@@ -44,6 +44,13 @@ a{color:inherit;text-decoration:none}
 .label{font-family:var(--sans);font-size:11px;font-weight:500;letter-spacing:.24em;text-transform:uppercase}
 .display{font-family:var(--display);font-weight:400;letter-spacing:-.01em;line-height:1.02;text-wrap:balance}
 .display em{font-style:italic}
+/* neon: her violet "buy flowers" sign, kept to the headings */
+.display{text-shadow:0 0 22px rgba(214,140,255,.16)}
+.display em{color:#fff0fb;text-shadow:0 0 2px rgba(255,255,255,.9),0 0 8px rgba(255,95,190,.85),0 0 20px rgba(214,90,255,.65),0 0 46px rgba(170,70,255,.4)}
+.stone .display{text-shadow:none}
+.stone .display em{color:#c0177a;text-shadow:0 0 1px rgba(255,79,163,.6),0 0 14px rgba(255,79,163,.35),0 0 30px rgba(190,90,255,.2)}
+.hero h1 em{animation:neonOn 2.6s .4s both}
+@keyframes neonOn{0%{opacity:.15;text-shadow:none}8%{opacity:1}10%{opacity:.3}14%{opacity:1}16%{opacity:.45;text-shadow:none}22%,100%{opacity:1}}
 .tline{display:inline-flex;align-items:center;gap:14px;font-size:12px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;padding-bottom:8px;position:relative}
 .tline::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;opacity:.5}
 .tline::before{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--iris);transform:scaleX(0);transform-origin:left;transition:transform .6s var(--ease);z-index:1}
@@ -94,7 +101,7 @@ header.solid .nav{height:68px}
 .intro{padding:clamp(96px,14vw,200px) 0 clamp(80px,10vw,150px)}
 .intro .wrap{display:grid;grid-template-columns:1fr 3fr;gap:40px}
 .intro p.display{font-size:clamp(28px,3.6vw,52px);line-height:1.18;letter-spacing:-.015em}
-.intro p.display em{color:#d9c3a0}
+
 .intro .sig{margin-top:40px;color:var(--mute-d);font-size:15px}
 
 /* signature */
