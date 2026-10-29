@@ -1,0 +1,701 @@
+<title>Pabst &amp; Hagedoorn Shop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Webshop-concept voor Pabst &amp; Hagedoorn, ontworpen door MediaWow.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gloock&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: the table seen from above. Porcelain ground, linen bands, hairline spec sheets; every product drawn, never photographed */
+:root{
+  --bg:#f4f5f3;          /* glazed porcelain */
+  --surface:#ffffff;
+  --cloth:#e8eae6;       /* pressed table linen */
+  --ink:#16202c;         /* service navy */
+  --mute:#5b6571;
+  --hair:rgba(22,32,44,.13);
+  --accent:#8f7136;      /* PVD champagne */
+  --accent-soft:rgba(143,113,54,.12);
+  --on-ink:#f4f5f3;
+  --shadow:rgba(22,32,44,.16);
+  --display:"Gloock","Didot","Bodoni 72",Georgia,serif;
+  --sans:"Instrument Sans","Helvetica Neue",Arial,system-ui,sans-serif;
+  --mono:"DM Mono","SFMono-Regular",Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.22,.61,.24,1);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f141b;--surface:#151c25;--cloth:#1a222d;--ink:#eceeec;--mute:#9aa3ad;--hair:rgba(236,238,236,.12);
+  --accent:#d3b475;--accent-soft:rgba(211,180,117,.14);--on-ink:#0f141b;--shadow:rgba(0,0,0,.5);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141b;--surface:#151c25;--cloth:#1a222d;--ink:#eceeec;--mute:#9aa3ad;--hair:rgba(236,238,236,.12);
+  --accent:#d3b475;--accent-soft:rgba(211,180,117,.14);--on-ink:#0f141b;--shadow:rgba(0,0,0,.5);color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
+h1,h2,h3,p{margin:0}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:1.5px solid var(--accent);outline-offset:3px}
+.wrap{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (min-width:760px){.wrap{padding-left:max(44px,env(safe-area-inset-left,0px));padding-right:max(44px,env(safe-area-inset-right,0px))}}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--accent)}
+.display{font-family:var(--display);font-weight:400;line-height:1.04;letter-spacing:-.012em;text-wrap:balance}
+.mono{font-family:var(--mono);font-size:12px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.lede{color:var(--mute);max-width:56ch;text-wrap:pretty}
+.btn{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 26px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--ink);transition:background .3s,color .3s}
+.btn.solid{background:var(--ink);color:var(--on-ink)}
+.btn.solid:hover{background:transparent;color:var(--ink)}
+.btn.line:hover{background:var(--ink);color:var(--on-ink)}
+.btn svg{width:16px;height:16px}
+
+/* ribbon + header */
+.ribbon{background:var(--ink);color:var(--on-ink);font-size:11px;letter-spacing:.18em;text-transform:uppercase;text-align:center;padding-block:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--hair)}
+.nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:76px;gap:16px}
+.menu{display:flex;gap:26px;font-size:13px;font-weight:500}
+.menu a{position:relative;padding-block:6px}
+.menu a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .4s var(--ease)}
+.menu a:hover::after{transform:scaleX(1)}
+.logo{text-align:center;line-height:1}
+.logo b{display:block;font-family:var(--display);font-weight:400;font-size:25px;letter-spacing:.01em;white-space:nowrap}
+.logo b i{font-style:normal;color:var(--accent)}
+.logo small{display:block;font-size:9.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--mute);margin-top:6px;white-space:nowrap}
+.tools{display:flex;justify-content:flex-end;align-items:center;gap:6px}
+.trade{font-size:12px;font-weight:600;letter-spacing:.06em;padding:8px 14px;border:1px solid var(--hair);white-space:nowrap}
+.trade:hover{border-color:var(--ink)}
+.ibtn{width:42px;height:42px;display:grid;place-items:center;position:relative}
+.ibtn svg{width:20px;height:20px}
+.badge{position:absolute;top:4px;right:2px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--on-ink);font-size:10px;font-weight:600;display:grid;place-items:center;transform:scale(0);transition:transform .35s var(--ease)}
+.badge.on{transform:scale(1)}
+.burger{display:none}
+.mnav{display:none;border-top:1px solid var(--hair);padding-block:12px 18px}
+.mnav a{display:block;padding:10px 0;font-family:var(--display);font-size:24px}
+@media (max-width:980px){.menu,.trade{display:none}.burger{display:grid}.nav{grid-template-columns:auto 1fr auto}.logo{text-align:left}.mnav.open{display:block}}
+@media (max-width:420px){.facts{grid-template-columns:1fr 1fr}.facts div:last-child{grid-column:1/-1}#searchBtn{display:none}.logo b{font-size:21px}.logo small{letter-spacing:.2em}}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:56px;align-items:center;padding-block:64px 72px}
+.hero h1{font-size:clamp(44px,6.4vw,92px)}
+.hero h1 span{color:var(--accent)}
+.hero .lede{margin-top:26px;font-size:17px}
+.hero .ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:44px;padding-top:22px;border-top:1px solid var(--hair)}
+.facts div{min-width:0}
+.facts b{display:block;font-family:var(--display);font-weight:400;font-size:26px;line-height:1.1}
+.facts span{font-size:12px;color:var(--mute)}
+.table{position:relative;aspect-ratio:1/1;max-width:100%;background:var(--cloth);border-radius:2px;overflow:hidden}
+.table::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 3px,rgba(127,127,127,.035) 3px 4px),repeating-linear-gradient(0deg,transparent 0 3px,rgba(127,127,127,.03) 3px 4px);pointer-events:none}
+.table svg{position:absolute;inset:0;width:100%;height:100%}
+.table .tag{position:absolute;left:18px;bottom:16px;z-index:2;color:var(--mute)}
+.lay{animation:lay 1.1s var(--ease) both}
+.lay.l1{animation-delay:.05s}.lay.l2{animation-delay:.25s;--dx:-40px}.lay.l3{animation-delay:.4s;--dx:40px}.lay.l4{animation-delay:.55s;--dy:-30px}
+@keyframes lay{from{opacity:.15;transform:translate(var(--dx,0),var(--dy,0)) scale(var(--s,1))}to{opacity:1;transform:none}}
+.lay.l1{--s:.94;transform-origin:50% 50%;transform-box:fill-box}
+@media (max-width:860px){.hero{grid-template-columns:1fr;gap:40px;padding-block:40px 56px}}
+
+/* brands */
+.brands{border-block:1px solid var(--hair);overflow:hidden}
+.brands .row{display:flex;gap:56px;padding-block:22px;width:max-content;animation:marquee 46s linear infinite}
+.brands span{font-family:var(--display);font-size:22px;color:var(--mute);white-space:nowrap}
+.brands span.top{color:var(--ink)}
+@keyframes marquee{to{transform:translateX(-50%)}}
+
+/* section heads */
+section.block{padding-block:88px}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:20px 40px;margin-bottom:40px}
+.head h2{font-size:clamp(36px,4.4vw,60px);margin-top:12px}
+.head .lede{max-width:46ch}
+
+/* shop */
+.filters{display:flex;flex-wrap:wrap;gap:10px 28px;align-items:center;justify-content:space-between;padding-block:14px;border-block:1px solid var(--hair);margin-bottom:36px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{height:36px;padding:0 16px;border:1px solid var(--hair);font-size:13px;font-weight:500;transition:border-color .25s,background .25s,color .25s}
+.chip:hover{border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.sort{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mute)}
+.sort select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--hair);height:36px;padding:0 10px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:36px 24px}
+@media (max-width:1100px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 14px}}
+.card{display:flex;flex-direction:column;min-width:0}
+.card .pic{position:relative;aspect-ratio:1/1;max-width:100%;background:var(--cloth);display:block;width:100%;overflow:hidden}
+.card .pic svg{width:100%;height:100%;display:block;transition:transform .8s var(--ease)}
+.card .pic:hover svg{transform:scale(1.045)}
+.card .flag{position:absolute;top:12px;left:12px;font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;background:var(--surface);padding:5px 9px}
+.card .meta{padding-top:16px;display:flex;flex-direction:column;gap:3px;flex:1}
+.card .brand{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
+.card h3{font-family:var(--display);font-weight:400;font-size:20px;line-height:1.2}
+.card .spec{color:var(--mute)}
+.card .swatches{display:flex;gap:6px;margin-top:8px}
+.sw{width:16px;height:16px;border-radius:50%;border:1px solid var(--hair);box-shadow:inset 0 0 0 2px var(--surface)}
+.card .buy{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair)}
+.price{font-variant-numeric:tabular-nums;font-weight:600;font-size:16px}
+.price small{display:block;font-weight:400;font-size:11px;color:var(--mute)}
+.add{width:40px;height:40px;border:1px solid var(--ink);display:grid;place-items:center;flex:none;transition:background .25s,color .25s}
+.add:hover{background:var(--ink);color:var(--on-ink)}
+.add svg{width:16px;height:16px}
+.empty{grid-column:1/-1;color:var(--mute);padding:40px 0}
+
+/* composer */
+.linen{background:var(--cloth)}
+.composer{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:56px;align-items:start}
+.composer .table{background:var(--surface)}
+.opts{display:flex;flex-direction:column;gap:26px}
+.opt h4{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);display:flex;justify-content:space-between;gap:12px}
+.opt h4 em{font-style:normal;color:var(--ink);letter-spacing:.04em;text-transform:none;font-size:13px;font-weight:500}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg .chip{background:var(--surface)}
+.seg .chip[aria-pressed="true"]{background:var(--ink)}
+.dots{display:flex;flex-wrap:wrap;gap:10px}
+.dot{width:34px;height:34px;border-radius:50%;border:1px solid var(--hair);position:relative}
+.dot[aria-pressed="true"]::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1.5px solid var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.sum{background:var(--surface);padding:22px 24px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--hair)}
+.sum .line{display:flex;justify-content:space-between;gap:16px;font-size:14px;color:var(--mute)}
+.sum .line b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums;text-align:right}
+.sum .total{border-top:1px solid var(--hair);padding-top:12px;margin-top:4px;font-size:15px;color:var(--ink)}
+.sum .total b{font-family:var(--display);font-size:30px;font-weight:400}
+.sum .btn{margin-top:10px;justify-content:center}
+@media (max-width:900px){.composer{grid-template-columns:1fr;gap:36px}}
+
+/* personalise */
+.perso{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:64px;align-items:center}
+.perso .table{background:var(--cloth)}
+.field{display:flex;flex-direction:column;gap:8px;margin-top:26px}
+.field label{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.field input{font:inherit;font-size:18px;color:var(--ink);background:var(--surface);border:1px solid var(--hair);height:52px;padding:0 16px;width:100%}
+.field input:focus{outline:none;border-color:var(--ink)}
+.perso ul{list-style:none;padding:0;margin:28px 0 0;display:flex;flex-direction:column;gap:10px;color:var(--mute);font-size:15px}
+.perso li{display:flex;gap:12px}
+.perso li::before{content:"";width:18px;height:1px;background:var(--accent);margin-top:12px;flex:none}
+@media (max-width:900px){.perso{grid-template-columns:1fr;gap:36px}}
+
+/* showrooms */
+.rooms{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:1px solid var(--ink)}
+.room{padding:28px 28px 32px 0;border-right:1px solid var(--hair);display:flex;flex-direction:column;gap:10px;min-width:0}
+.room+.room{padding-left:28px}
+.room:last-child{border-right:0}
+.room h3{font-family:var(--display);font-weight:400;font-size:30px}
+.room p{color:var(--mute);font-size:15px}
+.room .btn{align-self:flex-start;margin-top:auto;height:42px;padding:0 18px;font-size:12px}
+@media (max-width:860px){.rooms{grid-template-columns:1fr}.room,.room+.room{padding:24px 0;border-right:0;border-bottom:1px solid var(--hair)}}
+
+footer{background:var(--ink);color:var(--on-ink);padding-block:56px 40px}
+footer .cols{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px}
+footer h5{margin:0 0 12px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.6;font-weight:600}
+footer a,footer p{display:block;font-size:14px;opacity:.86;padding-block:3px}
+footer .logo{text-align:left}
+footer .logo small{color:inherit;opacity:.6}
+footer .fine{margin-top:44px;padding-top:18px;border-top:1px solid color-mix(in srgb,var(--on-ink) 18%,transparent);font-size:12px;opacity:.6;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+@media (max-width:760px){footer .cols{grid-template-columns:1fr 1fr}footer .cols>div:first-child{grid-column:1/-1}}
+
+/* drawers */
+.scrim{position:fixed;inset:0;background:rgba(10,14,20,.42);z-index:80;opacity:0;pointer-events:none;transition:opacity .4s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--bg);z-index:90;transform:translateX(100%);transition:transform .5s var(--ease),visibility 0s .5s;visibility:hidden;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer.on{transform:none;visibility:visible;transition:transform .5s var(--ease);box-shadow:-20px 0 60px var(--shadow)}
+.dhead{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--hair)}
+.dhead h3{font-family:var(--display);font-weight:400;font-size:24px}
+.dbody{flex:1;overflow:auto;padding:24px}
+.dfoot{padding:20px 24px;border-top:1px solid var(--hair);display:flex;flex-direction:column;gap:8px}
+.pd .pic{aspect-ratio:1/1;max-width:100%;background:var(--cloth);margin-bottom:22px}
+.pd .pic svg{width:100%;height:100%;display:block}
+.pd h2{font-size:34px;margin:6px 0 4px}
+.pd .copy{color:var(--mute);margin-top:14px;font-size:15px}
+.specs{margin-top:20px;border-top:1px solid var(--hair)}
+.specs div{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--hair);font-size:14px}
+.specs dt,.specs span:first-child{color:var(--mute)}
+.staffel{width:100%;border-collapse:collapse;margin-top:20px;font-size:14px;font-variant-numeric:tabular-nums}
+.staffel th{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);text-align:left;padding:8px 0;border-bottom:1px solid var(--ink)}
+.staffel td{padding:9px 0;border-bottom:1px solid var(--hair)}
+.staffel td:last-child,.staffel th:last-child{text-align:right}
+.staffel tr.on td{color:var(--accent);font-weight:600}
+.qty{display:flex;align-items:center;border:1px solid var(--hair);height:48px}
+.qty button{width:44px;height:100%;font-size:18px}
+.qty output{min-width:84px;text-align:center;font-variant-numeric:tabular-nums;font-size:14px}
+.pd .row{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.pd .row .btn{flex:1;justify-content:center;min-width:180px}
+.chk{display:flex;gap:10px;align-items:flex-start;margin-top:18px;font-size:14px;color:var(--mute)}
+.chk input{accent-color:var(--accent);margin-top:4px}
+.ci{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:14px;padding-block:16px;border-bottom:1px solid var(--hair);align-items:center}
+.ci .th{width:72px;height:72px;background:var(--cloth)}
+.ci .th svg{width:100%;height:100%;display:block}
+.ci h4{margin:0;font-family:var(--display);font-weight:400;font-size:17px;line-height:1.2}
+.ci p{font-size:12px;color:var(--mute)}
+.ci .r{text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
+.ci .r button{font-size:12px;color:var(--mute);text-decoration:underline;margin-top:4px}
+.tl{display:flex;justify-content:space-between;font-size:14px;color:var(--mute);font-variant-numeric:tabular-nums}
+.tl.big{color:var(--ink);font-size:16px;font-weight:600}
+.dfoot .btn{justify-content:center;margin-top:8px}
+.note{font-size:12px;color:var(--mute)}
+.done{padding:40px 0;text-align:center}
+.done h4{font-family:var(--display);font-weight:400;font-size:28px;margin:0 0 10px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--on-ink);padding:12px 20px;font-size:14px;z-index:100;opacity:0;pointer-events:none;transition:opacity .3s,transform .4s var(--ease);max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+
+<div class="ribbon">Concept door MediaWow &middot; voorbeeldprijzen, excl. btw</div>
+
+<header>
+  <div class="wrap">
+    <div class="nav">
+      <nav class="menu" aria-label="Hoofdmenu">
+        <a href="#shop" data-cat="porselein">Porselein</a>
+        <a href="#shop" data-cat="glas">Glas</a>
+        <a href="#shop" data-cat="bestek">Bestek</a>
+        <a href="#couvert">Couvert</a>
+        <a href="#maatwerk">Maatwerk</a>
+      </nav>
+      <button class="ibtn burger" id="burger" aria-label="Menu openen" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+      </button>
+      <a class="logo" href="#top"><b>Pabst <i>&amp;</i> Hagedoorn</b><small>Architecten van de gedekte tafel</small></a>
+      <div class="tools">
+        <button class="trade" id="tradeBtn">Inloggen vakhandel</button>
+        <button class="ibtn" id="searchBtn" aria-label="Zoeken">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+        </button>
+        <button class="ibtn" id="cartBtn" aria-label="Bestellijst openen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/></svg>
+          <span class="badge" id="badge">0</span>
+        </button>
+      </div>
+    </div>
+    <nav class="mnav" id="mnav" aria-label="Mobiel menu">
+      <a href="#shop" data-cat="porselein">Porselein</a>
+      <a href="#shop" data-cat="glas">Glas</a>
+      <a href="#shop" data-cat="bestek">Bestek</a>
+      <a href="#couvert">Couvert samenstellen</a>
+      <a href="#maatwerk">Maatwerk</a>
+      <a href="#showrooms">Showrooms</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div>
+      <p class="eyebrow">Porselein, glas &amp; bestek voor de horeca</p>
+      <h1 class="display" style="margin-top:18px">De gedekte tafel, <span>tot op de millimeter</span> ontworpen.</h1>
+      <p class="lede">Al meer dan een halve eeuw richten wij tafels in voor restaurants, hotels en cateraars. Wij brengen de beste merken samen en stemmen elk couvert af op uw keuken, uw zaal en uw gasten.</p>
+      <div class="ctas">
+        <a class="btn solid" href="#couvert">Stel een couvert samen
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 8h12M9 3l5 5-5 5"/></svg></a>
+        <a class="btn line" href="#shop">Bekijk de collectie</a>
+      </div>
+      <div class="facts">
+        <div><b>30+</b><span>merken in porselein, glas en bestek</span></div>
+        <div><b>Ø 160–310</b><span>mm, van broodbord tot onderbord</span></div>
+        <div><b>Eigen logo</b><span>op elk stuk, vanaf één doos</span></div>
+      </div>
+    </div>
+    <div class="table" id="heroTable" role="img" aria-label="Een gedekte tafel van bovenaf: bord, bestek en glazen"></div>
+  </div>
+
+  <div class="brands" aria-label="Onze merken">
+    <div class="row" id="brandRow"></div>
+  </div>
+
+  <section class="block" id="shop">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <p class="eyebrow">Collectie</p>
+          <h2 class="display">Kies per stuk, bestel per doos.</h2>
+        </div>
+        <p class="lede">Alle prijzen per stuk, excl. btw. Staffelkorting loopt automatisch mee vanaf vijf dozen. Na inloggen ziet de vakhandel eigen netto-prijzen.</p>
+      </div>
+      <div class="filters">
+        <div class="chips" id="cats" role="group" aria-label="Categorie"></div>
+        <label class="sort" for="sortSel">Sorteer
+          <select id="sortSel">
+            <option value="rec">Aanbevolen</option>
+            <option value="low">Prijs oplopend</option>
+            <option value="high">Prijs aflopend</option>
+            <option value="brand">Merk A–Z</option>
+          </select>
+        </label>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+  </section>
+
+  <section class="block linen" id="couvert">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <p class="eyebrow">Couvert samensteller</p>
+          <h2 class="display">Eén couvert, honderd keer gedekt.</h2>
+        </div>
+        <p class="lede">Combineer bord, glas en bestek en zie direct hoe het op tafel staat. Wij rekenen het uit per couvert en voor uw hele zaal.</p>
+      </div>
+      <div class="composer">
+        <div class="table" id="compTable" role="img" aria-label="Voorbeeld van het samengestelde couvert"></div>
+        <div class="opts">
+          <div class="opt"><h4>Bord <em id="oPlate"></em></h4><div class="seg" id="segPlate"></div></div>
+          <div class="opt"><h4>Glazuur <em id="oGlaze"></em></h4><div class="dots" id="segGlaze"></div></div>
+          <div class="opt"><h4>Glas <em id="oGlass"></em></h4><div class="seg" id="segGlass"></div></div>
+          <div class="opt"><h4>Bestek <em id="oFinish"></em></h4><div class="dots" id="segFinish"></div></div>
+          <div class="opt"><h4><label for="covers">Aantal couverts</label> <em id="oCovers"></em></h4><input type="range" id="covers" min="10" max="300" step="10" value="80"></div>
+          <div class="sum">
+            <div class="line"><span>Bord</span><b id="sPlate"></b></div>
+            <div class="line"><span>Glas</span><b id="sGlass"></b></div>
+            <div class="line"><span>Mes, vork &amp; lepel</span><b id="sCut"></b></div>
+            <div class="line"><span>Per couvert</span><b id="sPer"></b></div>
+            <div class="line total"><span>Totaal, <span id="sN"></span> couverts</span><b id="sTot"></b></div>
+            <button class="btn solid" id="addSet">Zet op bestellijst</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="maatwerk">
+    <div class="wrap perso">
+      <div>
+        <p class="eyebrow">Maatwerk</p>
+        <h2 class="display" style="font-size:clamp(36px,4.4vw,60px);margin-top:12px">Uw naam, ingebrand in de rand.</h2>
+        <p class="lede" style="margin-top:20px">Elk stuk kan worden voorzien van een logo, decor of eigen ontwerp. Typ de naam van uw zaak en bekijk het resultaat.</p>
+        <div class="field">
+          <label for="persoName">Naam van uw zaak</label>
+          <input id="persoName" maxlength="28" value="Atelier Zeven" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Kleur van het decor</label>
+          <div class="seg" id="segInk"></div>
+        </div>
+        <ul>
+          <li>Decor onder glazuur, vaatwasser- en magnetronbestendig</li>
+          <li>Gravure op bestek en glas mogelijk</li>
+          <li>Proefstuk binnen drie weken</li>
+        </ul>
+      </div>
+      <div class="table" id="persoTable" role="img" aria-label="Bord met gepersonaliseerde naam in de rand"></div>
+    </div>
+  </section>
+
+  <section class="block linen" id="showrooms">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <p class="eyebrow">Showrooms</p>
+          <h2 class="display">Zie het, voel het, dek het.</h2>
+        </div>
+        <p class="lede">Porselein koop je niet van een scherm alleen. In onze showrooms dekken wij uw tafel op ware grootte, op afspraak.</p>
+      </div>
+      <div class="rooms">
+        <div class="room">
+          <p class="eyebrow">Hoofdkantoor</p>
+          <h3>Breda</h3>
+          <p>Takkebijsters 47<br>4817 BL Breda</p>
+          <p>Showroom en kantoor. Bezoek op afspraak.</p>
+          <a class="btn line" href="#showrooms" data-appt="Breda">Plan een afspraak</a>
+        </div>
+        <div class="room">
+          <p class="eyebrow">Inspirium</p>
+          <h3>Breda</h3>
+          <p>Inspiratiecentrum voor hotel en horeca, samen met de merken van Interhal.</p>
+          <a class="btn line" href="#showrooms" data-appt="Inspirium Breda">Plan een afspraak</a>
+        </div>
+        <div class="room">
+          <p class="eyebrow">Inspirium</p>
+          <h3>Amsterdam</h3>
+          <p>De volledige collectie gedekt in de hoofdstad. Ideaal voor een proefdiner met uw chef.</p>
+          <a class="btn line" href="#showrooms" data-appt="Inspirium Amsterdam">Plan een afspraak</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <div class="logo"><b>Pabst <i>&amp;</i> Hagedoorn</b><small>Part of Interhal</small></div>
+        <p style="margin-top:16px;max-width:36ch">Leverancier van porselein, glas, bestek en buffetmaterialen voor de professionele gastvrijheid.</p>
+      </div>
+      <div><h5>Collectie</h5><a href="#shop">Porselein</a><a href="#shop">Glas</a><a href="#shop">Bestek</a><a href="#couvert">Couvert</a></div>
+      <div><h5>Service</h5><a href="#maatwerk">Logo &amp; decor</a><a href="#showrooms">Showrooms</a><a href="#shop">Staffelprijzen</a></div>
+      <div><h5>Contact</h5><p>Takkebijsters 47</p><p>4817 BL Breda</p></div>
+    </div>
+    <div class="fine"><span>&copy; 2026 Pabst &amp; Hagedoorn B.V.</span><span>Levering uitsluitend aan de vakhandel en horeca</span></div>
+  </div>
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="pd" aria-label="Product" aria-hidden="true">
+  <div class="dhead"><span class="eyebrow" id="pdBrand"></span><button class="ibtn" data-close aria-label="Sluiten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="dbody pd" id="pdBody"></div>
+</aside>
+<aside class="drawer" id="cart" aria-label="Bestellijst" aria-hidden="true">
+  <div class="dhead"><h3>Bestellijst</h3><button class="ibtn" data-close aria-label="Sluiten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="dbody" id="cartBody"></div>
+  <div class="dfoot" id="cartFoot"></div>
+</aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const eur=n=>'€ '+n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
+let uid=0;
+
+/* ---------- drawing: everything is a vector, seen as on a table ---------- */
+const GLAZE={wit:['#fbfbf9','#dfe1dd','Porseleinwit'],blush:['#efd9d1','#c9a497','Blush'],salie:['#d5ddd0','#9fae98','Salie'],leisteen:['#7d848b','#4b5157','Leisteen'],zand:['#e9dfcf','#c2b296','Zand']};
+const FIN={inox:['#f2f4f6','#a7afb7','#6f7880','Edelstaal'],zilver:['#ffffff','#c9ccd2','#8d929b','Verzilverd'],goud:['#f6e6b5','#c9a55c','#8a6a2c','PVD goud'],zwart:['#6a6b70','#2c2d31','#121214','PVD zwart'],koper:['#f1c4a2','#c07f5b','#7d4630','PVD koper']};
+
+function plate(cx,cy,r,g,o={}){
+  const [a,b]=GLAZE[g]||GLAZE.wit, id='p'+(uid++);
+  const well=o.coupe?r*.78:r*.64;
+  let s=`<defs><radialGradient id="${id}" cx="42%" cy="38%" r="70%"><stop offset="0" stop-color="${a}"/><stop offset=".75" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></radialGradient>
+  <radialGradient id="${id}w" cx="50%" cy="50%" r="50%"><stop offset=".7" stop-color="${a}"/><stop offset="1" stop-color="${b}" stop-opacity=".55"/></radialGradient>
+  <filter id="${id}s" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="${r*.05}" stdDeviation="${r*.06}" flood-color="#0b1220" flood-opacity=".22"/></filter></defs>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id})" filter="url(#${id}s)"/>`;
+  if(o.relief){for(let i=0;i<4;i++)s+=`<circle cx="${cx}" cy="${cy}" r="${well+(r-well)*(.18+i*.2)}" fill="none" stroke="${b}" stroke-opacity=".45" stroke-width="${r*.006}"/>`}
+  s+=`<circle cx="${cx}" cy="${cy}" r="${well}" fill="url(#${id}w)"/>`;
+  if(o.bowl)s+=`<circle cx="${cx}" cy="${cy}" r="${well*.72}" fill="${b}" fill-opacity=".22"/>`;
+  s+=`<ellipse cx="${cx-r*.32}" cy="${cy-r*.38}" rx="${r*.22}" ry="${r*.07}" transform="rotate(-38 ${cx-r*.32} ${cy-r*.38})" fill="#fff" fill-opacity=".55"/>`;
+  return s;
+}
+function grad(f){const [a,b,c]=FIN[f]||FIN.inox,id='m'+(uid++);return [id,`<defs><linearGradient id="${id}" x1="0" x2="1"><stop offset="0" stop-color="${c}"/><stop offset=".35" stop-color="${a}"/><stop offset=".6" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></linearGradient></defs>`]}
+const handle=(x,y,k=1)=>`M${x-2.4*k},${y} C${x-3*k},${y+40*k} ${x-6*k},${y+70*k} ${x-6*k},${y+102*k} a${6*k},${6*k} 0 0 0 ${12*k},0 C${x+6*k},${y+70*k} ${x+3*k},${y+40*k} ${x+2.4*k},${y} Z`;
+function fork(x,y,k,f){const [id,d]=grad(f);let t='';for(let i=0;i<4;i++)t+=`<rect x="${x-9*k+i*5.6*k}" y="${y}" width="${2.6*k}" height="${32*k}" rx="${1.3*k}" fill="url(#${id})"/>`;
+  return d+t+`<path d="M${x-9.6*k},${y+28*k} h${19.2*k} c0,${12*k} ${-5*k},${18*k} ${-7.2*k},${22*k} h${-4.8*k} c${-2.2*k},${-4*k} ${-7.2*k},${-10*k} ${-7.2*k},${-22*k}z" fill="url(#${id})"/><path d="${handle(x,y+48*k,k)}" fill="url(#${id})"/>`}
+function knife(x,y,k,f){const [id,d]=grad(f);return d+`<path d="M${x-2.5*k},${y} C${x+8*k},${y+6*k} ${x+8*k},${y+28*k} ${x+6.5*k},${y+66*k} L${x-3*k},${y+66*k} Z" fill="url(#${id})"/><path d="${handle(x+1.5*k,y+64*k,k)}" fill="url(#${id})"/>`}
+function spoon(x,y,k,f){const [id,d]=grad(f);return d+`<ellipse cx="${x}" cy="${y+17*k}" rx="${10.5*k}" ry="${17*k}" fill="url(#${id})"/><ellipse cx="${x-3*k}" cy="${y+11*k}" rx="${3*k}" ry="${7*k}" fill="#fff" fill-opacity=".45"/><path d="${handle(x,y+32*k,k)}" fill="url(#${id})"/>`}
+function glassTop(cx,cy,r,tint){const id='g'+(uid++);tint=tint||'#cfe3ea';
+  return `<defs><radialGradient id="${id}" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".6" stop-color="${tint}" stop-opacity=".35"/><stop offset="1" stop-color="${tint}" stop-opacity=".7"/></radialGradient></defs>
+  <circle cx="${cx+r*.12}" cy="${cy+r*.16}" r="${r}" fill="#0b1220" fill-opacity=".07"/>
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${id})" stroke="#fff" stroke-opacity=".9" stroke-width="${r*.05}"/>
+  <circle cx="${cx}" cy="${cy}" r="${r*.62}" fill="none" stroke="${tint}" stroke-opacity=".8" stroke-width="${r*.03}"/>
+  <circle cx="${cx}" cy="${cy}" r="${r*.16}" fill="${tint}" fill-opacity=".5"/>
+  <path d="M${cx-r*.7},${cy-r*.3} A${r*.78},${r*.78} 0 0 1 ${cx-r*.1},${cy-r*.76}" stroke="#fff" stroke-width="${r*.07}" fill="none" stroke-linecap="round"/>`}
+function glassSide(kind){const id='gs'+(uid++);
+  const shapes={
+    wijn:'M68,34 C62,78 70,112 100,118 C130,112 138,78 132,34 Z',
+    flute:'M83,22 C79,70 84,106 100,112 C116,106 121,70 117,22 Z',
+    water:'M70,52 L76,150 Q100,156 124,150 L130,52 Z',
+    karaf:'M88,30 L88,64 C58,82 52,118 60,146 Q100,160 140,146 C148,118 142,82 112,64 L112,30 Z'};
+  const stem=kind==='water'||kind==='karaf'?'':`<rect x="98.6" y="${kind==='flute'?112:118}" width="2.8" height="${kind==='flute'?52:46}" fill="url(#${id})"/><ellipse cx="100" cy="165" rx="${kind==='flute'?24:30}" ry="4.5" fill="url(#${id})" stroke="#9bb3bc" stroke-opacity=".7"/>`;
+  const fill=kind==='wijn'?`<path d="M66.5,74 C68,100 78,114 100,118 C122,114 132,100 133.5,74 Z" fill="#7b1f32" fill-opacity=".72"/>`:'';
+  return `<defs><linearGradient id="${id}" x1="0" x2="1"><stop offset="0" stop-color="#b8cdd4" stop-opacity=".75"/><stop offset=".25" stop-color="#fff" stop-opacity=".95"/><stop offset=".55" stop-color="#e3eef1" stop-opacity=".35"/><stop offset="1" stop-color="#9ab3bb" stop-opacity=".8"/></linearGradient></defs>
+  <ellipse cx="100" cy="170" rx="44" ry="5" fill="#0b1220" fill-opacity=".08"/>${fill}<path d="${shapes[kind]}" fill="url(#${id})" stroke="#9bb3bc" stroke-opacity=".8" stroke-width="1"/>${stem}
+  <path d="M${kind==='flute'?88:76},40 C${kind==='flute'?86:73},70 ${kind==='flute'?88:76},92 ${kind==='flute'?93:86},104" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/>`}
+function mat(color){return `<rect x="22" y="22" width="156" height="156" rx="3" fill="${color}"/>`+Array.from({length:26},(_,i)=>`<line x1="22" x2="178" y1="${25+i*6}" y2="${25+i*6}" stroke="#000" stroke-opacity=".08"/>`).join('')}
+const svg=(inner,vb='0 0 200 200')=>`<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${inner}</svg>`;
+
+/* ---------- catalogue (voorbeeldartikelen) ---------- */
+const P=[
+ {id:'hs240',cat:'porselein',brand:'Heart & Soul',name:'Pine coupebord met reliëf',d:'Ø 240 mm',art:'10300129',box:6,price:14.95,glazes:['blush','salie','wit'],kind:'coupe',flag:'Nieuw',copy:'Een coupebord met fijn ringreliëf in de spiegel. Mat geglazuurde rand, glanzende binnenzijde.'},
+ {id:'bpur',cat:'porselein',brand:'Bauscher',name:'Purity bord plat',d:'Ø 280 mm',art:'10291044',box:6,price:18.40,glazes:['wit'],kind:'rim',copy:'Het werkpaard van de fine dining: ultrasterk hotelporselein met een strakke, smalle vlag.'},
+ {id:'sall',cat:'porselein',brand:'Schönwald',name:'Allure diep bord',d:'Ø 230 mm',art:'10287712',box:6,price:16.75,glazes:['wit','leisteen'],kind:'bowl',copy:'Diep bord met golvende vlag. Voor risotto, pasta en heldere bouillons.'},
+ {id:'arz',cat:'porselein',brand:'Arzberg',name:'Form 1382 onderbord',d:'Ø 310 mm',art:'10279908',box:4,price:29.90,glazes:['wit','zand'],kind:'rim',flag:'Klassiek',copy:'Het onderbord dat sinds 1931 op de mooiste tafels staat. Licht, dun en toch horecabestendig.'},
+ {id:'zpure',cat:'glas',brand:'Zwiesel Glas',name:'Pure Bordeaux',d:'680 ml',art:'20118501',box:6,price:11.60,glass:'wijn',copy:'Tritan-kristal met een royale kelk. Sterk genoeg voor de vaatwasser, dun genoeg voor de grote wijnen.'},
+ {id:'zair',cat:'glas',brand:'Zwiesel Glas',name:'Air champagneflûte',d:'250 ml',art:'20118544',box:6,price:9.85,glass:'flute',copy:'Mondgeblazen uitstraling, machinaal gemaakt. Een fijn mousseerpunt in de bodem.'},
+ {id:'lroc',cat:'glas',brand:'La Rochère',name:'Périgord waterglas',d:'280 ml',art:'20120333',box:6,price:6.40,glass:'water',copy:'Geperst glas uit de oudste glasblazerij van Frankrijk. Robuust, met karakter.'},
+ {id:'jen',cat:'glas',brand:'Jenaer Glas',name:'Primo karaf',d:'1,0 l',art:'20114070',box:4,price:21.50,glass:'karaf',copy:'Borosilicaatglas, hittebestendig en kraakhelder. Voor water, wijn en koude infusies.'},
+ {id:'hexq',cat:'bestek',brand:'Hepp',name:'Exquisit tafelvork',d:'205 mm',art:'30140211',box:12,price:7.20,cut:'fork',fins:['inox','zilver','goud','zwart'],copy:'18/10 edelstaal, zwaar in de hand. Leverbaar verzilverd en in PVD-kleuren.'},
+ {id:'wmes',cat:'bestek',brand:'WMF',name:'Signum tafelmes',d:'232 mm',art:'30139804',box:12,price:8.95,cut:'knife',fins:['inox','zilver','koper'],copy:'Massief heft met hol geslepen lemmet. Snijdt, blijft scherp, oogt rustig.'},
+ {id:'hlep',cat:'bestek',brand:'Hepp',name:'Exquisit dessertlepel',d:'180 mm',art:'30140219',box:12,price:6.30,cut:'spoon',fins:['inox','goud','zwart'],copy:'De dessertlepel uit de Exquisit-lijn. Diepe schep, slank heft.'},
+ {id:'yax',cat:'bestek',brand:'Yaxell',name:'Mon steakmes',d:'235 mm',art:'30151002',box:6,price:24.50,cut:'knife',fins:['zwart','inox'],flag:'Japans',copy:'Japans VG10-staal met een heft van zwart composiet. Het steakmes dat de chef zelf zou kiezen.'}
+];
+const CATS=[['alles','Alles'],['porselein','Porselein'],['glas','Glas'],['bestek','Bestek']];
+
+function art(p,o={}){
+  const g=o.glaze||(p.glazes&&p.glazes[0]), f=o.fin||(p.fins&&p.fins[0]);
+  if(p.cat==='porselein')return svg(plate(100,100,p.kind==='rim'&&p.id==='arz'?84:76,g,{coupe:p.kind==='coupe',relief:p.kind==='coupe',bowl:p.kind==='bowl'}));
+  if(p.cat==='glas')return svg(glassSide(p.glass));
+  const k=1.05, by=34;
+  const x=100, m={fork:fork(x,by,k,f),knife:knife(x-1,by-4,k,f),spoon:spoon(x,by,k,f)}[p.cut];
+  return svg(`<g transform="rotate(-28 100 100)">${m}</g>`);
+}
+
+/* ---------- hero table ---------- */
+function setting(o){
+  const k=o.k||1.4;
+  return `<g class="lay l1">${o.under?plate(300,300,170,'wit',{}):''}${plate(300,300,o.r||132,o.glaze,{coupe:o.coupe,relief:o.coupe,bowl:o.bowl})}</g>
+  <g class="lay l2">${fork(105,200,k,o.fin)}</g>
+  <g class="lay l3">${knife(492,196,k,o.fin)}${spoon(538,200,k,o.fin)}</g>
+  <g class="lay l4">${o.glass==='flute'?glassTop(470,112,30):''}${glassTop(o.glass==='flute'?535:500,o.glass==='flute'?150:118,o.glass==='water'?34:40,o.glass==='wijn'?'#d7c2c8':'#cfe3ea')}${o.glass==='wijn'?glassTop(552,190,28):''}</g>`;
+}
+$('#heroTable').innerHTML=svg(setting({glaze:'blush',fin:'goud',coupe:true,under:true,glass:'wijn',r:128}),'0 0 600 600')+'<span class="tag mono">Pine coupebord Ø 240 · Exquisit PVD goud · Pure Bordeaux</span>';
+
+/* ---------- brands ---------- */
+const B=['WMF','Bauscher','Schönwald','Zwiesel Glas','Hepp','Arzberg','La Rochère','Jenaer Glas','Yaxell','Chilewich','Libbey','iSi Culinary','Tellier','KAPP'];
+$('#brandRow').innerHTML=[...B,...B].map((b,i)=>`<span class="${i%14<3?'top':''}">${b}</span>`).join('');
+
+/* ---------- shop ---------- */
+let cat='alles', sort='rec';
+$('#cats').innerHTML=CATS.map(([v,l])=>`<button class="chip" data-v="${v}" aria-pressed="${v===cat}">${l}</button>`).join('');
+$('#cats').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;cat=b.dataset.v;renderGrid()});
+$('#sortSel').addEventListener('change',e=>{sort=e.target.value;renderGrid()});
+document.querySelectorAll('[data-cat]').forEach(a=>a.addEventListener('click',()=>{cat=a.dataset.cat;renderGrid();$('#mnav').classList.remove('open')}));
+function swatches(p){
+  if(p.glazes)return p.glazes.map(g=>`<span class="sw" style="background:${GLAZE[g][0]};border-color:${GLAZE[g][1]}" title="${GLAZE[g][2]}"></span>`).join('');
+  if(p.fins)return p.fins.map(f=>`<span class="sw" style="background:linear-gradient(135deg,${FIN[f][0]},${FIN[f][2]})" title="${FIN[f][3]}"></span>`).join('');
+  return '';
+}
+function renderGrid(){
+  document.querySelectorAll('#cats .chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.v===cat));
+  let list=P.filter(p=>cat==='alles'||p.cat===cat);
+  if(sort==='low')list=[...list].sort((a,b)=>a.price-b.price);
+  if(sort==='high')list=[...list].sort((a,b)=>b.price-a.price);
+  if(sort==='brand')list=[...list].sort((a,b)=>a.brand.localeCompare(b.brand));
+  $('#grid').innerHTML=list.length?list.map(p=>`<article class="card">
+    <button class="pic" data-open="${p.id}" aria-label="${p.name} bekijken">${art(p)}${p.flag?`<span class="flag">${p.flag}</span>`:''}</button>
+    <div class="meta"><span class="brand">${p.brand}</span><h3>${p.name}</h3><span class="spec mono">${p.d} · art. ${p.art}</span><div class="swatches">${swatches(p)}</div>
+    <div class="buy"><span class="price">${eur(p.price)}<small>per stuk · doos à ${p.box}</small></span>
+    <button class="add" data-add="${p.id}" aria-label="Doos ${p.name} toevoegen"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2v12M2 8h12"/></svg></button></div></div></article>`).join(''):'<p class="empty">Geen artikelen in deze selectie.</p>';
+}
+renderGrid();
+$('#grid').addEventListener('click',e=>{
+  const o=e.target.closest('[data-open]'), a=e.target.closest('[data-add]');
+  if(o)openProduct(o.dataset.open);
+  if(a){const p=P.find(x=>x.id===a.dataset.add);addLine(p,p.box,variantOf(p));toast(`Doos ${p.name} (${p.box} st.) toegevoegd`)}
+});
+const variantOf=(p,g,f)=>p.glazes?GLAZE[g||p.glazes[0]][2]:p.fins?FIN[f||p.fins[0]][3]:'';
+
+/* staffel */
+const tier=boxes=>boxes>=10?.10:boxes>=5?.06:0;
+
+/* ---------- product drawer ---------- */
+let cur=null;
+function openProduct(id){
+  const p=P.find(x=>x.id===id);cur={p,glaze:p.glazes&&p.glazes[0],fin:p.fins&&p.fins[0],boxes:1,logo:false};
+  $('#pdBrand').textContent=p.brand;drawPD();openDrawer('#pd');
+}
+function drawPD(){
+  const {p}=cur, d=tier(cur.boxes), unit=p.price*(1-d)+(cur.logo?1.15:0);
+  const opts=p.glazes?`<div class="opt" style="margin-top:22px"><h4>Glazuur <em>${GLAZE[cur.glaze][2]}</em></h4><div class="dots">${p.glazes.map(g=>`<button class="dot" data-g="${g}" aria-pressed="${g===cur.glaze}" aria-label="${GLAZE[g][2]}" style="background:radial-gradient(circle at 40% 35%,${GLAZE[g][0]} 55%,${GLAZE[g][1]})"></button>`).join('')}</div></div>`
+   :p.fins?`<div class="opt" style="margin-top:22px"><h4>Afwerking <em>${FIN[cur.fin][3]}</em></h4><div class="dots">${p.fins.map(f=>`<button class="dot" data-f="${f}" aria-pressed="${f===cur.fin}" aria-label="${FIN[f][3]}" style="background:linear-gradient(135deg,${FIN[f][0]},${FIN[f][1]} 55%,${FIN[f][2]})"></button>`).join('')}</div></div>`:'';
+  $('#pdBody').innerHTML=`<div class="pic">${art(p,{glaze:cur.glaze,fin:cur.fin})}</div>
+   <h2 class="display">${p.name}</h2><span class="mono" style="color:var(--mute)">${p.d} · art. ${p.art} · doos à ${p.box}</span>
+   <p class="copy">${p.copy}</p>${opts}
+   <table class="staffel"><thead><tr><th>Afname</th><th>Korting</th><th>Per stuk</th></tr></thead><tbody>
+   ${[[1,'1–4 dozen',0],[5,'5–9 dozen',.06],[10,'10+ dozen',.10]].map(([n,l,k])=>`<tr class="${tier(cur.boxes)===k?'on':''}"><td>${l}</td><td>${k?'−'+k*100+'%':'—'}</td><td>${eur(p.price*(1-k))}</td></tr>`).join('')}
+   </tbody></table>
+   <label class="chk"><input type="checkbox" id="pdLogo" ${cur.logo?'checked':''}> Voorzien van eigen logo of decor (+ ${eur(1.15)} per stuk, eenmalig ontwerpvoorstel)</label>
+   <div class="row"><div class="qty"><button data-q="-1" aria-label="Doos minder">−</button><output>${cur.boxes} ${cur.boxes===1?'doos':'dozen'}</output><button data-q="1" aria-label="Doos meer">+</button></div>
+   <button class="btn solid" id="pdAdd">Toevoegen · ${eur(unit*p.box*cur.boxes)}</button></div>
+   <p class="note" style="margin-top:12px">${cur.boxes*p.box} stuks à ${eur(unit)} excl. btw. Uit voorraad Breda, levering in 2–4 werkdagen.</p>`;
+}
+$('#pdBody').addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.g){cur.glaze=t.dataset.g;drawPD()}
+  if(t.dataset.f){cur.fin=t.dataset.f;drawPD()}
+  if(t.dataset.q){cur.boxes=Math.max(1,cur.boxes+ +t.dataset.q);drawPD()}
+  if(t.id==='pdAdd'){const {p}=cur;addLine(p,p.box*cur.boxes,variantOf(p,cur.glaze,cur.fin)+(cur.logo?' · eigen logo':''),cur.logo?1.15:0,{glaze:cur.glaze,fin:cur.fin});closeAll();toast(`${p.box*cur.boxes} × ${p.name} toegevoegd`)}
+});
+$('#pdBody').addEventListener('change',e=>{if(e.target.id==='pdLogo'){cur.logo=e.target.checked;drawPD()}});
+
+/* ---------- cart ---------- */
+const cart=[];
+function addLine(p,qty,variant,extra=0,look={}){
+  const key=p.id+'|'+variant, l=cart.find(x=>x.key===key);
+  if(l)l.qty+=qty;else cart.push({key,p,qty,variant,extra,look});
+  renderCart();
+}
+function lineUnit(l){return l.p.price*(1-tier(Math.floor(l.qty/l.p.box)))+l.extra}
+function renderCart(){
+  const n=cart.reduce((s,l)=>s+Math.ceil(l.qty/l.p.box),0), b=$('#badge');
+  b.textContent=n;b.classList.toggle('on',n>0);
+  if(!cart.length){$('#cartBody').innerHTML='<div class="done"><h4>Nog leeg</h4><p class="note">Voeg dozen toe vanuit de collectie of stel een compleet couvert samen.</p></div>';$('#cartFoot').innerHTML='<a class="btn line" href="#shop" data-closego>Naar de collectie</a>';return}
+  $('#cartBody').innerHTML=cart.map((l,i)=>`<div class="ci"><div class="th">${art(l.p,l.look)}</div>
+    <div style="min-width:0"><h4>${l.p.name}</h4><p>${l.p.brand}${l.variant?' · '+l.variant:''}</p><p class="mono">${l.qty} st. · ${Math.ceil(l.qty/l.p.box)} ${Math.ceil(l.qty/l.p.box)===1?'doos':'dozen'}${tier(Math.floor(l.qty/l.p.box))?' · staffel −'+tier(Math.floor(l.qty/l.p.box))*100+'%':''}</p></div>
+    <div class="r">${eur(lineUnit(l)*l.qty)}<br><button data-rm="${i}">Verwijderen</button></div></div>`).join('');
+  const sub=cart.reduce((s,l)=>s+lineUnit(l)*l.qty,0), ship=sub>=750?0:39.5;
+  $('#cartFoot').innerHTML=`<div class="tl"><span>Subtotaal excl. btw</span><span>${eur(sub)}</span></div>
+   <div class="tl"><span>Levering${ship?' (gratis vanaf '+eur(750)+')':''}</span><span>${ship?eur(ship):'Gratis'}</span></div>
+   <div class="tl"><span>Btw 21%</span><span>${eur((sub+ship)*.21)}</span></div>
+   <div class="tl big"><span>Totaal incl. btw</span><span>${eur((sub+ship)*1.21)}</span></div>
+   <button class="btn solid" id="order">Bestelling plaatsen</button>
+   <button class="btn line" id="quote">Offerte aanvragen</button>`;
+}
+$('#cartBody').addEventListener('click',e=>{const r=e.target.closest('[data-rm]');if(r){cart.splice(+r.dataset.rm,1);renderCart()}});
+$('#cartFoot').addEventListener('click',e=>{
+  if(e.target.closest('[data-closego]'))closeAll();
+  const t=e.target.closest('#order,#quote');if(!t)return;
+  const q=t.id==='quote';cart.length=0;renderCart();
+  $('#cartBody').innerHTML=`<div class="done"><h4>${q?'Offerte aangevraagd':'Bestelling ontvangen'}</h4><p class="note">${q?'Uw accountmanager neemt binnen één werkdag contact op.':'U ontvangt de orderbevestiging per e-mail.'} Dit is een concept: er is niets verzonden.</p></div>`;
+  $('#cartFoot').innerHTML='<a class="btn line" href="#shop" data-closego>Verder kijken</a>';
+});
+
+/* ---------- drawers ---------- */
+function openDrawer(s){closeAll(true);$(s).classList.add('on');$(s).setAttribute('aria-hidden','false');$('#scrim').classList.add('on')}
+function closeAll(keep){document.querySelectorAll('.drawer').forEach(d=>{d.classList.remove('on');d.setAttribute('aria-hidden','true')});if(!keep)$('#scrim').classList.remove('on')}
+$('#cartBtn').addEventListener('click',()=>{renderCart();openDrawer('#cart')});
+$('#scrim').addEventListener('click',()=>closeAll());
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeAll()));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
+$('#burger').addEventListener('click',()=>{const m=$('#mnav'),o=m.classList.toggle('open');$('#burger').setAttribute('aria-expanded',o)});
+$('#tradeBtn').addEventListener('click',()=>toast('Vakhandel-login: in dit concept nog niet actief'));
+$('#searchBtn').addEventListener('click',()=>toast('Zoeken op merk, serie of artikelnummer volgt in de volgende versie'));
+document.querySelectorAll('[data-appt]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();toast(`Afspraakverzoek voor ${a.dataset.appt} genoteerd (concept)`)}));
+
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2600)}
+
+/* ---------- couvert composer ---------- */
+const PLATES={hs240:['Pine coupe',true,false],bpur:['Purity plat',false,false],sall:['Allure diep',false,true],arz:['Form 1382',false,false]};
+const GLASSES={zpure:'Bordeaux',zair:'Flûte',lroc:'Water'};
+const C={plate:'hs240',glaze:'blush',glass:'zpure',fin:'goud',n:80};
+const CUT_SET=7.20+8.95+6.30;
+const finUp={inox:0,zilver:4.5,goud:6.9,zwart:6.9,koper:6.9};
+$('#segPlate').innerHTML=Object.entries(PLATES).map(([k,v])=>`<button class="chip" data-k="${k}">${v[0]}</button>`).join('');
+$('#segGlass').innerHTML=Object.entries(GLASSES).map(([k,v])=>`<button class="chip" data-k="${k}">${v}</button>`).join('');
+$('#segGlaze').innerHTML=Object.keys(GLAZE).map(g=>`<button class="dot" data-k="${g}" aria-label="${GLAZE[g][2]}" style="background:radial-gradient(circle at 40% 35%,${GLAZE[g][0]} 55%,${GLAZE[g][1]})"></button>`).join('');
+$('#segFinish').innerHTML=Object.keys(FIN).map(f=>`<button class="dot" data-k="${f}" aria-label="${FIN[f][3]}" style="background:linear-gradient(135deg,${FIN[f][0]},${FIN[f][1]} 55%,${FIN[f][2]})"></button>`).join('');
+[['#segPlate','plate'],['#segGlass','glass'],['#segGlaze','glaze'],['#segFinish','fin']].forEach(([s,k])=>$(s).addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(b){C[k]=b.dataset.k;renderComp()}}));
+$('#covers').addEventListener('input',e=>{C.n=+e.target.value;renderComp(true)});
+function compPrices(){const pl=P.find(p=>p.id===C.plate).price, gl=P.find(p=>p.id===C.glass).price, cu=CUT_SET+finUp[C.fin];return {pl,gl,cu,per:pl+gl+cu}}
+function renderComp(numbersOnly){
+  const pr=compPrices(), d=C.n>=150?.10:C.n>=60?.06:0;
+  if(!numbersOnly){
+    const [,coupe,bowl]=PLATES[C.plate];
+    $('#compTable').innerHTML=svg(setting({glaze:C.glaze,fin:C.fin,coupe,bowl,under:C.plate==='arz'?false:true,glass:{zpure:'wijn',zair:'flute',lroc:'water'}[C.glass],r:C.plate==='arz'?150:128}),'0 0 600 600');
+    ['#segPlate','#segGlass','#segGlaze','#segFinish'].forEach((s,i)=>$(s).querySelectorAll('[data-k]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===C[['plate','glass','glaze','fin'][i]])));
+    $('#oPlate').textContent=P.find(p=>p.id===C.plate).brand+' · '+P.find(p=>p.id===C.plate).d;
+    $('#oGlaze').textContent=GLAZE[C.glaze][2];
+    $('#oGlass').textContent=P.find(p=>p.id===C.glass).brand+' '+P.find(p=>p.id===C.glass).name.split(' ')[0];
+    $('#oFinish').textContent=FIN[C.fin][3];
+  }
+  $('#oCovers').textContent=C.n+' gasten';
+  $('#sPlate').textContent=eur(pr.pl);$('#sGlass').textContent=eur(pr.gl);$('#sCut').textContent=eur(pr.cu);
+  $('#sPer').textContent=eur(pr.per*(1-d))+(d?` (−${d*100}%)`:'');
+  $('#sN').textContent=C.n;$('#sTot').textContent=eur(pr.per*(1-d)*C.n);
+}
+renderComp();
+$('#addSet').addEventListener('click',()=>{
+  const pl=P.find(p=>p.id===C.plate), gl=P.find(p=>p.id===C.glass);
+  addLine(pl,Math.ceil(C.n/pl.box)*pl.box,pl.glazes.includes(C.glaze)?GLAZE[C.glaze][2]:GLAZE[C.glaze][2]+' (op aanvraag)',0,{glaze:C.glaze});
+  addLine(gl,Math.ceil(C.n/gl.box)*gl.box,'');
+  ['hexq','wmes','hlep'].forEach(id=>{const p=P.find(x=>x.id===id);addLine(p,Math.ceil(C.n/p.box)*p.box,FIN[C.fin][3],finUp[C.fin]/3,{fin:C.fin})});
+  toast(`${C.n} couverts op de bestellijst gezet`);
+});
+
+/* ---------- personalisation ---------- */
+const INKS={goud:['#b48a3c','Goud'],kobalt:['#1f3f8f','Kobalt'],zwart:['#1b1d21','Zwart'],bordeaux:['#6e1a2c','Bordeaux']};
+let ink='goud';
+$('#segInk').innerHTML=Object.entries(INKS).map(([k,v])=>`<button class="chip" data-k="${k}">${v[1]}</button>`).join('');
+$('#segInk').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(b){ink=b.dataset.k;renderPerso()}});
+$('#persoName').addEventListener('input',renderPerso);
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function renderPerso(){
+  const name=esc(($('#persoName').value||'Uw zaak').trim()||'Uw zaak'), c=INKS[ink][0];
+  const mono=name.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  $('#segInk').querySelectorAll('[data-k]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===ink));
+  $('#persoTable').innerHTML=svg(`${plate(300,300,220,'wit',{})}
+   <defs><path id="rim" d="M300,300 m-188,0 a188,188 0 1,1 376,0"/></defs>
+   <circle cx="300" cy="300" r="204" fill="none" stroke="${c}" stroke-width="1.2" opacity=".85"/>
+   <circle cx="300" cy="300" r="170" fill="none" stroke="${c}" stroke-width=".6" opacity=".7"/>
+   <text font-family="Gloock, Georgia, serif" font-size="20" letter-spacing="7" fill="${c}"><textPath href="#rim" startOffset="50%" text-anchor="middle">${name.toUpperCase()}</textPath></text>
+   <text x="300" y="300" dy=".34em" text-anchor="middle" font-family="Gloock, Georgia, serif" font-size="58" fill="${c}" opacity=".9">${esc(mono)}</text>
+   <circle cx="300" cy="300" r="56" fill="none" stroke="${c}" stroke-width=".8" opacity=".6"/>`,'0 0 600 600')+`<span class="tag mono">Bauscher Purity Ø 280 · decor ${INKS[ink][1].toLowerCase()}</span>`;
+}
+renderPerso();
+renderCart();
+})();
+</script>
