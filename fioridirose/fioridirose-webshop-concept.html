@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fiori di Rose — Webshop concept</title>
+<title>Fiori di Rose Webshop</title>
 <meta name="description" content="Webshop-concept voor Fiori di Rose, ontworpen door MediaWow.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,7 +39,7 @@ em{font-style:italic}
 @keyframes slide{to{transform:translateX(-50%)}}
 
 /* header */
-header{position:sticky;top:0;z-index:40;background:rgba(251,247,241,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid transparent;transition:border-color .3s}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:rgba(251,247,241,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid transparent;transition:border-color .3s}
 header.scrolled{border-color:var(--line)}
 .nav{display:flex;align-items:center;justify-content:space-between;height:76px;gap:24px}
 .logo{font-family:var(--serif);font-size:30px;font-weight:500;letter-spacing:-.02em;line-height:1;display:flex;align-items:center;gap:10px}
@@ -310,7 +310,7 @@ footer li a:hover{color:var(--pink-soft)}
 .toast i{width:22px;height:22px;border-radius:50%;background:var(--pink);display:grid;place-items:center;font-style:normal;font-size:12px;flex:none}
 
 /* reveal */
-.rv{opacity:0;transform:translateY(28px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.rv{transform:translateY(18px);transition:transform .9s var(--ease)}
 .rv.in{opacity:1;transform:none}
 
 /* mobile menu */
