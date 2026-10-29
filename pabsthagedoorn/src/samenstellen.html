@@ -1,0 +1,26 @@
+<div class="dark phead">
+  <div class="wrap in">
+    <div>
+      <p class="crumbs"><a href="{{L:home}}">Home</a><span>/</span><span>Servies samenstellen</span></p>
+      <h1 class="display">Uw couvert, <em>berekend.</em></h1>
+    </div>
+    <p class="lede">Kies een collectie en de stukken per gast. Wij rekenen het aantal dozen uit en ronden af op de verpakking.</p>
+  </div>
+</div>
+<section class="block paper">
+  <div class="wrap builder">
+    <figure><img src="{{IMG}}surface-set-glass.jpg" alt="" id="ph-bimg"></figure>
+    <div class="steps">
+      <div class="step"><h4>1 &middot; Collectie <em id="ph-bcoll"></em></h4><div class="opts" id="ph-bopts"></div></div>
+      <div class="step"><h4>2 &middot; Per couvert</h4><div class="items" id="ph-bitems"></div></div>
+      <div class="step"><h4><label for="ph-covers">3 &middot; Aantal couverts</label> <em id="ph-bn"></em></h4><input type="range" id="ph-covers" min="20" max="300" step="10" value="80"></div>
+      <div class="total">
+        <div class="row"><span>Per couvert</span><b id="ph-tper"></b></div>
+        <div class="row"><span>Te bestellen</span><b id="ph-tboxes"></b></div>
+        <div class="row sum"><span>Totaal excl. btw</span><b id="ph-tsum"></b></div>
+        <button class="btn light" type="button" id="ph-addset">Zet op bestellijst</button>
+        <button class="btn" type="button" id="ph-quoteset" style="background:transparent;border-color:rgba(243,239,232,.3)">Vraag offerte aan</button>
+      </div>
+    </div>
+  </div>
+</section>
