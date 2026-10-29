@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fiori di Rose — Webshop concept</title>
+<meta name="description" content="Webshop-concept voor Fiori di Rose, ontworpen door MediaWow.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=Manrope:wght@400;500;600;700&family=Yellowtail&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1a0f13; --ink-2:#2a161d; --bordeaux:#5b1a2b; --wine:#7d2238;
+  --cream:#f6efe6; --paper:#fbf7f1; --sand:#eadfce; --muted:#7a6a63;
+  --pink:#ff4fa3; --pink-soft:#f7c9d8; --orange:#e2672b; --sage:#a9b08a;
+  --line:rgba(26,15,19,.12); --line-dark:rgba(246,239,230,.14);
+  --serif:"Fraunces",Georgia,serif; --sans:"Manrope",system-ui,sans-serif; --script:"Yellowtail",cursive;
+  --r:18px; --ease:cubic-bezier(.2,.7,.2,1);
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{display:block;max-width:100%}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1320px;margin:0 auto;padding:0 clamp(16px,4vw,48px)}
+.serif{font-family:var(--serif)}
+em{font-style:italic}
+
+/* concept ribbon */
+.concept{background:var(--ink);color:var(--cream);font-size:12px;letter-spacing:.08em;text-transform:uppercase;text-align:center;padding:8px 16px}
+.concept b{color:var(--pink);font-weight:700}
+
+/* announcement marquee */
+.announce{background:var(--bordeaux);color:var(--cream);overflow:hidden;white-space:nowrap;font-size:13px;padding:9px 0}
+.announce .track{display:inline-flex;gap:48px;animation:slide 38s linear infinite;padding-left:48px}
+.announce span::before{content:"✿";margin-right:12px;color:var(--pink-soft)}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+/* header */
+header{position:sticky;top:0;z-index:40;background:rgba(251,247,241,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid transparent;transition:border-color .3s}
+header.scrolled{border-color:var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:76px;gap:24px}
+.logo{font-family:var(--serif);font-size:30px;font-weight:500;letter-spacing:-.02em;line-height:1;display:flex;align-items:center;gap:10px}
+.logo i{font-weight:300}
+.logo .dot{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--pink) 0 18%,transparent 19%),radial-gradient(circle at 65% 40%,var(--orange) 0 17%,transparent 18%),radial-gradient(circle at 50% 68%,var(--sage) 0 18%,transparent 19%),var(--ink);flex:none}
+.menu{display:flex;gap:28px;font-size:14px;font-weight:600}
+.menu a{position:relative;padding:6px 0}
+.menu a::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--pink);transition:width .35s var(--ease)}
+.menu a:hover::after{width:100%}
+.icons{display:flex;gap:6px;align-items:center}
+.icon-btn{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;position:relative;transition:background .2s}
+.icon-btn:hover{background:var(--sand)}
+.icon-btn svg{width:21px;height:21px}
+.badge{position:absolute;top:3px;right:2px;min-width:18px;height:18px;border-radius:9px;background:var(--pink);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px;transform:scale(0);transition:transform .3s var(--ease)}
+.badge.on{transform:scale(1)}
+.burger{display:none}
+
+/* hero */
+.hero{position:relative;padding:clamp(32px,6vw,72px) 0 clamp(56px,8vw,110px);overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(24px,5vw,72px);align-items:center}
+.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--wine);display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:28px;height:1.5px;background:currentColor}
+.hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(52px,8.4vw,128px);line-height:.92;letter-spacing:-.035em;margin:22px 0 26px}
+.hero h1 em{font-weight:300;color:var(--wine)}
+.hero h1 .neon{font-family:var(--script);font-style:normal;font-weight:400;color:#fff;font-size:.62em;letter-spacing:0;display:inline-block;transform:rotate(-6deg) translateY(-.1em);text-shadow:0 0 4px #fff,0 0 12px var(--pink),0 0 26px var(--pink),0 0 48px var(--pink);-webkit-text-stroke:1px var(--pink);animation:flicker 6s infinite}
+@keyframes flicker{0%,18%,22%,25%,53%,57%,100%{opacity:1}20%,24%,55%{opacity:.55}}
+.hero p.lead{font-size:clamp(17px,1.5vw,20px);max-width:460px;color:#4a3a36}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
+.btn{display:inline-flex;align-items:center;gap:10px;height:54px;padding:0 28px;border-radius:999px;font-weight:700;font-size:15px;transition:transform .25s var(--ease),background .25s,color .25s,box-shadow .25s}
+.btn:hover{transform:translateY(-2px)}
+.btn-dark{background:var(--ink);color:var(--cream)}
+.btn-dark:hover{background:var(--wine);box-shadow:0 12px 30px -10px rgba(125,34,56,.6)}
+.btn-ghost{border:1.5px solid var(--ink)}
+.btn-ghost:hover{background:var(--ink);color:var(--cream)}
+.btn svg{width:18px;height:18px;transition:transform .25s}
+.btn:hover svg{transform:translateX(4px)}
+.proof{display:flex;align-items:center;gap:14px;margin-top:40px;font-size:14px;color:var(--muted)}
+.avatars{display:flex}
+.avatars img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2.5px solid var(--paper);margin-left:-10px}
+.avatars img:first-child{margin-left:0}
+.proof b{color:var(--ink)}
+
+.collage{position:relative;height:clamp(440px,48vw,640px)}
+.collage figure{position:absolute;border-radius:var(--r);overflow:hidden;box-shadow:0 30px 60px -25px rgba(26,15,19,.45);transition:transform .8s var(--ease)}
+.collage img{width:100%;height:100%;object-fit:cover}
+.c1{width:60%;height:78%;left:20%;top:4%;z-index:2;transform:rotate(-2deg)}
+.c2{width:40%;height:46%;left:0;bottom:0;z-index:3;transform:rotate(-7deg)}
+.c3{width:38%;height:44%;right:0;top:0;transform:rotate(6deg)}
+.collage:hover .c1{transform:rotate(0) scale(1.02)}
+.collage:hover .c2{transform:rotate(-3deg) translate(-6px,6px)}
+.collage:hover .c3{transform:rotate(3deg) translate(6px,-6px)}
+.sticker{position:absolute;right:4%;bottom:6%;z-index:4;width:132px;height:132px;border-radius:50%;background:var(--pink);color:#fff;display:grid;place-items:center;text-align:center;font-family:var(--serif);font-size:15px;line-height:1.15;animation:spin 18s linear infinite;box-shadow:0 14px 30px -10px rgba(255,79,163,.7)}
+.sticker span{display:block;animation:spin 18s linear infinite reverse}
+.sticker strong{display:block;font-size:30px;font-weight:600}
+@keyframes spin{to{transform:rotate(360deg)}}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.45;z-index:-1}
+.blob.a{width:420px;height:420px;background:var(--pink-soft);right:-80px;top:40px}
+.blob.b{width:300px;height:300px;background:#f3c9a6;left:-120px;bottom:-60px}
+
+/* big marquee */
+.ticker{background:var(--ink);color:var(--cream);overflow:hidden;white-space:nowrap;padding:26px 0;border-block:1px solid var(--ink)}
+.ticker .track{display:inline-flex;align-items:center;gap:40px;animation:slide 30s linear infinite;font-family:var(--serif);font-size:clamp(32px,5vw,64px);font-weight:300;letter-spacing:-.02em}
+.ticker .track i{font-style:italic;color:var(--pink-soft)}
+.ticker .track .flower{color:var(--pink);font-size:.6em}
+
+/* section heads */
+section{position:relative}
+.sec{padding:clamp(64px,9vw,128px) 0}
+.sec-head{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:clamp(28px,4vw,48px);flex-wrap:wrap}
+.sec-head h2{font-family:var(--serif);font-weight:400;font-size:clamp(38px,5.2vw,72px);line-height:1;letter-spacing:-.03em;max-width:780px}
+.sec-head h2 em{color:var(--wine);font-weight:300}
+.sec-head p{max-width:380px;color:var(--muted)}
+.link{font-weight:700;font-size:14px;border-bottom:1.5px solid currentColor;padding-bottom:3px;white-space:nowrap}
+
+/* categories bento */
+.bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:clamp(180px,20vw,280px);gap:14px}
+.cat{position:relative;border-radius:var(--r);overflow:hidden;color:#fff;isolation:isolate}
+.cat img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transition:transform 1s var(--ease)}
+.cat::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(26,15,19,.78));z-index:-1}
+.cat:hover img{transform:scale(1.07)}
+.cat .label{position:absolute;left:22px;right:22px;bottom:20px;display:flex;justify-content:space-between;align-items:end;gap:12px}
+.cat h3{font-family:var(--serif);font-weight:400;font-size:clamp(24px,2.4vw,34px);line-height:1;letter-spacing:-.02em}
+.cat small{display:block;font-size:13px;opacity:.85;margin-top:6px;font-family:var(--sans)}
+.cat .arrow{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(8px);display:grid;place-items:center;flex:none;transition:background .3s,transform .3s}
+.cat:hover .arrow{background:var(--pink);transform:rotate(-45deg)}
+.cat .arrow svg{width:18px;height:18px}
+.cat.big{grid-column:span 2;grid-row:span 2}
+.cat.wide{grid-column:span 2}
+
+/* products */
+.shop{background:var(--cream)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{height:40px;padding:0 18px;border-radius:999px;border:1.5px solid var(--line);font-weight:600;font-size:14px;transition:all .25s}
+.chip:hover{border-color:var(--ink)}
+.chip.on{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2vw,26px);margin-top:32px}
+.card{position:relative;animation:pop .6s var(--ease) both}
+@keyframes pop{from{opacity:0;transform:translateY(18px)}}
+.card .ph{position:relative;aspect-ratio:4/5;border-radius:var(--r);overflow:hidden;background:var(--sand)}
+.card .ph img{width:100%;height:100%;object-fit:cover;transition:transform .9s var(--ease)}
+.card:hover .ph img{transform:scale(1.06)}
+.tag{position:absolute;left:12px;top:12px;background:var(--paper);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border-radius:999px}
+.tag.hot{background:var(--pink);color:#fff}
+.tag.silk{background:var(--ink);color:var(--cream)}
+.heart{position:absolute;right:10px;top:10px;width:38px;height:38px;border-radius:50%;background:rgba(251,247,241,.9);display:grid;place-items:center;transition:transform .2s}
+.heart svg{width:18px;height:18px}
+.heart:active{transform:scale(.85)}
+.heart.on svg{fill:var(--pink);stroke:var(--pink)}
+.quick{position:absolute;left:12px;right:12px;bottom:12px;height:48px;border-radius:999px;background:var(--ink);color:var(--cream);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;transform:translateY(130%);transition:transform .4s var(--ease),background .2s}
+.card:hover .quick,.quick:focus-visible{transform:none}
+.quick:hover{background:var(--wine)}
+.card .meta{display:flex;justify-content:space-between;gap:12px;margin-top:14px;align-items:baseline}
+.card h4{font-family:var(--serif);font-weight:500;font-size:19px;line-height:1.2;letter-spacing:-.01em}
+.card .sub{font-size:13px;color:var(--muted);margin-top:3px}
+.card .price{font-weight:700;white-space:nowrap}
+.swatches{display:flex;gap:6px;margin-top:10px}
+.swatches i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--paper);box-shadow:0 0 0 1px var(--line)}
+
+/* configurator */
+.builder{background:var(--ink);color:var(--cream);overflow:hidden}
+.builder .sec-head h2 em{color:var(--pink-soft)}
+.builder .sec-head p{color:rgba(246,239,230,.65)}
+.b-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,72px);align-items:start}
+.b-grid>*{min-width:0}
+.b-preview{position:sticky;top:100px;aspect-ratio:4/5;border-radius:24px;overflow:hidden;background:var(--ink-2)}
+.b-preview img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .6s,transform .8s var(--ease)}
+.b-preview img.out{opacity:0;transform:scale(1.06)}
+.b-preview .glass{position:absolute;left:16px;right:16px;bottom:16px;background:rgba(26,15,19,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line-dark);border-radius:16px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.b-preview .glass small{opacity:.7;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.b-preview .glass strong{display:block;font-family:var(--serif);font-size:22px;font-weight:400}
+.b-preview .total{font-family:var(--serif);font-size:34px;font-weight:500}
+.step{padding:26px 0;border-top:1px solid var(--line-dark)}
+.step:first-child{border-top:0;padding-top:0}
+.step h5{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--pink-soft);margin-bottom:14px;display:flex;gap:10px}
+.step h5 span{opacity:.5}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.opt{border:1.5px solid var(--line-dark);border-radius:14px;padding:14px 10px;text-align:center;transition:all .25s}
+.opt:hover{border-color:rgba(246,239,230,.5)}
+.opt.on{border-color:var(--pink);background:rgba(255,79,163,.12)}
+.opt b{display:block;font-family:var(--serif);font-size:22px;font-weight:500}
+.opt small{opacity:.65;font-size:12px}
+.palettes{grid-template-columns:repeat(2,1fr)}
+.pal{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px}
+.pal .sw{display:flex;flex:none}
+.pal .sw i{width:22px;height:22px;border-radius:50%;margin-left:-7px;border:2px solid var(--ink)}
+.pal .sw i:first-child{margin-left:0}
+.pal b{font-size:17px}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 16px;border:1.5px solid var(--line-dark);border-radius:14px;margin-bottom:10px;cursor:pointer;transition:border-color .25s}
+.toggle-row:hover{border-color:rgba(246,239,230,.5)}
+.toggle-row.on{border-color:var(--pink)}
+.toggle-row .sw2{width:46px;height:26px;border-radius:13px;background:rgba(246,239,230,.2);position:relative;flex:none;transition:background .25s}
+.toggle-row .sw2::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:var(--cream);top:3px;left:3px;transition:transform .3s var(--ease)}
+.toggle-row.on .sw2{background:var(--pink)}
+.toggle-row.on .sw2::after{transform:translateX(20px)}
+.toggle-row small{display:block;opacity:.6;font-size:13px}
+.field{width:100%;background:transparent;border:1.5px solid var(--line-dark);border-radius:14px;padding:14px 16px;color:var(--cream);font:inherit;resize:none}
+.field:focus{outline:none;border-color:var(--pink)}
+.field::placeholder{color:rgba(246,239,230,.4)}
+.dates{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.dates::-webkit-scrollbar{display:none}
+.date{flex:none;width:72px;border:1.5px solid var(--line-dark);border-radius:14px;padding:10px 0;text-align:center;transition:all .25s}
+.date small{display:block;font-size:11px;opacity:.6;text-transform:uppercase;letter-spacing:.08em}
+.date b{font-family:var(--serif);font-size:24px;font-weight:500;display:block;line-height:1.2}
+.date.on{border-color:var(--pink);background:rgba(255,79,163,.12)}
+.date:hover{border-color:rgba(246,239,230,.5)}
+.btn-pink{background:var(--pink);color:#fff;width:100%;justify-content:center;margin-top:26px;height:60px;font-size:16px}
+.btn-pink:hover{box-shadow:0 16px 40px -12px rgba(255,79,163,.8)}
+
+/* story */
+.story-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:clamp(28px,6vw,96px);align-items:center}
+.story-img{position:relative}
+.story-img img{border-radius:24px;width:100%;aspect-ratio:4/5;object-fit:cover}
+.story-img .neon-sign{position:absolute;top:-22px;right:-10px;font-family:var(--script);font-size:clamp(40px,5vw,64px);color:#fff;transform:rotate(-8deg);text-shadow:0 0 4px #fff,0 0 12px #b56cff,0 0 30px #b56cff,0 0 60px #8a3dff;animation:flicker 7s infinite 1s}
+.story h2{font-family:var(--serif);font-weight:400;font-size:clamp(38px,5vw,68px);line-height:1;letter-spacing:-.03em;margin:18px 0 22px}
+.story h2 em{color:var(--wine);font-weight:300}
+.story p{color:#4a3a36;font-size:18px;margin-bottom:16px;max-width:520px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:36px;padding-top:28px;border-top:1px solid var(--line)}
+.stats b{font-family:var(--serif);font-size:clamp(34px,4vw,52px);font-weight:400;display:block;line-height:1;letter-spacing:-.03em}
+.stats small{color:var(--muted);font-size:13px}
+
+/* instagram reels */
+.reels{background:var(--sand)}
+.reel-row{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px clamp(16px,4vw,48px) 20px;scrollbar-width:none}
+.reel-row::-webkit-scrollbar{display:none}
+.reel{flex:none;width:clamp(200px,22vw,280px);aspect-ratio:9/14;border-radius:20px;overflow:hidden;position:relative;scroll-snap-align:start;color:#fff}
+.reel img{width:100%;height:100%;object-fit:cover;transition:transform .9s var(--ease)}
+.reel:hover img{transform:scale(1.05)}
+.reel::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 30%,transparent 55%,rgba(0,0,0,.7))}
+.reel .play{position:absolute;top:14px;right:14px;z-index:2;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.25);backdrop-filter:blur(6px);display:grid;place-items:center}
+.reel .play svg{width:14px;height:14px;fill:#fff}
+.reel .cap{position:absolute;left:16px;right:16px;bottom:16px;z-index:2;font-size:14px;font-weight:600;line-height:1.35}
+.reel .cap small{display:flex;align-items:center;gap:6px;font-weight:500;opacity:.85;margin-bottom:6px;font-size:12px}
+.reel .shop-it{display:inline-flex;margin-top:10px;background:#fff;color:var(--ink);font-size:12px;font-weight:700;padding:7px 12px;border-radius:999px}
+
+/* usps */
+.usps{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(16px,3vw,40px)}
+.usp svg{width:34px;height:34px;color:var(--wine);margin-bottom:16px}
+.usp h4{font-family:var(--serif);font-weight:500;font-size:22px;margin-bottom:6px;letter-spacing:-.01em}
+.usp p{color:var(--muted);font-size:15px}
+
+/* pitch section */
+.pitch{background:linear-gradient(160deg,var(--bordeaux),var(--ink) 70%);color:var(--cream)}
+.pitch .sec-head h2 em{color:var(--pink-soft)}
+.pitch .sec-head p{color:rgba(246,239,230,.7)}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.feat{border:1px solid var(--line-dark);border-radius:20px;padding:26px;background:rgba(255,255,255,.03);transition:background .3s,transform .3s var(--ease)}
+.feat:hover{background:rgba(255,255,255,.07);transform:translateY(-4px)}
+.feat .n{font-family:var(--serif);font-style:italic;color:var(--pink);font-size:18px}
+.feat h4{font-family:var(--serif);font-weight:400;font-size:25px;margin:10px 0 8px;letter-spacing:-.01em}
+.feat p{color:rgba(246,239,230,.7);font-size:15px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.compare div{border-radius:20px;padding:26px}
+.compare .old{border:1px dashed var(--line-dark);color:rgba(246,239,230,.6)}
+.compare .new{background:var(--pink);color:#fff}
+.compare h5{font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:12px}
+.compare li{list-style:none;padding:6px 0;display:flex;gap:10px}
+.compare .old li::before{content:"—"}
+.compare .new li::before{content:"✓";font-weight:700}
+
+/* newsletter + footer */
+.news{text-align:center}
+.news h2{font-family:var(--serif);font-weight:400;font-size:clamp(40px,6vw,84px);line-height:.98;letter-spacing:-.035em}
+.news h2 em{color:var(--wine);font-weight:300}
+.news p{color:var(--muted);margin:18px auto 30px;max-width:480px}
+.news form{display:flex;max-width:520px;margin:0 auto;border:1.5px solid var(--ink);border-radius:999px;padding:6px}
+.news input{flex:1;min-width:0;border:0;background:transparent;padding:0 18px;font:inherit;font-size:16px}
+.news input:focus{outline:none}
+.news button{height:50px;padding:0 24px;border-radius:999px;background:var(--ink);color:var(--cream);font-weight:700}
+footer{background:var(--ink);color:rgba(246,239,230,.7);padding:72px 0 32px;font-size:14px}
+.f-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px}
+footer .logo{color:var(--cream);margin-bottom:16px}
+footer h6{color:var(--cream);font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px}
+footer li{list-style:none;padding:4px 0}
+footer li a:hover{color:var(--pink-soft)}
+.f-bottom{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:56px;padding-top:24px;border-top:1px solid var(--line-dark);font-size:12px}
+.pay{display:flex;gap:8px}
+.pay span{border:1px solid var(--line-dark);border-radius:6px;padding:3px 8px;font-weight:700;color:var(--cream);font-size:11px}
+
+/* cart drawer */
+.scrim{position:fixed;inset:0;background:rgba(26,15,19,.5);opacity:0;pointer-events:none;transition:opacity .35s;z-index:60}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--paper);z-index:70;transform:translateX(100%);transition:transform .5s var(--ease);display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.d-head{display:flex;justify-content:space-between;align-items:center;padding:22px 24px;border-bottom:1px solid var(--line)}
+.d-head h3{font-family:var(--serif);font-weight:400;font-size:28px}
+.d-body{flex:1;overflow-y:auto;padding:8px 24px}
+.ship{margin:16px 0 8px;font-size:13px}
+.ship .bar{height:6px;border-radius:3px;background:var(--sand);margin-top:8px;overflow:hidden}
+.ship .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--orange),var(--pink));transition:width .5s var(--ease)}
+.line{display:grid;grid-template-columns:76px 1fr auto;gap:14px;padding:16px 0;border-bottom:1px solid var(--line);align-items:center}
+.line img{width:76px;height:92px;object-fit:cover;border-radius:12px}
+.line h4{font-family:var(--serif);font-weight:500;font-size:17px;line-height:1.2}
+.line small{color:var(--muted);font-size:12px;display:block}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;margin-top:8px}
+.qty button{width:30px;height:30px;font-weight:700}
+.qty span{min-width:20px;text-align:center;font-size:14px;font-weight:600}
+.line .price{font-weight:700}
+.empty{text-align:center;padding:60px 10px;color:var(--muted)}
+.empty .serif{font-size:26px;color:var(--ink);display:block;margin-bottom:6px}
+.d-foot{padding:20px 24px 24px;border-top:1px solid var(--line)}
+.d-foot .row{display:flex;justify-content:space-between;font-size:15px;margin-bottom:6px}
+.d-foot .row.t{font-family:var(--serif);font-size:24px;margin:10px 0 16px}
+.d-foot .btn{width:100%;justify-content:center}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,140%);background:var(--ink);color:var(--cream);padding:14px 20px;border-radius:999px;font-size:14px;font-weight:600;z-index:90;display:flex;gap:10px;align-items:center;visibility:hidden;transition:transform .45s var(--ease),visibility .45s;max-width:calc(100% - 32px)}
+.toast.on{transform:translate(-50%,0);visibility:visible}
+.toast i{width:22px;height:22px;border-radius:50%;background:var(--pink);display:grid;place-items:center;font-style:normal;font-size:12px;flex:none}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.rv.in{opacity:1;transform:none}
+
+/* mobile menu */
+.mnav{position:fixed;inset:0;background:var(--ink);color:var(--cream);z-index:80;padding:24px 16px;transform:translateY(-100%);transition:transform .5s var(--ease);display:flex;flex-direction:column}
+.mnav.on{transform:none}
+.mnav a{font-family:var(--serif);font-size:40px;line-height:1.35;letter-spacing:-.02em}
+.mnav a:hover{color:var(--pink-soft)}
+
+@media (max-width:1080px){
+  .grid{grid-template-columns:repeat(3,1fr)}
+  .features{grid-template-columns:1fr 1fr}
+}
+@media (max-width:860px){
+  .menu{display:none}.burger{display:grid}
+  .hero-grid,.b-grid,.story-grid{grid-template-columns:1fr}
+  .collage{height:min(110vw,520px)}
+  .b-preview{position:relative;top:0}
+  .bento{grid-template-columns:1fr 1fr;grid-auto-rows:200px}
+  .cat.big{grid-column:span 2;grid-row:span 1;}
+  .grid{grid-template-columns:1fr 1fr}
+  .usps{grid-template-columns:1fr 1fr;row-gap:36px}
+  .f-grid{grid-template-columns:1fr 1fr}
+  .f-grid>div:first-child{grid-column:span 2}
+  .quick{transform:none;height:40px;font-size:13px}
+  .story-img .neon-sign{right:10px}
+}
+@media (max-width:560px){
+  .logo{font-size:24px}.logo .dot{width:28px;height:28px}
+  .nav{height:64px}
+  .icons .hide-sm{display:none}
+  .opts{grid-template-columns:repeat(2,1fr)}
+  .palettes{grid-template-columns:1fr}
+  .features,.compare{grid-template-columns:1fr}
+  .sticker{width:100px;height:100px;font-size:12px}.sticker strong{font-size:22px}
+  .card h4{font-size:16px}
+  .card .meta{flex-direction:column;gap:2px}
+  .news form{flex-direction:column;border-radius:20px;gap:6px}
+  .news input{height:48px}
+  .stats{gap:12px}
+  .cat .label{left:16px;right:16px;bottom:14px}
+  .cat .arrow{width:36px;height:36px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .rv{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="concept">Webshop-concept voor <b>Fiori di Rose</b> &middot; ontworpen door MediaWow &middot; voorbeeldcontent en -prijzen</div>
+
+<div class="announce" aria-hidden="true"><div class="track" id="announce"></div></div>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a href="#top" class="logo" aria-label="Fiori di Rose"><span class="dot"></span><span>Fiori <i>di</i> Rose</span></a>
+    <nav class="menu">
+      <a href="#shop" data-f="boeket">Boeketten</a>
+      <a href="#shop" data-f="zijde">Zijden bloemen</a>
+      <a href="#shop" data-f="vaas">Vazen</a>
+      <a href="#shop" data-f="krans">Kransen</a>
+      <a href="#shop" data-f="interieur">Interieur</a>
+      <a href="#builder">Boeket op maat</a>
+    </nav>
+    <div class="icons">
+      <button class="icon-btn hide-sm" aria-label="Zoeken"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+      <button class="icon-btn hide-sm" aria-label="Favorieten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg><span class="badge" id="favCount">0</span></button>
+      <button class="icon-btn" aria-label="Winkelmand" id="cartBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="badge" id="cartCount">0</span></button>
+      <button class="icon-btn burger" aria-label="Menu" id="burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h16M4 16h16"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<div class="mnav" id="mnav">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:40px">
+    <span class="logo" style="color:var(--cream)"><span class="dot"></span><span>Fiori <i>di</i> Rose</span></span>
+    <button class="icon-btn" id="mclose" aria-label="Sluiten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <a href="#shop" data-f="boeket">Boeketten</a>
+  <a href="#shop" data-f="zijde">Zijden bloemen</a>
+  <a href="#shop" data-f="vaas">Vazen</a>
+  <a href="#shop" data-f="krans">Kransen</a>
+  <a href="#shop" data-f="interieur">Interieur</a>
+  <a href="#builder"><em>Boeket op maat</em></a>
+</div>
+
+<main id="top">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="blob a"></div><div class="blob b"></div>
+  <div class="wrap hero-grid">
+    <div class="rv">
+      <div class="eyebrow">Herfstcollectie 2026</div>
+      <h1>Bloemen <br>met <em>lef.</em> <span class="neon">buy flowers</span></h1>
+      <p class="lead">Uitbundige boeketten, zijden arrangementen die nooit verwelken en vazen met karakter. Met de hand gemaakt in onze winkel, nu ook bij jou thuisbezorgd.</p>
+      <div class="cta">
+        <a href="#shop" class="btn btn-dark">Shop de collectie <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="#builder" class="btn btn-ghost">Stel je boeket samen</a>
+      </div>
+      <div class="proof">
+        <div class="avatars"><img src="img/a21.jpg" alt=""><img src="img/b30.jpg" alt=""><img src="img/a01.jpg" alt=""><img src="img/b10.jpg" alt=""></div>
+        <span><b>Bekend van Instagram</b><br>Elke week nieuwe stukken uit de winkel</span>
+      </div>
+    </div>
+    <div class="collage rv">
+      <figure class="c1"><img src="img/a22.jpg" alt="Uitbundig, kleurrijk boeket"></figure>
+      <figure class="c2"><img src="img/a21.jpg" alt="Poederroze boeket in witte vaas"></figure>
+      <figure class="c3"><img src="img/b01.jpg" alt="Herfstkransen bij de winkeldeur"></figure>
+      <div class="sticker"><span><strong>Nieuw</strong>herfst<br>kransen</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker" aria-hidden="true"><div class="track" id="ticker"></div></div>
+
+<!-- CATEGORIES -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <h2>Alles wat de winkel <em>zo bijzonder</em> maakt, nu online.</h2>
+      <p>Van het verse boeket voor vanavond tot de vaas waar iedereen naar vraagt. Kies je wereld.</p>
+    </div>
+    <div class="bento">
+      <a href="#shop" data-f="boeket" class="cat big rv"><img src="img/a22.jpg" alt=""><div class="label"><div><h3>Verse boeketten</h3><small>Dagelijks vers gebonden</small></div><span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div></a>
+      <a href="#shop" data-f="zijde" class="cat rv"><img src="img/b00.jpg" alt=""><div class="label"><div><h3>Zijde</h3><small>Bloeit voor altijd</small></div><span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div></a>
+      <a href="#shop" data-f="vaas" class="cat rv"><img src="img/a20.jpg" alt=""><div class="label"><div><h3>Vazen</h3><small>Statement pieces</small></div><span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div></a>
+      <a href="#shop" data-f="krans" class="cat rv"><img src="img/b32.jpg" alt=""><div class="label"><div><h3>Kransen</h3><small>Voor de deur</small></div><span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div></a>
+      <a href="#shop" data-f="interieur" class="cat rv"><img src="img/a32.jpg" alt=""><div class="label"><div><h3>Interieur</h3><small>Lampen &amp; meer</small></div><span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div></a>
+    </div>
+  </div>
+</section>
+
+<!-- SHOP -->
+<section class="sec shop" id="shop">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <h2>Nu in de <em>winkel</em></h2>
+      <div class="chips" id="chips">
+        <button class="chip on" data-f="all">Alles</button>
+        <button class="chip" data-f="boeket">Boeketten</button>
+        <button class="chip" data-f="zijde">Zijde</button>
+        <button class="chip" data-f="vaas">Vazen</button>
+        <button class="chip" data-f="krans">Kransen</button>
+        <button class="chip" data-f="interieur">Interieur</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<!-- BUILDER -->
+<section class="sec builder" id="builder">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <h2>Jouw boeket, <em>onze handen.</em></h2>
+      <p>Kies grootte, kleur en bezorgdag. Wij binden het met dezelfde liefde als in de winkel en sturen een foto voordat het de deur uit gaat.</p>
+    </div>
+    <div class="b-grid">
+      <div class="b-preview rv" id="preview">
+        <img src="img/b30.jpg" alt="Voorbeeld van het gekozen boeket" id="pvImg">
+        <div class="glass">
+          <div><small id="pvSize">Medium</small><strong id="pvName">Herfstgloed</strong></div>
+          <div class="total" id="pvTotal">€65</div>
+        </div>
+      </div>
+      <div class="rv">
+        <div class="step">
+          <h5><span>01</span> Grootte</h5>
+          <div class="opts" id="sizes"></div>
+        </div>
+        <div class="step">
+          <h5><span>02</span> Kleurstemming</h5>
+          <div class="opts palettes" id="palettes"></div>
+        </div>
+        <div class="step">
+          <h5><span>03</span> Maak het af</h5>
+          <div class="toggle-row" data-add="vase" data-price="35"><div>Met een vaas uit de winkel <small>Wij kiezen er een die past, + €35</small></div><span class="sw2"></span></div>
+          <div class="toggle-row" data-add="choc" data-price="12.5"><div>Doos bonbons erbij <small>Ambachtelijk, + €12,50</small></div><span class="sw2"></span></div>
+          <textarea class="field" rows="2" placeholder="Persoonlijk kaartje (gratis)" maxlength="160"></textarea>
+        </div>
+        <div class="step">
+          <h5><span>04</span> Bezorgdag</h5>
+          <div class="dates" id="dates"></div>
+        </div>
+        <button class="btn btn-pink" id="addCustom">In winkelmand · <span id="ctaTotal">€65</span></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STORY -->
+<section class="sec story">
+  <div class="wrap story-grid">
+    <div class="story-img rv">
+      <img src="img/wall.jpg" alt="Het team tussen een muur van verse bloemen">
+      <span class="neon-sign">buy flowers</span>
+    </div>
+    <div class="rv">
+      <div class="eyebrow">Ons verhaal</div>
+      <h2>Een trap vol bloemen, <em>en een team</em> dat er gek op is.</h2>
+      <p>Wie bij ons binnenloopt, weet het meteen: dit is geen gewone bloemenwinkel. Het is kleur, geur, overdaad, en altijd net iets meer dan je had verwacht.</p>
+      <p>Die beleving brengen we nu naar je voordeur. Elk boeket wordt gebonden door hetzelfde team dat je kent van onze stories.</p>
+      <div class="stats">
+        <div><b>100%</b><small>met de hand gebonden</small></div>
+        <div><b>7/7</b><small>nieuwe stukken op Instagram</small></div>
+        <div><b>∞</b><small>zijden bloemen die blijven</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REELS -->
+<section class="sec reels">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <h2>Gezien op <em>@fioridirose</em></h2>
+      <a class="link" href="https://www.instagram.com/fioridirose" target="_blank" rel="noopener">Volg ons op Instagram</a>
+    </div>
+  </div>
+  <div class="reel-row" id="reels"></div>
+</section>
+
+<!-- USPS -->
+<section class="sec">
+  <div class="wrap usps">
+    <div class="usp rv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21c-4-3-7-6-7-10a7 7 0 0 1 14 0c0 4-3 7-7 10Z"/><circle cx="12" cy="11" r="2.5"/></svg><h4>Handgebonden</h4><p>In onze eigen winkel, door ons eigen team.</p></div>
+    <div class="usp rv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><h4>Jij kiest de dag</h4><p>Bezorging precies wanneer het moet.</p></div>
+    <div class="usp rv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg><h4>Persoonlijk kaartje</h4><p>Met jouw woorden, met de hand geschreven.</p></div>
+    <div class="usp rv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9.5 12 4l9 5.5V20H3z"/><path d="M9 20v-6h6v6"/></svg><h4>Ophalen kan ook</h4><p>Online bestellen, in de winkel ophalen.</p></div>
+  </div>
+</section>
+
+<!-- PITCH -->
+<section class="sec pitch">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <h2>Waarom deze shop <em>werkt.</em></h2>
+      <p>Een notitie van MediaWow. Je winkel is een belevenis; je website moet dat ook zijn. Dit is wat we voor je bouwen.</p>
+    </div>
+    <div class="features">
+      <div class="feat rv"><span class="n">01</span><h4>De winkel, online</h4><p>Dezelfde kleur, overdaad en persoonlijkheid als op de vloer en op Instagram. Geen standaardtemplate.</p></div>
+      <div class="feat rv"><span class="n">02</span><h4>Boeket-configurator</h4><p>Klanten stellen zelf een boeket samen met live prijs. Hogere orderwaarde door vaas en extra's.</p></div>
+      <div class="feat rv"><span class="n">03</span><h4>Bezorgplanner</h4><p>Klant kiest de dag, jij ziet per dag wat er gebonden en bezorgd moet worden.</p></div>
+      <div class="feat rv"><span class="n">04</span><h4>Shopbare reels</h4><p>Je Instagram-content direct gekoppeld aan producten. Van story naar bestelling in twee tikken.</p></div>
+      <div class="feat rv"><span class="n">05</span><h4>Mobile first</h4><p>Je volgers komen via hun telefoon. Daar is elke pixel van deze shop voor ontworpen.</p></div>
+      <div class="feat rv"><span class="n">06</span><h4>Zelf beheren</h4><p>Nieuw stuk binnen? Foto erin, prijs erbij, live. Met iDEAL, voorraadbeheer en ophaaloptie.</p></div>
+    </div>
+    <div class="compare rv">
+      <div class="old"><h5>Nu</h5><ul><li>Site die niet laat zien wat je hebt</li><li>Bezoekers van Instagram haken af</li><li>Verkoop alleen in de winkel</li></ul></div>
+      <div class="new"><h5>Met MediaWow</h5><ul><li>Een shop die net zo vet is als je winkel</li><li>Instagram-volgers worden kopers</li><li>Omzet, ook als de deur dicht is</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<section class="sec news">
+  <div class="wrap rv">
+    <h2>Als eerste de <em>nieuwe</em><br>collectie zien?</h2>
+    <p>Eén keer per week de mooiste nieuwe stukken, voordat ze in de winkel uitverkocht zijn.</p>
+    <form id="newsForm"><input type="email" placeholder="Je e-mailadres" aria-label="E-mailadres" required><button type="submit">Aanmelden</button></form>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="f-grid">
+      <div><span class="logo"><span class="dot"></span><span>Fiori <i>di</i> Rose</span></span><p style="max-width:300px">Bloemen, zijde en interieur met karakter. Met de hand gemaakt, con amore.</p></div>
+      <div><h6>Shop</h6><ul><li><a href="#shop">Boeketten</a></li><li><a href="#shop">Zijden bloemen</a></li><li><a href="#shop">Vazen</a></li><li><a href="#shop">Kransen</a></li></ul></div>
+      <div><h6>Service</h6><ul><li><a href="#">Bezorging</a></li><li><a href="#">Ophalen in de winkel</a></li><li><a href="#">Verzorgingstips</a></li><li><a href="#">Contact</a></li></ul></div>
+      <div><h6>Volg ons</h6><ul><li><a href="https://www.instagram.com/fioridirose" target="_blank" rel="noopener">Instagram</a></li><li><a href="#">Facebook</a></li><li><a href="#">Pinterest</a></li></ul></div>
+    </div>
+    <div class="f-bottom"><span>Concept &copy; 2026 MediaWow voor Fiori di Rose</span><div class="pay"><span>iDEAL</span><span>VISA</span><span>Mastercard</span><span>Apple Pay</span></div></div>
+  </div>
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Winkelmand">
+  <div class="d-head"><h3>Je mandje</h3><button class="icon-btn" id="closeCart" aria-label="Sluiten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="d-body">
+    <div class="ship" id="ship"></div>
+    <div id="lines"></div>
+  </div>
+  <div class="d-foot">
+    <div class="row"><span>Subtotaal</span><span id="sub">€0</span></div>
+    <div class="row"><span>Bezorging</span><span id="del">€7,95</span></div>
+    <div class="row t"><span>Totaal</span><span id="tot">€0</span></div>
+    <button class="btn btn-dark" id="checkout">Afrekenen</button>
+  </div>
+</aside>
+<div class="toast" id="toast"><i>✓</i><span id="toastMsg"></span></div>
+
+<script>
+const P=[
+ {id:1,n:"Wild & Kleurrijk",s:"Vers boeket · XL",p:85,c:"boeket",img:"a22",t:"Bestseller",tc:"hot",sw:["#e2672b","#c2185b","#7e57c2","#f9a825"]},
+ {id:2,n:"Bordeaux Bol",s:"Zijden arrangement",p:249,c:"zijde",img:"a12",t:"Zijde",tc:"silk",sw:["#5b1a2b","#7d2238"]},
+ {id:3,n:"Herfstkrans Oranjegloed",s:"Met lint naar keuze",p:89,c:"krans",img:"a01",t:"Nieuw",tc:"",sw:["#e2672b","#d81b60"]},
+ {id:4,n:"Spike Vaas Olijf",s:"Keramiek · 48 cm",p:129,c:"vaas",img:"a11",t:"",sw:["#6b6b4a","#3b3b2a"]},
+ {id:5,n:"Poederroze",s:"Vers boeket in vaas",p:75,c:"boeket",img:"a21",t:"",sw:["#f7c9d8","#fff"]},
+ {id:6,n:"Celadon & Dahlia",s:"Zijden boeket incl. vaas",p:189,c:"zijde",img:"b10",t:"Zijde",tc:"silk",sw:["#b8c49a","#8e1b3a"]},
+ {id:7,n:"Chinoiserie Rozen",s:"Zijde in porseleinen pot",p:159,c:"zijde",img:"b30",t:"",sw:["#f0a35e","#e88070"]},
+ {id:8,n:"Ikat Lamp Oranje",s:"Handgeweven kap",p:219,c:"interieur",img:"a32",t:"Laatste stuk",tc:"hot",sw:["#d9822b","#c0392b"]},
+ {id:9,n:"Witte Rozenvaas",s:"Porselein · met droogbloemen",p:179,c:"vaas",img:"a10",t:"",sw:["#fff","#e8dcc6"]},
+ {id:10,n:"Testa di Moro",s:"Siciliaanse hoofdvaas",p:139,c:"vaas",img:"b31",t:"Nieuw",tc:"",sw:["#222","#c9a24b"]},
+ {id:11,n:"Kransenset Deurwerk",s:"Drie formaten",p:149,c:"krans",img:"b32",t:"",sw:["#e2672b","#8a4b2a"]},
+ {id:12,n:"Onyx Kaarsenset",s:"Set van vijf",p:59,c:"interieur",img:"b22",t:"",sw:["#e8d8c3","#c8a98a"]}
+];
+const IMG=null;
+const imgs=k=>IMG?IMG[k]:`img/${k}.jpg`;
+const eur=v=>"€"+(Number.isInteger(v)?v:v.toFixed(2).replace(".",","));
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* marquees */
+const ann=["Gratis bezorging vanaf €75","Voor 14:00 besteld, morgen bezorgd","Elk boeket met de hand gebonden","Ook ophalen in de winkel"];
+$("#announce").innerHTML=[...ann,...ann,...ann,...ann].map(t=>`<span>${t}</span>`).join("");
+const tk=["Boeketten","<i>zijde</i>","Vazen","<i>kransen</i>","Interieur","<i>con amore</i>"];
+$("#ticker").innerHTML=[...tk,...tk,...tk,...tk].map(t=>`<span>${t}</span><span class="flower">✿</span>`).join("");
+
+/* products */
+let favs=new Set(store.get("fdr-favs",[]));
+function renderGrid(f="all"){
+  $("#grid").innerHTML=P.filter(p=>f==="all"||p.c===f).map((p,i)=>`
+   <article class="card" style="animation-delay:${i*60}ms">
+    <div class="ph"><img src="${imgs(p.img)}" alt="${p.n}">
+     ${p.t?`<span class="tag ${p.tc||""}">${p.t}</span>`:""}
+     <button class="heart ${favs.has(p.id)?"on":""}" data-fav="${p.id}" aria-label="Bewaar ${p.n}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg></button>
+     <button class="quick" data-add="${p.id}">+ In mandje</button>
+    </div>
+    <div class="meta"><div><h4>${p.n}</h4><div class="sub">${p.s}</div></div><span class="price">${eur(p.p)}</span></div>
+    <div class="swatches">${p.sw.map(c=>`<i style="background:${c}"></i>`).join("")}</div>
+   </article>`).join("");
+}
+function setFilter(f){$$(".chip").forEach(c=>c.classList.toggle("on",c.dataset.f===f));renderGrid(f)}
+$("#chips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b)setFilter(b.dataset.f)});
+$$("[data-f]:not(.chip)").forEach(a=>a.addEventListener("click",()=>{setFilter(a.dataset.f);$("#mnav").classList.remove("on")}));
+$("#grid").addEventListener("click",e=>{
+  const h=e.target.closest("[data-fav]");
+  if(h){const id=+h.dataset.fav;favs.has(id)?favs.delete(id):favs.add(id);h.classList.toggle("on");store.set("fdr-favs",[...favs]);updFav();if(favs.has(id))toast("Bewaard in je favorieten");return}
+  const a=e.target.closest("[data-add]");
+  if(a){const p=P.find(x=>x.id==a.dataset.add);addToCart({key:"p"+p.id,n:p.n,s:p.s,p:p.p,img:p.img})}
+});
+function updFav(){const b=$("#favCount");b.textContent=favs.size;b.classList.toggle("on",favs.size>0)}
+
+/* cart */
+let cart=store.get("fdr-cart",[]);
+const FREE=75;
+function addToCart(item){
+  const ex=cart.find(c=>c.key===item.key);
+  ex?ex.q++:cart.push({...item,q:1});
+  saveCart();toast(`${item.n} toegevoegd`);
+  const b=$("#cartBtn");b.animate([{transform:"scale(1)"},{transform:"scale(1.25)"},{transform:"scale(1)"}],{duration:450});
+}
+function saveCart(){store.set("fdr-cart",cart);renderCart()}
+function renderCart(){
+  const n=cart.reduce((s,c)=>s+c.q,0), sub=cart.reduce((s,c)=>s+c.q*c.p,0);
+  const cc=$("#cartCount");cc.textContent=n;cc.classList.toggle("on",n>0);
+  const left=Math.max(0,FREE-sub);
+  $("#ship").innerHTML=cart.length?(left>0?`Nog <b>${eur(+left.toFixed(2))}</b> tot gratis bezorging`:`<b>Gratis bezorging</b> ✿ je zit erboven`)+`<div class="bar"><i style="width:${Math.min(100,sub/FREE*100)}%"></i></div>`:"";
+  $("#lines").innerHTML=cart.length?cart.map((c,i)=>`
+   <div class="line"><img src="${imgs(c.img)}" alt="">
+    <div><h4>${c.n}</h4><small>${c.s}</small>
+     <div class="qty"><button data-q="${i}" data-d="-1" aria-label="Minder">−</button><span>${c.q}</span><button data-q="${i}" data-d="1" aria-label="Meer">+</button></div></div>
+    <span class="price">${eur(+(c.p*c.q).toFixed(2))}</span></div>`).join("")
+   :`<div class="empty"><span class="serif">Nog leeg hier</span>Tijd voor bloemen.</div>`;
+  const del=sub>=FREE||!sub?0:7.95;
+  $("#sub").textContent=eur(+sub.toFixed(2));
+  $("#del").textContent=del?"€7,95":"Gratis";
+  $("#tot").textContent=eur(+(sub+del).toFixed(2));
+}
+$("#lines").addEventListener("click",e=>{const b=e.target.closest("[data-q]");if(!b)return;const c=cart[b.dataset.q];c.q+=+b.dataset.d;if(c.q<1)cart.splice(b.dataset.q,1);saveCart()});
+const openCart=o=>{$("#drawer").classList.toggle("on",o);$("#scrim").classList.toggle("on",o)};
+$("#cartBtn").onclick=()=>openCart(true);$("#closeCart").onclick=()=>openCart(false);$("#scrim").onclick=()=>openCart(false);
+$("#checkout").onclick=()=>toast(cart.length?"Concept: hier start straks de iDEAL-checkout":"Je mandje is nog leeg");
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){openCart(false);$("#mnav").classList.remove("on")}});
+
+/* toast */
+let tt;function toast(m){$("#toastMsg").textContent=m;$("#toast").classList.add("on");clearTimeout(tt);tt=setTimeout(()=>$("#toast").classList.remove("on"),2400)}
+
+/* builder */
+const SIZES=[{k:"S",n:"Klein",p:45},{k:"M",n:"Medium",p:65},{k:"L",n:"Groot",p:85},{k:"XL",n:"Uitbundig",p:115}];
+const PALS=[{n:"Herfstgloed",img:"b30",c:["#e2672b","#f0a35e","#8a4b2a"]},{n:"Poederroze",img:"a21",c:["#f7c9d8","#fff","#e8a0b8"]},{n:"Bordeaux",img:"a31",c:["#5b1a2b","#8e1b3a","#c48a9e"]},{n:"Wild & kleurrijk",img:"a22",c:["#c2185b","#7e57c2","#f9a825"]}];
+let B={size:1,pal:0,adds:{},date:0};
+$("#sizes").innerHTML=SIZES.map((s,i)=>`<button class="opt ${i===1?"on":""}" data-size="${i}"><b>${s.k}</b><small>${s.n} · ${eur(s.p)}</small></button>`).join("");
+$("#palettes").innerHTML=PALS.map((p,i)=>`<button class="opt pal ${i===0?"on":""}" data-pal="${i}"><span class="sw">${p.c.map(c=>`<i style="background:${c}"></i>`).join("")}</span><b>${p.n}</b></button>`).join("");
+const dn=["zo","ma","di","wo","do","vr","za"], mn=["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
+const days=[...Array(10)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()+i+1);return d});
+$("#dates").innerHTML=days.map((d,i)=>`<button class="date ${i===0?"on":""}" data-date="${i}"><small>${i===0?"morgen":dn[d.getDay()]}</small><b>${d.getDate()}</b><small>${mn[d.getMonth()]}</small></button>`).join("");
+function bTotal(){return SIZES[B.size].p+Object.values(B.adds).reduce((s,v)=>s+v,0)}
+function renderB(swap){
+  const t=eur(+bTotal().toFixed(2));
+  $("#pvTotal").textContent=t;$("#ctaTotal").textContent=t;
+  $("#pvSize").textContent=SIZES[B.size].n+(B.adds.vase?" · met vaas":"");
+  $("#pvName").textContent=PALS[B.pal].n;
+  if(swap){const im=$("#pvImg");im.classList.add("out");setTimeout(()=>{im.src=imgs(PALS[B.pal].img);im.onload=()=>im.classList.remove("out");if(im.complete)im.classList.remove("out")},300)}
+}
+$("#builder").addEventListener("click",e=>{
+  const s=e.target.closest("[data-size]"),p=e.target.closest("[data-pal]"),a=e.target.closest(".toggle-row"),d=e.target.closest("[data-date]");
+  if(s){B.size=+s.dataset.size;$$("[data-size]").forEach(x=>x.classList.toggle("on",x===s));renderB()}
+  if(p){const ch=B.pal!==+p.dataset.pal;B.pal=+p.dataset.pal;$$("[data-pal]").forEach(x=>x.classList.toggle("on",x===p));renderB(ch)}
+  if(a){a.classList.toggle("on");a.classList.contains("on")?B.adds[a.dataset.add]=+a.dataset.price:delete B.adds[a.dataset.add];renderB()}
+  if(d){B.date=+d.dataset.date;$$("[data-date]").forEach(x=>x.classList.toggle("on",x===d))}
+});
+$("#addCustom").onclick=()=>{
+  const d=days[B.date];
+  addToCart({key:"c"+Date.now(),n:"Boeket op maat · "+PALS[B.pal].n,s:`${SIZES[B.size].n}${B.adds.vase?" + vaas":""}${B.adds.choc?" + bonbons":""} · ${dn[d.getDay()]} ${d.getDate()} ${mn[d.getMonth()]}`,p:bTotal(),img:PALS[B.pal].img});
+  setTimeout(()=>openCart(true),500);
+};
+
+/* reels */
+const R=[["a01","Herfstkrans met fuchsia lint, net klaar","Krans"],["a10","Witte rozenvaas met droogbloemen","Vaas"],["a30","Fruitschalen voor het weekend","Interieur"],["b32","Kransen-dag in de winkel","Krans"],["a20","Spike vazen, nieuw binnen","Vaas"],["b00","Bordeaux, zo groot als je wilt","Zijde"],["a00","Bladborden voor op tafel","Interieur"],["b31","Testa di Moro is terug","Vaas"]];
+$("#reels").innerHTML=R.map(([k,c,t])=>`<a class="reel" href="#shop"><img src="${imgs(k)}" alt=""><span class="play"><svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg></span><div class="cap"><small>@fioridirose · ${t}</small>${c}<br><span class="shop-it">Shop deze look</span></div></a>`).join("");
+
+/* misc */
+$("#newsForm").onsubmit=e=>{e.preventDefault();e.target.reset();toast("Benvenuta! Je staat op de lijst")};
+$("#burger").onclick=()=>$("#mnav").classList.add("on");$("#mclose").onclick=()=>$("#mnav").classList.remove("on");
+addEventListener("scroll",()=>$("#hdr").classList.toggle("scrolled",scrollY>10),{passive:true});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.12});
+$$(".rv").forEach(el=>io.observe(el));
+
+renderGrid();renderCart();updFav();renderB();
+</script>
+</body>
+</html>
