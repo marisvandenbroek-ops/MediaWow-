@@ -65,6 +65,14 @@ $('#ph-scrim').addEventListener('click',closeCart);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCart()});
 let tt;function toast(m){const t=$('#ph-toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2600)}
 $('#ph-login').addEventListener('click',()=>toast('Inloggen voor de vakhandel volgt in de volgende versie'));
+const menu=$('#ph-menu'),burger=$('#ph-burger');
+const setMenu=on=>{menu.classList.toggle('on',on);menu.setAttribute('aria-hidden',!on);burger.setAttribute('aria-expanded',on);document.documentElement.style.overflow=on?'hidden':''};
+burger.addEventListener('click',()=>setMenu(true));
+$('#ph-mclose').addEventListener('click',()=>setMenu(false));
+$$('#ph-menu a').forEach(a=>a.addEventListener('click',()=>setMenu(false)));
+$('#ph-mlogin').addEventListener('click',()=>{setMenu(false);toast('Inloggen voor de vakhandel volgt in de volgende versie')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')setMenu(false)});
+$$('#ph-menu [data-nav]').forEach(a=>a.classList.toggle('on',a.dataset.nav===({product:'collectie'}[page]||page)));
 
 /* ---------- header: search + active menu ---------- */
 $('#ph-search').addEventListener('submit',e=>{e.preventDefault();const q=$('#ph-q').value.trim();
