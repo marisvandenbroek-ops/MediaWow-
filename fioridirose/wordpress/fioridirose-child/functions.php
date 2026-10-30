@@ -5,7 +5,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'FDR_THEME_VERSION', '1.0.1' );
+define( 'FDR_THEME_VERSION', '1.0.2' );
 
 add_action(
 	'after_setup_theme',
