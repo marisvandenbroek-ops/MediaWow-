@@ -45,7 +45,7 @@ function wp_enqueue_script() {}
 function wp_list_pluck( $l, $f ) { return array_map( fn( $o ) => $o->$f, $l ); }
 function language_attributes() { echo 'lang="nl-NL"'; }
 function bloginfo( $k ) { echo array( 'name' => 'Fiori di Rose', 'description' => 'Bloemen &amp; interieur', 'charset' => 'UTF-8' )[ $k ] ?? ''; }
-function body_class() { echo 'class="home page fdr-site fdr-overlay-header woocommerce-js"'; }
+function body_class() { echo 'class="home page woocommerce fdr-site fdr-overlay-header woocommerce-js"'; }
 function wp_head() { echo $GLOBALS['head']; }
 function wp_body_open() {}
 function wp_footer() { echo $GLOBALS['foot']; }
@@ -160,12 +160,20 @@ $data = fdr_install_home_data( $slug_to_id );
 $elementor_css = '.e-con{--padding-top:10px;--padding-bottom:10px;--padding-left:10px;--padding-right:10px;--gap:20px;--row-gap:20px;--column-gap:20px;--flex-direction:column;--display:flex;display:var(--display);flex-direction:var(--flex-direction);gap:var(--row-gap) var(--column-gap);padding:var(--padding-top) var(--padding-right) var(--padding-bottom) var(--padding-left);width:var(--width,100%);position:relative;box-sizing:border-box}'
 	. '.elementor-widget:not(:last-child){margin-block-end:20px}.elementor-heading-title{line-height:1;margin:0;padding:0;font-family:Roboto,sans-serif;color:#6ec1e4}'
 	. 'body{margin:0}a{color:#c36}button,[type=submit]{border:1px solid #c36;color:#c36;padding:.5rem 1rem;border-radius:3px;background:transparent}button:hover{background:#c36;color:#fff}'
-	. '.screen-reader-text{position:absolute!important;clip:rect(1px,1px,1px,1px);height:1px;width:1px;overflow:hidden}';
+	. '.woocommerce ul.cart_list li,.woocommerce ul.product_list_widget li,ul.product_list_widget li{padding:4px 0;margin:0;list-style:none}.woocommerce ul.cart_list li a,.woocommerce ul.product_list_widget li a,ul.product_list_widget li a{display:block;font-weight:700}.woocommerce ul.cart_list li img,.woocommerce ul.product_list_widget li img,ul.product_list_widget li img{float:right;margin-left:4px;width:32px;height:auto;box-shadow:none;position:static}.woocommerce .widget_shopping_cart .cart_list li,.widget_shopping_cart_content .cart_list li{padding-left:2em;position:relative;padding-top:0}.woocommerce .widget_shopping_cart .cart_list li a.remove,.widget_shopping_cart_content .cart_list li a.remove{position:absolute;top:0;left:0}.woocommerce a.remove,a.remove{display:block;font-size:1.5em;height:1em;width:1em;text-align:center;line-height:1;border-radius:100%;color:#e2401c!important;font-weight:700}.woocommerce a.button,a.button{font-size:100%;margin:0;line-height:1;cursor:pointer;position:relative;font-weight:700;border-radius:3px;padding:.618em 1em;background-color:#e9e6ed;color:#515151;display:inline-block}.widget_shopping_cart_content .buttons a{margin-right:5px;margin-bottom:5px}.widget_shopping_cart_content .total{border-top:3px double #ebe9eb;padding:4px 0 0}.screen-reader-text{position:absolute!important;clip:rect(1px,1px,1px,1px);height:1px;width:1px;overflow:hidden}';
 
 $GLOBALS['head'] = '<style>' . $elementor_css . '</style><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Jost:wght@300;400;500&display=swap"><link rel="stylesheet" href="file://' . $ROOT . '/fioridirose-child/style.css"><script src="file://' . __DIR__ . '/jquery.js"></script>';
 $GLOBALS['foot'] = '<script>var wc_add_to_cart_params={wc_ajax_url:"/?wc-ajax=%%endpoint%%"};</script><script src="file://' . $ROOT . '/fioridirose-kit/assets/atelier.js"></script><script src="file://' . $ROOT . '/fioridirose-child/assets/site.js"></script>';
 
-function woocommerce_mini_cart() { echo '<p class="woocommerce-mini-cart__empty-message">Er staan geen producten in je winkelwagen.</p>'; }
+function woocommerce_mini_cart() {
+	$img = wp_get_attachment_image_url( fdr_img_id( 'riccio' ) );
+	$img2 = wp_get_attachment_image_url( fdr_img_id( 'porcellana' ) );
+	echo '<ul class="woocommerce-mini-cart cart_list product_list_widget">'
+	. '<li class="woocommerce-mini-cart-item mini_cart_item"><a href="#" class="remove remove_from_cart_button" aria-label="Verwijder">&times;</a><a href="#"><img width="300" height="375" src="' . $img . '" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" alt="">Riccio</a><span class="quantity">1 &times; ' . wc_price( 149 ) . '</span></li>'
+	. '<li class="woocommerce-mini-cart-item mini_cart_item"><a href="#" class="remove remove_from_cart_button">&times;</a><a href="#"><img width="300" height="375" src="' . $img2 . '" alt="">Atelier · Ambra</a><dl class="variation"><dt class="variation-Formaat">Formaat:</dt><dd class="variation-Formaat"><p>Grand</p></dd><dt>Afwerking:</dt><dd><p>Vaas uit de collectie</p></dd><dt>Bezorgdag:</dt><dd><p>za 31 okt</p></dd></dl><span class="quantity">1 &times; ' . wc_price( 190 ) . '</span></li>'
+	. '</ul><p class="woocommerce-mini-cart__total total"><strong>Subtotaal:</strong> ' . wc_price( 339 ) . '</p>'
+	. '<p class="woocommerce-mini-cart__buttons buttons"><a href="#" class="button wc-forward">Bekijk winkelwagen</a><a href="#" class="button checkout wc-forward">Afrekenen</a></p>';
+}
 function elementor_theme_do_location() { return false; }
 
 ob_start();
