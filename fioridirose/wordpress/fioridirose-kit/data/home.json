@@ -1,0 +1,1246 @@
+[
+ {
+  "id": "bbdd76e",
+  "elType": "container",
+  "isInner": false,
+  "settings": {
+   "content_width": "full",
+   "flex_direction": "column",
+   "css_classes": "fdr-sec fdr-hero",
+   "html_tag": "section",
+   "padding": {
+    "unit": "px",
+    "top": "0",
+    "right": "0",
+    "bottom": "0",
+    "left": "0",
+    "isLinked": true
+   },
+   "flex_gap": {
+    "unit": "px",
+    "size": 0,
+    "column": "0",
+    "row": "0",
+    "isLinked": true
+   }
+  },
+  "elements": [
+   {
+    "id": "8b9a365",
+    "elType": "widget",
+    "widgetType": "image",
+    "settings": {
+     "image": {
+      "url": "{{url:winkel}}",
+      "id": "{{id:winkel}}",
+      "alt": "Interieur van de winkel: bloemen, ballonnen en de iriserende toonbank",
+      "source": "library",
+      "size": ""
+     },
+     "image_size": "full",
+     "_css_classes": "fdr-hero-img"
+    },
+    "elements": []
+   },
+   {
+    "id": "696d99f",
+    "elType": "container",
+    "isInner": true,
+    "settings": {
+     "content_width": "full",
+     "flex_direction": "column",
+     "css_classes": "fdr-wrap fdr-hero-copy",
+     "html_tag": "div",
+     "padding": {
+      "unit": "px",
+      "top": "0",
+      "right": "0",
+      "bottom": "0",
+      "left": "0",
+      "isLinked": true
+     },
+     "flex_gap": {
+      "unit": "px",
+      "size": 0,
+      "column": "0",
+      "row": "0",
+      "isLinked": true
+     }
+    },
+    "elements": [
+     {
+      "id": "3841b47",
+      "elType": "widget",
+      "widgetType": "heading",
+      "settings": {
+       "title": "Bloemen &middot; Zijde &middot; Interieur",
+       "header_size": "div",
+       "_css_classes": "fdr-label"
+      },
+      "elements": []
+     },
+     {
+      "id": "8f6be08",
+      "elType": "widget",
+      "widgetType": "heading",
+      "settings": {
+       "title": "De kunst van <em>overvloed</em>",
+       "header_size": "h1",
+       "_css_classes": "fdr-display fdr-h1"
+      },
+      "elements": []
+     },
+     {
+      "id": "557162e",
+      "elType": "widget",
+      "widgetType": "text-editor",
+      "settings": {
+       "editor": "<p>Verse en zijden bloemen, vazen en interieurstukken. Elk stuk samengesteld in ons atelier, nu ook bij jou thuis.</p>",
+       "_css_classes": "fdr-hero-p"
+      },
+      "elements": []
+     },
+     {
+      "id": "dd91973",
+      "elType": "widget",
+      "widgetType": "html",
+      "settings": {
+       "html": "<div class=\"fdr-links\"><a href=\"#collectie\" class=\"fdr-tline\">Ontdek de collectie <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" aria-hidden=\"true\"><path d=\"M4 12h16M14 6l6 6-6 6\"/></svg></a><a href=\"#atelier\" class=\"fdr-tline\">Atelier op maat</a></div>",
+       "_css_classes": ""
+      },
+      "elements": []
+     }
+    ]
+   },
+   {
+    "id": "0991c45",
+    "elType": "widget",
+    "widgetType": "html",
+    "settings": {
+     "html": "<span class=\"fdr-credit-text\">Foto &middot; Daan van Oort Photography</span>",
+     "_css_classes": "fdr-credit"
+    },
+    "elements": []
+   }
+  ]
+ },
+ {
+  "id": "a2748d1",
+  "elType": "container",
+  "isInner": false,
+  "settings": {
+   "content_width": "full",
+   "flex_direction": "column",
+   "css_classes": "fdr-sec fdr-intro",
+   "html_tag": "section",
+   "padding": {
+    "unit": "px",
+    "top": "0",
+    "right": "0",
+    "bottom": "0",
+    "left": "0",
+    "isLinked": true
+   },
+   "flex_gap": {
+    "unit": "px",
+    "size": 0,
+    "column": "0",
+    "row": "0",
+    "isLinked": true
+   }
+  },
+  "elements": [
+   {
+    "id": "430f55e",
+    "elType": "container",
+    "isInner": true,
+    "settings": {
+     "content_width": "full",
+     "flex_direction": "column",
+     "css_classes": "fdr-wrap fdr-intro-grid",
+     "html_tag": "div",
+     "padding": {
+      "unit": "px",
+      "top": "0",
+      "right": "0",
+      "bottom": "0",
+      "left": "0",
+      "isLinked": true
+     },
+     "flex_gap": {
+      "unit": "px",
+      "size": 0,
+      "column": "0",
+      "row": "0",
+      "isLinked": true
+     }
+    },
+    "elements": [
+     {
+      "id": "cb12cfd",
+      "elType": "widget",
+      "widgetType": "heading",
+      "settings": {
+       "title": "Het huis",
+       "header_size": "div",
+       "_css_classes": "fdr-label fdr-rv"
+      },
+      "elements": []
+     },
+     {
+      "id": "d89739c",
+      "elType": "container",
+      "isInner": true,
+      "settings": {
+       "content_width": "full",
+       "flex_direction": "column",
+       "css_classes": "fdr-intro-body fdr-rv",
+       "html_tag": "div",
+       "padding": {
+        "unit": "px",
+        "top": "0",
+        "right": "0",
+        "bottom": "0",
+        "left": "0",
+        "isLinked": true
+       },
+       "flex_gap": {
+        "unit": "px",
+        "size": 0,
+        "column": "0",
+        "row": "0",
+        "isLinked": true
+       }
+      },
+      "elements": [
+       {
+        "id": "8454ce3",
+        "elType": "widget",
+        "widgetType": "heading",
+        "settings": {
+         "title": "Geen boeketten van de band, maar arrangementen met <em>karakter</em>. Uitbundig waar het mag, verfijnd waar het moet, en altijd met de hand gemaakt.",
+         "header_size": "p",
+         "_css_classes": "fdr-display fdr-intro-text"
+        },
+        "elements": []
+       },
+       {
+        "id": "97557f3",
+        "elType": "widget",
+        "widgetType": "text-editor",
+        "settings": {
+         "editor": "<p>Zijden bloemen die blijven, verse bloemen voor het moment, en de vaas die het af maakt.</p>",
+         "_css_classes": "fdr-intro-sig"
+        },
+        "elements": []
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "244f487",
+  "elType": "container",
+  "isInner": false,
+  "settings": {
+   "content_width": "full",
+   "flex_direction": "column",
+   "css_classes": "fdr-sec fdr-signature",
+   "html_tag": "section",
+   "padding": {
+    "unit": "px",
+    "top": "0",
+    "right": "0",
+    "bottom": "0",
+    "left": "0",
+    "isLinked": true
+   },
+   "flex_gap": {
+    "unit": "px",
+    "size": 0,
+    "column": "0",
+    "row": "0",
+    "isLinked": true
+   }
+  },
+  "elements": [
+   {
+    "id": "699b86d",
+    "elType": "container",
+    "isInner": true,
+    "settings": {
+     "content_width": "full",
+     "flex_direction": "column",
+     "css_classes": "fdr-wrap",
+     "html_tag": "div",
+     "padding": {
+      "unit": "px",
+      "top": "0",
+      "right": "0",
+      "bottom": "0",
+      "left": "0",
+      "isLinked": true
+     },
+     "flex_gap": {
+      "unit": "px",
+      "size": 0,
+      "column": "0",
+      "row": "0",
+      "isLinked": true
+     }
+    },
+    "elements": [
+     {
+      "id": "56dc1cb",
+      "elType": "container",
+      "isInner": true,
+      "settings": {
+       "content_width": "full",
+       "flex_direction": "row",
+       "css_classes": "fdr-head-row fdr-rv",
+       "html_tag": "div",
+       "padding": {
+        "unit": "px",
+        "top": "0",
+        "right": "0",
+        "bottom": "0",
+        "left": "0",
+        "isLinked": true
+       },
+       "flex_gap": {
+        "unit": "px",
+        "size": 0,
+        "column": "0",
+        "row": "0",
+        "isLinked": true
+       }
+      },
+      "elements": [
+       {
+        "id": "45218a6",
+        "elType": "widget",
+        "widgetType": "heading",
+        "settings": {
+         "title": "Signature <em>zijde</em>",
+         "header_size": "h2",
+         "_css_classes": "fdr-display fdr-h2-xl"
+        },
+        "elements": []
+       },
+       {
+        "id": "1f99fc8",
+        "elType": "widget",
+        "widgetType": "html",
+        "settings": {
+         "html": "<a href=\"{{cat:zijde}}\" class=\"fdr-tline\">Alle zijden arrangementen <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" aria-hidden=\"true\"><path d=\"M4 12h16M14 6l6 6-6 6\"/></svg></a>",
+         "_css_classes": ""
+        },
+        "elements": []
+       }
+      ]
+     },
+     {
+      "id": "49fd539",
+      "elType": "widget",
+      "widgetType": "shortcode",
+      "settings": {
+       "shortcode": "[fdr_signature]",
+       "_css_classes": ""
+      },
+      "elements": []
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "066906d",
+  "elType": "container",
+  "isInner": false,
+  "settings": {
+   "content_width": "full",
+   "flex_direction": "column",
+   "css_classes": "fdr-sec fdr-stone fdr-collections",
+   "html_tag": "section",
+   "padding": {
+    "unit": "px",
+    "top": "0",
+    "right": "0",
+    "bottom": "0",
+    "left": "0",
+    "isLinked": true
+   },
+   "flex_gap": {
+    "unit": "px",
+    "size": 0,
+    "column": "0",
+    "row": "0",
+    "isLinked": true
+   },
+   "_element_id": "collectie"
+  },
+  "elements": [
+   {
+    "id": "153e49d",
+    "elType": "container",
+    "isInner": true,
+    "settings": {
+     "content_width": "full",
+     "flex_direction": "column",
+     "css_classes": "fdr-wrap",
+     "html_tag": "div",
+     "padding": {
+      "unit": "px",
+      "top": "0",
+      "right": "0",
+      "bottom": "0",
+      "left": "0",
+      "isLinked": true
+     },
+     "flex_gap": {
+      "unit": "px",
+      "size": 0,
+      "column": "0",
+      "row": "0",
+      "isLinked": true
+     }
+    },
+    "elements": [
+     {
+      "id": "25e93a3",
+      "elType": "container",
+      "isInner": true,
+      "settings": {
+       "content_width": "full",
+       "flex_direction": "row",
+       "css_classes": "fdr-head-row fdr-rv",
+       "html_tag": "div",
+       "padding": {
+        "unit": "px",
+        "top": "0",
+        "right": "0",
+        "bottom": "0",
+        "left": "0",
+        "isLinked": true
+       },
+       "flex_gap": {
+        "unit": "px",
+        "size": 0,
+        "column": "0",
+        "row": "0",
+        "isLinked": true
+       }
+      },
+      "elements": [
+       {
+        "id": "fac483e",
+        "elType": "widget",
+        "widgetType": "heading",
+        "settings": {
+         "title": "Collecties",
+         "header_size": "h2",
+         "_css_classes": "fdr-display"
+        },
+        "elements": []
+       },
+       {
+        "id": "a881801",
+        "elType": "widget",
+        "widgetType": "heading",
+        "settings": {
+         "title": "Vier werelden, één huis",
+         "header_size": "div",
+         "_css_classes": "fdr-label"
+        },
+        "elements": []
+       }
+      ]
+     },
+     {
+      "id": "290fc71",
+      "elType": "widget",
+      "widgetType": "shortcode",
+      "settings": {
+       "shortcode": "[fdr_collections slugs=\"verse-bloemen,zijde,vazen,interieur\"]",
+       "_css_classes": ""
+      },
+      "elements": []
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "ac5ef98",
+  "elType": "container",
+  "isInner": false,
+  "settings": {
+   "content_width": "full",
+   "flex_direction": "column",
+   "css_classes": "fdr-sec fdr-stone fdr-shop",
+   "html_tag": "section",
+   "padding": {
+    "unit": "px",
+    "top": "0",
+    "right": "0",
+    "bottom": "0",
+    "left": "0",
+    "isLinked": true
+   },
+   "flex_gap": {
+    "unit": "px",
+    "size": 0,
+    "column": "0",
+    "row": "0",
+    "isLinked": true
+   },
+   "_element_id": "shop"
+  },
+  "elements": [
+   {
+    "id": "2426225",
+    "elType": "container",
+    "isInner": true,
+    "settings": {
+     "content_width": "full",
+     "flex_direction": "column",
+     "css_classes": "fdr-wrap",
+     "html_tag": "div",
+     "padding": {
+      "unit": "px",
+      "top": "0",
+      "right": "0",
+      "bottom": "0",
+      "left": "0",
+      "isLinked": true
+     },
+     "flex_gap": {
+      "unit": "px",
+      "size": 0,
+      "column": "0",
+      "row": "0",
+      "isLinked": true
+     }
+    },
+    "elements": [
+     {
+      "id": "48c079f",
+      "elType": "widget",
+      "widgetType": "shortcode",
+      "settings": {
+       "shortcode": "[fdr_products title_pre=\"De\" title_em=\"selectie\" limit=\"8\"]",
+       "_css_classes": ""
+      },
+      "elements": []
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "bdd7059",
+  "elType": "container",
+  "isInner": false,
+  "settings": {
+   "content_width": "full",
+   "flex_direction": "column",
+   "css_classes": "fdr-sec fdr-atelier-sec",
+   "html_tag": "section",
+   "padding": {
+    "unit": "px",
+    "top": "0",
+    "right": "0",
+    "bottom": "0",
+    "left": "0",
+    "isLinked": true
+   },
+   "flex_gap": {
+    "unit": "px",
+    "size": 0,
+    "column": "0",
+    "row": "0",
+    "isLinked": true
+   },
+   "_element_id": "atelier"
+  },
+  "elements": [
+   {
+    "id": "ebcd47e",
+    "elType": "container",
+    "isInner": true,
+    "settings": {
+     "content_width": "full",
+     "flex_direction": "column",
+     "css_classes": "fdr-wrap",
+     "html_tag": "div",
+     "padding": {
+      "unit": "px",
+      "top": "0",
+      "right": "0",
+      "bottom": "0",
+      "left": "0",
+      "isLinked": true
+     },
+     "flex_gap": {
+      "unit": "px",
+      "size": 0,
+      "column": "0",
+      "row": "0",
+      "isLinked": true
+     }
+    },
+    "elements": [
+     {
+      "id": "59b2056",
+      "elType": "widget",
+      "widgetType": "shortcode",
+      "settings": {
+       "shortcode": "[fdr_atelier]",
+       "_css_classes": ""
+      },
+      "elements": []
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "7bf2ba7",
+  "elType": "container",
+  "isInner": false,
+  "settings": {
+   "content_width": "full",
+   "flex_direction": "row",
+   "css_classes": "fdr-sec fdr-stone fdr-store",
+   "html_tag": "section",
+   "padding": {
+    "unit": "px",
+    "top": "0",
+    "right": "0",
+    "bottom": "0",
+    "left": "0",
+    "isLinked": true
+   },
+   "flex_gap": {
+    "unit": "px",
+    "size": 0,
+    "column": "0",
+    "row": "0",
+    "isLinked": true
+   },
+   "_element_id": "winkel"
+  },
+  "elements": [
+   {
+    "id": "6a9a1ca",
+    "elType": "container",
+    "isInner": true,
+    "settings": {
+     "content_width": "full",
+     "flex_direction": "column",
+     "css_classes": "fdr-store-fig",
+     "html_tag": "div",
+     "padding": {
+      "unit": "px",
+      "top": "0",
+      "right": "0",
+      "bottom": "0",
+      "left": "0",
+      "isLinked": true
+     },
+     "flex_gap": {
+      "unit": "px",
+      "size": 0,
+      "column": "0",
+      "row": "0",
+      "isLinked": true
+     }
+    },
+    "elements": [
+     {
+      "id": "70f3710",
+      "elType": "widget",
+      "widgetType": "image",
+      "settings": {
+       "image": {
+        "url": "{{url:toonbank}}",
+        "id": "{{id:toonbank}}",
+        "alt": "De iriserende toonbank en hangende planten in de winkel",
+        "source": "library",
+        "size": ""
+       },
+       "image_size": "full",
+       "_css_classes": "fdr-store-img"
+      },
+      "elements": []
+     },
+     {
+      "id": "8a2857c",
+      "elType": "widget",
+      "widgetType": "html",
+      "settings": {
+       "html": "<span class=\"fdr-credit-text\">Foto &middot; Daan van Oort Photography</span>",
+       "_css_classes": "fdr-credit"
+      },
+      "elements": []
+     }
+    ]
+   },
+   {
+    "id": "0e11783",
+    "elType": "container",
+    "isInner": true,
+    "settings": {
+     "content_width": "full",
+     "flex_direction": "column",
+     "css_classes": "fdr-store-txt fdr-rv",
+     "html_tag": "div",
+     "padding": {
+      "unit": "px",
+      "top": "0",
+      "right": "0",
+      "bottom": "0",
+      "left": "0",
+      "isLinked": true
+     },
+     "flex_gap": {
+      "unit": "px",
+      "size": 0,
+      "column": "0",
+      "row": "0",
+      "isLinked": true
+     }
+    },
+    "elements": [
+     {
+      "id": "ecde625",
+      "elType": "widget",
+      "widgetType": "heading",
+      "settings": {
+       "title": "De winkel",
+       "header_size": "div",
+       "_css_classes": "fdr-label"
+      },
+      "elements": []
+     },
+     {
+      "id": "52f5757",
+      "elType": "widget",
+      "widgetType": "heading",
+      "settings": {
+       "title": "Staal, glas en <em>duizend bloemen</em>",
+       "header_size": "h2",
+       "_css_classes": "fdr-display"
+      },
+      "elements": []
+     },
+     {
+      "id": "1760ca1",
+      "elType": "widget",
+      "widgetType": "text-editor",
+      "settings": {
+       "editor": "<p>Hangende groene wolken, een toonbank die van kleur verschiet en bloemen tot aan het plafond. Onze winkel is een plek om te kijken, te ruiken en je te laten verrassen.</p><p>Wat je online ziet, is samengesteld door hetzelfde team. Liever zelf uitzoeken? Je bent van harte welkom.</p>",
+       "_css_classes": "fdr-store-p"
+      },
+      "elements": []
+     },
+     {
+      "id": "fa1e07a",
+      "elType": "widget",
+      "widgetType": "html",
+      "settings": {
+       "html": "<a href=\"#contact\" class=\"fdr-tline\">Route en openingstijden <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" aria-hidden=\"true\"><path d=\"M4 12h16M14 6l6 6-6 6\"/></svg></a>",
+       "_css_classes": ""
+      },
+      "elements": []
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "605d4ca",
+  "elType": "container",
+  "isInner": false,
+  "settings": {
+   "content_width": "full",
+   "flex_direction": "column",
+   "css_classes": "fdr-sec fdr-services",
+   "html_tag": "section",
+   "padding": {
+    "unit": "px",
+    "top": "0",
+    "right": "0",
+    "bottom": "0",
+    "left": "0",
+    "isLinked": true
+   },
+   "flex_gap": {
+    "unit": "px",
+    "size": 0,
+    "column": "0",
+    "row": "0",
+    "isLinked": true
+   }
+  },
+  "elements": [
+   {
+    "id": "e30143b",
+    "elType": "container",
+    "isInner": true,
+    "settings": {
+     "content_width": "full",
+     "flex_direction": "column",
+     "css_classes": "fdr-wrap",
+     "html_tag": "div",
+     "padding": {
+      "unit": "px",
+      "top": "0",
+      "right": "0",
+      "bottom": "0",
+      "left": "0",
+      "isLinked": true
+     },
+     "flex_gap": {
+      "unit": "px",
+      "size": 0,
+      "column": "0",
+      "row": "0",
+      "isLinked": true
+     }
+    },
+    "elements": [
+     {
+      "id": "649fd45",
+      "elType": "container",
+      "isInner": true,
+      "settings": {
+       "content_width": "full",
+       "flex_direction": "row",
+       "css_classes": "fdr-head-row fdr-rv",
+       "html_tag": "div",
+       "padding": {
+        "unit": "px",
+        "top": "0",
+        "right": "0",
+        "bottom": "0",
+        "left": "0",
+        "isLinked": true
+       },
+       "flex_gap": {
+        "unit": "px",
+        "size": 0,
+        "column": "0",
+        "row": "0",
+        "isLinked": true
+       }
+      },
+      "elements": [
+       {
+        "id": "565a5d6",
+        "elType": "widget",
+        "widgetType": "heading",
+        "settings": {
+         "title": "Service",
+         "header_size": "h2",
+         "_css_classes": "fdr-display"
+        },
+        "elements": []
+       }
+      ]
+     },
+     {
+      "id": "e84ebc7",
+      "elType": "container",
+      "isInner": true,
+      "settings": {
+       "content_width": "full",
+       "flex_direction": "row",
+       "css_classes": "fdr-svc-grid",
+       "html_tag": "div",
+       "padding": {
+        "unit": "px",
+        "top": "0",
+        "right": "0",
+        "bottom": "0",
+        "left": "0",
+        "isLinked": true
+       },
+       "flex_gap": {
+        "unit": "px",
+        "size": 0,
+        "column": "0",
+        "row": "0",
+        "isLinked": true
+       }
+      },
+      "elements": [
+       {
+        "id": "7ea1fb6",
+        "elType": "container",
+        "isInner": true,
+        "settings": {
+         "content_width": "full",
+         "flex_direction": "column",
+         "css_classes": "fdr-svc fdr-rv",
+         "html_tag": "div",
+         "padding": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+         },
+         "flex_gap": {
+          "unit": "px",
+          "size": 0,
+          "column": "0",
+          "row": "0",
+          "isLinked": true
+         }
+        },
+        "elements": [
+         {
+          "id": "e120e07",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+           "title": "Bezorging aan huis",
+           "header_size": "h3",
+           "_css_classes": "fdr-svc-title"
+          },
+          "elements": []
+         },
+         {
+          "id": "c65fc10",
+          "elType": "widget",
+          "widgetType": "text-editor",
+          "settings": {
+           "editor": "<p>Op de dag die jij kiest, zorgvuldig verpakt en met een handgeschreven kaart.</p>",
+           "_css_classes": ""
+          },
+          "elements": []
+         }
+        ]
+       },
+       {
+        "id": "9d02881",
+        "elType": "container",
+        "isInner": true,
+        "settings": {
+         "content_width": "full",
+         "flex_direction": "column",
+         "css_classes": "fdr-svc fdr-rv",
+         "html_tag": "div",
+         "padding": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+         },
+         "flex_gap": {
+          "unit": "px",
+          "size": 0,
+          "column": "0",
+          "row": "0",
+          "isLinked": true
+         }
+        },
+        "elements": [
+         {
+          "id": "2f3086f",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+           "title": "Atelier op maat",
+           "header_size": "h3",
+           "_css_classes": "fdr-svc-title"
+          },
+          "elements": []
+         },
+         {
+          "id": "e24f1be",
+          "elType": "widget",
+          "widgetType": "text-editor",
+          "settings": {
+           "editor": "<p>Voor een bijzondere plek of moment stellen we een arrangement samen dat precies past.</p>",
+           "_css_classes": ""
+          },
+          "elements": []
+         }
+        ]
+       },
+       {
+        "id": "af80869",
+        "elType": "container",
+        "isInner": true,
+        "settings": {
+         "content_width": "full",
+         "flex_direction": "column",
+         "css_classes": "fdr-svc fdr-rv",
+         "html_tag": "div",
+         "padding": {
+          "unit": "px",
+          "top": "0",
+          "right": "0",
+          "bottom": "0",
+          "left": "0",
+          "isLinked": true
+         },
+         "flex_gap": {
+          "unit": "px",
+          "size": 0,
+          "column": "0",
+          "row": "0",
+          "isLinked": true
+         }
+        },
+        "elements": [
+         {
+          "id": "3d994ae",
+          "elType": "widget",
+          "widgetType": "heading",
+          "settings": {
+           "title": "Zakelijk",
+           "header_size": "h3",
+           "_css_classes": "fdr-svc-title"
+          },
+          "elements": []
+         },
+         {
+          "id": "4dbcffc",
+          "elType": "widget",
+          "widgetType": "text-editor",
+          "settings": {
+           "editor": "<p>Zijden en verse arrangementen voor hotels, restaurants en kantoren, ook als abonnement.</p>",
+           "_css_classes": ""
+          },
+          "elements": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "a274b5e",
+  "elType": "container",
+  "isInner": false,
+  "settings": {
+   "content_width": "full",
+   "flex_direction": "column",
+   "css_classes": "fdr-sec fdr-journal",
+   "html_tag": "section",
+   "padding": {
+    "unit": "px",
+    "top": "0",
+    "right": "0",
+    "bottom": "0",
+    "left": "0",
+    "isLinked": true
+   },
+   "flex_gap": {
+    "unit": "px",
+    "size": 0,
+    "column": "0",
+    "row": "0",
+    "isLinked": true
+   }
+  },
+  "elements": [
+   {
+    "id": "e2f961d",
+    "elType": "container",
+    "isInner": true,
+    "settings": {
+     "content_width": "full",
+     "flex_direction": "column",
+     "css_classes": "fdr-wrap",
+     "html_tag": "div",
+     "padding": {
+      "unit": "px",
+      "top": "0",
+      "right": "0",
+      "bottom": "0",
+      "left": "0",
+      "isLinked": true
+     },
+     "flex_gap": {
+      "unit": "px",
+      "size": 0,
+      "column": "0",
+      "row": "0",
+      "isLinked": true
+     }
+    },
+    "elements": [
+     {
+      "id": "a6ac23f",
+      "elType": "container",
+      "isInner": true,
+      "settings": {
+       "content_width": "full",
+       "flex_direction": "row",
+       "css_classes": "fdr-head-row fdr-rv",
+       "html_tag": "div",
+       "padding": {
+        "unit": "px",
+        "top": "0",
+        "right": "0",
+        "bottom": "0",
+        "left": "0",
+        "isLinked": true
+       },
+       "flex_gap": {
+        "unit": "px",
+        "size": 0,
+        "column": "0",
+        "row": "0",
+        "isLinked": true
+       }
+      },
+      "elements": [
+       {
+        "id": "8e2e65d",
+        "elType": "widget",
+        "widgetType": "heading",
+        "settings": {
+         "title": "Journal",
+         "header_size": "h2",
+         "_css_classes": "fdr-display"
+        },
+        "elements": []
+       },
+       {
+        "id": "9b5aa22",
+        "elType": "widget",
+        "widgetType": "html",
+        "settings": {
+         "html": "<a href=\"https://www.instagram.com/fioridirose\" class=\"fdr-tline\" target=\"_blank\" rel=\"noopener\">@fioridirose <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.4\" aria-hidden=\"true\"><path d=\"M4 12h16M14 6l6 6-6 6\"/></svg></a>",
+         "_css_classes": ""
+        },
+        "elements": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "id": "2777cc0",
+    "elType": "widget",
+    "widgetType": "shortcode",
+    "settings": {
+     "shortcode": "[fdr_journal ids=\"{{ids:journal}}\" url=\"https://www.instagram.com/fioridirose\"]",
+     "_css_classes": ""
+    },
+    "elements": []
+   }
+  ]
+ },
+ {
+  "id": "2e3eb75",
+  "elType": "container",
+  "isInner": false,
+  "settings": {
+   "content_width": "full",
+   "flex_direction": "column",
+   "css_classes": "fdr-sec fdr-stone fdr-news",
+   "html_tag": "section",
+   "padding": {
+    "unit": "px",
+    "top": "0",
+    "right": "0",
+    "bottom": "0",
+    "left": "0",
+    "isLinked": true
+   },
+   "flex_gap": {
+    "unit": "px",
+    "size": 0,
+    "column": "0",
+    "row": "0",
+    "isLinked": true
+   }
+  },
+  "elements": [
+   {
+    "id": "12f7d0a",
+    "elType": "container",
+    "isInner": true,
+    "settings": {
+     "content_width": "full",
+     "flex_direction": "column",
+     "css_classes": "fdr-wrap fdr-rv",
+     "html_tag": "div",
+     "padding": {
+      "unit": "px",
+      "top": "0",
+      "right": "0",
+      "bottom": "0",
+      "left": "0",
+      "isLinked": true
+     },
+     "flex_gap": {
+      "unit": "px",
+      "size": 0,
+      "column": "0",
+      "row": "0",
+      "isLinked": true
+     }
+    },
+    "elements": [
+     {
+      "id": "2ff8fc0",
+      "elType": "widget",
+      "widgetType": "heading",
+      "settings": {
+       "title": "Nieuwsbrief",
+       "header_size": "div",
+       "_css_classes": "fdr-label"
+      },
+      "elements": []
+     },
+     {
+      "id": "0142138",
+      "elType": "widget",
+      "widgetType": "heading",
+      "settings": {
+       "title": "Als eerste de <em>nieuwe collectie</em>",
+       "header_size": "h2",
+       "_css_classes": "fdr-display"
+      },
+      "elements": []
+     },
+     {
+      "id": "7519be0",
+      "elType": "widget",
+      "widgetType": "text-editor",
+      "settings": {
+       "editor": "<p>Eén keer per week de mooiste nieuwe stukken, voordat ze in de winkel weg zijn.</p>",
+       "_css_classes": "fdr-news-p"
+      },
+      "elements": []
+     },
+     {
+      "id": "ea25aaa",
+      "elType": "widget",
+      "widgetType": "shortcode",
+      "settings": {
+       "shortcode": "[fdr_newsletter]",
+       "_css_classes": ""
+      },
+      "elements": []
+     }
+    ]
+   }
+  ]
+ }
+]
