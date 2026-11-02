@@ -196,6 +196,37 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .new .chips{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 .new .chips span{font-size:10px;border:1px solid rgba(255,255,255,.25);border-radius:99px;padding:4px 9px}
 
+
+/* Cases */
+.cases{display:grid;gap:22px;margin-top:52px}
+@media (min-width:980px){.cases{grid-template-columns:1.25fr 1fr 1fr}}
+.case{background:var(--white);border-radius:24px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 0 var(--line),0 30px 60px -45px rgba(22,20,15,.5)}
+.case figure{position:relative;aspect-ratio:16/10;max-width:100%;overflow:hidden;background:var(--night)}
+.case figure img{width:100%;height:100%;object-fit:cover}
+.case .demo{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:99px;background:rgba(15,14,11,.8);color:var(--butter);border:1px dashed var(--butter)}
+.case-body{padding:26px;display:flex;flex-direction:column;gap:16px;flex:1}
+.case .who{font-family:var(--mono);font-size:12.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--cobalt)}
+.case h3{font-family:var(--display);font-stretch:112%;font-weight:900;font-size:clamp(22px,2.2vw,28px);line-height:1.05;letter-spacing:-.02em;text-wrap:balance}
+.jump{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-family:var(--display);font-stretch:112%;font-weight:900;letter-spacing:-.03em}
+.jump s{font-size:30px;color:var(--mute);text-decoration-thickness:3px;text-decoration-color:var(--bad)}
+.jump b{font-size:clamp(48px,5vw,64px);line-height:1;color:var(--ink)}
+.jump small{font-family:var(--body);font-stretch:100%;font-weight:600;letter-spacing:0;font-size:14px;color:var(--mute)}
+.case dl{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:0;border-top:1px solid var(--line)}
+.case dl div{padding:12px 0;border-bottom:1px solid var(--line)}
+.case dl div:nth-child(odd){padding-right:12px}
+.case dl div:nth-child(even){padding-left:12px;border-left:1px solid var(--line)}
+.case dt{font-family:var(--display);font-stretch:112%;font-weight:900;font-size:22px;letter-spacing:-.02em;line-height:1.1}
+.case dd{margin:2px 0 0;font-size:13.5px;color:var(--mute);line-height:1.35}
+.case blockquote{font-size:16.5px;line-height:1.5;font-weight:500;margin-top:auto;padding-top:4px}
+.case blockquote::before{content:"“";font-family:var(--accent);font-size:48px;line-height:0;vertical-align:-.35em;color:var(--cobalt);margin-right:2px}
+.case.lead{background:var(--ink);color:var(--on-night)}
+.case.lead .who{color:var(--butter)}
+.case.lead .jump b{color:var(--butter)}
+.case.lead .jump s,.case.lead dd,.case.lead .jump small{color:var(--on-night-mute)}
+.case.lead dl,.case.lead dl div{border-color:var(--night-line)}
+.case.lead blockquote::before{color:var(--butter)}
+.cases-note{margin-top:18px;font-size:13.5px;color:var(--mute)}
+
 /* Proof */
 .proof{background:var(--night);color:var(--on-night)}
 .proof .kicker{color:var(--butter)}
@@ -453,11 +484,64 @@ footer b{color:var(--on-night)}
   </div>
 </section>
 
+<!-- CASES (example data: replace with real horeca clients before going live) -->
+<section id="resultaten">
+  <div class="wrap">
+    <p class="kicker">Resultaten</p>
+    <h2 class="h2">Minder commissie. <span class="it">Meer</span> volle avonden.</h2>
+    <p class="lede">Drie zaken, drie verschillende problemen. Eén ding gemeen: hun gasten boeken nu direct.</p>
+    <div class="cases">
+      <article class="case lead">
+        <figure><img style="object-position:95% 40%" src="{{IMG_HERO}}" alt="Volle bistro op een doordeweekse avond" width="800" height="500" loading="lazy"><span class="demo">Voorbeeldcase · fictief</span></figure>
+        <div class="case-body">
+          <p class="who">Bistro De Hoek · Utrecht · 60 couverts</p>
+          <h3>Van platform-afhankelijk naar 68% directe boekingen.</h3>
+          <p class="jump"><s>22%</s><b>68%</b><small>directe reserveringen</small></p>
+          <dl>
+            <div><dt>€ 5.900</dt><dd>minder commissie in jaar 1</dd></div>
+            <div><dt>−70%</dt><dd>telefoontjes tijdens de service</dd></div>
+            <div><dt>7 mnd</dt><dd>terugverdientijd</dd></div>
+            <div><dt>#1</dt><dd>op “bistro Utrecht centrum”</dd></div>
+          </dl>
+          <blockquote>Mijn telefoon ligt tijdens de service gewoon in de la. De reserveringen staan er 's ochtends al in.</blockquote>
+        </div>
+      </article>
+      <article class="case">
+        <figure><img src="{{IMG_TERRACE}}" alt="Vol terras aan het water" width="800" height="500" loading="lazy"><span class="demo">Voorbeeldcase · fictief</span></figure>
+        <div class="case-body">
+          <p class="who">Café Stroom · Arnhem</p>
+          <h3>Quizavond elke week uitverkocht.</h3>
+          <p class="jump"><s>40%</s><b>100%</b><small>bezetting events</small></p>
+          <dl>
+            <div><dt>+41%</dt><dd>reserveringen voor events</dd></div>
+            <div><dt>2 min</dt><dd>om de borrelkaart te wijzigen</dd></div>
+          </dl>
+          <blockquote>Mensen boeken nu een tafel voor de quiz in plaats van te hopen dat er plek is.</blockquote>
+        </div>
+      </article>
+      <article class="case">
+        <figure><img src="{{IMG_DISH}}" alt="Seizoensgerecht op een donker bord" width="800" height="500" loading="lazy"><span class="demo">Voorbeeldcase · fictief</span></figure>
+        <div class="case-body">
+          <p class="who">Het Veerhuis · B&amp;B en restaurant · Wijk bij Duurstede</p>
+          <h3>Kamers direct geboekt, niet via boekingssites.</h3>
+          <p class="jump"><s>31%</s><b>57%</b><small>directe boekingen</small></p>
+          <dl>
+            <div><dt>€ 11.200</dt><dd>minder afdracht per jaar</dd></div>
+            <div><dt>3 talen</dt><dd>NL, EN en DE</dd></div>
+          </dl>
+          <blockquote>Gasten boeken nu bij ons omdat het ontbijt erbij zit. Dat stond nergens, nu staat het bovenaan.</blockquote>
+        </div>
+      </article>
+    </div>
+    <p class="cases-note">Deze drie cases zijn fictieve voorbeelden voor de opmaak. Vervang ze door echte klanten voordat de pagina live gaat.</p>
+  </div>
+</section>
+
 <!-- PROOF -->
 <section class="proof">
   <div class="wrap">
     <p class="kicker">Gemaakt door MediaWow</p>
-    <h2 class="h2">Ondernemers die het al <span class="it">deden</span>.</h2>
+    <h2 class="h2">Wat klanten over MediaWow <span class="it">zeggen</span>.</h2>
     <div class="proof-grid">
       <div class="big-q"><img src="{{IMG_HERO}}" alt="" loading="lazy">
         <figure><p class="stars">★★★★★</p><blockquote>“Ik kan oprecht zeggen dat Mariska mijn go to persoon is. Haar uitleg is altijd duidelijk, direct en weloverwogen, precies afgestemd op onze bedrijven en werkwijze.”</blockquote><figcaption><b>Rody Roeleveld</b> · Google-review</figcaption></figure></div>
