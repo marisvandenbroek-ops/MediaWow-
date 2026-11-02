@@ -235,7 +235,11 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .after{clip-path:inset(0 0 0 var(--pos,50%))}
 .handle{position:absolute;top:0;bottom:0;left:var(--pos,50%);width:3px;margin-left:-1.5px;background:var(--butter);z-index:3;pointer-events:none}
 .handle::after{content:"⟷";position:absolute;top:50%;left:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:var(--butter);color:var(--ink);display:grid;place-items:center;font-weight:800;font-size:18px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
-.range{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;z-index:4;margin:0}
+.range{position:absolute;left:0;right:0;bottom:0;width:100%;height:1px;opacity:0;margin:0;pointer-events:none}
+.phone{touch-action:pan-y;cursor:ew-resize;user-select:none;-webkit-user-select:none}
+.phone.dragging .handle::after{transform:scale(1.12)}
+.handle::after{transition:transform .2s var(--ease)}
+.ba-hint{text-align:center;margin-top:16px;font-size:14px;color:var(--mute)}
 .phone:focus-within{outline:3px solid var(--butter);outline-offset:6px}
 .tags{position:absolute;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;z-index:2;pointer-events:none}
 .tags span{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border-radius:99px;background:rgba(0,0,0,.75);color:#fff}
@@ -577,7 +581,8 @@ footer b{color:var(--on-night)}
         <div class="tags"><span>Vandaag</span><span>Tafelvol</span></div>
         <div class="handle"></div>
       </div>
-      <input class="range" id="ba-range" type="range" min="0" max="100" value="50" aria-label="Vergelijk de oude en de nieuwe website">
+      <input class="range" id="ba-range" type="range" min="0" max="100" value="50" aria-label="Vergelijk de oude en de nieuwe website (pijltjestoetsen)">
+      <p class="ba-hint">← Sleep over het scherm →</p>
     </div>
   </div>
 </section>
@@ -810,7 +815,31 @@ footer b{color:var(--on-night)}
   }, 3000);
 
   /* Before / after */
-  const ba = $('ba'), r = $('ba-range'); r.addEventListener('input', () => ba.style.setProperty('--pos', r.value + '%'));
+  const ba = $('ba'), r = $('ba-range'), scr = ba.querySelector('.screen');
+  let touched = false, drag = false;
+  const setPos = v => { v = Math.max(0, Math.min(100, v)); ba.style.setProperty('--pos', v + '%'); r.value = Math.round(v); };
+  const fromEvent = e => { const b = scr.getBoundingClientRect(); setPos((e.clientX - b.left) / b.width * 100); };
+  ba.addEventListener('pointerdown', e => { touched = true; drag = true; ba.classList.add('dragging'); try { ba.setPointerCapture(e.pointerId); } catch (_) {} fromEvent(e); });
+  ba.addEventListener('pointermove', e => { if (drag) fromEvent(e); });
+  const stop = () => { drag = false; ba.classList.remove('dragging'); };
+  ba.addEventListener('pointerup', stop); ba.addEventListener('pointercancel', stop); ba.addEventListener('lostpointercapture', stop);
+  r.addEventListener('input', () => { touched = true; setPos(+r.value); });
+  ba.addEventListener('click', () => r.focus({preventScroll: true}));
+  /* One gentle demo swipe the first time the phone scrolls into view */
+  if (!reduce && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return; io.disconnect();
+      const keys = [[0,50],[700,78],[1500,22],[2200,50]], t0 = performance.now();
+      const step = now => {
+        if (touched) return;
+        const t = now - t0; let i = keys.findIndex(k => k[0] > t); if (i === -1) { setPos(50); return; }
+        const [ta, va] = keys[i - 1], [tb, vb] = keys[i], f = (t - ta) / (tb - ta), ease = f < .5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+        setPos(va + (vb - va) * ease); requestAnimationFrame(step);
+      };
+      setTimeout(() => requestAnimationFrame(step), 400);
+    }, {threshold: .6});
+    io.observe(ba);
+  }
 
   /* Calculator */
   const eur = v => '€ ' + Math.round(v).toLocaleString('nl-NL'), PRICE = 2995;
