@@ -1,0 +1,769 @@
+<title>Mediawow Horeca</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Websites voor restaurants, cafés en hotels die tafels vullen. Door Mediawow, webdesign uit Rhenen.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: Mediawow house style. Alternating wine-dark and white bands, Instrument Serif headlines with one italic word,
+   tracked uppercase labels, square 2px buttons. One horeca-specific moment: the live reservation-ticket rail in the hero.
+   Deliberately single-theme (the brand is fixed), so every color is set explicitly. */
+:root{
+  --wine:#1B0405; --burgundy:#3A1011; --white:#FFFFFF; --blush:#F6EFEC;
+  --d-mute:rgba(255,255,255,.55); --d-body:rgba(255,255,255,.78); --d-line:rgba(255,255,255,.14); --d-edge:rgba(255,255,255,.35);
+  --l-mute:rgba(58,16,17,.55); --l-body:rgba(58,16,17,.82); --l-line:rgba(58,16,17,.14); --l-edge:rgba(58,16,17,.35);
+  --ticket:#FFFDF7; --ticket-ink:#1C1412; --ticket-mute:#80736D; --ok:#2F7A4B; --bad:#9E2A22;
+  --serif:"Instrument Serif","Didot",Georgia,serif;
+  --sans:"DM Sans","Helvetica Neue",Arial,system-ui,sans-serif;
+  --mono:"DM Mono",ui-monospace,Menlo,monospace;
+  --ease:cubic-bezier(.22,.61,.24,1);
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--white);color:var(--burgundy);font-family:var(--sans);font-weight:300;font-size:16.5px;line-height:1.75;-webkit-font-smoothing:antialiased;overflow-x:clip}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--wine)}
+h1,h2,h3,h4,p,ul,ol,figure,blockquote{margin:0;padding:0}
+ul,ol{list-style:none}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+strong,b{font-weight:500}
+:focus-visible{outline:1px solid currentColor;outline-offset:4px}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+section{padding-block:clamp(72px,10vw,120px)}
+.dark{background:var(--wine);color:var(--white)}
+.label{font-size:11px;font-weight:500;letter-spacing:4px;text-transform:uppercase;color:var(--l-mute);line-height:1.4}
+.dark .label{color:var(--d-mute)}
+.h2{font-family:var(--serif);font-weight:400;font-size:clamp(38px,5vw,56px);line-height:1.05;margin-top:12px;text-wrap:balance;max-width:16ch}
+.h2 em{font-style:italic}
+.lede{color:var(--l-body);max-width:52ch;margin-top:22px;text-wrap:pretty}
+.dark .lede{color:var(--d-body)}
+.head{display:grid;gap:24px;margin-bottom:clamp(40px,5vw,56px);align-items:end}
+@media (min-width:900px){.head{grid-template-columns:3fr 2fr}.head .lede{margin-top:0}}
+.note{font-size:12.5px;color:var(--l-mute)}
+.dark .note{color:var(--d-mute)}
+
+/* Buttons: Mediawow style */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:54px;padding:0 30px;border-radius:2px;border:1px solid;font-family:var(--sans);font-size:12px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;text-decoration:none;line-height:1;transition:background .25s,color .25s,border-color .25s}
+.btn svg{width:15px;height:15px;transition:transform .3s var(--ease)}
+.btn:hover svg{transform:translateX(4px)}
+.btn-solid{background:var(--burgundy);color:var(--white);border-color:var(--burgundy)}
+.btn-solid:hover{background:var(--wine);border-color:var(--wine)}
+.btn-line{background:transparent;color:var(--burgundy);border-color:var(--l-edge)}
+.btn-line:hover{border-color:var(--burgundy)}
+.dark .btn-solid{background:var(--white);color:var(--wine);border-color:var(--white)}
+.dark .btn-solid:hover{background:var(--blush);border-color:var(--blush)}
+.dark .btn-line{color:var(--white);border-color:var(--d-edge)}
+.dark .btn-line:hover{border-color:var(--white)}
+
+/* Header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--wine);color:var(--white);border-bottom:1px solid var(--d-line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:72px}
+.logo{font-family:var(--serif);font-size:28px;line-height:1;text-decoration:none}
+.logo small{font-family:var(--sans);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--d-mute);margin-left:10px;vertical-align:middle}
+.top nav{display:none;gap:30px;font-size:11px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase}
+.top nav a{text-decoration:none;color:var(--d-mute)}
+.top nav a:hover{color:var(--white)}
+.top .btn{min-height:44px;padding:0 20px;font-size:11px}
+@media (min-width:1000px){.top nav{display:flex}}
+@media (max-width:420px){.logo small{display:none}}
+
+/* Hero */
+.hero{padding-block:clamp(56px,8vw,110px) clamp(64px,8vw,110px)}
+.hero .wrap{display:grid;gap:56px;align-items:center}
+@media (min-width:1000px){.hero .wrap{grid-template-columns:1.2fr .8fr}}
+.hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(50px,7.6vw,106px);line-height:.98;margin-top:14px;text-wrap:balance}
+.hero h1 .woord{font-style:italic;display:inline-block;transition:opacity .35s,transform .35s var(--ease)}
+.hero h1 .woord.out{opacity:0;transform:translateY(.15em)}
+.hero h1 .dim{color:var(--d-mute);display:block}
+.hero .intro{display:grid;gap:30px;margin-top:48px;padding-top:28px;border-top:1px solid var(--d-line)}
+@media (min-width:700px){.hero .intro{grid-template-columns:1fr 1fr;gap:40px}}
+.hero .intro p{color:var(--d-body);text-wrap:pretty}
+.hero .intro p b{color:var(--white)}
+.hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:4px}
+@media (max-width:600px){.hero-cta .btn{flex:1 1 100%}}
+.trust{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;font-size:13px;color:var(--d-mute)}
+.trust .stars{color:var(--white);letter-spacing:2px}
+
+/* Ticket rail */
+.rail{min-width:0}
+.rail-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.live{display:inline-flex;align-items:center;gap:9px}
+.live i{width:7px;height:7px;border-radius:50%;background:#6FE39A;box-shadow:0 0 0 0 rgba(111,227,154,.6);animation:pulse 1.8s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(111,227,154,0)}100%{box-shadow:0 0 0 0 rgba(111,227,154,0)}}
+.rail-bar{height:12px;border-radius:2px;background:linear-gradient(180deg,#d9d2cf,#8f8683);box-shadow:inset 0 -2px 0 rgba(0,0,0,.3);position:relative;z-index:2}
+.tickets{display:flex;gap:12px;margin-top:-3px;padding:0 6px;min-height:290px;overflow:hidden}
+.ticket{flex:0 0 auto;width:176px;background:var(--ticket);color:var(--ticket-ink);font-family:var(--mono);font-size:12px;line-height:1.55;padding:18px 14px 22px;transform-origin:top center;box-shadow:0 20px 30px -18px rgba(0,0,0,.7);position:relative;
+  -webkit-mask:radial-gradient(circle 5px at 50% 100%,transparent 98%,#000) 0 0/12px 100% repeat-x;mask:radial-gradient(circle 5px at 50% 100%,transparent 98%,#000) 0 0/12px 100% repeat-x}
+.ticket:nth-child(odd){transform:rotate(-1.3deg)} .ticket:nth-child(even){transform:rotate(1deg)}
+.ticket .clip{position:absolute;top:-2px;left:50%;width:34px;height:11px;margin-left:-17px;background:#a39a96;border-radius:0 0 3px 3px}
+.ticket .no{display:flex;justify-content:space-between;color:var(--ticket-mute);font-size:10.5px}
+.ticket .what{font-size:11px;margin-top:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ticket-mute)}
+.ticket .big{font-family:var(--serif);font-size:38px;line-height:1;margin-top:4px}
+.ticket hr{border:0;border-top:1px dashed #c9bfba;margin:10px 0}
+.ticket .row{display:flex;justify-content:space-between;gap:8px}
+.ticket .zero{color:var(--ok);font-weight:500}
+.ticket.new{animation:drop .7s var(--ease) both}
+@keyframes drop{from{opacity:0;translate:0 -40px}to{opacity:1;translate:0 0}}
+.rail .note{margin-top:16px;max-width:44ch}
+
+/* Pain */
+.pains{display:grid;border-top:1px solid var(--l-line)}
+@media (min-width:800px){.pains{grid-template-columns:repeat(3,1fr)}}
+.pain{padding:30px 28px 32px 0;border-bottom:1px solid var(--l-line)}
+@media (min-width:800px){.pain{padding:32px 28px 36px}.pain:nth-child(3n+1){padding-left:0}.pain:not(:nth-child(3n+1)){border-left:1px solid var(--l-line)}}
+.pain .n{font-family:var(--serif);font-size:20px;font-style:italic;color:var(--l-mute)}
+.pain h3{font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.15;margin-top:10px;text-wrap:balance}
+.pain p{color:var(--l-body);font-size:15px;margin-top:10px}
+.pain-out{margin-top:48px;font-family:var(--serif);font-size:clamp(26px,3vw,38px);line-height:1.2;max-width:28ch;text-wrap:balance}
+.pain-out em{font-style:italic}
+
+/* Before / after */
+.ba{display:grid;gap:48px;align-items:center}
+@media (min-width:940px){.ba{grid-template-columns:1fr 1fr;gap:80px}}
+.ba-list{margin-top:36px;border-top:1px solid var(--d-line)}
+.ba-list li{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--d-line);font-size:15px}
+.ba-list li span:first-child{color:var(--d-mute);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.3)}
+.ba-list li.lbl span{text-decoration:none;font-size:10.5px;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:var(--d-mute)}
+.phone{position:relative;width:min(330px,100%);max-width:100%;margin:0 auto;aspect-ratio:9/18.5;border-radius:42px;padding:11px;background:#0b0b0b;box-shadow:0 50px 90px -40px rgba(0,0,0,.9),inset 0 0 0 1.5px #3a3a3a}
+.screen{position:relative;width:100%;height:100%;border-radius:32px;overflow:hidden;background:#fff}
+.layer{position:absolute;inset:0;overflow:hidden}
+.after{clip-path:inset(0 0 0 var(--pos,50%))}
+.ba-handle{position:absolute;top:0;bottom:0;left:var(--pos,50%);width:2px;margin-left:-1px;background:#fff;z-index:3;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.ba-handle::after{content:"";position:absolute;top:50%;left:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233A1011' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l-6 6 6 6M15 6l6 6-6 6'/%3E%3C/svg%3E") center/20px no-repeat;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.ba-range{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;z-index:4;margin:0}
+.phone:focus-within{outline:1px solid #fff;outline-offset:6px}
+.ba-tags{position:absolute;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;z-index:2;pointer-events:none}
+.ba-tags span{font-size:9.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;padding:4px 9px;border-radius:2px;background:rgba(0,0,0,.72);color:#fff}
+.old{background:#ECE9E2;color:#333;font-family:"Times New Roman",Times,serif;padding:46px 14px 14px;font-size:11px;line-height:1.35}
+.old .ob{background:#1f3f7a;color:#FFE97A;text-align:center;font-size:17px;font-weight:700;padding:8px;font-style:italic}
+.old .marq{background:#FFE97A;color:#1f3f7a;font-size:10px;padding:3px 6px;margin-top:4px;white-space:nowrap;overflow:hidden}
+.old .img{margin-top:10px;height:96px;background:repeating-linear-gradient(45deg,#d6d2c8 0 6px,#cdc8bd 6px 12px);display:grid;place-items:center;color:#8a8577;font-family:Arial,sans-serif;font-size:10px;border:1px solid #bbb}
+.old p{margin-top:9px}
+.old u{color:#1a0dab}
+.old .pdf{margin-top:9px;display:inline-block;border:1px outset #ccc;background:#f2f2f2;padding:3px 6px;font-family:Arial,sans-serif;font-size:10px;color:#1a0dab}
+.old .tiny{font-size:8.5px;color:#666;margin-top:10px}
+.old .cnt{margin-top:10px;font-family:Arial,sans-serif;font-size:9px;color:#666;text-align:center}
+.new{background:var(--wine);color:#fff;font-family:var(--sans)}
+.new .nimg{height:52%;position:relative;background:radial-gradient(circle at 68% 38%,#E9B266 0 11%,transparent 12%),radial-gradient(circle at 68% 38%,#5A2A14 0 23%,transparent 24%),radial-gradient(ellipse at 25% 85%,#3E5B3A 0 28%,transparent 29%),linear-gradient(160deg,#4A2A22,#1B0405)}
+.new .nimg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(27,4,5,0) 40%,var(--wine))}
+.new .nnav{position:absolute;top:46px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;z-index:2}
+.new .nnav b{font-family:var(--serif);font-size:18px;letter-spacing:0;text-transform:none;font-weight:400}
+.new .nbody{padding:0 18px;margin-top:-62px;position:relative;z-index:2}
+.new .open{font-size:10px;color:#A9E8C0;display:flex;align-items:center;gap:6px}
+.new .open::before{content:"";width:6px;height:6px;border-radius:50%;background:#6FE39A}
+.new h4{font-family:var(--serif);font-weight:400;font-size:30px;line-height:1;margin-top:8px}
+.new h4 em{font-style:italic}
+.new .nsub{font-size:11px;color:rgba(255,255,255,.65);margin-top:6px}
+.new .nbtn{margin-top:14px;background:#fff;color:var(--wine);border-radius:2px;text-align:center;font-weight:500;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:13px}
+.new .nchips{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.new .nchips span{font-size:10px;border:1px solid rgba(255,255,255,.25);border-radius:2px;padding:4px 8px}
+.new .nmenu{margin-top:12px;font-size:11px;display:grid;gap:6px}
+.new .nmenu div{display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:5px}
+
+/* Calculator */
+.calc{display:grid;gap:40px;border-top:1px solid var(--l-line);padding-top:12px}
+@media (min-width:940px){.calc{grid-template-columns:1.1fr .9fr;gap:80px}}
+.field{display:grid;gap:10px;padding-block:22px;border-bottom:1px solid var(--l-line)}
+.field label{display:flex;justify-content:space-between;align-items:baseline;gap:16px;font-weight:400;font-size:16px;color:var(--burgundy)}
+.field output{font-family:var(--serif);font-size:30px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.field small{color:var(--l-mute);font-size:13px;line-height:1.5}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:26px;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--burgundy) var(--fill,50%),var(--l-line) var(--fill,50%))}
+input[type=range]::-moz-range-track{height:2px;background:linear-gradient(90deg,var(--burgundy) var(--fill,50%),var(--l-line) var(--fill,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--white);border:1.5px solid var(--burgundy);margin-top:-10px;box-shadow:0 2px 8px rgba(58,16,17,.2)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--white);border:1.5px solid var(--burgundy)}
+.receipt{background:var(--ticket);color:var(--ticket-ink);font-family:var(--mono);font-size:13.5px;line-height:1.6;padding:28px 24px 36px;align-self:start;box-shadow:0 30px 50px -30px rgba(58,16,17,.45),0 0 0 1px rgba(58,16,17,.06);
+  -webkit-mask:radial-gradient(circle 6px at 50% 100%,transparent 98%,#000) 0 0/14px 100% repeat-x;mask:radial-gradient(circle 6px at 50% 100%,transparent 98%,#000) 0 0/14px 100% repeat-x}
+.receipt h3{text-align:center;font-family:var(--serif);font-weight:400;font-size:26px;line-height:1}
+.receipt .sm{text-align:center;color:var(--ticket-mute);font-size:11px;margin-top:6px;letter-spacing:.08em;text-transform:uppercase}
+.receipt hr{border:0;border-top:1px dashed #cbc1bc;margin:14px 0}
+.receipt .row{display:flex;justify-content:space-between;gap:10px;padding:2px 0;font-variant-numeric:tabular-nums}
+.receipt .tot{font-weight:500}
+.receipt .loss{color:var(--bad)} .receipt .win{color:var(--ok)}
+.receipt .pay{margin-top:18px;padding:16px;border:1px solid var(--ticket-ink);text-align:center;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.receipt .pay b{display:block;font-family:var(--serif);font-weight:400;font-size:46px;line-height:1;letter-spacing:0;text-transform:none;margin-top:6px}
+.calc .note{margin-top:16px}
+
+/* Features */
+.feat{display:grid;border-top:1px solid var(--d-line)}
+@media (min-width:700px){.feat{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1040px){.feat{grid-template-columns:repeat(3,1fr)}}
+.feat article{padding:34px 28px 38px 0;border-bottom:1px solid var(--d-line);display:flex;flex-direction:column;gap:10px}
+@media (min-width:1040px){.feat article{padding:34px 28px 38px}.feat article:nth-child(3n+1){padding-left:0}.feat article:not(:nth-child(3n+1)){border-left:1px solid var(--d-line)}}
+@media (min-width:700px) and (max-width:1039px){.feat article{padding:34px 24px 38px}.feat article:nth-child(odd){padding-left:0}.feat article:nth-child(even){border-left:1px solid var(--d-line)}}
+.feat .n{font-family:var(--serif);font-size:44px;line-height:1;color:var(--d-mute)}
+.feat h3{font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.15;margin-top:14px}
+.feat p{color:var(--d-body);font-size:15px}
+.feat .why{margin-top:auto;padding-top:10px;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--white)}
+
+/* Types */
+.tabs{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid var(--l-line);scrollbar-width:thin}
+.tabs button{flex:0 0 auto;border:0;background:transparent;padding:14px 22px 16px 0;margin-right:22px;font-size:11.5px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:var(--l-mute);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--burgundy);border-bottom-color:var(--burgundy)}
+.panel{display:grid;gap:36px;padding-top:44px}
+@media (min-width:900px){.panel{grid-template-columns:1fr 1fr;gap:80px}}
+.panel h3{font-family:var(--serif);font-weight:400;font-size:clamp(30px,3.4vw,42px);line-height:1.08;text-wrap:balance}
+.panel h3 em{font-style:italic}
+.panel p{color:var(--l-body);margin-top:18px;max-width:46ch}
+.panel ul{border-top:1px solid var(--l-line)}
+.panel li{padding:15px 0;border-bottom:1px solid var(--l-line);display:flex;gap:16px;font-size:15.5px;color:var(--l-body)}
+.panel li::before{content:"—";color:var(--l-mute)}
+.panel .kpi{margin-top:28px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.panel .kpi b{font-family:var(--serif);font-weight:400;font-size:52px;line-height:1}
+.panel .kpi span{font-size:13px;color:var(--l-mute);max-width:24ch;line-height:1.5}
+
+/* Reviews */
+.reviews{display:grid;border-top:1px solid var(--d-line)}
+@media (min-width:900px){.reviews{grid-template-columns:1.4fr 1fr 1fr}}
+.review{padding:34px 32px 34px 0;border-bottom:1px solid var(--d-line);display:flex;flex-direction:column;gap:24px}
+@media (min-width:900px){.review:not(:first-child){padding-left:32px;border-left:1px solid var(--d-line)}}
+.review blockquote{font-family:var(--serif);font-size:23px;line-height:1.35}
+.review:first-child blockquote{font-size:clamp(26px,2.6vw,32px);line-height:1.25}
+.review figcaption{margin-top:auto;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--d-mute)}
+.review figcaption b{color:var(--white);font-weight:500}
+.reviews-foot{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;margin-top:40px}
+.score{font-family:var(--serif);font-size:56px;line-height:1}
+.score small{font-family:var(--sans);font-size:13px;color:var(--d-mute);margin-left:10px;letter-spacing:0}
+
+/* Steps */
+.steps{display:grid;border-top:1px solid var(--l-line)}
+@media (min-width:900px){.steps{grid-template-columns:repeat(4,1fr)}}
+.step{padding:34px 28px 36px 0;border-bottom:1px solid var(--l-line)}
+@media (min-width:900px){.step{border-bottom:0}.step:not(:first-child){padding-left:28px;border-left:1px solid var(--l-line)}}
+.step .n{font-family:var(--serif);font-size:64px;line-height:1}
+.step h3{font-family:var(--serif);font-weight:400;font-size:25px;line-height:1.2;margin-top:24px}
+.step p{color:var(--l-body);font-size:15px;margin-top:10px}
+.step .t{display:inline-block;margin-top:16px;font-size:10.5px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:var(--l-mute)}
+
+/* Pricing */
+.offer{display:grid;gap:0;border:1px solid var(--l-line);border-radius:4px;overflow:hidden}
+@media (min-width:940px){.offer{grid-template-columns:1fr 1.1fr}}
+.offer-price{background:var(--wine);color:var(--white);padding:clamp(28px,4vw,52px);display:flex;flex-direction:column;gap:20px}
+.bill{display:inline-flex;align-self:flex-start;border:1px solid var(--d-edge);border-radius:2px}
+.bill button{border:0;background:transparent;color:var(--d-mute);padding:10px 16px;font-size:10.5px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase}
+.bill button[aria-pressed="true"]{background:var(--white);color:var(--wine)}
+.offer-price .amount{font-family:var(--serif);font-size:clamp(64px,8vw,96px);line-height:.95;font-variant-numeric:tabular-nums}
+.amount small{font-size:.32em;color:var(--d-mute);margin-left:6px}
+.offer-price p:not(.amount):not(.label){color:var(--d-body);font-size:15px;max-width:40ch}
+.offer-price .btn{align-self:stretch;margin-top:auto}
+.offer-list{padding:clamp(28px,4vw,52px)}
+.offer-list h3{font-family:var(--serif);font-weight:400;font-size:30px;line-height:1.1}
+.offer-list ul{margin-top:22px;border-top:1px solid var(--l-line)}
+.offer-list li{padding:13px 0;border-bottom:1px solid var(--l-line);display:flex;gap:14px;font-size:15.5px;color:var(--l-body)}
+.offer-list li::before{content:"✓";color:var(--ok);font-weight:500}
+.extras{display:grid;gap:0;margin-top:28px}
+@media (min-width:700px){.extras{grid-template-columns:repeat(3,1fr)}}
+.extra{padding:24px 24px 24px 0;border-top:1px solid var(--l-line)}
+@media (min-width:700px){.extra:not(:first-child){padding-left:24px;border-left:1px solid var(--l-line)}}
+.extra h4{font-family:var(--serif);font-weight:400;font-size:22px}
+.extra p{font-size:14.5px;color:var(--l-body);margin-top:6px}
+.extra span{display:block;margin-top:10px;font-size:10.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--l-mute)}
+.guar{margin-top:40px;display:grid;gap:8px;padding:28px 0 0;border-top:1px solid var(--l-line);max-width:760px}
+.guar h3{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1.15}
+.guar h3 em{font-style:italic}
+.guar p{color:var(--l-body)}
+
+/* FAQ */
+.faq{border-top:1px solid var(--l-line);max-width:900px}
+.faq details{border-bottom:1px solid var(--l-line)}
+.faq summary{list-style:none;cursor:pointer;padding:24px 0;font-family:var(--serif);font-size:24px;line-height:1.25;display:flex;justify-content:space-between;gap:20px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-family:var(--sans);font-weight:300;font-size:26px;line-height:1;color:var(--l-mute);transition:transform .3s var(--ease)}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{padding-bottom:26px;color:var(--l-body);max-width:64ch}
+
+/* Final */
+.final .wrap{display:grid;gap:56px}
+@media (min-width:980px){.final .wrap{grid-template-columns:1fr 1fr;gap:80px;align-items:start}}
+.final .h2{max-width:14ch}
+.promise{margin-top:40px;border-top:1px solid var(--d-line)}
+.promise li{padding:14px 0;border-bottom:1px solid var(--d-line);font-size:15px;color:var(--d-body);display:flex;gap:14px}
+.promise li::before{content:"—";color:var(--d-mute)}
+.form{background:var(--white);color:var(--burgundy);border-radius:4px;padding:clamp(26px,4vw,44px);display:grid;gap:22px}
+.form h3{font-family:var(--serif);font-weight:400;font-size:32px;line-height:1.1}
+.form .sub{color:var(--l-body);font-size:15px;margin-top:-12px}
+.form .row2{display:grid;gap:22px}
+@media (min-width:540px){.form .row2{grid-template-columns:1fr 1fr}}
+.form label{display:grid;gap:6px;font-size:10.5px;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:var(--l-mute)}
+.form input,.form select{font:inherit;font-family:var(--sans);font-size:16px;font-weight:300;letter-spacing:0;text-transform:none;color:var(--burgundy);background:transparent;border:0;border-bottom:1px solid var(--l-edge);border-radius:0;padding:10px 0;min-height:46px;width:100%}
+.form input::placeholder{color:rgba(58,16,17,.35)}
+.form input:focus,.form select:focus{outline:none;border-bottom-color:var(--burgundy)}
+.form .btn{width:100%}
+.form .fine{font-size:12.5px;color:var(--l-mute);text-align:center}
+.ok{display:grid;gap:12px;text-align:center;padding:30px 6px}
+.ok b{font-family:var(--serif);font-weight:400;font-size:34px}
+.ok p{color:var(--l-body)}
+
+footer{background:var(--wine);color:var(--d-mute);padding-block:32px;font-size:13px;border-top:1px solid var(--d-line)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+footer b{font-family:var(--serif);font-weight:400;font-size:20px;color:var(--white)}
+
+.sticky{position:fixed;left:0;right:0;bottom:0;z-index:55;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:var(--wine);border-top:1px solid var(--d-line);transform:translateY(110%);transition:transform .35s var(--ease)}
+.sticky.show{transform:none}
+.sticky .btn{width:100%;background:var(--white);color:var(--wine);border-color:var(--white)}
+@media (min-width:760px){.sticky{display:none}}
+@media (max-width:759px){footer{padding-bottom:100px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#top">Mediawow<small>Horeca</small></a>
+    <nav aria-label="Hoofdmenu">
+      <a href="#rekenen">Rekensom</a>
+      <a href="#werk">Per type zaak</a>
+      <a href="#prijs">Prijs</a>
+      <a href="#faq">Vragen</a>
+    </nav>
+    <a class="btn btn-solid" href="#kennismaken" style="background:#fff;color:#1B0405;border-color:#fff">Gratis scan</a>
+  </div>
+</header>
+
+<main id="top">
+<!-- HERO -->
+<section class="hero dark">
+  <div class="wrap">
+    <div>
+      <p class="label">Mediawow · Horecawebsites uit Rhenen</p>
+      <h1>Websites die tafels vullen in jouw <span class="woord" id="woord">restaurant</span>.<span class="dim">Zonder commissie.</span></h1>
+      <div class="intro">
+        <p>Gasten reserveren via <b>je eigen website</b> in plaats van via een platform dat per couvert rekent. Je menu pas je zelf aan op je telefoon. En je praat van begin tot eind met mij, niet met een accountmanager.</p>
+        <div>
+          <div class="hero-cta">
+            <a class="btn btn-solid" href="#kennismaken">Vraag je gratis scan aan
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10h13m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <a class="btn btn-line" href="#rekenen">Bereken wat je misloopt</a>
+          </div>
+          <p class="trust"><span><span class="stars">★★★★★</span> 5,0 · 13 Google-reviews</span><span>Website en domein op jouw naam</span></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="rail" aria-label="Voorbeeld van binnenkomende reserveringen via een eigen website">
+      <div class="rail-head"><span class="label live"><i></i>Bonnenrail</span><span class="label">Vrijdagavond</span></div>
+      <div class="rail-bar"></div>
+      <div class="tickets" id="tickets"></div>
+      <p class="note">Zo ziet een vrijdag eruit als gasten via je eigen website boeken. Elke bon is een tafel zonder afdracht aan een platform.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label">Herken je dit?</p><h2 class="h2">Je keuken is goed. Je website <em>kost</em> je gasten.</h2></div>
+      <p class="lede">Iemand zoekt om kwart voor zeven nog een tafel. Binnen tien seconden beslist die of het jouw zaak wordt of de buren.</p>
+    </div>
+    <div class="pains">
+      <div class="pain"><span class="n">i.</span><h3>De telefoon gaat midden in de spits</h3><p>Niemand neemt op, en die tafel van vier boekt ergens anders.</p></div>
+      <div class="pain"><span class="n">ii.</span><h3>Je menukaart is een PDF van 4 MB</h3><p>Op een telefoon is hij onleesbaar. De gast haakt af voordat hij je gerechten heeft gezien.</p></div>
+      <div class="pain"><span class="n">iii.</span><h3>Je betaalt per couvert aan een platform</h3><p>Ook voor vaste gasten die jou allang kenden en je gewoon googelden.</p></div>
+      <div class="pain"><span class="n">iv.</span><h3>Google toont oude openingstijden</h3><p>Gasten staan voor een dichte deur, of komen helemaal niet.</p></div>
+      <div class="pain"><span class="n">v.</span><h3>Je Instagram is mooier dan je website</h3><p>De eerste indruk online past niet meer bij hoe je zaak voelt.</p></div>
+      <div class="pain"><span class="n">vi.</span><h3>Je zoekt personeel, maar niemand vindt je</h3><p>Zonder vacaturepagina hang je af van dure vacaturesites.</p></div>
+    </div>
+    <p class="pain-out">Een horecawebsite heeft één taak: van iemand met trek een <em>gast aan tafel</em> maken. In drie tikken.</p>
+  </div>
+</section>
+
+<!-- BEFORE / AFTER -->
+<section class="dark">
+  <div class="wrap ba">
+    <div>
+      <p class="label">Voor en na</p>
+      <h2 class="h2">Sleep, en zie wat je gast <em>ziet</em>.</h2>
+      <p class="lede">Zo ziet je zaak eruit op de telefoon van iemand die om 18:40 nog een tafel zoekt.</p>
+      <ul class="ba-list">
+        <li class="lbl"><span>Nu</span><span>Met Mediawow</span></li>
+        <li><span>“Bel tussen 14 en 16 uur”</span><span>Reserveren in 3 tikken, dag en nacht</span></li>
+        <li><span>Menukaart als PDF</span><span>Menu dat je zelf aanpast op je telefoon</span></li>
+        <li><span>Traag op mobiel</span><span>Snel, ook op 4G aan de bar</span></li>
+        <li><span>Onvindbaar op “restaurant + stad”</span><span>Lokale SEO en Google-profiel op orde</span></li>
+      </ul>
+    </div>
+    <div class="phone" id="ba" style="--pos:50%">
+      <div class="screen">
+        <div class="layer old" aria-hidden="true">
+          <div class="ob">~ Welkom bij Eetcafé De Hoek ~</div>
+          <div class="marq">*** NIEUW: ONZE WINTERKAART IS ER!!! *** NIEUW: ONZE WINTERKAART IS ER!!! ***</div>
+          <div class="img">[ afbeelding kan niet worden geladen ]</div>
+          <p>Wij heten u van harte welkom op onze website. Al sinds 1998 staan wij klaar voor al uw feesten, partijen, diners en meer. Kijk gerust rond!</p>
+          <span class="pdf">📄 Menukaart_2019_DEF_nieuw.pdf (4,2 MB)</span>
+          <p>Reserveren? Bel ons op <u>tel</u> tussen 14:00 en 16:00 uur.</p>
+          <p class="tiny">Openingstijden: zie Facebook. Op feestdagen kunnen afwijkende tijden gelden. © 2017</p>
+          <p class="cnt">U bent bezoeker nr. 004127</p>
+        </div>
+        <div class="layer new after" aria-hidden="true">
+          <div class="nimg"></div>
+          <div class="nnav"><b>De Hoek</b><span>Menu · Over · EN</span></div>
+          <div class="nbody">
+            <p class="open">Vandaag open tot 23:00</p>
+            <h4>Eerlijk eten <em>op de hoek.</em></h4>
+            <p class="nsub">Seizoenskeuken · Terras op het zuiden</p>
+            <div class="nbtn">Reserveer een tafel</div>
+            <div class="nchips"><span>Vanavond 19:30 ✓</span><span>2 pers.</span><span>Terras</span></div>
+            <div class="nmenu"><div><span>Pompoensoep, salie</span><span>8,5</span></div><div><span>Hertenstoof, rode kool</span><span>24</span></div><div><span>Tarte tatin</span><span>9,5</span></div></div>
+          </div>
+        </div>
+        <div class="ba-tags"><span>Nu</span><span>Straks</span></div>
+        <div class="ba-handle"></div>
+      </div>
+      <input class="ba-range" id="ba-range" type="range" min="0" max="100" value="50" aria-label="Vergelijk de oude en de nieuwe website">
+    </div>
+  </div>
+</section>
+
+<!-- CALCULATOR -->
+<section id="rekenen">
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label">De rekensom</p><h2 class="h2">Wat kost een reserveringsplatform je <em>per jaar</em>?</h2></div>
+      <p class="lede">Vul je eigen cijfers in. De meeste ondernemers schrikken van het bedrag onderaan de bon.</p>
+    </div>
+    <div class="calc">
+      <div>
+        <div class="field">
+          <label for="c-res">Reserveringen per maand via platforms <output id="o-res"></output></label>
+          <input id="c-res" type="range" min="20" max="1200" step="10" value="300">
+        </div>
+        <div class="field">
+          <label for="c-pers">Gasten per reservering <output id="o-pers"></output></label>
+          <input id="c-pers" type="range" min="1" max="8" step="0.1" value="2.6">
+        </div>
+        <div class="field">
+          <label for="c-fee">Commissie per couvert <output id="o-fee"></output></label>
+          <input id="c-fee" type="range" min="0.5" max="4" step="0.25" value="2">
+          <small>Kijk op je laatste factuur. Sommige platforms rekenen per reservering of een vast bedrag per maand.</small>
+        </div>
+        <div class="field">
+          <label for="c-share">Deel dat straks direct boekt <output id="o-share"></output></label>
+          <input id="c-share" type="range" min="10" max="90" step="5" value="60">
+          <small>Vaste en terugkerende gasten boeken het snelst via je eigen website.</small>
+        </div>
+      </div>
+      <div>
+        <div class="receipt" aria-live="polite">
+          <h3>Jouw rekening</h3>
+          <p class="sm">per jaar · jouw cijfers</p>
+          <hr>
+          <div class="row"><span>Couverts via platform</span><span id="r-cov"></span></div>
+          <div class="row tot loss"><span>Commissie nu</span><span id="r-cost"></span></div>
+          <hr>
+          <div class="row"><span>Naar eigen website</span><span id="r-share"></span></div>
+          <div class="row tot win"><span>Bespaard per jaar</span><span id="r-save"></span></div>
+          <div class="row"><span>Website vanaf</span><span>€ 2.995</span></div>
+          <div class="pay">Terugverdiend in<b id="r-pay"></b></div>
+        </div>
+        <p class="note">Indicatie. Nieuwe gasten die je via Google vinden, zitten hier nog niet in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="dark">
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label">Wat ik voor je maak</p><h2 class="h2">Alles wat een zaak nodig heeft. <em>Niets</em> wat je niet gebruikt.</h2></div>
+      <p class="lede">Ontwerp, bouw, teksten en onderhoud uit één hand. Zo klopt alles, van je menukaart tot je Google-profiel.</p>
+    </div>
+    <div class="feat">
+      <article><span class="n">01</span><h3>Direct reserveren</h3><p>Koppeling met Zenchef, Formitable, Resengo of TheFork, of een eigen reserveringsmodule.</p><span class="why">Geen commissie op directe boekingen</span></article>
+      <article><span class="n">02</span><h3>Menukaart die je zelf aanpast</h3><p>Geen PDF. Een gerecht toevoegen of een prijs wijzigen doe je in twee minuten op je telefoon.</p><span class="why">Seizoenskaart direct online</span></article>
+      <article><span class="n">03</span><h3>Gevonden in je stad</h3><p>Lokale SEO en een volledig ingericht Google-bedrijfsprofiel met de juiste tijden en foto's.</p><span class="why">Zichtbaar op “restaurant + stad”</span></article>
+      <article><span class="n">04</span><h3>Meertalig</h3><p>Nederlands, Engels en Duits. Toeristen en zakelijke gasten reserveren in hun eigen taal.</p><span class="why">Meer internationale gasten</span></article>
+      <article><span class="n">05</span><h3>Arrangementen en cadeaubonnen</h3><p>Verkoop groepsmenu's, high tea en cadeaukaarten direct via je website.</p><span class="why">Omzet op rustige dagen</span></article>
+      <article><span class="n">06</span><h3>Vacaturepagina</h3><p>Laat zien hoe het is om bij jou te werken. Sollicitaties komen rechtstreeks bij jou binnen.</p><span class="why">Minder afhankelijk van vacaturesites</span></article>
+    </div>
+  </div>
+</section>
+
+<!-- TYPES -->
+<section id="werk">
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label">Per type zaak</p><h2 class="h2">Een café verkoopt sfeer. Een hotel verkoopt <em>nachten</em>.</h2></div>
+      <p class="lede">Daarom begint jouw website niet bij een sjabloon, maar bij wie er bij je binnenloopt en waarom ze terugkomen.</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Type horecazaak">
+      <button role="tab" id="t-0" aria-selected="true" aria-controls="p-0">Restaurant</button>
+      <button role="tab" id="t-1" aria-selected="false" aria-controls="p-1" tabindex="-1">Café &amp; bar</button>
+      <button role="tab" id="t-2" aria-selected="false" aria-controls="p-2" tabindex="-1">Hotel &amp; B&amp;B</button>
+      <button role="tab" id="t-3" aria-selected="false" aria-controls="p-3" tabindex="-1">Lunchroom</button>
+      <button role="tab" id="t-4" aria-selected="false" aria-controls="p-4" tabindex="-1">Strandpaviljoen</button>
+    </div>
+    <div class="panel" role="tabpanel" id="p-0" aria-labelledby="t-0">
+      <div><h3>Van zoeken naar <em>gereserveerd</em> in één scherm</h3><p>De reserveringsknop staat overal in beeld. Je menu laat je gerechten zien met prijzen, zodat gasten al weten wat ze gaan bestellen.</p><p class="kpi"><b>3 tikken</b><span>van Google naar een gereserveerde tafel</span></p></div>
+      <ul><li>Reserveren met live beschikbaarheid</li><li>Menu met allergenen per gerecht</li><li>Groepen, private dining en events apart aanvraagbaar</li><li>Cadeaubonnen online verkopen</li><li>Minder no-shows door bevestiging en herinnering</li></ul>
+    </div>
+    <div class="panel" role="tabpanel" id="p-1" aria-labelledby="t-1" hidden>
+      <div><h3>Laat ze de sfeer <em>proeven</em> voordat ze binnenstappen</h3><p>Beeld van een volle bar, je agenda met live muziek en de quiz, en je borrelkaart op één plek.</p><p class="kpi"><b>1 agenda</b><span>die je zelf bijhoudt vanaf je telefoon</span></p></div>
+      <ul><li>Evenementenagenda: quiz, live muziek, sport</li><li>Borrelkaart en speciaalbieren zelf beheren</li><li>Zaal of hoek reserveren voor feestjes</li><li>Instagram-feed automatisch op je website</li><li>Openingstijden altijd gelijk met Google</li></ul>
+    </div>
+    <div class="panel" role="tabpanel" id="p-2" aria-labelledby="t-2" hidden>
+      <div><h3>Meer directe boekingen, <em>minder afdracht</em></h3><p>Een eigen website met boekingsmodule en een reden om direct te boeken, zoals het beste tarief of een gratis ontbijt.</p><p class="kpi"><b>15–18%</b><span>commissie die je per directe boeking zelf houdt</span></p></div>
+      <ul><li>Koppeling met je boekingssysteem of channel manager</li><li>“Beste prijs bij direct boeken” prominent in beeld</li><li>Kamers met foto's, voorzieningen en prijzen</li><li>Arrangementen met diner en overnachting</li><li>Meertalig voor buitenlandse gasten</li></ul>
+    </div>
+    <div class="panel" role="tabpanel" id="p-3" aria-labelledby="t-3" hidden>
+      <div><h3>Lunch, high tea en catering <em>goed geregeld</em></h3><p>Overdag snel gevonden worden, high tea vooraf laten boeken en zakelijke catering online laten aanvragen.</p><p class="kpi"><b>Vooraf</b><span>betaalde high tea, dus geen no-shows</span></p></div>
+      <ul><li>High tea en brunch reserveren met aanbetaling</li><li>Catering- en lunchbestellingen voor bedrijven</li><li>Dagmenu dat je 's ochtends aanpast</li><li>Afhalen zonder platformkosten</li><li>Lokale SEO voor “lunch + stad”</li></ul>
+    </div>
+    <div class="panel" role="tabpanel" id="p-4" aria-labelledby="t-4" hidden>
+      <div><h3>Het weer bepaalt je dag. <em>Je website ook.</em></h3><p>Laat met één knop zien of het terras open is, verkoop ligbedden vooraf en vul de winter met events.</p><p class="kpi"><b>1 knop</b><span>voor “terras open” vanaf je telefoon</span></p></div>
+      <ul><li>Live status: terras open of gesloten</li><li>Ligbedden en strandhuisjes vooraf boeken</li><li>Bruiloften en bedrijfsfeesten met offerteformulier</li><li>Seizoensopeningstijden automatisch</li><li>Winterprogramma en events</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section class="dark">
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label">Wat klanten zeggen</p><h2 class="h2">Niet mijn verhaal. <em>Dat van hen.</em></h2></div>
+    </div>
+    <div class="reviews">
+      <figure class="review"><blockquote>“Ik kan oprecht zeggen dat Mariska mijn go to persoon is. Haar uitleg is altijd duidelijk, direct en weloverwogen, precies afgestemd op onze bedrijven en werkwijze.”</blockquote><figcaption><b>Rody Roeleveld</b> · Google-review ★★★★★</figcaption></figure>
+      <figure class="review"><blockquote>“Mariska wist mijn wensen precies te vertalen naar een perfect ingerichte website. Zowel esthetisch als praktisch.”</blockquote><figcaption><b>Luvely Beauty</b> · Google-review ★★★★★</figcaption></figure>
+      <figure class="review"><blockquote>“Mariska heeft een geweldige website voor me gebouwd! Een must have voor m'n business.”</blockquote><figcaption><b>Danielle Lek</b> · Google-review ★★★★★</figcaption></figure>
+    </div>
+    <div class="reviews-foot"><p class="score">5,0<small>★★★★★ gemiddeld uit 13 Google-reviews</small></p></div>
+  </div>
+</section>
+
+<!-- STEPS -->
+<section>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label">Van eerste gesprek tot livegang</p><h2 class="h2">Jij runt je zaak. <em>Ik regel de rest.</em></h2></div>
+      <p class="lede">Je bent er in totaal ongeveer twee uur mee bezig, verspreid over een paar weken en nooit tijdens de dienst.</p>
+    </div>
+    <ol class="steps">
+      <li class="step"><span class="n">01</span><h3>Gratis scan</h3><p>Ik bekijk je huidige website zoals een gast dat doet en stuur je een korte video met wat beter kan.</p><span class="t">Binnen 1 werkdag reactie</span></li>
+      <li class="step"><span class="n">02</span><h3>Koffie in je zaak</h3><p>Een gesprek op een rustig moment: wie er binnenloopt, waarom ze terugkomen en waar je naartoe wilt.</p><span class="t">Vaste prijs binnen een week</span></li>
+      <li class="step"><span class="n">03</span><h3>Ontwerp, bouw en teksten</h3><p>Een ontwerp dat voelt als jouw zaak, geen template. Je geeft feedback op je eigen telefoon.</p><span class="t">Eén vast aanspreekpunt</span></li>
+      <li class="step"><span class="n">04</span><h3>Livegang en onderhoud</h3><p>Ik zet alles live, richt je Google-profiel in en blijf betrokken met hosting en onderhoud.</p><span class="t">Op jouw naam</span></li>
+    </ol>
+  </div>
+</section>
+
+<!-- PRICE -->
+<section id="prijs" style="padding-top:0">
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label">Prijs</p><h2 class="h2">Een vaste prijs. <em>Nooit</em> commissie.</h2></div>
+      <p class="lede">Je weet vooraf waar je aan toe bent. Eenmalig of gespreid, zoals het beste bij je cashflow past.</p>
+    </div>
+    <div class="offer">
+      <div class="offer-price">
+        <div class="bill" role="group" aria-label="Betaalwijze">
+          <button type="button" id="b-once" aria-pressed="true">Eenmalig</button>
+          <button type="button" id="b-month" aria-pressed="false">Gespreid</button>
+        </div>
+        <p class="label">Horecawebsite vanaf</p>
+        <p class="amount" id="amount">€2.995<small>excl. btw</small></p>
+        <p id="amount-note">Vaste prijs voor ontwerp, bouw, teksten en livegang. Liever gespreid? Dat kan ook.</p>
+        <a class="btn btn-solid" href="#kennismaken">Plan een vrijblijvende kennismaking
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10h13m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="offer-list">
+        <h3>Wat er altijd in zit</h3>
+        <ul>
+          <li>Ontwerp op maat in de sfeer van je zaak</li>
+          <li>Reserveren gekoppeld aan je eigen systeem</li>
+          <li>Menukaart die je zelf aanpast</li>
+          <li>Google-bedrijfsprofiel en lokale SEO</li>
+          <li>Teksten die klinken als jouw zaak</li>
+          <li>Perfect op mobiel, waar je gasten zoeken</li>
+          <li>Website en domein op jouw naam</li>
+        </ul>
+      </div>
+    </div>
+    <div class="extras">
+      <div class="extra"><h4>Meertalig</h4><p>Engels en Duits voor toeristen en zakelijke gasten.</p><span>Optioneel</span></div>
+      <div class="extra"><h4>Branding</h4><p>Logo, kleuren en een menukaartontwerp voor print.</p><span>Optioneel</span></div>
+      <div class="extra"><h4>Onderhoud &amp; hosting</h4><p>Snel, veilig en up-to-date. Jij hoeft je nergens zorgen over te maken.</p><span>Per maand</span></div>
+    </div>
+    <div class="guar">
+      <h3>Je ziet het ontwerp <em>voordat</em> ik bouw.</h3>
+      <p>Pas als het voelt als jouw zaak, ga ik verder. Zo weet je zeker dat het klopt.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label">Vragen</p><h2 class="h2">Wat ondernemers me het vaakst <em>vragen</em></h2></div>
+    </div>
+    <div class="faq">
+      <details open><summary>Ik heb geen tijd voor een websiteproject.</summary><p>Dat hoeft ook niet. Je bent er in totaal ongeveer twee uur mee bezig: een kennismaking in je zaak, en feedback geven op je telefoon wanneer het jou uitkomt. Teksten, ontwerp en techniek doe ik.</p></details>
+      <details><summary>Ik heb al een reserveringssysteem. Moet dat weg?</summary><p>Nee. Ik koppel Zenchef, Formitable, Resengo, TheFork en de meeste andere systemen. Het verschil is dat gasten via jouw eigen website boeken, en dan betaal je bij de meeste systemen geen commissie per couvert.</p></details>
+      <details><summary>Kan ik zelf het menu en de openingstijden aanpassen?</summary><p>Ja, vanaf je telefoon, in een paar minuten. Geen PDF's meer. Bij de oplevering laat ik je zien hoe het werkt.</p></details>
+      <details><summary>Met wie heb ik contact?</summary><p>Met mij, van het eerste gesprek tot na de livegang. Geen accountmanager of ticketsysteem. Je krijgt binnen één werkdag antwoord.</p></details>
+      <details><summary>Wie is eigenaar van de website en het domein?</summary><p>Jij. Website en domein staan op jouw naam. Ga je ooit weg, dan neem je alles mee.</p></details>
+      <details><summary>Kan ik gespreid betalen?</summary><p>Ja. Je kunt de website gespreid betalen vanaf €165 per maand. In het kennismakingsgesprek bespreken we wat het beste bij je past.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section class="final dark" id="kennismaken">
+  <div class="wrap">
+    <div>
+      <p class="label">Gratis website-scan</p>
+      <h2 class="h2">Hoeveel tafels kost je website <em>je</em> nu?</h2>
+      <p class="lede">Ik bekijk je huidige website zoals een gast dat doet, en stuur je een korte video met drie verbeterpunten. Die kun je ook zonder mij uitvoeren.</p>
+      <ul class="promise">
+        <li>Vrijblijvend, zonder verkooppraatje</li>
+        <li>Reactie binnen 1 werkdag</li>
+        <li>Website en domein altijd op jouw naam</li>
+      </ul>
+    </div>
+    <form class="form" id="scan-form" novalidate>
+      <div id="form-fields" style="display:grid;gap:22px">
+        <h3>Vraag je gratis scan aan</h3>
+        <p class="sub">Het invullen duurt een minuut.</p>
+        <div class="row2">
+          <label for="f-name">Naam<input id="f-name" name="name" autocomplete="name" required placeholder="Je voor- en achternaam"></label>
+          <label for="f-biz">Naam van je zaak<input id="f-biz" name="biz" required placeholder="Bijv. Bistro De Hoek"></label>
+        </div>
+        <div class="row2">
+          <label for="f-site">Huidige website<input id="f-site" name="site" placeholder="www.jouwzaak.nl (optioneel)"></label>
+          <label for="f-type">Type zaak<select id="f-type" name="type"><option>Restaurant</option><option>Café / bar</option><option>Hotel / B&amp;B</option><option>Lunchroom</option><option>Strandpaviljoen</option><option>Anders</option></select></label>
+        </div>
+        <label for="f-contact">E-mail of telefoon<input id="f-contact" name="contact" autocomplete="email" required placeholder="Waar mag ik de video naartoe sturen?"></label>
+        <button class="btn btn-solid" type="submit">Stuur mij de gratis scan
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10h13m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <p class="fine" id="form-msg">Vrijblijvend · Reactie binnen 1 werkdag</p>
+      </div>
+      <div class="ok" id="form-ok" hidden>
+        <b>Dank je wel</b>
+        <p>Dit is een demo-formulier, er is niets verzonden. Op de live website komt hier de bevestiging van je aanvraag.</p>
+      </div>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap"><b>Mediawow</b><span>Webdesign uit Rhenen · Websites voor horeca</span></div>
+</footer>
+
+<div class="sticky" id="sticky"><a class="btn" href="#kennismaken">Gratis website-scan aanvragen</a></div>
+
+<script>
+(function(){
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = id => document.getElementById(id);
+
+  /* Rotating word in the headline, like the Mediawow homepage */
+  const woord = $('woord'), words = ['restaurant','café','hotel','lunchroom','strandpaviljoen'];
+  let w = 0;
+  if (!reduce) setInterval(() => {
+    if (document.hidden) return;
+    woord.classList.add('out');
+    setTimeout(() => { w = (w + 1) % words.length; woord.textContent = words[w]; woord.classList.remove('out'); }, 350);
+  }, 2600);
+
+  /* Ticket rail */
+  const rail = $('tickets');
+  const pool = [
+    ['Reservering','19:30','4 pers.','raamtafel'],
+    ['Reservering','20:00','2 pers.','verjaardag'],
+    ['Groep','18:30','12 pers.','bedrijfsdiner'],
+    ['Reservering','21:15','2 pers.','terras'],
+    ['Cadeaubon','€ 75','online','betaald'],
+    ['Reservering','19:00','6 pers.','kinderstoel'],
+    ['Arrangement','18:45','2 pers.','3 gangen'],
+    ['Reservering','20:30','3 pers.','vegetarisch'],
+  ];
+  let n = 412, i = 0;
+  function ticket(d, isNew){
+    const el = document.createElement('div');
+    el.className = 'ticket' + (isNew ? ' new' : '');
+    el.innerHTML = '<span class="clip"></span><div class="no"><span>BON #0'+(n++)+'</span><span>vr</span></div>'+
+      '<div class="what">'+d[0]+'</div><div class="big">'+d[1]+'</div><div>'+d[2]+' · '+d[3]+'</div><hr>'+
+      '<div class="row"><span>Bron</span><span>eigen site</span></div><div class="row zero"><span>Commissie</span><span>€ 0,00</span></div>';
+    return el;
+  }
+  for (let k = 0; k < 4; k++) rail.appendChild(ticket(pool[i++ % pool.length]));
+  if (!reduce) setInterval(() => {
+    if (document.hidden) return;
+    rail.prepend(ticket(pool[i++ % pool.length], true));
+    while (rail.children.length > 5) rail.lastElementChild.remove();
+  }, 3200);
+
+  /* Before / after */
+  const ba = $('ba'), bar = $('ba-range');
+  bar.addEventListener('input', () => ba.style.setProperty('--pos', bar.value + '%'));
+
+  /* Calculator */
+  const eur = v => '€ ' + Math.round(v).toLocaleString('nl-NL');
+  const PRICE = 2995;
+  const fill = r => r.style.setProperty('--fill', ((r.value - r.min) / (r.max - r.min) * 100) + '%');
+  function calc(){
+    const res = +$('c-res').value, pers = +$('c-pers').value, fee = +$('c-fee').value, share = +$('c-share').value / 100;
+    $('o-res').textContent = res.toLocaleString('nl-NL');
+    $('o-pers').textContent = pers.toLocaleString('nl-NL', {minimumFractionDigits:1});
+    $('o-fee').textContent = '€ ' + fee.toLocaleString('nl-NL', {minimumFractionDigits:2});
+    $('o-share').textContent = Math.round(share * 100) + '%';
+    const cov = res * pers * 12, cost = cov * fee, save = cost * share;
+    $('r-cov').textContent = Math.round(cov).toLocaleString('nl-NL');
+    $('r-cost').textContent = eur(cost);
+    $('r-share').textContent = Math.round(share * 100) + '%';
+    $('r-save').textContent = eur(save);
+    const m = save > 0 ? Math.ceil(PRICE / (save / 12)) : Infinity;
+    $('r-pay').textContent = !isFinite(m) ? '—' : m > 36 ? '> 3 jaar' : m + (m === 1 ? ' maand' : ' maanden');
+    document.querySelectorAll('.calc input[type=range]').forEach(fill);
+  }
+  document.querySelectorAll('.calc input').forEach(r => r.addEventListener('input', calc));
+  calc();
+
+  /* Tabs */
+  const tabs = [...document.querySelectorAll('[role=tab]')];
+  function select(t){
+    tabs.forEach(x => {
+      const on = x === t;
+      x.setAttribute('aria-selected', on); x.tabIndex = on ? 0 : -1;
+      $(x.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach((t, k) => {
+    t.addEventListener('click', () => select(t));
+    t.addEventListener('keydown', e => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      const nx = tabs[(k + d + tabs.length) % tabs.length]; select(nx); nx.focus(); e.preventDefault();
+    });
+  });
+
+  /* Billing toggle */
+  const once = $('b-once'), month = $('b-month');
+  function bill(m){
+    once.setAttribute('aria-pressed', !m); month.setAttribute('aria-pressed', m);
+    $('amount').innerHTML = m ? '€165<small>per maand</small>' : '€2.995<small>excl. btw</small>';
+    $('amount-note').textContent = m
+      ? 'Gespreid betalen vanaf €165 per maand. Vaste prijs, dus je weet vooraf waar je aan toe bent.'
+      : 'Vaste prijs voor ontwerp, bouw, teksten en livegang. Liever gespreid? Dat kan ook.';
+  }
+  once.addEventListener('click', () => bill(false));
+  month.addEventListener('click', () => bill(true));
+
+  /* Form (demo) */
+  $('scan-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const empty = [...e.target.querySelectorAll('[required]')].find(x => !x.value.trim());
+    if (empty) { $('form-msg').textContent = 'Vul nog in: ' + empty.labels[0].firstChild.textContent.trim().toLowerCase() + '.'; empty.focus(); return; }
+    $('form-fields').hidden = true; $('form-ok').hidden = false;
+  });
+
+  /* Sticky mobile CTA */
+  const sticky = $('sticky');
+  let heroGone = false, formIn = false;
+  const upd = () => sticky.classList.toggle('show', heroGone && !formIn);
+  new IntersectionObserver(([e]) => { heroGone = !e.isIntersecting; upd(); }).observe(document.querySelector('.hero'));
+  new IntersectionObserver(([e]) => { formIn = e.isIntersecting; upd(); }).observe($('kennismaken'));
+})();
+</script>
