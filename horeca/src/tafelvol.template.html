@@ -4,8 +4,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,700;112,800;112,900&family=Instrument+Serif:ital@1&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* Layout: photo-led food-magazine pages with direct-response rhythm. Full-bleed photos carry emotion,
-   white paper carries the argument. Two contrasts only: cobalt (structure, like bistro enamel signs) and
+/* Layout: product-led direct-response page. No stock or generated photos: the product itself (tickets, Google result,
+   menu, confirmation) and the founder's real photo and real work carry the trust; white paper carries the argument. Two contrasts only: cobalt (structure, like bistro enamel signs) and
    butter yellow (every action). Single deliberate light look with dark photo bands; all colors explicit. */
 :root{
   --paper:#FBFAF7; --white:#FFFFFF; --ink:#16140F; --mute:#5E5A52; --line:rgba(22,20,15,.12);
@@ -33,7 +33,7 @@ img{display:block;max-width:100%;height:auto}
 @media (min-width:760px){.wrap{padding-left:max(36px,env(safe-area-inset-left,0px));padding-right:max(36px,env(safe-area-inset-right,0px))}}
 section{padding-block:clamp(72px,10vw,128px)}
 .kicker{font-family:var(--mono);font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--cobalt)}
-.h2{font-family:var(--display);font-stretch:112%;font-weight:900;font-size:clamp(38px,5.6vw,72px);line-height:.96;letter-spacing:-.025em;text-wrap:balance;margin-top:16px;max-width:16ch}
+.h2{font-family:var(--display);font-stretch:112%;font-weight:900;font-size:clamp(38px,5.6vw,72px);line-height:.96;letter-spacing:-.025em;text-wrap:balance;margin-top:16px;max-width:16ch;overflow-wrap:break-word;hyphens:auto}
 .it{font-family:var(--accent);font-style:italic;font-weight:400;letter-spacing:0;font-stretch:100%}
 .lede{font-size:clamp(18px,1.6vw,21px);color:var(--mute);max-width:56ch;margin-top:20px;text-wrap:pretty}
 .lede b{color:var(--ink);font-weight:600}
@@ -61,10 +61,7 @@ section{padding-block:clamp(72px,10vw,128px)}
 
 /* Hero */
 .hero{position:relative;color:var(--on-night);background:var(--night);padding:0;overflow:hidden;isolation:isolate}
-.hero-img{position:absolute;inset:0;z-index:-2}
-.hero-img img{width:100%;height:100%;object-fit:cover;object-position:92% 40%}
-.hero::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(12,11,9,.94) 0%,rgba(12,11,9,.78) 42%,rgba(12,11,9,.25) 75%,rgba(12,11,9,.1) 100%),linear-gradient(0deg,rgba(12,11,9,.9) 0%,transparent 40%)}
-@media (max-width:860px){.hero::after{background:linear-gradient(0deg,rgba(12,11,9,.97) 35%,rgba(12,11,9,.6) 70%,rgba(12,11,9,.35))}}
+.hero::after{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse 50% 70% at 82% 40%,rgba(30,63,216,.35),transparent 70%),radial-gradient(ellipse 40% 50% at 95% 100%,rgba(255,217,74,.10),transparent 70%)}
 .hero .wrap{padding-block:clamp(90px,12vw,150px) clamp(56px,7vw,90px);display:grid;gap:40px;align-items:end}
 @media (min-width:1000px){.hero .wrap{grid-template-columns:1fr 300px}}
 .hero .kicker{color:var(--butter)}
@@ -76,7 +73,7 @@ section{padding-block:clamp(72px,10vw,128px)}
 @media (max-width:560px){.hero-cta .btn{width:100%}}
 .hero .micro{color:var(--on-night-mute)}
 .stack{display:grid;gap:12px;justify-items:end}
-@media (max-width:999px){.stack{display:none}}
+@media (max-width:999px){.stack{justify-items:start}.stack .ticket{width:min(260px,100%)}.stack .ticket:nth-child(n+2){display:none}}
 .ticket{width:250px;background:var(--ticket);color:var(--ink);font-family:var(--mono);font-size:12.5px;line-height:1.55;padding:18px 16px 22px;box-shadow:0 30px 50px -20px rgba(0,0,0,.7);
   -webkit-mask:radial-gradient(circle 5px at 50% 100%,transparent 98%,#000) 0 0/12px 100% repeat-x;mask:radial-gradient(circle 5px at 50% 100%,transparent 98%,#000) 0 0/12px 100% repeat-x}
 .ticket:nth-child(1){transform:rotate(2deg)} .ticket:nth-child(2){transform:rotate(-1.5deg) translateX(-24px)}
@@ -156,6 +153,41 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .m li{display:flex;gap:10px}
 .m li::before{content:"";flex:0 0 18px;height:18px;margin-top:3px;border-radius:50%;background:var(--butter) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%2316140F' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
 
+
+/* Product UI mocks (method cards) */
+.m figure.ui{aspect-ratio:4/3;max-width:100%;background:#EEF0F7;display:grid;place-items:center;padding:22px;overflow:hidden}
+.m:nth-child(2) figure.ui{background:#FFF6D6}
+.m:nth-child(3) figure.ui{background:#E9F6EE}
+.g{width:100%;max-width:330px;background:#fff;border-radius:14px;box-shadow:0 20px 40px -24px rgba(22,20,15,.45);padding:14px 16px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#202124}
+.g .q{display:flex;align-items:center;gap:8px;border:1px solid #dfe1e5;border-radius:99px;padding:7px 12px;color:#202124}
+.g .q::before{content:"";width:11px;height:11px;border:2px solid #9aa0a6;border-radius:50%}
+.g .hit{margin-top:12px;padding:10px;border-radius:10px;border:2px solid var(--cobalt);background:#F5F7FF}
+.g .hit b{display:block;font-size:14px;color:#1a0dab;font-weight:600}
+.g .hit .st{color:#e37400;letter-spacing:1px}
+.g p{font-size:12px}
+.g .hit .meta{color:#4d5156;margin-top:3px;line-height:1.4}
+.g .hit .row{display:flex;gap:6px;margin-top:8px}
+.g .hit .row span{border:1px solid #dadce0;border-radius:99px;padding:3px 9px;color:#1a0dab;font-size:11px}
+.g .hit .row span:first-child{background:var(--cobalt);border-color:var(--cobalt);color:#fff}
+.g .other{margin-top:9px;padding:0 10px;color:#70757a;line-height:1.45}
+.g .other b{color:#5f6368;font-weight:600;display:block}
+.pm{width:62%;max-width:210px;aspect-ratio:9/17;background:#16140F;border-radius:26px;padding:8px;box-shadow:0 24px 40px -20px rgba(22,20,15,.6)}
+.pm .in{height:100%;border-radius:19px;background:#FFFDF6;overflow:hidden;font-size:10.5px;color:#16140F;padding:14px 12px}
+.pm .t{font-family:var(--display);font-stretch:112%;font-weight:900;font-size:15px;letter-spacing:-.02em}
+.pm .tabs{display:flex;gap:5px;margin:8px 0 10px}
+.pm .tabs span{border:1px solid rgba(22,20,15,.18);border-radius:99px;padding:2px 7px;font-size:9px}
+.pm .tabs span:first-child{background:#16140F;color:#fff;border-color:#16140F}
+.pm .it2{display:flex;justify-content:space-between;gap:6px;padding:7px 0;border-bottom:1px dashed rgba(22,20,15,.18)}
+.pm .it2 small{display:block;color:#7B766B;font-size:9px}
+.pm .it2 i{font-style:normal;font-weight:700}
+.pm .edit{margin-top:10px;background:var(--butter);border-radius:99px;text-align:center;font-weight:700;padding:7px;font-size:10px}
+.cf{width:100%;max-width:300px;display:grid;gap:10px}
+.cf .n1{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 16px 30px -20px rgba(22,20,15,.5);display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:center;font-size:12px}
+.cf .n1 i{width:30px;height:30px;border-radius:8px;background:var(--ok);color:#fff;display:grid;place-items:center;font-style:normal;font-weight:800}
+.cf .n1 b{display:block;font-size:12.5px}
+.cf .n1 span{color:#5E5A52}
+.cf .n1.dim{opacity:.6;transform:scale(.96)}
+
 /* Before / after */
 .ba{display:grid;gap:56px;align-items:center}
 @media (min-width:940px){.ba{grid-template-columns:1fr 1fr;gap:90px}}
@@ -182,8 +214,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .old .pdf{margin-top:9px;display:inline-block;border:1px outset #ccc;background:#f2f2f2;padding:3px 6px;font-family:Arial,sans-serif;font-size:10px;color:#1a0dab}
 .old .tiny{font-size:8.5px;color:#666;margin-top:10px}
 .new{background:#0F0E0B;color:#fff;font-family:var(--body)}
-.new .nimg{height:50%;position:relative;overflow:hidden}
-.new .nimg img{width:100%;height:100%;object-fit:cover}
+.new .nimg{height:50%;position:relative;overflow:hidden;background:radial-gradient(circle at 66% 40%,#E9A24A 0 10%,transparent 11%),radial-gradient(circle at 66% 40%,#5A2A14 0 22%,transparent 23%),radial-gradient(ellipse at 22% 85%,#3E5B3A 0 26%,transparent 27%),linear-gradient(160deg,#3A2A1E,#0F0E0B)}
 .new .nimg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,14,11,.35),rgba(15,14,11,0) 30%,rgba(15,14,11,0) 55%,#0F0E0B)}
 .new .nnav{position:absolute;top:44px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;font-size:10px;z-index:2}
 .new .nnav b{font-family:var(--display);font-stretch:112%;font-weight:900;font-size:16px}
@@ -203,7 +234,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .case{background:var(--white);border-radius:24px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 0 var(--line),0 30px 60px -45px rgba(22,20,15,.5)}
 .case figure{position:relative;aspect-ratio:16/10;max-width:100%;overflow:hidden;background:var(--night)}
 .case figure img{width:100%;height:100%;object-fit:cover}
-.case .demo{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:99px;background:rgba(15,14,11,.8);color:var(--butter);border:1px dashed var(--butter)}
+.case .demo{align-self:flex-start;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:99px;background:rgba(15,14,11,.8);color:var(--butter);border:1px dashed var(--butter)}
 .case-body{padding:26px;display:flex;flex-direction:column;gap:16px;flex:1}
 .case .who{font-family:var(--mono);font-size:12.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--cobalt)}
 .case h3{font-family:var(--display);font-stretch:112%;font-weight:900;font-size:clamp(22px,2.2vw,28px);line-height:1.05;letter-spacing:-.02em;text-wrap:balance}
@@ -220,6 +251,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .case blockquote{font-size:16.5px;line-height:1.5;font-weight:500;margin-top:auto;padding-top:4px}
 .case blockquote::before{content:"“";font-family:var(--accent);font-size:48px;line-height:0;vertical-align:-.35em;color:var(--cobalt);margin-right:2px}
 .case.lead{background:var(--ink);color:var(--on-night)}
+.case:not(.lead) .demo{background:transparent;color:var(--mute);border-color:var(--mute)}
 .case.lead .who{color:var(--butter)}
 .case.lead .jump b{color:var(--butter)}
 .case.lead .jump s,.case.lead dd,.case.lead .jump small{color:var(--on-night-mute)}
@@ -227,17 +259,40 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 .case.lead blockquote::before{color:var(--butter)}
 .cases-note{margin-top:18px;font-size:13.5px;color:var(--mute)}
 
+
+/* Founder */
+.founder{display:grid;gap:44px;align-items:center}
+.founder>*{min-width:0}
+@media (min-width:940px){.founder{grid-template-columns:.85fr 1.15fr;gap:72px}}
+.founder figure{position:relative;border-radius:28px;overflow:hidden;aspect-ratio:4/5;max-width:100%}
+.founder figure img{width:100%;height:100%;object-fit:cover}
+.founder figcaption{position:absolute;left:16px;bottom:16px;right:16px;background:rgba(15,14,11,.82);backdrop-filter:blur(8px);color:var(--on-night);border-radius:16px;padding:14px 16px;font-size:14px}
+.founder figcaption b{display:block;font-family:var(--display);font-stretch:112%;font-weight:900;font-size:18px;letter-spacing:-.01em}
+.founder .promise{margin-top:26px;display:grid;gap:0;border-top:1px solid var(--line)}
+.founder .promise li{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);font-size:16.5px}
+.founder .promise li b{font-family:var(--display);font-stretch:112%;font-weight:900;font-size:20px;min-width:72px;letter-spacing:-.02em}
+.work{margin-top:28px;display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center;padding:14px;border-radius:20px;background:var(--white);box-shadow:0 1px 0 var(--line)}
+.work img{width:120px;height:120px;object-fit:cover;border-radius:12px}
+.work small{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cobalt);font-weight:600}
+.work b{display:block;font-family:var(--display);font-stretch:112%;font-weight:900;font-size:20px;letter-spacing:-.01em;margin-top:2px}
+.work p{font-size:15px;color:var(--mute);margin-top:2px}
+.logos{margin-top:64px;padding-top:28px;border-top:1px solid var(--line)}
+.logos p{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.logos ul{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:18px 26px;align-items:center}
+.logos img{max-height:40px;width:auto;max-width:100%;margin:0 auto;opacity:.7;filter:grayscale(1)}
+
 /* Proof */
 .proof{background:var(--night);color:var(--on-night)}
 .proof .kicker{color:var(--butter)}
 .proof-grid{display:grid;gap:20px;margin-top:52px}
 @media (min-width:920px){.proof-grid{grid-template-columns:1.3fr 1fr}}
-.big-q{border-radius:24px;overflow:hidden;position:relative;min-height:440px;display:flex;align-items:flex-end;isolation:isolate}
+.big-q{border-radius:24px;overflow:hidden;position:relative;min-height:380px;display:flex;align-items:flex-end;isolation:isolate;background:var(--cobalt)}
 .big-q img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
-.big-q::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,rgba(12,11,9,.95) 20%,rgba(12,11,9,.2) 80%)}
+.big-q::after{content:"“";position:absolute;top:-40px;left:24px;z-index:-1;font-family:var(--accent);font-size:260px;line-height:1;color:rgba(255,255,255,.12)}
 .big-q figure{padding:34px}
 .big-q blockquote{font-family:var(--display);font-stretch:112%;font-weight:800;font-size:clamp(24px,2.6vw,32px);line-height:1.15;letter-spacing:-.015em}
 .big-q figcaption,.q figcaption{margin-top:18px;font-size:14px;color:var(--on-night-mute)}
+.big-q figcaption{color:rgba(255,255,255,.8)}
 .big-q figcaption b,.q figcaption b{color:var(--on-night)}
 .qs{display:grid;gap:20px}
 .q{border:1px solid var(--night-line);border-radius:24px;padding:30px}
@@ -297,7 +352,7 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* Final */
 .final{position:relative;color:var(--on-night);background:var(--night);isolation:isolate;overflow:hidden}
 .final>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
-.final::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(12,11,9,.95) 0%,rgba(12,11,9,.82) 50%,rgba(12,11,9,.55))}
+.final::after{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse 50% 70% at 85% 50%,rgba(30,63,216,.35),transparent 70%)}
 .final .wrap{display:grid;gap:48px}
 @media (min-width:980px){.final .wrap{grid-template-columns:1.05fr .95fr;align-items:center}}
 .final .kicker{color:var(--butter)}
@@ -343,11 +398,10 @@ footer b{color:var(--on-night)}
   </div>
 </header>
 
-<main id="top">
+<main id="top" lang="nl">
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-img"><img src="{{IMG_HERO}}" alt="Een volle bistro op vrijdagavond, alle tafels bezet" width="1600" height="900" fetchpriority="high"></div>
-  <div class="wrap">
+    <div class="wrap">
     <div>
       <p class="kicker">Voor restaurants, cafés en hotels · alleen horeca</p>
       <h1>Vrijdag vol.<span class="it">Dinsdag ook.</span></h1>
@@ -426,13 +480,13 @@ footer b{color:var(--on-night)}
     <h2 class="h2">Gevonden. Gekozen. <span class="it">Geboekt.</span></h2>
     <p class="lede">Elke gast doorloopt dezelfde drie stappen. Wij zorgen dat je ze alle drie wint, binnen een minuut, op een telefoon.</p>
     <div class="method">
-      <article class="m"><figure><img src="{{IMG_TERRACE}}" alt="Een vol terras aan de gracht in de avondzon" width="800" height="600" loading="lazy"></figure>
+      <article class="m"><figure class="ui" aria-hidden="true"><div class="g"><div class="q">restaurant utrecht centrum</div><div class="hit"><b>Bistro De Hoek</b><span class="st">★★★★★</span> 4,8 · €€ · Frans<p class="meta">Open · sluit om 23:00 · Oudegracht 12</p><div class="row"><span>Reserveren</span><span>Menu</span><span>Route</span></div></div><p class="other"><b>Restaurant Twee</b>Gesloten · opent om 17:00</p></div></figure>
         <div class="m-body"><span class="step">Stap 1 · Gevonden</span><h3>Bovenaan in je stad.</h3><p>Wie “restaurant + jouw stad” zoekt, moet jou zien. Met de juiste tijden, foto's en reviews.</p>
         <ul><li>Lokale SEO per stad en wijk</li><li>Google-profiel volledig ingericht</li><li>Snel op 4G, ook op het terras</li></ul></div></article>
-      <article class="m"><figure><img src="{{IMG_DISH}}" alt="Geroosterde pompoen met salie op een donker bord" width="800" height="600" loading="lazy"></figure>
+      <article class="m"><figure class="ui" aria-hidden="true"><div class="pm"><div class="in"><p class="t">Menukaart</p><div class="tabs"><span>Diner</span><span>Lunch</span><span>Wijn</span></div><div class="it2"><span>Pompoensoep<small>salie · pompoenpit · (V)</small></span><i>8,5</i></div><div class="it2"><span>Hertenstoof<small>rode kool · stoofpeer</small></span><i>24</i></div><div class="it2"><span>Tarte tatin<small>crème fraîche</small></span><i>9,5</i></div><div class="edit">✎ Zelf aanpassen</div></div></div></figure>
         <div class="m-body"><span class="step">Stap 2 · Gekozen</span><h3>Trek in drie seconden.</h3><p>Fotografie en een menu die meteen honger maken. Gasten weten al wat ze bestellen voordat ze binnen zijn.</p>
         <ul><li>Fotoshoot in je eigen zaak</li><li>Menu dat je zelf aanpast, geen PDF</li><li>Teksten die klinken als jouw zaak</li></ul></div></article>
-      <article class="m"><figure><img style="object-position:80% 70%" src="{{IMG_PHONE}}" alt="Een eigenaar ziet een nieuwe reservering binnenkomen op de telefoon" width="800" height="600" loading="lazy"></figure>
+      <article class="m"><figure class="ui" aria-hidden="true"><div class="cf"><div class="n1 dim"><i>✓</i><div><b>Nieuwe reservering</b><span>vr 19:00 · 2 pers. · via website</span></div></div><div class="n1"><i>✓</i><div><b>Nieuwe reservering · tafel 4</b><span>vr 19:30 · 4 pers. · commissie €0,00</span></div></div><div class="n1"><i>✓</i><div><b>Groepsaanvraag</b><span>za 18:30 · 12 pers. · bedrijfsdiner</span></div></div></div></figure>
         <div class="m-body"><span class="step">Stap 3 · Geboekt</span><h3>Drie tikken. Geen telefoon.</h3><p>Eén knop, altijd in beeld. De reservering staat direct in jouw systeem, zonder commissie.</p>
         <ul><li>Koppeling met je reserveringssysteem</li><li>Bevestiging en herinnering tegen no-shows</li><li>Groepen, arrangementen en cadeaubonnen</li></ul></div></article>
     </div>
@@ -466,7 +520,7 @@ footer b{color:var(--on-night)}
           <p class="tiny">Openingstijden: zie Facebook. Op feestdagen kunnen afwijkende tijden gelden. © 2017</p>
         </div>
         <div class="layer new after" aria-hidden="true">
-          <div class="nimg"><img src="{{IMG_DISH}}" alt=""></div>
+          <div class="nimg"></div>
           <div class="nnav"><b>De Hoek</b><span>Menu · Over · EN</span></div>
           <div class="nb">
             <p class="open">Vandaag open tot 23:00</p>
@@ -492,8 +546,7 @@ footer b{color:var(--on-night)}
     <p class="lede">Drie zaken, drie verschillende problemen. Eén ding gemeen: hun gasten boeken nu direct.</p>
     <div class="cases">
       <article class="case lead">
-        <figure><img style="object-position:95% 40%" src="{{IMG_HERO}}" alt="Volle bistro op een doordeweekse avond" width="800" height="500" loading="lazy"><span class="demo">Voorbeeldcase · fictief</span></figure>
-        <div class="case-body">
+        <div class="case-body"><span class="demo">Voorbeeldcase · fictief</span>
           <p class="who">Bistro De Hoek · Utrecht · 60 couverts</p>
           <h3>Van platform-afhankelijk naar 68% directe boekingen.</h3>
           <p class="jump"><s>22%</s><b>68%</b><small>directe reserveringen</small></p>
@@ -507,8 +560,7 @@ footer b{color:var(--on-night)}
         </div>
       </article>
       <article class="case">
-        <figure><img src="{{IMG_TERRACE}}" alt="Vol terras aan het water" width="800" height="500" loading="lazy"><span class="demo">Voorbeeldcase · fictief</span></figure>
-        <div class="case-body">
+        <div class="case-body"><span class="demo">Voorbeeldcase · fictief</span>
           <p class="who">Café Stroom · Arnhem</p>
           <h3>Quizavond elke week uitverkocht.</h3>
           <p class="jump"><s>40%</s><b>100%</b><small>bezetting events</small></p>
@@ -520,8 +572,7 @@ footer b{color:var(--on-night)}
         </div>
       </article>
       <article class="case">
-        <figure><img src="{{IMG_DISH}}" alt="Seizoensgerecht op een donker bord" width="800" height="500" loading="lazy"><span class="demo">Voorbeeldcase · fictief</span></figure>
-        <div class="case-body">
+        <div class="case-body"><span class="demo">Voorbeeldcase · fictief</span>
           <p class="who">Het Veerhuis · B&amp;B en restaurant · Wijk bij Duurstede</p>
           <h3>Kamers direct geboekt, niet via boekingssites.</h3>
           <p class="jump"><s>31%</s><b>57%</b><small>directe boekingen</small></p>
@@ -537,13 +588,34 @@ footer b{color:var(--on-night)}
   </div>
 </section>
 
+<!-- FOUNDER -->
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="founder">
+      <figure><img src="{{IMG_MARISKA}}" alt="Mariska van den Broek aan het werk" width="880" height="1100" loading="lazy"><figcaption><b>Mariska van den Broek</b>Oprichter MediaWow · Rhenen</figcaption></figure>
+      <div>
+        <p class="kicker">Wie bouwt jouw website?</p>
+        <h2 class="h2">Geen bureau met accountmanagers. <span class="it">Mij.</span></h2>
+        <p class="lede">Ik ben Mariska. Ik ontwerp, schrijf en bouw je website zelf, en ik blijf je aanspreekpunt na de livegang. Je belt of appt dus altijd met degene die je site kent.</p>
+        <ul class="promise">
+          <li><b>1</b><span>vast aanspreekpunt, van eerste koffie tot na de livegang</span></li>
+          <li><b>1 dag</b><span>is het langst dat je op antwoord wacht</span></li>
+          <li><b>100%</b><span>van je website en domein staat op jouw naam</span></li>
+        </ul>
+        <div class="work"><img src="{{IMG_MARK}}" alt="Website van Mark Minkman op een laptop" width="120" height="120" loading="lazy"><div><small>Recent culinair werk</small><b>Mark Minkman</b><p>Culinair adviseur en private chef. Website met sterke beelden en een duidelijke route naar een aanvraag.</p></div></div>
+      </div>
+    </div>
+    <div class="logos"><p>14 ondernemers gingen je voor</p><ul><li><img src="{{LOGO_01}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_02}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_03}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_04}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_05}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_06}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_07}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_08}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_09}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_10}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_11}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_12}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_13}}" alt="Logo van een MediaWow-klant" loading="lazy"></li><li><img src="{{LOGO_14}}" alt="Logo van een MediaWow-klant" loading="lazy"></li></ul></div>
+  </div>
+</section>
+
 <!-- PROOF -->
 <section class="proof">
   <div class="wrap">
     <p class="kicker">Gemaakt door MediaWow</p>
     <h2 class="h2">Wat klanten over MediaWow <span class="it">zeggen</span>.</h2>
     <div class="proof-grid">
-      <div class="big-q"><img src="{{IMG_HERO}}" alt="" loading="lazy">
+      <div class="big-q">
         <figure><p class="stars">★★★★★</p><blockquote>“Ik kan oprecht zeggen dat Mariska mijn go to persoon is. Haar uitleg is altijd duidelijk, direct en weloverwogen, precies afgestemd op onze bedrijven en werkwijze.”</blockquote><figcaption><b>Rody Roeleveld</b> · Google-review</figcaption></figure></div>
       <div class="qs">
         <figure class="q"><p class="stars">★★★★★</p><blockquote>“Mariska wist mijn wensen precies te vertalen naar een perfect ingerichte website. Zowel esthetisch als praktisch.”</blockquote><figcaption><b>Luvely Beauty</b> · Google-review</figcaption></figure>
@@ -618,8 +690,7 @@ footer b{color:var(--on-night)}
 
 <!-- FINAL -->
 <section class="final" id="scan">
-  <img src="{{IMG_TERRACE}}" alt="" loading="lazy">
-  <div class="wrap">
+    <div class="wrap">
     <div>
       <p class="kicker">Gratis website-scan</p>
       <h2 class="h2">Over vier weken boeken je gasten <span class="it">zelf.</span></h2>
