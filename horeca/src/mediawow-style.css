@@ -1,0 +1,82 @@
+/* MediaWow house style (taken from the live mediawow.nl) on top of the Tafelvol layout:
+   - very dark bordeaux #1B0405 bands, white and warm-cream light sections
+   - Instrument Serif headings (regular, one italic word), DM Sans body
+   - small tracked uppercase labels and buttons with a 2px radius, hairline dividers
+   - the yellow from the MediaWow logo is reserved for every call to action, so CTAs stay the loudest thing on the page */
+:root{
+  --display:"Instrument Serif","Didot",Georgia,serif;
+  --accent:"Instrument Serif","Didot",Georgia,serif;
+  --body:"DM Sans","Helvetica Neue",Arial,system-ui,sans-serif;
+  --paper:#FAF6F1; --white:#FFFFFF;
+  --ink:#1B0405; --mute:rgba(27,4,5,.62); --line:rgba(27,4,5,.13);
+  --cobalt:#1B0405; --cobalt-deep:#0F0203;
+  --night:#1B0405; --on-night:#FAF4ED; --on-night-mute:rgba(250,244,237,.62); --night-line:rgba(250,244,237,.14);
+  --butter:#E8F27A; --butter-hot:#F1F8A0; --on-cta:#1B0405;
+}
+body{font-size:16.5px;line-height:1.75;font-weight:300}
+b,strong{font-weight:500}
+
+/* Labels: "ONDERNEMERS DIE JE VOORGINGEN" */
+.kicker{font-family:var(--body);font-size:11px;font-weight:500;letter-spacing:.32em;color:var(--mute)}
+.hero .kicker,.calc-band .kicker,.lilou .kicker,.proof .kicker,.final .kicker,.bill2 .kicker{color:var(--on-night-mute)}
+
+/* Headings: Instrument Serif, regular weight, one italic word */
+.h2{font-weight:400;letter-spacing:-.01em;line-height:1.04;font-size:clamp(38px,5vw,64px);font-stretch:normal}
+.it{font-family:var(--accent);font-style:italic;font-weight:400;letter-spacing:0}
+.lede{font-weight:300}
+.hero h1{font-weight:400;letter-spacing:-.015em;line-height:.98;font-size:clamp(52px,8vw,108px);font-stretch:normal}
+.hero h1 .it{font-size:1em;line-height:.98;margin-top:0;color:var(--on-night-mute);display:block}
+.hero .sub{font-weight:300}
+.hero .sub b{font-weight:500}
+.calc-band .h2 .it,.lilou .h2 .it,.proof .h2 .it,.final .h2 .it,.verdict p .it{color:var(--on-night-mute)}
+.verdict p,.m h3,.tl h3,.case h3,.offer-l h3,.guarantee h3,.fit h3,.form h3,.lilou h3,.ok b{font-family:var(--display);font-weight:400;letter-spacing:-.005em;font-stretch:normal}
+.tl h3{font-size:clamp(23px,2.3vw,28px);line-height:1.2}
+.m h3{font-size:34px}
+.lilou h3{font-size:clamp(30px,3.2vw,42px)}
+.lilou h3 .it{color:var(--on-night-mute)}
+.faq summary{font-family:var(--display);font-weight:400;font-size:clamp(21px,2vw,25px);letter-spacing:0;font-stretch:normal}
+.faq summary::after{font-family:var(--body);font-weight:300;color:var(--mute)}
+/* numbers stay crisp in DM Sans */
+.field output,.receipt .pay b,.jump,.case dt,.score b,.bill2 .price,.price,.founder .promise li b,.lp-sum b{font-family:var(--body);font-weight:500;letter-spacing:-.02em;font-stretch:normal}
+.jump b{font-weight:500}
+.founder figcaption b,.work b{font-family:var(--display);font-weight:400;font-stretch:normal;font-size:22px}
+.marquee{background:var(--night);color:var(--on-night);border-block:1px solid var(--night-line);padding-block:16px}
+.marquee span{font-family:var(--display);font-weight:400;font-stretch:normal;letter-spacing:0;font-size:clamp(22px,2.6vw,32px)}
+.marquee span i{font-style:italic;color:var(--on-night-mute)}
+.marquee b{color:var(--butter);opacity:1}
+.works{background:var(--night)}
+.works span{font-family:var(--body);font-weight:500;font-stretch:normal;font-size:15px;letter-spacing:.04em}
+.card .head2 h3{font-family:var(--display);font-style:italic;font-weight:400}
+.case blockquote::before,.big-q::after{font-family:var(--display)}
+.seal{font-family:var(--body);font-weight:500;font-stretch:normal;letter-spacing:.12em;font-size:10.5px}
+.ticket .big{font-family:var(--display);font-weight:400;font-stretch:normal;font-size:38px}
+.receipt h3{font-family:var(--display);font-weight:400;font-stretch:normal;text-transform:none;font-size:30px}
+.pm .t{font-family:var(--display);font-weight:400;font-stretch:normal;font-size:18px}
+
+/* Buttons: MediaWow shape (2px, uppercase, tracked), CTA in logo yellow so it stays the loudest element */
+.btn{border-radius:2px;font-family:var(--body);font-weight:500;font-size:13px;letter-spacing:.18em;text-transform:uppercase;min-height:58px;padding:0 30px}
+.btn-quiet{border-width:1px;opacity:1;border-color:rgba(250,244,237,.4)}
+.btn-quiet:hover{border-color:currentColor}
+.top .btn{min-height:44px;font-size:11.5px;padding:0 20px}
+.sticky .btn{font-size:12.5px}
+.form .btn{font-size:13px}
+
+/* Cards: calmer corners like the live site */
+.m,.case,.calc,.offer,.big-q,.q,.score,.fit div,.form,.guarantee,.founder figure,.work,.bill2,.verdict{border-radius:6px}
+.lp,.phone{border-radius:44px}
+.score{background:var(--butter)}
+
+/* Header: logo, small tracked nav like mediawow.nl */
+.top{background:var(--night);border-bottom:1px solid var(--night-line)}
+.brand img{height:30px;width:auto;display:block}
+.brand{align-items:center}
+.brand small{font-family:var(--body);font-size:10px;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:var(--on-night-mute);padding-left:12px;border-left:1px solid var(--night-line);display:inline}
+.nav{display:none;gap:30px;font-size:11px;font-weight:500;letter-spacing:.22em;text-transform:uppercase}
+.nav a{text-decoration:none;color:var(--on-night-mute)}
+.nav a:hover{color:var(--on-night)}
+@media (min-width:1040px){.nav{display:flex}}
+
+/* Hero glow: warm, not red */
+.hero::after{background:radial-gradient(ellipse 45% 60% at 85% 45%,rgba(232,242,122,.08),transparent 70%)}
+.final::after{background:radial-gradient(ellipse 45% 60% at 85% 50%,rgba(232,242,122,.07),transparent 70%)}
+.calc-band{background:var(--night)}
