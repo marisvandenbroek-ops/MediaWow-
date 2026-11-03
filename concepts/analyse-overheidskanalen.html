@@ -1,0 +1,210 @@
+<title>Belastingdienst op Instagram</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Fira+Sans+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: één leeskolom met brede tabellen en een kaartenraster voor de lessen */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --ink:#15233a; --muted:#5a6a80; --line:#dbe2eb;
+  --accent:#a2005f; --accent-soft:#f8e8f1; --navy:#154273; --good:#2f7d32; --warn:#b26a00;
+  --display:"Fira Sans Condensed","Fira Sans",system-ui,sans-serif;
+  --body:"Fira Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0e1522;--surface:#172236;--ink:#e5ebf3;--muted:#9aa8bb;--line:#2a3851;--accent:#ff6fb5;--accent-soft:#3a1a2e;--navy:#8fb4e3;--good:#7cc77f;--warn:#f0b35a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1522;--surface:#172236;--ink:#e5ebf3;--muted:#9aa8bb;--line:#2a3851;--accent:#ff6fb5;--accent-soft:#3a1a2e;--navy:#8fb4e3;--good:#7cc77f;--warn:#f0b35a;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;margin:0;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+section{display:flex;flex-direction:column;gap:16px;min-width:0}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(30px,5vw,44px)}
+h2{font-size:26px}
+h3{font-size:18px}
+p{margin:0;max-width:68ch}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+header{display:flex;flex-direction:column;gap:12px}
+
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.summary div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:6px}
+.summary b{font-family:var(--display);font-size:19px;color:var(--navy)}
+
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+th.num{text-align:right}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--accent-soft);color:var(--accent)}
+
+.findings{display:flex;flex-direction:column;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.finding{display:grid;grid-template-columns:200px 1fr;gap:16px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.finding:last-child{border-bottom:0}
+.finding h3{font-size:16px}
+@media (max-width:640px){.finding{grid-template-columns:1fr;gap:6px}}
+q{font-style:italic}
+
+.lessons{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.lesson{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lesson .who{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.lesson .take{border-top:1px solid var(--line);padding-top:10px;font-size:15px}
+.lesson .take b{color:var(--accent)}
+
+.tips{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;counter-reset:tip}
+.tips li{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px 18px 18px 64px;position:relative;counter-increment:tip;display:flex;flex-direction:column;gap:8px}
+.tips li::before{content:counter(tip);position:absolute;left:18px;top:16px;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--surface);font-family:var(--display);font-weight:700;display:flex;align-items:center;justify-content:center}
+.ex{background:var(--accent-soft);border-radius:6px;padding:10px 12px;font-size:15px}
+.ex span{display:block;font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px}
+
+.donts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.donts div{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:6px;padding:14px 16px}
+
+.sources{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.sources ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+a{color:var(--navy)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">MediaWow · analyse november 2026</span>
+  <h1>Belastingdienst op Instagram: wat werkt er, en wat kunnen ze leren van andere overheden?</h1>
+  <p class="muted">Gebaseerd op het profiel @belastingdienstnl (29,5K volgers), screenshots van recente posts en wat er bekend is over andere overheidskanalen in Nederland en daarbuiten.</p>
+</header>
+
+<section>
+  <h2>In het kort</h2>
+  <div class="summary">
+    <div><b>De inhoud klopt</b><span class="muted">Goede onderwerpen, een herkenbare huisstijl en sterke formats zoals het chatgesprek en Feit of Fabel.</span></div>
+    <div><b>De eerste seconde niet</b><span class="muted">Covers kondigen een onderwerp aan. De beste zin staat in de caption, waar bijna niemand hem leest.</span></div>
+    <div><b>Mensen sturen het door</b><span class="muted">Eén video werd vaker gedeeld dan geliket. Belastingcontent is “stuur dit naar je ouders”-content.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Wat de cijfers laten zien</h2>
+  <p>Vier recente posts over schenkbelasting. Interactie is likes plus reacties, gedeeld door het aantal volgers.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Post</th><th>Vorm</th><th class="num">Likes</th><th class="num">Reacties</th><th class="num">Gedeeld</th><th class="num">Interactie</th></tr></thead>
+    <tbody>
+      <tr><td>Feit of Fabel: schenking in je aangifte?</td><td>Reel</td><td class="num">30</td><td class="num">3</td><td class="num">3</td><td class="num">0,11%</td></tr>
+      <tr><td>“Schenking gekregen? 🎁” <span class="pill">6 uur oud</span></td><td>Reel, 3:03</td><td class="num">11</td><td class="num">–</td><td class="num">12</td><td class="num">0,04%</td></tr>
+      <tr><td>Moet ik aangifte doen als ik een schenking krijg?</td><td>Carrousel</td><td class="num">10</td><td class="num">–</td><td class="num">1</td><td class="num">0,03%</td></tr>
+      <tr><td>“Ons bouwdepot is leeg…”</td><td>Carrousel</td><td class="num">8</td><td class="num">–</td><td class="num">1</td><td class="num">0,03%</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small muted">Een gezond Instagram-account haalt meestal enkele procenten. Bereik, opslaan en kijkduur staan alleen in de eigen Insights en zeggen meer dan likes.</p>
+</section>
+
+<section>
+  <h2>Zes bevindingen</h2>
+  <div class="findings">
+    <div class="finding"><h3>De caption is beter dan de cover</h3><p>Caption: <q>Je hebt een schenking gehad boven het vrijgestelde bedrag. Lekker! Maar, waar geef je dat eigenlijk op? 👀</q> Cover van dezelfde post: <q>Hoe zit het met schenkbelasting?</q> De hook bestaat al, alleen op de verkeerde plek.</p></div>
+    <div class="finding"><h3>Een situatie zonder inzet werkt niet</h3><p><q>Ons bouwdepot is leeg</q> is herkenbaar, maar haalde 8 likes. Je weet niet wat er voor jou op het spel staat. Eén zin erbij lost dat op: <q>Mijn ouders willen bijspringen. Moet ik dat melden?</q></p></div>
+    <div class="finding"><h3>Meedoen wint</h3><p>Feit of Fabel scoort het best, omdat je zelf een oordeel geeft. Maar de cover toont de fabel als stelling. Wie alleen scrolt, onthoudt de fout.</p></div>
+    <div class="finding"><h3>Delen is de echte maatstaf</h3><p>12 keer gedeeld bij 11 likes. Een belastingpost like je niet snel, maar je stuurt hem wel door naar wie het aangaat.</p></div>
+    <div class="finding"><h3>Zes keer dezelfde vraag</h3><p>Binnen een week zes posts over schenkbelasting, die allemaal opnieuw beginnen. Een serie die op elkaar voortbouwt, houdt mensen vast.</p></div>
+    <div class="finding"><h3>Goede hooks, maar niet consequent</h3><p><q>Camper kopen? Let dan op de inrichting!</q> en <q>Vorig jaar gescheiden?</q> werken. Ernaast staat <q>Wat is MRB?</q> Er ontbreekt geen kennis, er ontbreekt een vaste regel.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Wat andere overheden laten zien</h2>
+  <p>Zeven voorbeelden, met per voorbeeld de les voor de Belastingdienst.</p>
+  <div class="lessons">
+    <div class="lesson">
+      <span class="who">TSA · Amerikaanse luchthavenbeveiliging</span>
+      <h3>Echte voorwerpen uit het eigen werk</h3>
+      <p>Het account laat zien wat er écht in bagage gevonden is, met droge humor en een veiligheidstip. Het groeide naar ongeveer 1 miljoen volgers. De beheerder koos alleen beelden die “niet alleen vermakelijk maar ook leerzaam” waren.</p>
+      <p class="take"><b>Les:</b> laat zien wat alleen jij ziet. Voor de Belastingdienst zijn dat de fouten en vragen die elk jaar terugkomen, geanonimiseerd.</p>
+    </div>
+    <div class="lesson">
+      <span class="who">Politie · wijkagent Frans</span>
+      <h3>Eén vast gezicht</h3>
+      <p>Wijkagent Frans bereikte bijna 250.000 volgers op Instagram en TikTok en was jarenlang “hét gezicht van de politie voor jongeren”. Na zijn vertrek in 2025 zocht de politie een opvolger. Hij kreeg ook te maken met bedreigingen.</p>
+      <p class="take"><b>Les:</b> de presentatoren zijn er al. Geef ze een naam en een vaste rol, maar verdeel het over meerdere mensen zodat het account niet van één persoon afhangt.</p>
+    </div>
+    <div class="lesson">
+      <span class="who">HMRC · Britse belastingdienst</span>
+      <h3>Campagne rond een situatie</h3>
+      <p>De campagne “Help for Hustles” richt zich op mensen met een bijverdienste via online platforms. Volgens een enquête verdient 55% van de 18- tot 24-jarigen geld via TikTok of Instagram, maar heeft maar 36% van hen aangifte gedaan.</p>
+      <p class="take"><b>Les:</b> geef een campagne de naam van een situatie, zoals “Spullen verkopen online?” of “Eerste bijbaan”, en niet van een belastingsoort.</p>
+    </div>
+    <div class="lesson">
+      <span class="who">IRS · Amerikaanse belastingdienst</span>
+      <h3>Reageren op virale “tax hacks”</h3>
+      <p>De IRS waarschuwt actief voor nepbelastingtips op TikTok en Instagram. Over drie jaar legde de dienst $162 miljoen aan boetes op bij ongeveer 32.000 aangiftes met onterechte aftrek uit social media.</p>
+      <p class="take"><b>Les:</b> gebruik Feit of Fabel voor claims die écht rondgaan. Dan wordt het actualiteit in plaats van een quiz.</p>
+    </div>
+    <div class="lesson">
+      <span class="who">Washington DNR · Amerikaans natuurbeheer</span>
+      <h3>Humor stap voor stap</h3>
+      <p>Het team voegde langzaam meer humor en popcultuur toe. Intern kreeg het meer steun zodra het kon laten zien dat de informatie beter werd opgepikt.</p>
+      <p class="take"><b>Les:</b> begin klein, meet en laat de cijfers het interne gesprek voeren.</p>
+    </div>
+    <div class="lesson">
+      <span class="who">Rijkswaterstaat</span>
+      <h3>Bereik lenen</h3>
+      <p>Rijkswaterstaat staat bekend om woordgrappen en plaatste branded reels en stories via Dumpert, het grootste Nederlandstalige Instagram-account.</p>
+      <p class="take"><b>Les:</b> 29,5K volgers is een klein publiek. Samenwerken met grote accounts of creators brengt de boodschap waar de doelgroep al kijkt.</p>
+    </div>
+    <div class="lesson">
+      <span class="who">Defensie</span>
+      <h3>Groei op Instagram</h3>
+      <p>In het eerste kwartaal van 2026 groeiden de accounts van Defensie op Instagram relatief sterk en haalde het ministerie veruit de meeste interactie. Overheden posten in die periode 18% meer op Instagram.</p>
+      <p class="take"><b>Les:</b> Instagram groeit voor de overheid. Wie wil opvallen, moet meer doen dan meer posten.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>De beste tips voor de Belastingdienst</h2>
+  <ol class="tips">
+    <li><h3>Zet de beste zin uit de caption op de cover</h3><p>Schrijf eerst de caption en kies daaruit de zin met de meeste spanning. Die gaat op de cover en wordt in de eerste seconde van de Reel uitgesproken.</p><div class="ex"><span>Voorbeeld</span>“Schenking boven het vrijgestelde bedrag? Lekker. Maar waar geef je dat op?”</div></li>
+    <li><h3>Begin een vaste rubriek: “Dit zien wij elk jaar”</h3><p>Het TSA-principe: laat zien wat alleen de Belastingdienst ziet. Eén veelgemaakte fout per week, geanonimiseerd, met de oplossing.</p><div class="ex"><span>Voorbeeld</span>“Deze fout zien we elk jaar terug: twee vinkjes voor loonheffingskorting.”</div></li>
+    <li><h3>Maak delen het doel</h3><p>Schrijf de hook voor de persoon die het doorstuurt. Meet gedeeld en opgeslagen, niet likes.</p><div class="ex"><span>Voorbeeld</span>“Stuur dit naar je ouders voordat ze je verbouwing betalen.”</div></li>
+    <li><h3>Feit of Fabel over echte virale claims</h3><p>Pak claims die echt rondgaan op TikTok of Instagram. Zet “FABEL” altijd zichtbaar op de cover, zodat niemand de fout onthoudt.</p><div class="ex"><span>Voorbeeld</span>“Op TikTok zeggen ze dat je je laptop kunt aftrekken. Klopt dat?”</div></li>
+    <li><h3>Geef de presentatoren een naam en een rol</h3><p>Zoals wijkagent Frans: een vast gezicht wordt herkend en vertrouwd. Verdeel het wel over twee of drie mensen.</p><div class="ex"><span>Voorbeeld</span>“Ik ben Sanne, ik beantwoord elke week jullie vragen over schenken.”</div></li>
+    <li><h3>Bouw series in plaats van losse posts</h3><p>Maak van een campagne een verhaal met delen die op elkaar voortbouwen.</p><div class="ex"><span>Voorbeeld</span>“Deel 2: mama wil €20.000 geven. Wat nu?”</div></li>
+    <li><h3>Reels onder de 40 seconden</h3><p>Knip een video van 3 minuten op in vier korte Reels met elk een eigen hook. Die kun je ook als serie posten.</p></li>
+    <li><h3>Gebruik de vragen uit de reacties</h3><p>De bio nodigt al uit tot vragen. Maak van een veelgestelde vraag een post en zeg dat erbij, zonder iemand herkenbaar te citeren.</p><div class="ex"><span>Voorbeeld</span>“Deze vraag krijgen we elke week: moet ik mijn Vinted-verkopen opgeven?”</div></li>
+  </ol>
+</section>
+
+<section>
+  <h2>Wat je beter niet doet</h2>
+  <div class="donts">
+    <div><b>Grappen ten koste van de burger.</b> De politie kreeg tientallen kritische reacties op humor die verkeerd viel. Lach om situaties, nooit om mensen of hun geldzorgen.</div>
+    <div><b>Iemands DM citeren.</b> Hun bio zegt “Géén privé-info, ook niet in DM”. Citaten blijven algemeen of komen uit openbare reacties.</div>
+    <div><b>Een hook die meer belooft dan de post.</b> Spanning mag, maar de post geeft altijd het volledige antwoord. Pakkend, niet lokkend.</div>
+    <div><b>Zomaar naar TikTok.</b> TikTok mag niet op werktelefoons van de Rijksoverheid. Defensie onderzoekt een aparte telefoon. Eerst beleid, dan platform.</div>
+  </div>
+</section>
+
+<section class="sources">
+  <h3>Bronnen</h3>
+  <ul>
+    <li><a href="https://digiday.com/marketing/dry-sense-humor-inside-tsas-instagram-strategy/">Digiday: inside the TSA’s Instagram strategy</a></li>
+    <li><a href="https://tsa.gov/about/employee-stories/million-milestone-tsa-instagram">TSA: million milestone on Instagram</a></li>
+    <li><a href="https://www.omroepbrabant.nl/nieuws/4747012/politie-frans-stopt-met-sociale-media-we-hebben-moordzaken-opgelost">Omroep Brabant: politie Frans stopt met sociale media</a></li>
+    <li><a href="https://nos.nl/l/2298286">NOS: waarom maakt politie grappen op sociale media?</a></li>
+    <li><a href="https://www.gbnews.com/money/hmrc-alert-britons-tax-penalty">GB News: HMRC Help for Hustles</a></li>
+    <li><a href="https://www.cbsnews.com/philadelphia/news/irs-tax-hacks-social-media-tiktok/">CBS: IRS warns against viral social media tax hacks</a></li>
+    <li><a href="https://www.seattlemet.com/articles/twitter-instagram-dnr-department-of-natural-resources-won-social-media">Seattle Met: how the DNR won social media</a></li>
+    <li><a href="https://www.mediahuis.nl/en/news/dumpert-the-largest-dutch-language-instagram-account">Mediahuis: Dumpert, het grootste Nederlandstalige Instagram-account</a></li>
+    <li><a href="https://www.hartvannederland.nl/algemeen-nieuws/artikelen/vliegt-rijkswaterstaat-uit-de-bocht-met-woordgrappen-op-twitteraccount">Hart van Nederland: Rijkswaterstaat en woordgrappen</a></li>
+    <li><a href="https://2meter1.nl/defensie-immigratie-en-landbouw-de-kurk-waarop-social-media-bij-de-overheid-drijft/">2meter1 Analytics: social media bij de overheid, Q1 2026</a></li>
+    <li><a href="https://www.binnenlandsbestuur.nl/bestuur-en-organisatie/overheden-actiever-op-instagram-en-facebook">Binnenlands Bestuur: overheden actiever op Instagram</a></li>
+    <li><a href="https://eenvandaag.avrotros.nl/artikelen/tiktok-verboden-voor-overheid-maar-defensie-wil-er-toch-op-dit-is-waarom-165031">EenVandaag: TikTok verboden voor overheid, Defensie wil er toch op</a></li>
+  </ul>
+  <p class="small">Let op: de TSA-cijfers zijn uit 2017–2019. De HMRC-percentages komen uit een enquête van een zakelijk platform, niet uit een evaluatie van de campagne. Over de Douane en DUO vond ik geen bruikbare bronnen.</p>
+</section>
+
+<footer>Analyse door MediaWow. Cijfers van @belastingdienstnl zijn overgenomen van screenshots van 3 november 2026.</footer>
+</div>
