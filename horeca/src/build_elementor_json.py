@@ -187,8 +187,42 @@ def html_widget(code, title):
     return {'id': eid(), 'elType': 'widget', 'widgetType': 'html', 'settings': {'html': code, '_title': title}, 'elements': []}
 
 
-def main():
+UPLOADS = 'https://mediawow.nl/wp-content/uploads/2026/10/'
+LOGO_URLS = ['logo-winstallatie-1-1.png', 'logo-luvely-1-1.png', 'logo-house-of-brave-leaders-1-1.png', 'logo-peter-looijen-1-1.png',
+             'logo-tim-kruik-hairstudio-1-1.png', 'logo-ge-stipt-1-1.png', 'logo-brand-veilig-1-1.png', 'logo-browz-amsterdam-1-1.png',
+             'logo-an-security-1-1.png', 'logo-an-groep-nederland-1-1.png', 'logo-tuinkantoren-1-1.png', 'logo-oranjedag-rhenen-1-1.png',
+             'logo-hairstyling-stormer-1-1.png', 'logo-studio-bellai-1-1.png']
+
+
+def lighten(page):
+    """Replace inlined images with images already on mediawow.nl, so the template is small enough to paste."""
+    import base64
+
+    def data(path, mime):
+        return f'data:{mime};base64,' + base64.b64encode(path.read_bytes()).decode()
+
+    swaps = {data(here / 'img' / 'mariska.jpg', 'image/jpeg'): UPLOADS + '0D65D621-A574-4948-81C3-111563D7499C-600x750-2-1.png',
+             data(here / 'img' / 'mark-minkman.jpg', 'image/jpeg'): UPLOADS + 'mw-mockup-mark-minkman-1.jpg',
+             data(here / 'mediawow-logo.png', 'image/png'): UPLOADS + '1-3-600x133-2-4.png'}
+    for i, name in enumerate(LOGO_URLS, 1):
+        swaps[data(here / 'img' / 'logos' / f'{i:02d}.png', 'image/png')] = UPLOADS + name
+    for k, v in swaps.items():
+        assert k in page, v
+        page = page.replace(k, v)
+    # Lilou: the live-site screenshots are not hosted, so show the Lilou mockup from mediawow.nl instead
+    start = page.index('<div class="shots">')
+    end = page.index('<span class="callout">', start)
+    page = page[:start] + ('<div class="shots"><img class="mock" src="' + UPLOADS + 'mw-mockup-lilou-1.jpg" '
+                           'alt="Website van restaurant Lilou in Ede op een laptop" width="1200" height="1200" loading="lazy">\n        ') + page[end:]
+    page = page.replace('</style>', '.shots .mock{width:100%;border-radius:6px;display:block}\n</style>', 1)
+    assert 'data:image' not in page.replace('data:image/svg', ''), 'inlined raster image left'
+    return page
+
+
+def main(light=False):
     page = (here / 'mediawow-horeca.html').read_text()
+    if light:
+        page = lighten(page)
     fonts = re.search(r'<link href="https://fonts\.googleapis\.com/css2[^>]+>', page).group(0)
     css = '\n'.join(re.findall(r'<style>(.*?)</style>', page, flags=re.S))
     scoped = ELEMENTOR_GUARD + scope_css(css)
@@ -219,7 +253,7 @@ def main():
         'page_settings': {'template': 'elementor_canvas', 'hide_title': 'yes'},
         'content': [root],
     }
-    out = here / 'elementor' / 'mediawow-horeca.json'
+    out = here / 'elementor' / ('mediawow-horeca-licht.json' if light else 'mediawow-horeca.json')
     out.parent.mkdir(exist_ok=True)
     out.write_text(json.dumps(template, ensure_ascii=False, indent=1))
     print('written', out.relative_to(here), out.stat().st_size // 1024, 'KB,', len(sections), 'sections:')
@@ -229,3 +263,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    main(light=True)
