@@ -1,0 +1,416 @@
+<title>Reels die gezien worden</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+/* Layout: leeskolom; concepten als rij van cover-mockup + uitleg; covers volgen de bestaande huisstijl */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --ink:#15233a; --muted:#5a6a80; --line:#dbe2eb; --accent:#a2005f; --accent-soft:#f8e8f1;
+  --good:#2f7d32; --bad:#b3261e;
+  /* huisstijl van de covers: blijft gelijk in beide thema's */
+  --c-sky1:#8dbbe6; --c-sky2:#3d74b0; --c-navy:#154273; --c-mag:#a2005f; --c-white:#ffffff; --c-pale:#e6eef8; --c-green:#39870c; --c-yellow:#f9b625;
+  --body:"Fira Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0d1420;--surface:#162135;--ink:#e6ecf4;--muted:#9aa8bb;--line:#2a3851;--accent:#ff6fb5;--accent-soft:#3a1a2e;--good:#7cc77f;--bad:#ff8a80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1420;--surface:#162135;--ink:#e6ecf4;--muted:#9aa8bb;--line:#2a3851;--accent:#ff6fb5;--accent-soft:#3a1a2e;--good:#7cc77f;--bad:#ff8a80;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;margin:0;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:64px}
+section{display:flex;flex-direction:column;gap:18px;min-width:0}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(30px,5.5vw,46px)}
+h2{font-size:26px}
+h3{font-size:19px}
+p{margin:0;max-width:68ch}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+/* data */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:700px){.split{grid-template-columns:1fr}}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.list h3{font-size:14px;letter-spacing:.05em;text-transform:uppercase;padding:12px 16px;border-bottom:1px solid var(--line)}
+.list.top h3{color:var(--good)}
+.list.low h3{color:var(--bad)}
+.row{display:flex;justify-content:space-between;gap:12px;padding:9px 16px;border-bottom:1px solid var(--line);font-size:15px}
+.row:last-child{border-bottom:0}
+.row b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.groups{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.bar{display:grid;grid-template-columns:200px 1fr 64px;gap:12px;align-items:center;font-size:15px}
+.bar .track{height:14px;background:var(--line);border-radius:7px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);border-radius:7px}
+.bar b{font-variant-numeric:tabular-nums;text-align:right}
+@media (max-width:560px){.bar{grid-template-columns:1fr 56px}.bar .track{grid-column:1/-1;grid-row:2}}
+
+.lessons{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.lesson{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.lesson b{font-size:17px}
+
+.formula{background:var(--c-navy);color:var(--c-white);border-radius:10px;padding:26px;display:flex;flex-direction:column;gap:14px}
+.formula .eq{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:clamp(18px,3vw,24px);font-weight:700}
+.formula .eq span{background:var(--c-mag);padding:4px 12px}
+.formula .eq i{font-style:normal;opacity:.7}
+.formula p{color:#c9d8ea}
+.ba{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;font-size:15px}
+.ba .old{color:#9fb3cc;text-decoration:line-through}
+.ba .new{font-weight:600}
+
+/* ---------- cover mockups in huisstijl ---------- */
+.cv{aspect-ratio:9/16;max-width:100%;width:100%;container-type:inline-size;position:relative;overflow:hidden;border-radius:6px;background:linear-gradient(180deg,var(--c-sky1),var(--c-sky2));font-family:var(--body)}
+.cv.street{background:linear-gradient(180deg,#b9c4cf 0%,#8796a6 50%,#5a6878 100%)}
+.cv.room{background:linear-gradient(180deg,#d6cfc4 0%,#b3a796 55%,#7d705f 100%)}
+.cv.dark{background:linear-gradient(180deg,#2f3a48,#121a24)}
+.person{position:absolute;left:50%;bottom:0;width:70cqw;height:112cqw;transform:translateX(-50%)}
+.person::before{content:"";position:absolute;left:50%;top:0;width:34cqw;height:40cqw;transform:translateX(-50%);background:#24476f;border:1.6cqw solid var(--c-white);border-radius:50% 50% 46% 46%}
+.person::after{content:"";position:absolute;left:0;right:0;bottom:-2cqw;height:74cqw;background:#1d3b5e;border:1.6cqw solid var(--c-white);border-radius:30cqw 30cqw 0 0}
+.person.l{left:38%}
+.person.r{left:64%}
+.ph{position:absolute;left:6cqw;right:6cqw;top:6cqw;font-size:4cqw;font-style:italic;color:var(--c-white);opacity:.9;text-shadow:0 .4cqw 1.6cqw rgba(0,0,0,.4)}
+.lbls{position:absolute;left:5cqw;right:5cqw;bottom:20cqw;font-size:7.6cqw;z-index:3}
+.lbls.hi{bottom:auto;top:20cqw}
+.lbl{display:inline;background:var(--c-mag);color:var(--c-white);font-weight:600;padding:.12em .35em;box-decoration-break:clone;-webkit-box-decoration-break:clone;line-height:1.62}
+.tilt{transform:rotate(-3deg);transform-origin:left bottom}
+.views{position:absolute;left:5cqw;bottom:5cqw;color:var(--c-white);font-weight:700;font-size:5cqw;z-index:3;text-shadow:0 .3cqw 1.2cqw rgba(0,0,0,.5)}
+.ic{position:absolute;z-index:2}
+/* icoon: kalenderblad */
+.cal{width:30cqw;height:32cqw;background:var(--c-white);border-radius:2cqw;box-shadow:0 2cqw 5cqw rgba(0,0,0,.25);display:flex;flex-direction:column;overflow:hidden}
+.cal::before{content:attr(data-m);background:var(--c-mag);color:var(--c-white);font-size:4.4cqw;font-weight:700;text-align:center;padding:1.4cqw 0}
+.cal span{flex:1;display:flex;align-items:center;justify-content:center;font-size:15cqw;font-weight:700;color:var(--c-navy)}
+/* icoon: blauwe envelop */
+.env{width:44cqw;aspect-ratio:1.6;background:#4f7fb8;border-radius:1.2cqw;box-shadow:0 2cqw 6cqw rgba(0,0,0,.3);border:1cqw solid var(--c-white)}
+.env::before{content:"";position:absolute;left:10%;top:22%;width:38%;height:10%;background:var(--c-white);opacity:.9}
+.env::after{content:"";position:absolute;right:10%;top:18%;width:14%;height:24%;border:.5cqw solid var(--c-white);opacity:.7}
+/* icoon: biljet */
+.note{width:26cqw;height:14cqw;background:var(--c-pale);border:1cqw solid var(--c-white);border-radius:1cqw;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:8cqw;color:#3d74b0;box-shadow:0 1.5cqw 4cqw rgba(0,0,0,.2)}
+/* icoon: sleutel / ringen / bubbel */
+.key{width:22cqw;height:22cqw;border:3cqw solid var(--c-white);border-radius:50%}
+.key::after{content:"";position:absolute;left:50%;top:100%;width:4cqw;height:22cqw;background:var(--c-white);transform:translateX(-50%)}
+.rings{width:34cqw;height:20cqw}
+.rings::before,.rings::after{content:"";position:absolute;top:0;width:20cqw;height:20cqw;border:2.6cqw solid var(--c-white);border-radius:50%}
+.rings::before{left:0}.rings::after{right:0}
+.card{background:var(--c-white);color:var(--c-navy);border-radius:2cqw;padding:3cqw 4cqw;font-size:4.8cqw;line-height:1.3;font-style:italic;box-shadow:0 2cqw 5cqw rgba(0,0,0,.2);width:78cqw}
+.ff{display:flex;justify-content:space-between;margin-top:2cqw;font-style:normal;font-weight:700;font-size:5cqw}
+.ff b{padding:.6cqw 2cqw;color:var(--c-white)}
+.ff .f1{background:var(--c-green)}.ff .f2{background:var(--c-mag)}
+.vs{display:flex;gap:3cqw}
+.vs span{background:var(--c-white);color:var(--c-navy);font-weight:700;font-size:6cqw;padding:2cqw 4cqw;border-radius:2cqw;box-shadow:0 1.5cqw 4cqw rgba(0,0,0,.2)}
+.vs span:last-child{background:var(--c-navy);color:var(--c-white)}
+.bigq{font-size:46cqw;font-weight:700;color:var(--c-white);line-height:1;opacity:.95}
+
+/* concepts */
+.concepts{display:flex;flex-direction:column;gap:18px}
+.concept{display:grid;grid-template-columns:220px 1fr;gap:22px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;align-items:start}
+.concept>*{min-width:0}
+@media (max-width:640px){.concept{grid-template-columns:1fr}.concept .cv{max-width:240px}}
+.concept .meta{display:flex;flex-direction:column;gap:10px}
+.concept .tag{align-self:flex-start;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:3px 10px;border-radius:20px}
+.concept dl{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;margin:0;font-size:15px}
+.concept dt{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding-top:3px}
+.concept dd{margin:0}
+@media (max-width:480px){.concept dl{grid-template-columns:1fr;gap:2px}.concept dd{margin-bottom:8px}}
+.why{border-left:3px solid var(--accent);padding-left:12px;font-size:14px;color:var(--muted)}
+.more{display:flex;flex-direction:column;gap:6px}
+.more span{font-size:14px;color:var(--muted)}
+.more em{font-style:normal;background:var(--c-mag);color:var(--c-white);padding:1px 6px;font-weight:600;font-size:14px}
+
+/* toolkit */
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.tool{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.tool b{font-size:17px}
+.tool .ex{font-size:14px;color:var(--muted)}
+
+/* kalender */
+.year{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.month{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.month b{color:var(--accent);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.month span{font-size:15px}
+.month.peak{border-color:var(--accent);background:var(--accent-soft)}
+
+.stop{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.stop div{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--bad);border-radius:6px;padding:14px 16px;font-size:15px}
+footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:12px">
+  <span class="eyebrow">MediaWow · creatief voorstel binnen de huisstijl</span>
+  <h1>Zelfde huisstijl, andere zinnen, betere beelden</h1>
+  <p class="muted">Kleuren, lettertype, magenta labels en de uitgeknipte presentatoren blijven precies zoals ze zijn. Wat verandert: wat er op de cover staat, wat er in beeld gebeurt en wanneer het online komt. Gebaseerd op de views van ruim 50 Reels.</p>
+</header>
+
+<!-- DATA -->
+<section>
+  <h2>Wat de views vertellen</h2>
+  <div class="split">
+    <div class="list top">
+      <h3>Best bekeken</h3>
+      <div class="row"><span>Hoe doe ik belastingaangifte?</span><b>68.300</b></div>
+      <div class="row"><span>Heb jij je aangifte al gedaan? (kalenders)</span><b>25.600</b></div>
+      <div class="row"><span>Hoe zoeken jongeren hulp bij belastingen?</span><b>17.100</b></div>
+      <div class="row"><span>Het is tijd voor..</span><b>15.000</b></div>
+      <div class="row"><span>Crypto opgeven in aangifte?</span><b>9.289</b></div>
+      <div class="row"><span>Voorlopige aanslag doen?</span><b>8.791</b></div>
+    </div>
+    <div class="list low">
+      <h3>Minst bekeken</h3>
+      <div class="row"><span>Hoe zit het met schenkbelasting?</span><b>1.533</b></div>
+      <div class="row"><span>Vraag &amp; antwoord: digitale brieven</span><b>1.778</b></div>
+      <div class="row"><span>De voordelen van digitale brieven</span><b>1.937</b></div>
+      <div class="row"><span>Vakkenvuller, 18, Amersfoort</span><b>2.015</b></div>
+      <div class="row"><span>Zomaar wat dingen… (illustratie)</span><b>2.173</b></div>
+      <div class="row"><span>Zo ontvang je jouw brieven digitaal</span><b>2.235</b></div>
+    </div>
+  </div>
+
+  <div class="groups">
+    <h3>Gemiddelde views per soort onderwerp (geschat)</h3>
+    <div class="bar"><span>Aangifteseizoen en deadline</span><div class="track"><div class="fill" style="width:100%"></div></div><b>±20K</b></div>
+    <div class="bar"><span>Jouw geld of levensmoment</span><div class="track"><div class="fill" style="width:40%"></div></div><b>±8K</b></div>
+    <div class="bar"><span>Feit of Fabel op straat</span><div class="track"><div class="fill" style="width:37%"></div></div><b>±7,5K</b></div>
+    <div class="bar"><span>Over de Belastingdienst zelf</span><div class="track"><div class="fill" style="width:15%"></div></div><b>±3K</b></div>
+    <div class="bar"><span>Illustratie of alleen tekst</span><div class="track"><div class="fill" style="width:12%"></div></div><b>±2,4K</b></div>
+    <p class="small muted">Gemiddelden zijn met de hand ingedeeld op basis van de screenshots. Of de toppers met advertentiebudget zijn gepromoot, is niet te zien. Dat moet de klant in de Insights nakijken.</p>
+  </div>
+
+  <div class="lessons">
+    <div class="lesson"><b>Het moment wint</b><span class="muted">Alles rond de aangiftedeadline scoort 3 tot 20 keer zo goed. Mensen kijken als het nú voor ze speelt.</span></div>
+    <div class="lesson"><b>“Jij” wint van “wij”</b><span class="muted">“Krijg jij nog geld van ons?” haalt 7.902 views. “De voordelen van digitale brieven” haalt 1.937. Over je eigen geld wil je weten, over hun dienst niet.</span></div>
+    <div class="lesson"><b>Een mens wint van een tekening</b><span class="muted">De “Stel:”-reels met een getekende hand blijven steken op 2.400 tot 2.700. Een gezicht met een label doet het consequent beter.</span></div>
+    <div class="lesson"><b>Een vraag zonder antwoord wint</b><span class="muted">“Het is tijd voor..” haalt 15.000 views zonder te zeggen waarvoor. De deadline-reel met de vraag “Heb jij je aangifte al gedaan?” kreeg 40 reacties.</span></div>
+  </div>
+</section>
+
+<!-- FORMULE -->
+<section>
+  <h2>De formule voor elke cover</h2>
+  <div class="formula">
+    <div class="eq"><span>Jij</span><i>+</i><span>jouw moment</span><i>+</i><span>wat je mist of krijgt</span></div>
+    <p>Eerst de kijker, dan de situatie die hij herkent, dan wat er voor hem op het spel staat. Een belastingterm komt nooit als eerste.</p>
+    <div class="ba"><span class="old">Hoe zit het met schenkbelasting?</span><span>→</span><span class="new">Geld gekregen van je ouders? Lees dit eerst.</span></div>
+    <div class="ba"><span class="old">De voordelen van digitale brieven</span><span>→</span><span class="new">Nooit meer een blauwe envelop kwijt.</span></div>
+    <div class="ba"><span class="old">Loonheffingskorting: hoe zit dat?</span><span>→</span><span class="new">Twee bijbaantjes? Check je loonstrook.</span></div>
+    <div class="ba"><span class="old">Hypotheekrenteaftrek, wat is dat?</span><span>→</span><span class="new">Je eerste huis? Hier krijg je geld voor terug.</span></div>
+  </div>
+</section>
+
+<!-- CONCEPTEN -->
+<section>
+  <h2>Acht creatieve concepten</h2>
+  <p class="muted">Allemaal binnen de huisstijl: blauwe achtergrond, uitgeknipte presentator met witte rand, magenta labels en de bekende iconen. Het silhouet staat voor de presentator.</p>
+
+  <div class="concepts">
+
+    <!-- 1 -->
+    <div class="concept">
+      <div class="cv">
+        <div class="ic cal" data-m="APRIL" style="left:8cqw;top:12cqw;transform:rotate(-10deg)"><span>14</span></div>
+        <div class="ic cal" data-m="APRIL" style="right:6cqw;top:30cqw;transform:rotate(8deg);opacity:.85"><span>13</span></div>
+        <div class="person"></div>
+        <div class="lbls tilt"><span class="lbl">Nog 14 dagen.</span><br><span class="lbl">Heb jij het al gedaan?</span></div>
+      </div>
+      <div class="meta">
+        <span class="tag">Serie · april</span>
+        <h3>De aftelkalender</h3>
+        <dl>
+          <dt>Cover</dt><dd>“Nog 14 dagen. Heb jij het al gedaan?”</dd>
+          <dt>Seconde 1</dt><dd>De presentator scheurt een kalenderblad af en kijkt in de camera: “Nog veertien dagen. Heb jij je aangifte al gedaan?”</dd>
+          <dt>Beeld</dt><dd>Het kalendericoon dat ze al gebruiken, maar nu als echt blad dat elke aflevering wordt afgescheurd. Zelfde shot, zelfde plek, ander getal.</dd>
+          <dt>Afleveringen</dt><dd>14, 7, 3 en 1 dag, met elke keer één tip die past bij die dag. De laatste: “Morgen te laat? Dit kun je nog doen.”</dd>
+        </dl>
+        <p class="why">De deadline-reel haalde 25.600 views en 40 reacties. Dit maakt er een herkenbare serie van, zodat mensen terugkomen voor het volgende blad.</p>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="concept">
+      <div class="cv room">
+        <div class="ph">[blauwe envelop valt door de brievenbus op de deurmat, presentator raapt hem op]</div>
+        <div class="ic env" style="left:28cqw;top:40cqw;transform:rotate(-12deg)"></div>
+        <div class="lbls tilt"><span class="lbl">Blauwe envelop?</span><br><span class="lbl">Niet schrikken.</span></div>
+      </div>
+      <div class="meta">
+        <span class="tag">Rubriek · het hele jaar</span>
+        <h3>De blauwe envelop</h3>
+        <dl>
+          <dt>Cover</dt><dd>“Blauwe envelop? Niet schrikken.”</dd>
+          <dt>Seconde 1</dt><dd>Geluid van de brievenbus, een envelop valt op de mat. “Je krijgt een blauwe envelop. Dit staat er waarschijnlijk in.”</dd>
+          <dt>Beeld</dt><dd>De bekendste envelop van Nederland als vast openingsshot. Elke aflevering een andere brief: voorlopige aanslag, uitnodiging aangifte, betalingsregeling.</dd>
+          <dt>Digitale post</dt><dd>Hét moment om digitale brieven te promoten: “Nooit meer een blauwe envelop kwijt? Zet hem in je app.”</dd>
+        </dl>
+        <p class="why">De Reels over digitale brieven bleven steken op 1.778 tot 2.235 views, omdat ze over de dienst gaan. De envelop is het voorwerp dat iedereen kent, en dat zorgt voor de spanning.</p>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="concept">
+      <div class="cv">
+        <div class="ic note" style="left:6cqw;top:14cqw;transform:rotate(-14deg)">€</div>
+        <div class="ic note" style="right:8cqw;top:24cqw;transform:rotate(12deg)">€</div>
+        <div class="ic note" style="left:20cqw;top:38cqw;transform:rotate(4deg);opacity:.8">€</div>
+        <div class="person"></div>
+        <div class="lbls tilt"><span class="lbl">Dit geld is van jou.</span><br><span class="lbl">Het ligt nog bij ons.</span></div>
+      </div>
+      <div class="meta">
+        <span class="tag">Serie · maart tot juni</span>
+        <h3>Geld dat nog bij ons ligt</h3>
+        <dl>
+          <dt>Cover</dt><dd>“Dit geld is van jou. Het ligt nog bij ons.”</dd>
+          <dt>Seconde 1</dt><dd>De presentator houdt een bundel van de bekende geïllustreerde biljetten vast en schuift hem naar de camera: “Dit is van jou. Maar je moet het wel even ophalen.”</dd>
+          <dt>Beeld</dt><dd>De bestaande euro-iconen, maar nu vliegen ze naar de kijker toe in plaats van rond de presentator.</dd>
+          <dt>Afleveringen</dt><dd>Bijbaan, studie, eerste baan halverwege het jaar. Elke aflevering één groep die vaak geld laat liggen.</dd>
+        </dl>
+        <p class="why">“Krijg jij nog geld van ons?” haalde 7.902 en “Hoeveel geld laten jongeren liggen?” 5.074. Geld terugkrijgen is de sterkste belofte die de Belastingdienst heeft.</p>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="concept">
+      <div class="cv street">
+        <div class="ph">[straatteam in blauwe jassen, voorbijganger kijkt twijfelend]</div>
+        <div class="person"></div>
+        <div class="lbls hi tilt"><span class="lbl">Klopt dit?</span><br><span class="lbl">Bijna niemand wist het.</span></div>
+        <div class="ic" style="left:11cqw;bottom:18cqw"><div class="card">“Na 1 mei kun je niks meer aan je aangifte veranderen.”<div class="ff"><b class="f1">FEIT!</b><b class="f2">FABEL</b></div></div></div>
+      </div>
+      <div class="meta">
+        <span class="tag">Rubriek · bestaand, scherper</span>
+        <h3>Feit of Fabel, met de twijfel op de cover</h3>
+        <dl>
+          <dt>Cover</dt><dd>Bovenin: “Klopt dit? Bijna niemand wist het.” Daaronder het bestaande stellingkaartje.</dd>
+          <dt>Seconde 1</dt><dd>Niet de presentator, maar de voorbijganger die twijfelt: “Eh… feit? Nee, fabel. Toch?”</dd>
+          <dt>Beeld</dt><dd>Precies het huidige straatformat met de blauwe jassen. Alleen de eerste seconde laat nu het gezicht van de twijfel zien.</dd>
+          <dt>Let op</dt><dd>“Bijna niemand wist het” alleen gebruiken als het tijdens de opname echt zo was. Anders: “Weet jij het?”</dd>
+        </dl>
+        <p class="why">Feit of Fabel op straat haalt steeds 7.700 tot 8.400 views. Het format werkt al. De twijfel van een ander maakt dat je zelf wilt antwoorden.</p>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="concept">
+      <div class="cv">
+        <div class="ic key" style="left:14cqw;top:12cqw;transform:rotate(-20deg)"></div>
+        <div class="ic rings" style="right:8cqw;top:18cqw;transform:rotate(10deg)"></div>
+        <div class="person"></div>
+        <div class="lbls tilt"><span class="lbl">Sleutels gekregen?</span><br><span class="lbl">Dit is klus nummer 1.</span></div>
+      </div>
+      <div class="meta">
+        <span class="tag">Serie · levensmomenten</span>
+        <h3>Klus nummer 1</h3>
+        <dl>
+          <dt>Cover</dt><dd>Steeds dezelfde zinsbouw: “[Moment]? Dit is klus nummer 1.”</dd>
+          <dt>Varianten</dt><dd>“Sleutels gekregen?” · “Ja gezegd?” · “Samen gaan wonen?” · “Uit elkaar?” · “Eerste salaris?”</dd>
+          <dt>Seconde 1</dt><dd>Het voorwerp vliegt in beeld (sleutel, ringen, verhuisdoos) en de presentator vangt het: “Gefeliciteerd. En nu even dit.”</dd>
+          <dt>Beeld</dt><dd>De bestaande iconen voor sleutel, huis en ringen, maar groot en als eerste in beeld.</dd>
+        </dl>
+        <p class="why">Levensmomenten scoren 6.400 tot 8.100 views. “Ga je trouwen? Check dan eerst even dit” bleef op 3.322, omdat de zin lang is en de ringen klein waren. Eén vaste zinsbouw maakt het een herkenbare serie.</p>
+      </div>
+    </div>
+
+    <!-- 6 -->
+    <div class="concept">
+      <div class="cv room">
+        <div class="ph">[presentator ligt op de bank met telefoon, kijkt verschrikt op]</div>
+        <div class="person"></div>
+        <div class="lbls hi tilt"><span class="lbl">Het is bijna tijd voor…</span></div>
+        <div class="views" style="left:auto;right:5cqw">1/2</div>
+      </div>
+      <div class="meta">
+        <span class="tag">Teaser · eind februari</span>
+        <h3>Het is bijna tijd voor…</h3>
+        <dl>
+          <dt>Cover</dt><dd>“Het is bijna tijd voor…” Bewust zonder antwoord.</dd>
+          <dt>Seconde 1</dt><dd>De presentator ligt op de bank, krijgt een melding en springt op: “Wacht. Het is 1 maart?”</dd>
+          <dt>Opvolger</dt><dd>Een dag later deel 2: “Je aangifte staat klaar. Zo ben je in 10 minuten klaar.”</dd>
+          <dt>Ook voor</dt><dd>Prinsjesdag (“Morgen weet je wat je overhoudt”) en de voorlopige aanslag in januari.</dd>
+        </dl>
+        <p class="why">“Het is tijd voor..” haalde 15.000 views. Een open vraag werkt, zolang deel 2 meteen volgt en het antwoord geeft.</p>
+      </div>
+    </div>
+
+    <!-- 7 -->
+    <div class="concept">
+      <div class="cv">
+        <div class="ph">[presentator op de blauwe bank, leest een vraag voor van haar telefoon]</div>
+        <div class="person"></div>
+        <div class="lbls hi tilt" style="font-size:6.8cqw"><span class="lbl">“Batterij leeg halverwege</span><br><span class="lbl">mijn aangifte.</span><br><span class="lbl">Is dat erg?”</span></div>
+      </div>
+      <div class="meta">
+        <span class="tag">Rubriek · vragen van kijkers</span>
+        <h3>De gekste vraag van de week</h3>
+        <dl>
+          <dt>Cover</dt><dd>De meest herkenbare of grappige vraag letterlijk als label. Altijd geanonimiseerd.</dd>
+          <dt>Seconde 1</dt><dd>“Iemand vroeg ons: mijn batterij viel leeg halverwege mijn aangifte. Is dat erg? Goed nieuws.”</dd>
+          <dt>Beeld</dt><dd>Het bestaande format met de blauwe bank en de witte vraagkaartjes, maar nu staat één vraag groot op de cover in plaats van vier kleine.</dd>
+          <dt>Meer</dt><dd>“Moet ik als student aangifte doen?” · “Ik doe het morgen wel. Wanneer is het officieel te laat?”</dd>
+        </dl>
+        <p class="why">Die vragen stonden al op de covers (4.339 en 2.692 views), maar in kleine kaartjes die niemand leest. De beste vraag verdient het hele scherm.</p>
+      </div>
+    </div>
+
+    <!-- 8 -->
+    <div class="concept">
+      <div class="cv">
+        <div class="ic vs" style="left:9cqw;top:30cqw"><span>Nu doen</span><span>30 april</span></div>
+        <div class="person"></div>
+        <div class="lbls hi tilt"><span class="lbl">Jij bent team…?</span></div>
+      </div>
+      <div class="meta">
+        <span class="tag">Interactie · maart</span>
+        <h3>Jij bent team…?</h3>
+        <dl>
+          <dt>Cover</dt><dd>“Jij bent team…?” met twee witte kaartjes: “Nu doen” en “30 april”.</dd>
+          <dt>Seconde 1</dt><dd>De presentator houdt twee kaartjes omhoog: “Team nu meteen of team laatste avond? Zeg het in de reacties.”</dd>
+          <dt>Daarna</dt><dd>Kort waarom vroeg doen handig is: eerder je geld terug. Zonder te preken. Team laatste avond mag ook, met de tip: begin dan wel vóór 23.00 uur.</dd>
+          <dt>Varianten</dt><dd>“Team app of team website?” · “Team papieren post of team digitaal?”</dd>
+        </dl>
+        <p class="why">Een vraag waarop iedereen een antwoord heeft, levert reacties op. De deadline-reel kreeg er 40, en reacties vergroten het bereik van een Reel.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- TEKST TOOLKIT -->
+<section>
+  <h2>Zeven teksttrucs voor de covers</h2>
+  <div class="tools">
+    <div class="tool"><b>Begin met “jij” of “je”</b><span class="ex">“Je eerste huis?” in plaats van “Hypotheekrenteaftrek”.</span></div>
+    <div class="tool"><b>Noem een getal</b><span class="ex">“Nog 14 dagen.” · “In 10 minuten klaar.” Een getal valt op tussen woorden.</span></div>
+    <div class="tool"><b>Stop halverwege</b><span class="ex">“Het is bijna tijd voor…” Alleen als het antwoord direct volgt.</span></div>
+    <div class="tool"><b>Gebruik een voorwerp</b><span class="ex">Blauwe envelop, sleutels, loonstrook. Iets wat je in je hand kunt houden.</span></div>
+    <div class="tool"><b>Laat iemand anders twijfelen</b><span class="ex">“Klopt dit?” met het gezicht van een voorbijganger.</span></div>
+    <div class="tool"><b>Maximaal twee labels</b><span class="ex">Twee korte regels. Drie labels is te veel voor een cover die je in een halve seconde ziet.</span></div>
+    <div class="tool"><b>De hardop-test</b><span class="ex">Zou je het zo tegen een vriend zeggen? “Fiscaal partnerschap” niet. “Samen gaan wonen?” wel.</span></div>
+  </div>
+</section>
+
+<!-- KALENDER -->
+<section>
+  <h2>Wanneer welk concept</h2>
+  <p class="muted">Het moment bepaalt de views. Daarom per periode het concept dat dan het meest speelt.</p>
+  <div class="year">
+    <div class="month"><b>Januari</b><span>Blauwe envelop: de voorlopige aanslag</span></div>
+    <div class="month peak"><b>Eind februari</b><span>Teaser: “Het is bijna tijd voor…”</span></div>
+    <div class="month peak"><b>Maart</b><span>Jij bent team…? · Geld dat nog bij ons ligt</span></div>
+    <div class="month peak"><b>April</b><span>De aftelkalender · Feit of Fabel over de deadline</span></div>
+    <div class="month"><b>Mei en juni</b><span>Geld dat nog bij ons ligt · Gekste vraag van de week</span></div>
+    <div class="month"><b>Zomer</b><span>Klus nummer 1: eerste salaris, bijbaan, verhuizen</span></div>
+    <div class="month"><b>September</b><span>Teaser voor Prinsjesdag</span></div>
+    <div class="month"><b>Oktober tot december</b><span>Klus nummer 1: samenwonen, uit elkaar · Feit of Fabel</span></div>
+  </div>
+</section>
+
+<!-- STOPPEN -->
+<section>
+  <h2>Hiermee kunnen ze stoppen</h2>
+  <div class="stop">
+    <div><b>“Hoe zit het met…?”</b> Het slechtst bekeken soort cover (1.533 views). Zeg wat er speelt in plaats van welk onderwerp.</div>
+    <div><b>Reels over de eigen dienst.</b> Digitale post, de app, hulp bij aangifte: maak er altijd iets van de kijker van.</div>
+    <div><b>Covers met alleen een tekening of tekst.</b> De Reels met een getekende hand bleven op 2.400 tot 2.700 views. Zet er een gezicht bij.</div>
+    <div><b>Kleine tekstkaartjes op de cover.</b> Eén zin, groot. De rest gaat in de video.</div>
+  </div>
+</section>
+
+<footer>Creatief voorstel van MediaWow. Cover-mockups zijn schetsen binnen de bestaande huisstijl; het silhouet staat voor een presentator. Views overgenomen van screenshots van 5 november 2026. Inhoud laten controleren door de vakafdeling voor publicatie.</footer>
+</div>
