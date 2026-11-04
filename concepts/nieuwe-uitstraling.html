@@ -1,0 +1,341 @@
+<title>Nieuwe uitstraling Instagram</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Fira+Sans+Condensed:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: leeskolom met grote post-mockups; posts schalen mee via container queries */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --ink:#15233a; --muted:#5a6a80; --line:#dbe2eb; --accent:#a2005f;
+  /* postkleuren: vast in beide thema's, het zijn Instagram-posts */
+  --p-navy:#0c2d57; --p-navy2:#123c70; --p-sky:#e3edf7; --p-sky2:#c7dbef; --p-mag:#a2005f; --p-yellow:#ffc72c; --p-white:#ffffff; --p-ink:#0c2d57;
+  --display:"Fira Sans Condensed","Fira Sans",system-ui,sans-serif;
+  --body:"Fira Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0d1420;--surface:#162135;--ink:#e6ecf4;--muted:#9aa8bb;--line:#2a3851;--accent:#ff6fb5;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1420;--surface:#162135;--ink:#e6ecf4;--muted:#9aa8bb;--line:#2a3851;--accent:#ff6fb5;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;margin:0;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:64px}
+section{display:flex;flex-direction:column;gap:18px;min-width:0}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(32px,6vw,52px)}
+h2{font-size:28px}
+h3{font-size:18px}
+p{margin:0;max-width:66ch}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+/* diagnose + regels */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.card b{font-family:var(--display);font-size:18px}
+.card.keep{border-color:var(--accent)}
+.rules{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;counter-reset:r}
+.rules li{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px 16px 58px;position:relative;counter-increment:r}
+.rules li::before{content:counter(r);position:absolute;left:16px;top:14px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--surface);font-weight:700;display:flex;align-items:center;justify-content:center}
+.rules b{display:block;font-family:var(--display);font-size:18px;margin-bottom:2px}
+
+/* ---------- POSTS ---------- */
+.post{aspect-ratio:4/5;max-width:100%;container-type:inline-size;position:relative;overflow:hidden;font-family:var(--body);color:var(--p-white)}
+.post .in{position:absolute;inset:0;padding:7cqw;display:flex;flex-direction:column;gap:3cqw}
+.rub{font-size:4.2cqw;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;gap:2cqw;align-self:flex-start}
+.rub i{font-style:normal;background:var(--p-mag);color:var(--p-white);padding:.4cqw 2cqw;border-radius:1cqw}
+.hook{font-family:var(--display);font-weight:800;font-size:12.5cqw;line-height:1;letter-spacing:-.01em;text-wrap:balance}
+.hook em{font-style:normal;color:var(--p-yellow)}
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-size:4cqw;opacity:.85}
+.lbl{display:inline;background:var(--p-mag);color:var(--p-white);font-family:var(--display);font-weight:800;padding:.08em .3em;box-decoration-break:clone;-webkit-box-decoration-break:clone;line-height:1.5}
+.tilt{transform:rotate(-2.5deg);transform-origin:left bottom}
+
+.navy{background:var(--p-navy)}
+.navy .big{font-family:var(--display);font-weight:800;font-size:34cqw;line-height:.85;color:var(--p-yellow)}
+.sky{background:var(--p-sky);color:var(--p-ink)}
+.sky .foot{color:var(--p-ink)}
+.photo{background:linear-gradient(170deg,#cdb9a6 0%,#9c836e 55%,#5b4a3d 100%)}
+.photo.b{background:linear-gradient(170deg,#c3ccd6 0%,#8796a7 55%,#4b5868 100%)}
+.photo.c{background:linear-gradient(170deg,#d8c2b4 0%,#b38a75 55%,#6e4f41 100%)}
+.ph{position:absolute;left:0;right:0;top:30%;text-align:center;font-size:3.6cqw;font-style:italic;color:rgba(255,255,255,.75);padding:0 10cqw}
+.photo .bottom{position:absolute;left:6cqw;right:6cqw;bottom:8cqw;font-size:10cqw}
+.name{position:absolute;left:6cqw;top:6cqw;background:var(--p-white);color:var(--p-ink);font-size:3.8cqw;font-weight:600;padding:1.2cqw 2.6cqw;border-radius:10cqw;display:flex;gap:1.6cqw;align-items:center}
+.name::before{content:"";width:2.4cqw;height:2.4cqw;border-radius:50%;background:var(--p-mag)}
+
+.stamp{position:absolute;right:6cqw;bottom:16cqw;border:1.4cqw solid var(--p-mag);color:var(--p-mag);font-family:var(--display);font-weight:800;font-size:15cqw;padding:0 3cqw;transform:rotate(-12deg);border-radius:2cqw;background:rgba(255,255,255,.6)}
+.claim{font-family:var(--display);font-weight:700;font-size:9.5cqw;line-height:1.1;color:var(--p-ink);position:relative}
+.claim s{text-decoration-color:var(--p-mag);text-decoration-thickness:1.2cqw}
+.src{font-size:4cqw;color:var(--p-ink);opacity:.7}
+
+.share{background:var(--p-white);color:var(--p-ink)}
+.share .hook{color:var(--p-ink)}
+.share .hook em{color:var(--p-mag)}
+.sticker{align-self:flex-start;background:var(--p-yellow);color:var(--p-ink);font-weight:800;font-size:4.4cqw;padding:1.6cqw 3cqw;border-radius:10cqw;transform:rotate(-4deg)}
+.bubble{background:var(--p-sky);border-radius:4cqw 4cqw 4cqw 1cqw;padding:3cqw 4cqw;font-size:4.6cqw;color:var(--p-ink);align-self:flex-start;max-width:80%}
+.bubble.me{align-self:flex-end;background:var(--p-navy);color:var(--p-white);border-radius:4cqw 4cqw 1cqw 4cqw}
+
+.object{background:#2c2622}
+.env{position:absolute;left:50%;top:36%;width:62%;aspect-ratio:1.6;transform:translate(-50%,-50%) rotate(-9deg);background:var(--p-sky);border-radius:1cqw;box-shadow:0 4cqw 9cqw rgba(0,0,0,.5)}
+.env::before{content:"";position:absolute;left:10%;top:20%;width:36%;height:9%;background:var(--p-navy)}
+.env::after{content:"";position:absolute;right:9%;top:16%;width:14%;height:22%;border:.6cqw dashed var(--p-navy);opacity:.5}
+.mat{position:absolute;left:0;right:0;bottom:0;height:46%;background:repeating-linear-gradient(90deg,#5e4f3f 0 1cqw,#4f4234 1cqw 2cqw)}
+.object .bottom{position:absolute;left:6cqw;right:6cqw;bottom:8cqw;font-size:10cqw}
+
+.qmark{font-family:var(--display);font-weight:800;font-size:46cqw;line-height:.8;color:var(--p-mag);position:absolute;right:4cqw;bottom:-4cqw;opacity:.18}
+.serie{position:absolute;right:6cqw;top:6cqw;font-size:4cqw;font-weight:700;border:.5cqw solid currentColor;border-radius:10cqw;padding:.6cqw 2.4cqw}
+.dots{display:flex;gap:1.4cqw}
+.dots span{width:2cqw;height:2cqw;border-radius:50%;background:currentColor;opacity:.35}
+.dots span.on{opacity:1}
+
+/* grid preview */
+.phonegrid{max-width:520px;width:100%;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 0 0;overflow:hidden}
+.phonegrid .handle{display:flex;align-items:center;gap:10px;padding:0 14px 12px;font-weight:700}
+.phonegrid .handle span{width:34px;height:34px;border-radius:50%;background:var(--p-navy)}
+.grid9{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.grid9 .ph{display:none}
+
+/* formats */
+.formats{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px}
+.format{display:flex;flex-direction:column;gap:10px;min-width:0}
+.format .post{border-radius:6px}
+.format h3{margin-top:4px}
+.format p{font-size:15px;color:var(--muted)}
+
+/* carousel */
+.carousel{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory}
+.carousel .post{flex:0 0 min(290px,78vw);border-radius:6px;scroll-snap-align:start}
+.body{font-size:6.4cqw;line-height:1.3}
+.body b{color:var(--p-yellow)}
+.sky .body b{color:var(--p-mag)}
+.check{display:flex;gap:3cqw;align-items:flex-start;font-size:5.6cqw;line-height:1.25}
+.check i{flex:none;width:7cqw;height:7cqw;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:4.6cqw;color:var(--p-white)}
+.check i.no{background:var(--p-mag)}
+.check i.yes{background:#2f7d32}
+
+/* reel */
+.reelrow{display:grid;grid-template-columns:280px 1fr;gap:28px;align-items:start}
+.reelrow>*{min-width:0}
+@media (max-width:720px){.reelrow{grid-template-columns:1fr}}
+.reel{aspect-ratio:9/16;border-radius:24px;border:7px solid #111;max-width:280px;width:100%}
+.reel .hooktop{position:absolute;left:6cqw;right:6cqw;top:16cqw;font-size:10cqw}
+.reel .sub{position:absolute;left:8cqw;right:8cqw;bottom:22cqw;text-align:center;font-size:5.2cqw;font-weight:600;color:var(--p-white);text-shadow:0 .5cqw 2cqw rgba(0,0,0,.7)}
+.reel .ph{top:48%}
+.reel .name{top:auto;bottom:36cqw}
+.spec{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.spec div{display:grid;grid-template-columns:120px 1fr;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:15px}
+.spec div:last-child{border-bottom:0}
+.spec b{color:var(--accent);font-size:13px;text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
+@media (max-width:480px){.spec div{grid-template-columns:1fr;gap:2px}}
+
+footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:12px">
+  <span class="eyebrow">MediaWow · voorstel uitstraling en content</span>
+  <h1>Een grid waar je duim op stopt</h1>
+  <p class="muted">De huisstijl blijft herkenbaar: blauw, magenta labels, echte mensen. Maar elke post krijgt één grote zin, meer contrast en een vaste rubriek. Zo zie je in een halve seconde wat er voor jou in zit.</p>
+</header>
+
+<!-- DIAGNOSE -->
+<section>
+  <h2>Wat er nu visueel misgaat</h2>
+  <div class="cards">
+    <div class="card"><b>Alles is lichtblauw</b><span class="muted">Illustraties, kaartjes en telefoons in dezelfde pasteltint. Het grid voelt vlak en niets springt eruit.</span></div>
+    <div class="card"><b>De tekst is te klein</b><span class="muted">De witte tekstkaartjes op foto’s zijn op grid-formaat zo’n 12 pixels hoog. Onleesbaar tijdens het scrollen.</span></div>
+    <div class="card"><b>Zes templates, geen rubrieken</b><span class="muted">Foto met label, illustratie, chat, melding, wit kaartje, checklist. Je herkent geen vaste onderdelen.</span></div>
+    <div class="card"><b>Poseren in plaats van een situatie</b><span class="muted">Presentatoren houden een hoed of biljetten vast. Je ziet een model, geen moment dat je herkent.</span></div>
+    <div class="card keep"><b>Wel houden: het magenta label</b><span class="muted">Het sterkste en meest herkenbare element. Dat bouwen we uit tot het vaste hook-label.</span></div>
+  </div>
+</section>
+
+<!-- REGELS -->
+<section>
+  <h2>Vijf ontwerpregels</h2>
+  <ol class="rules">
+    <li><b>Eén zin, maximaal acht woorden</b>Groot genoeg om op grid-formaat te lezen. De rest gaat in de slides of de caption.</li>
+    <li><b>Diepblauw als basis</b>Donkerblauw met gele accenten voor contrast. Lichtblauw alleen voor uitleg-slides en Feit of Fabel.</li>
+    <li><b>Magenta is altijd de hook</b>Het label komt alleen op de zin die spanning maakt, nooit op een onderwerp.</li>
+    <li><b>Vaste rubrieken met een vaste kop</b>Zo zie je in het grid meteen: dit is weer “Dit zien wij” of “Feit of Fabel”.</li>
+    <li><b>Echte mensen met een naam, echte voorwerpen</b>De envelop op de deurmat, de melding op een telefoon, Sanne die je vraag beantwoordt.</li>
+  </ol>
+</section>
+
+<!-- GRID -->
+<section>
+  <h2>Zo ziet het grid eruit</h2>
+  <p class="muted">Negen posts, afwisselend licht, donker en foto. Elk ervan is ook vanaf een meter afstand leesbaar.</p>
+
+  <div class="phonegrid">
+    <div class="handle"><span></span>belastingdienstnl</div>
+    <div class="grid9">
+
+      <div class="post photo"><div class="name">Sanne · beantwoordt jullie vragen</div><div class="bottom tilt"><span class="lbl">Twee bijbaantjes?</span><br><span class="lbl">Let op dit vinkje.</span></div></div>
+
+      <div class="post navy"><div class="in">
+        <span class="rub"><i>Dit zien wij</i> elk jaar</span>
+        <div class="big">2×</div>
+        <div class="hook">Twee vinkjes. <em>Eén naheffing.</em></div>
+      </div></div>
+
+      <div class="post sky"><div class="in">
+        <span class="rub" style="color:var(--p-ink)"><i>Feit of fabel</i></span>
+        <div class="claim">“Je laptop kun je altijd aftrekken.”</div>
+        <div class="stamp">FABEL</div>
+      </div></div>
+
+      <div class="post share"><div class="in">
+        <span class="sticker">Stuur dit door ↗</span>
+        <div class="hook" style="font-size:10.5cqw">Naar je ouders, <em>vóór</em> ze je verbouwing betalen.</div>
+      </div></div>
+
+      <div class="post object"><div class="env"></div><div class="mat"></div><div class="bottom tilt" style="font-size:9cqw"><span class="lbl">Waar is die brief van</span><br><span class="lbl">de Belastingdienst</span><br><span class="lbl">gebleven?</span></div></div>
+
+      <div class="post navy" style="background:var(--p-navy2)"><div class="in">
+        <span class="serie">Deel 2/4</span>
+        <span class="rub"><i>Mama betaalt mee</i></span>
+        <div class="hook" style="margin-top:auto">Moet <em>jij</em> nu iets melden?</div>
+      </div></div>
+
+      <div class="post sky"><div class="in">
+        <span class="rub" style="color:var(--p-ink)"><i>Vraag van de week</i></span>
+        <div class="hook" style="color:var(--p-ink);font-size:11cqw">Moet ik mijn Vinted-verkopen opgeven?</div>
+        <div class="qmark">?</div>
+      </div></div>
+
+      <div class="post photo b"><div class="name">Mo · Prinsjesdag</div><div class="bottom tilt"><span class="lbl">Wat merk jij</span><br><span class="lbl">op je loonstrook?</span></div></div>
+
+      <div class="post navy"><div class="in">
+        <span class="rub"><i>Dit zien wij</i> elk jaar</span>
+        <div class="hook" style="margin-top:auto">Uit elkaar. <em>Dit vergeet</em> bijna iedereen.</div>
+      </div></div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FORMATS -->
+<section>
+  <h2>Vijf vaste formats</h2>
+  <p class="muted">Elke week dezelfde rubrieken. Dat maakt plannen makkelijker en volgers herkennen het meteen.</p>
+  <div class="formats">
+
+    <div class="format">
+      <div class="post navy"><div class="in">
+        <span class="rub"><i>Dit zien wij</i> elk jaar</span>
+        <div class="big">2×</div>
+        <div class="hook">Twee vinkjes. <em>Eén naheffing.</em></div>
+        <div class="foot"><span>Swipe →</span><div class="dots"><span class="on"></span><span></span><span></span><span></span></div></div>
+      </div></div>
+      <h3>Dit zien wij elk jaar</h3>
+      <p>Eén veelgemaakte fout met een groot getal of symbool. De troef die geen influencer heeft. Carrousel van 4 slides.</p>
+    </div>
+
+    <div class="format">
+      <div class="post sky"><div class="in">
+        <span class="rub" style="color:var(--p-ink)"><i>Feit of fabel</i></span>
+        <span class="src">Gezien op TikTok:</span>
+        <div class="claim">“Je laptop kun je altijd aftrekken.”</div>
+        <div class="stamp">FABEL</div>
+      </div></div>
+      <h3>Feit of Fabel</h3>
+      <p>Een claim die echt rondgaat. Het oordeel staat altijd op de cover, zodat niemand de fout onthoudt.</p>
+    </div>
+
+    <div class="format">
+      <div class="post share"><div class="in">
+        <span class="sticker">Stuur dit door ↗</span>
+        <div class="hook" style="font-size:10.5cqw">Naar je ouders, <em>vóór</em> ze je verbouwing betalen.</div>
+        <div class="bubble">Mam, lees dit even 👀</div>
+        <div class="bubble me">Oh! Goed dat je het zegt</div>
+      </div></div>
+      <h3>Stuur dit door</h3>
+      <p>Geschreven voor wie het doorstuurt. Het bestaande chat-format, maar nu met een duidelijke reden om te delen.</p>
+    </div>
+
+    <div class="format">
+      <div class="post photo c"><div class="ph">[Sanne aan haar bureau, telefoon in de hand]</div><div class="name">Sanne · beantwoordt jullie vragen</div><div class="bottom tilt"><span class="lbl">Moet ik mijn</span><br><span class="lbl">Vinted-verkopen</span><br><span class="lbl">opgeven?</span></div></div>
+      <h3>Vraag van de week</h3>
+      <p>Een vast gezicht met een naam beantwoordt een vraag uit de reacties. Als Reel of als foto-cover.</p>
+    </div>
+
+    <div class="format">
+      <div class="post navy" style="background:var(--p-navy2)"><div class="in">
+        <span class="serie">Deel 2/4</span>
+        <span class="rub"><i>Mama betaalt mee</i></span>
+        <div class="hook" style="margin-top:auto">Moet <em>jij</em> nu iets melden?</div>
+        <div class="foot"><span>Deel 1 gemist? Kijk een post terug</span></div>
+      </div></div>
+      <h3>Serie</h3>
+      <p>Eén verhaal in vier delen in plaats van zes losse posts over hetzelfde onderwerp. Elk deel eindigt met een vraag voor het volgende.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- CAROUSEL -->
+<section>
+  <h2>Uitgewerkt: Feit of Fabel over de laptop</h2>
+  <p class="muted">Vijf slides. Swipe om ze te bekijken.</p>
+  <div class="carousel">
+    <div class="post sky"><div class="in">
+      <span class="rub" style="color:var(--p-ink)"><i>Feit of fabel</i></span>
+      <span class="src">Gezien op TikTok:</span>
+      <div class="claim">“Je laptop kun je altijd aftrekken.”</div>
+      <div class="stamp">FABEL</div>
+      <div class="foot" style="color:var(--p-ink)"><span>Swipe →</span><span>1/5</span></div>
+    </div></div>
+
+    <div class="post navy"><div class="in">
+      <span class="rub"><i>Waarom niet?</i></span>
+      <div class="hook" style="font-size:10cqw">Werk je in loondienst?</div>
+      <div class="body">Dan kun je een laptop <b>niet aftrekken</b> in je aangifte. Ook niet als je hem voor je werk gebruikt.</div>
+      <div class="foot"><span></span><span>2/5</span></div>
+    </div></div>
+
+    <div class="post sky"><div class="in">
+      <span class="rub" style="color:var(--p-ink)"><i>Wel goed om te weten</i></span>
+      <div class="hook" style="color:var(--p-ink);font-size:10cqw">Vraag het je werkgever.</div>
+      <div class="body" style="color:var(--p-ink)">Heb je hem nodig voor je werk? Dan kan je werkgever hem soms <b>belastingvrij</b> vergoeden.</div>
+      <div class="foot" style="color:var(--p-ink)"><span></span><span>3/5</span></div>
+    </div></div>
+
+    <div class="post navy"><div class="in">
+      <span class="rub"><i>Even checken</i></span>
+      <div class="check"><i class="no">✕</i><span>In loondienst: niet aftrekbaar</span></div>
+      <div class="check"><i class="yes">✓</i><span>Nodig voor je werk: vraag je werkgever</span></div>
+      <div class="check"><i class="yes">✓</i><span>Ondernemer: andere regels, kijk bij @belastingdienstondernemers</span></div>
+      <div class="foot"><span></span><span>4/5</span></div>
+    </div></div>
+
+    <div class="post share"><div class="in">
+      <span class="sticker">Stuur dit door ↗</span>
+      <div class="hook" style="font-size:10cqw">Naar die ene collega die het <em>ook</em> op TikTok zag.</div>
+      <div class="foot" style="color:var(--p-ink)"><span>Meer feit of fabel: volg ons</span><span>5/5</span></div>
+    </div></div>
+  </div>
+  <p class="small muted">Inhoud laten controleren door de vakafdeling voordat er gepubliceerd wordt.</p>
+</section>
+
+<!-- REEL -->
+<section>
+  <h2>De eerste seconde van een Reel</h2>
+  <div class="reelrow">
+    <div class="post photo c reel">
+      <div class="hooktop tilt"><span class="lbl">Moet ik mijn</span><br><span class="lbl">Vinted-verkopen</span><br><span class="lbl">opgeven?</span></div>
+      <div class="ph">[Sanne, close-up, kijkt in de camera, telefoon met Vinted-melding in de hand]</div>
+      <div class="name">Sanne · Vraag van de week</div>
+      <div class="sub">“Moet ik mijn Vinted-verkopen opgeven? Die vraag krijgen we elke week.”</div>
+    </div>
+    <div class="spec">
+      <div><b>Hook</b><span>Bovenin, in magenta labels. Zo wordt hij niet bedekt door de Instagram-knoppen onderin.</span></div>
+      <div><b>Seconde 1</b><span>Sanne zegt de hook meteen hardop. Geen intro, geen logo, geen “hoi allemaal”.</span></div>
+      <div><b>Beeld</b><span>Het voorwerp waar het over gaat zit in beeld: de telefoon met de melding.</span></div>
+      <div><b>Naam</b><span>Vast naamlabel, zodat volgers Sanne gaan herkennen.</span></div>
+      <div><b>Ondertitels</b><span>Altijd aan, groot en gecentreerd. Veel mensen kijken zonder geluid.</span></div>
+      <div><b>Lengte</b><span>20 tot 40 seconden. Langer? Maak er een serie van.</span></div>
+      <div><b>Einde</b><span>“Stuur dit naar wie altijd op Vinted zit.”</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>Conceptvoorstel van MediaWow, ter illustratie. Geen officieel materiaal. Foto’s zijn placeholders, namen van presentatoren zijn voorbeelden.</footer>
+</div>
