@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lilou Opening</title>
+<meta name="description" content="Geanimeerde uitnodiging voor de opening van Lilou, c'est tout. — zondag 29 november, Het Pomphuis Ede.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-1: #8a3226;
+    --bg-2: #4a140d;
+    --rust: #8e2914;
+    --rust-hi: #a8452d;
+    --rust-lo: #7a200d;
+    --cream: #f3e6dc;
+    --serif: "Cormorant Garamond", "Times New Roman", serif;
+    --sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: var(--bg-2); overflow: hidden; font-family: var(--sans); -webkit-font-smoothing: antialiased; color: var(--cream); }
+
+  .backdrop {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 50% 45%, var(--bg-1), var(--bg-2) 80%);
+  }
+  .spot {
+    position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 45% 40% at 50% 46%, rgba(230, 120, 80, .28), transparent 70%);
+  }
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 40;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: .26; mix-blend-mode: multiply;
+  }
+
+  .stage {
+    position: absolute; left: 50%; top: 50%;
+    width: 800px; height: 1000px;
+    transform: translate(-50%, -50%) scale(var(--scale, .8));
+  }
+  .stage:not(.ready) { visibility: hidden; }
+  .abs { position: absolute; }
+
+  /* ---------- Envelop ---------- */
+  .env { left: 120px; top: 470px; width: 560px; height: 380px; }
+  .env-back { z-index: 1; background: linear-gradient(180deg, #3d0f07, #5a170b); border-radius: 2px; }
+  .env-pocket {
+    z-index: 3;
+    clip-path: polygon(0 0, 50% 54%, 100% 0, 100% 100%, 0 100%);
+    filter: drop-shadow(0 30px 40px rgba(20, 2, 0, .5));
+  }
+  .env-pocket svg, .env-flap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .env-flap {
+    z-index: 4; height: 236px;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+  .seal { z-index: 5; left: 352px; top: 642px; width: 96px; height: 96px; }
+  .seal svg { width: 100%; height: 100%; filter: drop-shadow(0 4px 5px rgba(20, 2, 0, .55)); }
+  .seal-l { clip-path: polygon(0 0, 53% 0, 46% 28%, 56% 52%, 47% 77%, 52% 100%, 0 100%); }
+  .seal-r { clip-path: polygon(53% 0, 100% 0, 100% 100%, 52% 100%, 47% 77%, 56% 52%, 46% 28%); }
+
+  /* ---------- Kaart ---------- */
+  .card-wrap {
+    z-index: 2;
+    left: 140px; top: 150px; width: 520px; height: 680px;
+    perspective: 1800px;
+  }
+  .tilt, .card3d { position: absolute; inset: 0; transform-style: preserve-3d; }
+  .card3d { cursor: pointer; }
+  .face {
+    position: absolute; inset: 0; overflow: hidden; border-radius: 3px;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    background:
+      radial-gradient(ellipse 80% 45% at 70% 0%, rgba(195, 95, 62, .45), transparent 70%),
+      linear-gradient(175deg, var(--rust-hi) 0%, var(--rust) 45%, var(--rust-lo) 100%);
+    box-shadow: 0 50px 80px -30px rgba(25, 3, 0, .8), 0 12px 26px rgba(25, 3, 0, .35);
+    text-align: center;
+    --lx: 1; --ly: 1.3; --gx: 50%; --gy: 20%;
+  }
+  .face::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: .2; mix-blend-mode: multiply;
+  }
+  .back { transform: rotateY(180deg); }
+  .glare {
+    position: absolute; inset: 0; pointer-events: none; z-index: 3;
+    background: radial-gradient(circle at var(--gx) var(--gy), rgba(255, 220, 195, .2), transparent 48%);
+    mix-blend-mode: screen;
+  }
+  .sheen {
+    position: absolute; top: -20%; bottom: -20%; width: 45%; left: 0; z-index: 3; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255, 225, 200, .2) 50%, transparent);
+    transform: translateX(-140%) skewX(-12deg);
+  }
+
+  .emboss {
+    color: #932f19;
+    text-shadow:
+      calc(var(--lx) * -1px) calc(var(--ly) * -1px) 1px rgba(255, 190, 160, .26),
+      calc(var(--lx) * 1px) calc(var(--ly) * 1px) 1.5px rgba(40, 4, 0, .5),
+      calc(var(--lx) * 3px) calc(var(--ly) * 3px) 8px rgba(40, 4, 0, .22);
+  }
+  .front .content { position: absolute; inset: 0; padding-top: 74px; z-index: 2; }
+  .kicker { font-size: 10px; font-weight: 600; letter-spacing: .5em; padding-left: .5em; color: rgba(243, 214, 196, .8); }
+  .logo { margin-top: 30px; }
+  .logo .word { font-family: var(--serif); font-weight: 300; font-size: 192px; line-height: .85; letter-spacing: -.01em; }
+  .logo .word span { display: inline-block; }
+  .logo .tag { display: block; margin-top: 4px; font-family: var(--serif); font-weight: 600; font-size: 35px; letter-spacing: .12em; }
+  .logo .by { display: block; margin-top: 2px; font-size: 8px; font-weight: 600; letter-spacing: .22em; }
+  .rule { width: 60px; height: 1px; margin: 46px auto 0; background: rgba(243, 214, 196, .55); }
+  .opening {
+    margin-top: 28px; display: inline-block;
+    font-family: var(--serif); font-weight: 600; font-size: 46px;
+    letter-spacing: .22em; padding-left: .22em;
+  }
+  .foil {
+    background: linear-gradient(105deg, #b9824a 0%, #f1d7a2 18%, #c6955b 34%, #fff0cf 50%, #b67f47 64%, #efd29a 82%, #c0894f 100%);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 1px 0 rgba(40, 4, 0, .45));
+    animation: foil 5.5s ease-in-out infinite alternate;
+  }
+  @keyframes foil { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+  .when { margin-top: 4px; font-family: var(--serif); font-style: italic; font-size: 31px; color: rgba(243, 214, 196, .88); }
+  .address {
+    position: absolute; left: 0; right: 0; bottom: 70px; z-index: 2;
+    font-size: 9.4px; font-weight: 600; letter-spacing: .34em; line-height: 2.3; color: rgba(243, 226, 214, .92);
+  }
+  .address span { display: block; }
+  svg.arcs { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+  .arc { fill: none; stroke-dasharray: 1; }
+  .arc.deep { stroke: rgba(60, 6, 0, .38); stroke-width: 1.5; }
+  .arc.hi   { stroke: rgba(255, 190, 160, .22); stroke-width: 1; }
+  .arc.thin { stroke: rgba(243, 214, 196, .32); stroke-width: .9; }
+
+  /* Achterkant */
+  .back .content {
+    position: absolute; inset: 0; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 60px 50px;
+  }
+  .back .bigL {
+    position: absolute; right: -40px; bottom: -120px; z-index: 1;
+    font-family: var(--serif); font-weight: 300; font-size: 620px; line-height: 1;
+    opacity: .9;
+  }
+  .back .frame { position: absolute; inset: 22px; border: 1px solid rgba(243, 214, 196, .28); z-index: 2; pointer-events: none; }
+  .back h2 { font-family: var(--serif); font-weight: 500; font-size: 58px; line-height: 1; margin-top: 22px; }
+  .back .time { font-family: var(--serif); font-style: italic; font-size: 34px; color: rgba(243, 214, 196, .88); margin-top: 6px; }
+  .back .place { margin-top: 30px; font-size: 10px; font-weight: 600; letter-spacing: .38em; line-height: 2.2; }
+  .back .place small { display: block; font-size: 9px; font-weight: 500; letter-spacing: .3em; color: rgba(243, 214, 196, .75); }
+  .back .rule { margin-top: 30px; }
+  .back .deadline { margin-top: 28px; font-family: var(--serif); font-size: 24px; font-style: italic; }
+  .cta {
+    margin-top: 26px; display: inline-flex; align-items: center; gap: 12px;
+    padding: 15px 26px; border-radius: 999px;
+    background: var(--cream); color: var(--rust);
+    font-size: 10px; font-weight: 600; letter-spacing: .3em; text-decoration: none;
+    box-shadow: 0 10px 24px -10px rgba(25, 3, 0, .7);
+    transition: transform .3s, box-shadow .3s;
+  }
+  .cta:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -10px rgba(25, 3, 0, .8); }
+  .countdown { margin-top: 22px; font-size: 9px; font-weight: 600; letter-spacing: .4em; color: rgba(243, 214, 196, .7); }
+
+  .hint {
+    position: absolute; left: 0; right: 0; top: 862px; z-index: 30; text-align: center;
+    font-size: 10px; font-weight: 600; letter-spacing: .4em; color: rgba(243, 214, 196, .65);
+  }
+
+  .controls { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: flex; gap: 8px; }
+  .controls button {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-radius: 999px;
+    border: 1px solid rgba(243, 226, 214, .35); background: rgba(50, 10, 5, .4); backdrop-filter: blur(6px);
+    color: var(--cream); font: 600 10px/1 var(--sans); letter-spacing: .26em; text-transform: uppercase;
+    cursor: pointer; opacity: .8; transition: opacity .3s, background .3s;
+  }
+  .controls button:hover, .controls button:focus-visible { opacity: 1; background: rgba(50, 10, 5, .65); outline: none; }
+  .controls svg { width: 13px; height: 13px; }
+</style>
+</head>
+<body>
+  <div class="backdrop"></div>
+  <div class="spot" id="spot"></div>
+  <canvas id="fx"></canvas>
+
+  <main class="stage" id="stage" aria-label="Uitnodiging voor de opening van Lilou">
+    <!-- Envelop -->
+    <div class="abs env env-back" id="envBack" aria-hidden="true"></div>
+
+    <div class="abs card-wrap" id="cardWrap">
+      <div class="tilt" id="tilt">
+        <div class="card3d" id="card3d" role="button" tabindex="0" aria-label="Draai de uitnodiging om">
+          <!-- Voorkant -->
+          <section class="face front" id="front">
+            <svg class="arcs" viewBox="0 0 520 680" aria-hidden="true">
+              <circle class="arc deep" cx="402" cy="585" r="204" pathLength="1" transform="rotate(-150 402 585)"/>
+              <circle class="arc hi"   cx="403.2" cy="586.6" r="204" pathLength="1" transform="rotate(-150 403.2 586.6)"/>
+              <circle class="arc thin" cx="377" cy="617" r="224" pathLength="1" transform="rotate(-160 377 617)"/>
+            </svg>
+            <div class="content">
+              <p class="kicker f-kicker">UITNODIGING</p>
+              <div class="logo">
+                <h1 class="word emboss" aria-label="Lilou"><span>L</span><span>i</span><span>l</span><span>o</span><span>u</span></h1>
+                <span class="tag emboss f-tag">c’est tout.</span>
+                <span class="by emboss f-by">by MARK MINKMAN</span>
+              </div>
+              <div class="rule f-rule"></div>
+              <div><p class="opening foil f-opening">OPENING</p></div>
+              <p class="when f-when">zondag 29 november · 16:00</p>
+            </div>
+            <p class="address">
+              <span class="f-addr">HET POMPHUIS · KLINKENBERGERWEG 41 · EDE</span>
+              <span class="f-addr">AANMELDEN TOT 26.11 · LILOU-EDE.NL/OPENING</span>
+            </p>
+            <div class="sheen" id="sheen"></div>
+            <div class="glare"></div>
+          </section>
+
+          <!-- Achterkant -->
+          <section class="face back" id="backFace">
+            <div class="bigL emboss" aria-hidden="true">L</div>
+            <div class="frame"></div>
+            <div class="content">
+              <p class="kicker">DE OPENING</p>
+              <h2 class="foil">29 november</h2>
+              <p class="time">zondag · 16:00</p>
+              <p class="place">HET POMPHUIS<small>KLINKENBERGERWEG 41 · EDE</small></p>
+              <div class="rule"></div>
+              <p class="deadline">Aanmelden tot 26 november</p>
+              <a class="cta" href="https://lilou-ede.nl/opening" target="_blank" rel="noopener">AANMELDEN <span aria-hidden="true">→</span></a>
+              <p class="countdown" id="countdown"></p>
+            </div>
+            <div class="glare"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div class="abs env env-pocket" id="envPocket" aria-hidden="true">
+      <svg viewBox="0 0 560 380" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="pk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7f2613"/><stop offset="1" stop-color="#6a1c0d"/></linearGradient>
+          <linearGradient id="pkb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8d2c16"/><stop offset="1" stop-color="#76200f"/></linearGradient>
+        </defs>
+        <rect width="560" height="380" fill="url(#pk)"/>
+        <path d="M0 380 L280 196 L560 380 Z" fill="url(#pkb)"/>
+        <path d="M0 380 L280 196 L560 380" fill="none" stroke="rgba(30,3,0,.25)" stroke-width="1.2"/>
+        <path d="M0 0 L262 196 M560 0 L298 196" fill="none" stroke="rgba(255,180,150,.1)" stroke-width="1"/>
+      </svg>
+    </div>
+    <div class="abs env env-flap" id="envFlap" aria-hidden="true">
+      <svg viewBox="0 0 560 236" preserveAspectRatio="none">
+        <defs><linearGradient id="fl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#93311a"/><stop offset="1" stop-color="#7b2310"/></linearGradient></defs>
+        <rect width="560" height="236" fill="url(#fl)"/>
+        <path d="M0 0 L280 236 L560 0" fill="none" stroke="rgba(30,3,0,.35)" stroke-width="3"/>
+      </svg>
+    </div>
+
+    <!-- Lakzegel (twee helften die breken) -->
+    <div class="abs seal seal-l" id="sealL" aria-hidden="true"><svg viewBox="0 0 100 100"><use href="#sealArt"/></svg></div>
+    <div class="abs seal seal-r" id="sealR" aria-hidden="true"><svg viewBox="0 0 100 100"><use href="#sealArt"/></svg></div>
+
+    <p class="hint" id="hint">KLIK OP DE KAART OM TE DRAAIEN</p>
+  </main>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <radialGradient id="wax" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#7d1a0d"/><stop offset=".6" stop-color="#561006"/><stop offset="1" stop-color="#3a0903"/></radialGradient>
+      <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2d9a6"/><stop offset=".5" stop-color="#b98348"/><stop offset="1" stop-color="#ecc98c"/></linearGradient>
+      <g id="sealArt">
+        <path d="M50 3 C60 2 66 8 74 9 C83 11 85 20 91 26 C97 33 95 42 97 50 C99 59 93 65 91 73 C88 82 80 84 74 90 C67 96 58 95 50 97 C41 99 35 93 27 91 C18 88 16 80 10 74 C4 67 5 58 3 50 C1 41 7 35 9 27 C12 18 20 16 26 10 C33 4 42 4 50 3 Z" fill="url(#wax)"/>
+        <circle cx="50" cy="50" r="33" fill="none" stroke="rgba(255,170,140,.18)" stroke-width="1.4"/>
+        <circle cx="50" cy="50" r="36" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/>
+        <text x="50" y="64" text-anchor="middle" font-family="Cormorant Garamond, serif" font-weight="500" font-size="44" fill="url(#gold)">L</text>
+      </g>
+    </defs>
+  </svg>
+
+  <div class="grain"></div>
+
+  <div class="controls">
+    <button type="button" id="flipBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Draai</button>
+    <button type="button" id="replayBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/></svg>Opnieuw</button>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const stage = $('#stage');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Schalen ---------- */
+  function fit() {
+    const s = Math.min(innerWidth / 800, innerHeight / 1000) * 0.95;
+    stage.style.setProperty('--scale', s.toFixed(4));
+  }
+  fit(); addEventListener('resize', fit);
+
+  /* ---------- Aftellen ---------- */
+  (() => {
+    const target = new Date(2026, 10, 29, 16, 0);
+    const days = Math.ceil((target - new Date()) / 864e5);
+    $('#countdown').textContent = days > 1 ? `NOG ${days} DAGEN` : days === 1 ? 'MORGEN IS HET ZOVER' : '';
+  })();
+
+  /* ---------- Champagnebubbels ---------- */
+  const cv = $('#fx'), ctx = cv.getContext('2d');
+  let W, H, dpr, bubbles = [], fxLevel = { v: 0 };
+  function size() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr;
+  }
+  size(); addEventListener('resize', size);
+  for (let i = 0; i < 70; i++) bubbles.push(newBubble(true));
+  function newBubble(anywhere) {
+    return {
+      x: Math.random(), y: anywhere ? Math.random() : 1.05,
+      r: (Math.random() * 2.4 + .6), sp: Math.random() * .0009 + .0003,
+      wob: Math.random() * Math.PI * 2, a: Math.random() * .5 + .2
+    };
+  }
+  gsap.ticker.add(() => {
+    ctx.clearRect(0, 0, W, H);
+    if (fxLevel.v <= 0.01) return;
+    for (const b of bubbles) {
+      b.y -= b.sp; b.wob += .03;
+      if (b.y < -0.05) Object.assign(b, newBubble(false));
+      const x = (b.x + Math.sin(b.wob) * .004) * W, y = b.y * H, r = b.r * dpr;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(244, 205, 150, ${b.a * fxLevel.v * .55})`; ctx.fill();
+      ctx.beginPath(); ctx.arc(x - r * .35, y - r * .35, r * .35, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 245, 225, ${b.a * fxLevel.v * .6})`; ctx.fill();
+    }
+  });
+
+  /* ---------- Licht (reliëf) ---------- */
+  const faces = $$('.face');
+  const light = { x: -3, y: -2 };
+  const applyLight = () => faces.forEach(f => { f.style.setProperty('--lx', light.x.toFixed(2)); f.style.setProperty('--ly', light.y.toFixed(2)); });
+
+  /* ---------- Elementen ---------- */
+  const env = ['#envBack', '#envPocket', '#envFlap'].map($);
+  const seals = [$('#sealL'), $('#sealR')];
+  const cardWrap = $('#cardWrap'), tilt = $('#tilt'), card3d = $('#card3d');
+  const letters = $$('.logo .word span');
+
+  gsap.set($('#envFlap'), { transformOrigin: '50% 0%', transformPerspective: 1300 });
+
+  /* ---------- Tijdlijn ---------- */
+  const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+  tl
+    .fromTo('#spot', { opacity: 0 }, { opacity: 1, duration: 1.6 }, 0)
+    .fromTo([...env, ...seals], { y: 560, opacity: 0 }, { y: 0, opacity: 1, duration: 1.3 }, .2)
+    .fromTo(seals, { x: 0, rotation: 0, scale: 1 }, { scale: 1.08, duration: .14, yoyo: true, repeat: 3, ease: 'sine.inOut' }, 1.55)
+    .to('#sealL', { x: -70, y: 140, rotation: -40, opacity: 0, duration: 1, ease: 'power2.in' }, 2.05)
+    .to('#sealR', { x: 70, y: 150, rotation: 35, opacity: 0, duration: 1, ease: 'power2.in' }, 2.05)
+    .fromTo('#envFlap', { rotationX: 0, zIndex: 4 }, { rotationX: 180, duration: 1, ease: 'power2.inOut' }, 2.25)
+    .set('#envFlap', { zIndex: 0 }, 2.75)
+    .fromTo(cardWrap, { y: 170, scale: .5, opacity: 0, zIndex: 2 }, { opacity: 1, duration: .01 }, 1.5)
+    .to(cardWrap, { y: -230, duration: 1.2, ease: 'power2.inOut' }, 3.1)
+    .set(cardWrap, { zIndex: 10 }, 4.25)
+    .to(env, { y: 760, opacity: 0, duration: 1.1, ease: 'power2.in' }, 4.2)
+    .to(cardWrap, { y: 0, scale: 1, duration: 1.5, ease: 'power3.inOut' }, 4.3)
+    .fromTo(card3d, { rotationY: 0 }, { rotationY: 360, duration: 1.5, ease: 'power3.inOut' }, 4.3)
+    .set(card3d, { rotationY: 0 }, 5.85)
+    .fromTo('#spot', { scale: 1 }, { scale: 1.25, duration: 2 }, 4.3)
+
+    // inhoud voorkant
+    .fromTo('.f-kicker', { opacity: 0, y: 12, letterSpacing: '1em' }, { opacity: 1, y: 0, letterSpacing: '.5em', duration: 1.2 }, 5.7)
+    .fromTo(letters, { opacity: 0, y: 46, filter: 'blur(10px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.4, stagger: .1 }, 5.9)
+    .fromTo(light, { x: -3, y: -2.2 }, { x: 1, y: 1.3, duration: 3, ease: 'power2.inOut', onUpdate: applyLight }, 5.9)
+    .fromTo('.arc', { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.8, stagger: .25, ease: 'power2.inOut' }, 6.1)
+    .fromTo('.f-tag', { opacity: 0, y: 14, filter: 'blur(6px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.1 }, 6.55)
+    .fromTo('.f-by', { opacity: 0 }, { opacity: 1, duration: 1 }, 6.8)
+    .fromTo('.f-rule', { scaleX: 0 }, { scaleX: 1, duration: 1, ease: 'power2.inOut' }, 6.9)
+    .fromTo('.f-opening', { opacity: 0, letterSpacing: '.8em', filter: 'blur(4px)' }, { opacity: 1, letterSpacing: '.22em', filter: 'blur(0px)', duration: 1.6 }, 7.05)
+    .fromTo('.f-when', { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 1.1 }, 7.45)
+    .fromTo('.f-addr', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 1, stagger: .15 }, 7.75)
+    .fromTo('#sheen', { xPercent: -140 }, { xPercent: 330, duration: 1.6, ease: 'power2.inOut' }, 8.1)
+    .fromTo(fxLevel, { v: 0 }, { v: 1, duration: 2.5, ease: 'power1.inOut' }, 7.6)
+    .fromTo('#hint', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 1 }, 9);
+
+  let introDone = false;
+  tl.eventCallback('onComplete', () => { introDone = true; });
+
+  /* ---------- 3D-tilt + glans ---------- */
+  const rx = gsap.quickTo(tilt, 'rotationX', { duration: .9, ease: 'power3.out' });
+  const ry = gsap.quickTo(tilt, 'rotationY', { duration: .9, ease: 'power3.out' });
+  let pointer = null, lastMove = 0;
+  addEventListener('pointermove', e => {
+    pointer = { x: (e.clientX / innerWidth) * 2 - 1, y: (e.clientY / innerHeight) * 2 - 1 };
+    lastMove = performance.now();
+  });
+  if (!reduce) gsap.ticker.add(() => {
+    if (!introDone) return;
+    const t = performance.now() / 1000;
+    const active = pointer && performance.now() - lastMove < 4000;
+    const px = active ? pointer.x : Math.sin(t * .5) * .45;
+    const py = active ? pointer.y : Math.cos(t * .4) * .35;
+    rx(-py * 9); ry(px * 12);
+    faces.forEach(f => {
+      f.style.setProperty('--gx', (50 + px * 45).toFixed(1) + '%');
+      f.style.setProperty('--gy', (35 + py * 40).toFixed(1) + '%');
+    });
+    light.x = 1 - px * 1.6; light.y = 1.3 - py * 1.4; applyLight();
+  });
+
+  /* ---------- Draaien ---------- */
+  let side = 0;
+  function flip() {
+    if (!introDone) return;
+    side += 180;
+    gsap.to(card3d, { rotationY: side, duration: 1.1, ease: 'power3.inOut' });
+    gsap.to('#hint', { opacity: 0, duration: .4 });
+  }
+  card3d.addEventListener('click', e => { if (!e.target.closest('a')) flip(); });
+  card3d.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+  $('#flipBtn').addEventListener('click', flip);
+
+  /* ---------- Afspelen ---------- */
+  function play() {
+    stage.classList.add('ready');
+    introDone = false; side = 0;
+    gsap.set(tilt, { rotationX: 0, rotationY: 0 });
+    if (reduce) { tl.progress(1).pause(); introDone = true; return; }
+    tl.restart();
+  }
+  $('#replayBtn').addEventListener('click', play);
+  addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') play(); });
+
+  let started = false;
+  const start = () => { if (!started) { started = true; play(); } };
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(start);
+  setTimeout(start, 2500);
+})();
+</script>
+</body>
+</html>

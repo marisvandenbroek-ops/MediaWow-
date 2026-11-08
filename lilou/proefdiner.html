@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lilou Proefdiner</title>
+<meta name="description" content="Geanimeerde uitnodiging voor de avant-première van Lilou — het eerste diner in Het Pomphuis, 26 & 27 november.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-1: #8a3226;
+    --bg-2: #4a140d;
+    --cream: #f2ece3;
+    --cream-lo: #e4dacb;
+    --ink-red: #8b2611;
+    --ink-dark: #3a1a12;
+    --line: rgba(139, 38, 17, .55);
+    --serif: "Cormorant Garamond", "Times New Roman", serif;
+    --sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: var(--bg-2); overflow: hidden; font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+
+  .backdrop { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 45%, var(--bg-1), var(--bg-2) 80%); }
+  .glow {
+    position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 50% 42% at 50% 47%, rgba(255, 170, 110, .3), transparent 70%);
+  }
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 40;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: .26; mix-blend-mode: multiply;
+  }
+
+  .stage {
+    position: absolute; left: 50%; top: 50%;
+    width: 800px; height: 1000px;
+    transform: translate(-50%, -50%) scale(var(--scale, .8));
+  }
+  .stage:not(.ready) { visibility: hidden; }
+  .abs { position: absolute; }
+
+  /* ---------- Bord & bestek ---------- */
+  .plate { z-index: 5; left: 230px; top: 300px; width: 340px; height: 340px; }
+  .plate svg { width: 100%; height: 100%; overflow: visible; }
+  .cutlery { z-index: 4; top: 320px; width: 60px; height: 300px; }
+  .cutlery svg { width: 100%; height: 100%; filter: drop-shadow(0 14px 14px rgba(25, 3, 0, .45)); }
+  .fork { left: 120px; }
+  .knife { left: 620px; }
+
+  /* ---------- Kaart ---------- */
+  .card-wrap { z-index: 3; left: 170px; top: 170px; width: 460px; height: 660px; perspective: 1800px; }
+  .tilt, .card3d { position: absolute; inset: 0; transform-style: preserve-3d; }
+  .card3d { cursor: pointer; }
+  .shadow {
+    position: absolute; inset: 0; border-radius: 3px;
+    box-shadow: 0 50px 80px -30px rgba(25, 3, 0, .8), 0 12px 26px rgba(25, 3, 0, .32);
+  }
+  .face {
+    position: absolute; inset: 0; overflow: hidden; border-radius: 3px;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    background:
+      radial-gradient(ellipse 90% 50% at 30% 0%, rgba(255, 255, 255, .55), transparent 70%),
+      linear-gradient(170deg, #f7f2eb 0%, var(--cream) 55%, var(--cream-lo) 100%);
+    color: var(--ink-red); text-align: center;
+    --gx: 50%; --gy: 25%;
+  }
+  .face::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: .2; mix-blend-mode: multiply;
+  }
+  .back { transform: rotateY(180deg); }
+  .glare {
+    position: absolute; inset: 0; pointer-events: none; z-index: 4;
+    background: radial-gradient(circle at var(--gx) var(--gy), rgba(255, 245, 230, .5), transparent 50%);
+    mix-blend-mode: soft-light;
+  }
+  .sheen {
+    position: absolute; top: -20%; bottom: -20%; width: 40%; left: 0; z-index: 4; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .45) 50%, transparent);
+    mix-blend-mode: soft-light;
+    transform: translateX(-140%) skewX(-12deg);
+  }
+  svg.frame { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+  svg.frame rect { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 1; }
+
+  .press { text-shadow: 0 1px 0 rgba(255, 255, 255, .7), 0 -.5px 0 rgba(90, 20, 5, .22); }
+
+  .front .content { position: absolute; inset: 0; padding: 72px 40px 0; z-index: 2; }
+  .mark { font-family: var(--serif); font-weight: 400; font-size: 168px; line-height: .78; letter-spacing: -.02em; }
+  .mark span { display: inline-block; }
+  .lead { margin-top: 30px; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 36px; line-height: 1.05; display: inline-block; }
+  .lead .dot { display: inline-block; }
+  .title { margin-top: 10px; font-family: var(--serif); font-weight: 500; font-size: 60px; line-height: .92; letter-spacing: .02em; perspective: 600px; }
+  .title span { display: inline-block; transform-origin: 50% 100%; }
+  .date { margin-top: 38px; color: var(--ink-dark); font-size: 12px; font-weight: 600; letter-spacing: .38em; padding-left: .38em; }
+  .body { margin-top: 18px; color: var(--ink-dark); font-size: 9.6px; font-weight: 500; letter-spacing: .28em; line-height: 2.05; }
+  .body span { display: block; }
+  .url { position: absolute; left: 0; right: 0; bottom: 70px; z-index: 2; font-size: 9.8px; font-weight: 600; letter-spacing: .34em; }
+  .url .ul { display: block; width: 210px; height: 1px; margin: 10px auto 0; background: var(--line); transform-origin: 50% 50%; }
+
+  /* Achterkant */
+  .back .content {
+    position: absolute; inset: 0; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 44px;
+  }
+  .back .watermark {
+    position: absolute; left: -30px; top: -60px; z-index: 1;
+    font-family: var(--serif); font-size: 560px; line-height: 1; color: rgba(139, 38, 17, .045);
+  }
+  .kicker { font-size: 10px; font-weight: 600; letter-spacing: .48em; padding-left: .48em; color: var(--ink-dark); }
+  .back h2 { margin-top: 16px; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 42px; line-height: 1.05; }
+  .nights { margin-top: 30px; display: flex; gap: 14px; }
+  .night {
+    width: 150px; padding: 18px 10px 16px; border: 1px solid var(--line); border-radius: 2px;
+    background: rgba(255, 255, 255, .35); color: var(--ink-red); cursor: pointer;
+    font-family: var(--sans); transition: background .35s, color .35s, transform .35s, box-shadow .35s;
+  }
+  .night:hover { transform: translateY(-3px); box-shadow: 0 12px 20px -12px rgba(60, 10, 0, .5); }
+  .night small { display: block; font-size: 8.5px; font-weight: 600; letter-spacing: .32em; }
+  .night b { display: block; margin-top: 6px; font-family: var(--serif); font-weight: 500; font-size: 44px; line-height: 1; }
+  .night i { display: block; margin-top: 4px; font-family: var(--serif); font-size: 18px; }
+  .night[aria-pressed="true"] { background: var(--ink-red); color: var(--cream); box-shadow: 0 14px 24px -12px rgba(60, 10, 0, .7); }
+  .back .note { margin-top: 26px; color: var(--ink-dark); font-size: 9.4px; font-weight: 500; letter-spacing: .26em; line-height: 2; }
+  .cta {
+    margin-top: 24px; display: inline-flex; align-items: center; gap: 12px;
+    padding: 15px 26px; border-radius: 999px; background: var(--ink-red); color: var(--cream);
+    font-size: 10px; font-weight: 600; letter-spacing: .3em; text-decoration: none;
+    box-shadow: 0 10px 24px -10px rgba(60, 10, 0, .7); transition: transform .3s;
+  }
+  .cta:hover { transform: translateY(-2px); }
+  .countdown { margin-top: 20px; font-size: 9px; font-weight: 600; letter-spacing: .4em; color: rgba(139, 38, 17, .7); }
+
+  .hint {
+    position: absolute; left: 0; right: 0; top: 858px; z-index: 30; text-align: center;
+    font-size: 10px; font-weight: 600; letter-spacing: .4em; color: rgba(243, 214, 196, .65);
+  }
+  .controls { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: flex; gap: 8px; }
+  .controls button {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px;
+    border: 1px solid rgba(243, 226, 214, .35); background: rgba(50, 10, 5, .4); backdrop-filter: blur(6px);
+    color: #f3e6dc; font: 600 10px/1 var(--sans); letter-spacing: .26em; text-transform: uppercase;
+    cursor: pointer; opacity: .8; transition: opacity .3s, background .3s;
+  }
+  .controls button:hover, .controls button:focus-visible { opacity: 1; background: rgba(50, 10, 5, .65); outline: none; }
+  .controls svg { width: 13px; height: 13px; }
+</style>
+</head>
+<body>
+  <div class="backdrop"></div>
+  <div class="glow" id="glow"></div>
+  <canvas id="fx"></canvas>
+
+  <main class="stage" id="stage" aria-label="Uitnodiging voor de avant-première van Lilou">
+
+    <!-- Kaart -->
+    <div class="abs card-wrap" id="cardWrap">
+      <div class="tilt" id="tilt">
+        <div class="card3d" id="card3d" role="button" tabindex="0" aria-label="Draai de uitnodiging om">
+          <div class="shadow" id="cardShadow"></div>
+
+          <section class="face front" id="front">
+            <svg class="frame" viewBox="0 0 460 660" aria-hidden="true">
+              <rect x="20" y="20" width="420" height="620" pathLength="1"/>
+              <rect x="26" y="26" width="408" height="608" pathLength="1"/>
+            </svg>
+            <div class="content">
+              <div class="mark press"><span id="markO">O</span><span id="markDot">.</span></div>
+              <div><p class="lead press" id="lead">Jouw plek aan tafel<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></p></div>
+              <h1 class="title press" id="title" aria-label="Avant-première"></h1>
+              <p class="date f-date">26 &amp; 27.11 &nbsp;/&nbsp; 16:00</p>
+              <p class="body">
+                <span class="f-body">HET EERSTE DINER IN HET POMPHUIS,</span>
+                <span class="f-body">VOORDAT DE DEUREN OPENGAAN.</span>
+                <span class="f-body">KIES JE AVOND TOT 23 NOVEMBER.</span>
+              </p>
+            </div>
+            <p class="url f-url">LILOU-EDE.NL/PROEFDINER<span class="ul f-ul"></span></p>
+            <div class="sheen" id="sheen"></div>
+            <div class="glare"></div>
+          </section>
+
+          <section class="face back">
+            <div class="watermark" aria-hidden="true">O.</div>
+            <svg class="frame" viewBox="0 0 460 660" aria-hidden="true">
+              <rect x="20" y="20" width="420" height="620" style="stroke-dasharray:none"/>
+              <rect x="26" y="26" width="408" height="608" style="stroke-dasharray:none"/>
+            </svg>
+            <div class="content">
+              <p class="kicker">AVANT-PREMIÈRE</p>
+              <h2>Kies je avond…</h2>
+              <div class="nights" role="group" aria-label="Kies je avond">
+                <button type="button" class="night" aria-pressed="true"><small>DONDERDAG</small><b>26.11</b><i>16:00</i></button>
+                <button type="button" class="night" aria-pressed="false"><small>VRIJDAG</small><b>27.11</b><i>16:00</i></button>
+              </div>
+              <p class="note">HET EERSTE DINER IN HET POMPHUIS,<br>VOORDAT DE DEUREN OPENGAAN.</p>
+              <a class="cta" href="https://lilou-ede.nl/proefdiner" target="_blank" rel="noopener">RESERVEER JE PLEK <span aria-hidden="true">→</span></a>
+              <p class="countdown" id="countdown"></p>
+            </div>
+            <div class="glare"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bestek -->
+    <div class="abs cutlery fork" id="fork" aria-hidden="true">
+      <svg viewBox="0 0 60 300">
+        <defs><linearGradient id="silver" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c9beb0"/><stop offset=".45" stop-color="#f7f1e8"/><stop offset="1" stop-color="#b5a99a"/></linearGradient></defs>
+        <path d="M14 8 v58 M24 8 v58 M36 8 v58 M46 8 v58" stroke="url(#silver)" stroke-width="5" stroke-linecap="round"/>
+        <path d="M11 60 Q11 92 26 100 L26 100 Q24 120 25 160 Q26 230 23 282 Q23 292 30 292 Q37 292 37 282 Q34 230 35 160 Q36 120 34 100 Q49 92 49 60 Z" fill="url(#silver)"/>
+      </svg>
+    </div>
+    <div class="abs cutlery knife" id="knife" aria-hidden="true">
+      <svg viewBox="0 0 60 300">
+        <path d="M30 6 Q44 20 44 80 Q44 118 36 128 L24 128 L24 14 Q24 6 30 6 Z" fill="url(#silver)"/>
+        <path d="M23 128 Q22 200 23 282 Q23 292 30 292 Q37 292 37 282 Q38 200 37 128 Z" fill="url(#silver)"/>
+      </svg>
+    </div>
+
+    <!-- Bord -->
+    <div class="abs plate" id="plate" aria-hidden="true">
+      <svg viewBox="0 0 340 340">
+        <defs>
+          <radialGradient id="rim" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#fbf8f3"/><stop offset=".85" stop-color="#ece4d8"/><stop offset="1" stop-color="#d9cfc1"/></radialGradient>
+          <radialGradient id="well" cx="55%" cy="60%" r="60%"><stop offset="0" stop-color="#f6f1ea"/><stop offset=".8" stop-color="#ebe3d7"/><stop offset="1" stop-color="#ddd3c4"/></radialGradient>
+          <filter id="ps" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#190300" flood-opacity=".55"/></filter>
+        </defs>
+        <g id="plateBody">
+          <circle cx="170" cy="170" r="165" fill="url(#rim)" filter="url(#ps)"/>
+          <circle cx="170" cy="170" r="112" fill="url(#well)"/>
+          <circle cx="170" cy="170" r="112" fill="none" stroke="rgba(120,90,70,.18)" stroke-width="1.5"/>
+          <ellipse cx="120" cy="95" rx="55" ry="22" fill="rgba(255,255,255,.5)" transform="rotate(-35 120 95)"/>
+        </g>
+        <circle id="ring" cx="170" cy="170" r="140" fill="none" stroke="#8b2611" stroke-width="3" pathLength="1" stroke-dasharray="1" transform="rotate(-90 170 170)"/>
+      </svg>
+    </div>
+
+    <p class="hint" id="hint">KLIK OP DE KAART OM TE DRAAIEN</p>
+  </main>
+
+  <div class="grain"></div>
+
+  <div class="controls">
+    <button type="button" id="flipBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Draai</button>
+    <button type="button" id="replayBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/></svg>Opnieuw</button>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const stage = $('#stage');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function fit() {
+    const s = Math.min(innerWidth / 800, innerHeight / 1000) * 0.95;
+    stage.style.setProperty('--scale', s.toFixed(4));
+  }
+  fit(); addEventListener('resize', fit);
+
+  /* Titel in losse letters */
+  const title = $('#title');
+  ['AVANT-', 'PREMIÈRE'].forEach((w, i) => {
+    if (i) title.appendChild(document.createElement('br'));
+    [...w].forEach(ch => { const s = document.createElement('span'); s.textContent = ch; s.setAttribute('aria-hidden', 'true'); title.appendChild(s); });
+  });
+
+  /* Aftellen tot de deadline */
+  (() => {
+    const days = Math.ceil((new Date(2026, 10, 23, 23, 59) - new Date()) / 864e5);
+    $('#countdown').textContent = days > 1 ? `NOG ${days} DAGEN OM TE KIEZEN` : days === 1 ? 'LAATSTE DAG OM TE KIEZEN' : '';
+  })();
+
+  /* Avond kiezen */
+  $$('.night').forEach(b => b.addEventListener('click', () => {
+    $$('.night').forEach(n => n.setAttribute('aria-pressed', String(n === b)));
+  }));
+
+  /* ---------- Warme stofdeeltjes / kaarslicht ---------- */
+  const cv = $('#fx'), ctx = cv.getContext('2d');
+  let W, H, dpr; const motes = []; const fxLevel = { v: 0 };
+  function size() { dpr = Math.min(devicePixelRatio || 1, 2); W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr; }
+  size(); addEventListener('resize', size);
+  for (let i = 0; i < 55; i++) motes.push({
+    x: Math.random(), y: Math.random(), r: Math.random() * 2.2 + .5,
+    vx: (Math.random() - .5) * .00025, vy: -(Math.random() * .0003 + .00005),
+    ph: Math.random() * 6.28, a: Math.random() * .6 + .2
+  });
+  gsap.ticker.add(() => {
+    ctx.clearRect(0, 0, W, H);
+    if (fxLevel.v < .01) return;
+    for (const m of motes) {
+      m.x += m.vx; m.y += m.vy; m.ph += .02;
+      if (m.y < -.02) { m.y = 1.02; m.x = Math.random(); }
+      if (m.x < -.02) m.x = 1.02; if (m.x > 1.02) m.x = -.02;
+      const tw = (Math.sin(m.ph) + 1) / 2;
+      ctx.beginPath(); ctx.arc(m.x * W, m.y * H, m.r * dpr, 0, 6.283);
+      ctx.fillStyle = `rgba(255, 214, 160, ${m.a * (.4 + tw * .6) * fxLevel.v * .55})`; ctx.fill();
+    }
+  });
+  // kaarslicht flakkert
+  (function flicker() {
+    if (!reduce) gsap.to('#glow', { opacity: gsap.utils.random(.75, 1), scale: gsap.utils.random(.98, 1.04), duration: gsap.utils.random(.12, .45), ease: 'sine.inOut', onComplete: flicker });
+  })();
+
+  /* ---------- Elementen ---------- */
+  const cardWrap = $('#cardWrap'), tilt = $('#tilt'), card3d = $('#card3d'), front = $('#front');
+  const plate = $('#plate');
+
+  // Positie van de "O" binnen de kaart (zonder transforms)
+  function offsetIn(el, anc) { let x = 0, y = 0; while (el && el !== anc) { x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; } return { x, y }; }
+  function oTarget() {
+    const o = $('#markO'), p = offsetIn(o, front);
+    const cx = p.x + o.offsetWidth / 2, cy = p.y + o.offsetHeight * .55;
+    return { cx, cy, stageX: cardWrap.offsetLeft + cx, stageY: cardWrap.offsetTop + cy, r: o.offsetWidth * .37 };
+  }
+
+  let tl;
+  function build() {
+    const T = oTarget();
+    const plateCX = plate.offsetLeft + 170, plateCY = plate.offsetTop + 170;
+    const s = T.r / 140;
+
+    tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
+    tl
+      .fromTo('#glow', { autoAlpha: 0 }, { autoAlpha: 1, duration: 1.4 }, 0)
+      .fromTo(plate, { scale: 1.35, rotation: -25, y: -40, opacity: 0, x: 0 }, { scale: 1, rotation: 0, y: 0, opacity: 1, duration: 1.4 }, .25)
+      .fromTo('#plateBody', { opacity: 1 }, { opacity: 1, duration: .01 }, 0)
+      .fromTo('#fork', { x: -340, rotation: -8, opacity: 0 }, { x: 0, rotation: 0, opacity: 1, duration: 1.2 }, .85)
+      .fromTo('#knife', { x: 340, rotation: 8, opacity: 0 }, { x: 0, rotation: 0, opacity: 1, duration: 1.2 }, .97)
+      .fromTo('#ring', { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1.4, ease: 'power2.inOut' }, 1.2)
+
+      // bestek weg, bord wordt de O
+      .to('#fork', { x: -380, opacity: 0, duration: .9, ease: 'power2.in' }, 2.75)
+      .to('#knife', { x: 380, opacity: 0, duration: .9, ease: 'power2.in' }, 2.8)
+      .to('#plateBody', { opacity: 0, duration: .9, ease: 'power1.inOut' }, 3.0)
+      .to(plate, { x: T.stageX - plateCX, y: T.stageY - plateCY, scale: s, rotation: 180, duration: 1.4, ease: 'power3.inOut' }, 3.0)
+      .fromTo(front, { clipPath: `circle(0px at ${T.cx}px ${T.cy}px)` }, { clipPath: `circle(820px at ${T.cx}px ${T.cy}px)`, duration: 1.6, ease: 'power2.inOut' }, 3.9)
+      .fromTo('#cardShadow', { opacity: 0 }, { opacity: 1, duration: 1.2 }, 4.4)
+      .fromTo('#markO', { opacity: 0 }, { opacity: 1, duration: .5 }, 4.15)
+      .to('#ring', { opacity: 0, duration: .45 }, 4.15)
+      .fromTo('#ring', { opacity: 1 }, { opacity: 1, duration: .01 }, 0)
+      .to(plate, { opacity: 0, duration: .5 }, 4.3)
+      .fromTo('#markDot', { y: -160, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: 'bounce.out' }, 4.6)
+
+      // inhoud
+      .fromTo('svg.frame rect', { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1.8, stagger: .2, ease: 'power2.inOut' }, 4.6)
+      .fromTo('#lead', { clipPath: 'inset(-20% 100% -20% 0)' }, { clipPath: 'inset(-20% 0% -20% 0)', duration: 1.5, ease: 'power1.inOut' }, 5.0)
+      .fromTo('#lead .dot', { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: .35, stagger: .18, ease: 'back.out(3)' }, 6.1)
+      .fromTo('#title span', { opacity: 0, rotationX: -95, y: 10 }, { opacity: 1, rotationX: 0, y: 0, duration: .9, stagger: .045, ease: 'back.out(1.6)' }, 5.6)
+      .fromTo('.f-date', { opacity: 0, letterSpacing: '1em' }, { opacity: 1, letterSpacing: '.38em', duration: 1.3 }, 6.4)
+      .fromTo('.f-body', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .9, stagger: .14 }, 6.7)
+      .fromTo('.f-url', { opacity: 0 }, { opacity: 1, duration: .9 }, 7.2)
+      .fromTo('.f-ul', { scaleX: 0 }, { scaleX: 1, duration: 1, ease: 'power2.inOut' }, 7.35)
+      .fromTo('#sheen', { xPercent: -140 }, { xPercent: 360, duration: 1.6, ease: 'power2.inOut' }, 7.6)
+      .fromTo(fxLevel, { v: 0 }, { v: 1, duration: 2.5 }, 6.5)
+      .fromTo('#hint', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 1 }, 8.4);
+
+    tl.eventCallback('onComplete', () => { introDone = true; });
+  }
+
+  /* ---------- 3D-tilt + glans ---------- */
+  let introDone = false;
+  const rx = gsap.quickTo(tilt, 'rotationX', { duration: .9, ease: 'power3.out' });
+  const ry = gsap.quickTo(tilt, 'rotationY', { duration: .9, ease: 'power3.out' });
+  const faces = $$('.face');
+  let pointer = null, lastMove = 0;
+  addEventListener('pointermove', e => { pointer = { x: e.clientX / innerWidth * 2 - 1, y: e.clientY / innerHeight * 2 - 1 }; lastMove = performance.now(); });
+  if (!reduce) gsap.ticker.add(() => {
+    if (!introDone) return;
+    const t = performance.now() / 1000;
+    const active = pointer && performance.now() - lastMove < 4000;
+    const px = active ? pointer.x : Math.sin(t * .5) * .45;
+    const py = active ? pointer.y : Math.cos(t * .4) * .35;
+    rx(-py * 9); ry(px * 12);
+    faces.forEach(f => { f.style.setProperty('--gx', (50 + px * 45).toFixed(1) + '%'); f.style.setProperty('--gy', (30 + py * 40).toFixed(1) + '%'); });
+  });
+
+  /* ---------- Draaien ---------- */
+  let side = 0;
+  function flip() {
+    if (!introDone) return;
+    side += 180;
+    gsap.to(card3d, { rotationY: side, duration: 1.1, ease: 'power3.inOut' });
+    gsap.to('#hint', { opacity: 0, duration: .4 });
+  }
+  card3d.addEventListener('click', e => { if (!e.target.closest('a, button')) flip(); });
+  card3d.addEventListener('keydown', e => { if (e.target === card3d && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); flip(); } });
+  $('#flipBtn').addEventListener('click', flip);
+
+  /* ---------- Afspelen ---------- */
+  function play() {
+    stage.classList.add('ready');
+    introDone = false; side = 0;
+    gsap.set(card3d, { rotationY: 0 });
+    gsap.set(tilt, { rotationX: 0, rotationY: 0 });
+    if (!tl) build();
+    if (reduce) { tl.progress(1).pause(); introDone = true; return; }
+    tl.restart();
+  }
+  $('#replayBtn').addEventListener('click', play);
+  addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') play(); });
+
+  let started = false;
+  const start = () => { if (!started) { started = true; play(); } };
+  (document.fonts ? document.fonts.ready : Promise.resolve()).then(start);
+  setTimeout(start, 2500);
+})();
+</script>
+</body>
+</html>
