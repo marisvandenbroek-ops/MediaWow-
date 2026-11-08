@@ -51,6 +51,7 @@
   }
   .stage:not(.ready) { visibility: hidden; }
   .abs { position: absolute; }
+  .cam { position: absolute; inset: 0; transform-origin: 400px 490px; }
 
   /* ---------- Envelop ---------- */
   .env { left: 120px; top: 470px; width: 560px; height: 380px; }
@@ -120,12 +121,12 @@
       calc(var(--lx) * 3px) calc(var(--ly) * 3px) 8px rgba(40, 4, 0, .22);
   }
   .front .content { position: absolute; inset: 0; padding-top: 74px; z-index: 2; }
-  .kicker { font-size: 10px; font-weight: 600; letter-spacing: .5em; padding-left: .5em; color: rgba(243, 214, 196, .8); }
+  .kicker { font-size: 12px; font-weight: 600; letter-spacing: .4em; padding-left: .4em; color: rgba(243, 214, 196, .8); }
   .logo { margin-top: 30px; }
   .logo .word { font-family: var(--serif); font-weight: 300; font-size: 192px; line-height: .85; letter-spacing: -.01em; }
   .logo .word span { display: inline-block; }
   .logo .tag { display: block; margin-top: 4px; font-family: var(--serif); font-weight: 600; font-size: 35px; letter-spacing: .12em; }
-  .logo .by { display: block; margin-top: 2px; font-size: 8px; font-weight: 600; letter-spacing: .22em; }
+  .logo .by { display: block; margin-top: 2px; font-size: 9px; font-weight: 600; letter-spacing: .22em; }
   .rule { width: 60px; height: 1px; margin: 46px auto 0; background: rgba(243, 214, 196, .55); }
   .opening {
     margin-top: 28px; display: inline-block;
@@ -140,10 +141,10 @@
     animation: foil 5.5s ease-in-out infinite alternate;
   }
   @keyframes foil { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
-  .when { margin-top: 4px; font-family: var(--serif); font-style: italic; font-size: 31px; color: rgba(243, 214, 196, .88); }
+  .when { margin-top: 4px; font-family: var(--serif); font-style: italic; font-size: 34px; color: rgba(243, 214, 196, .88); }
   .address {
-    position: absolute; left: 56px; right: 56px; bottom: 70px; z-index: 2;
-    font-size: 9px; font-weight: 600; letter-spacing: .24em; line-height: 2.3; color: rgba(243, 226, 214, .92);
+    position: absolute; left: 36px; right: 36px; bottom: 58px; z-index: 2;
+    font-size: 11.4px; font-weight: 600; letter-spacing: .12em; line-height: 2.1; color: rgba(243, 226, 214, .92);
   }
   .address span { display: block; }
   svg.arcs { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
@@ -166,23 +167,23 @@
   .back .frame { position: absolute; inset: 22px; border: 1px solid rgba(243, 214, 196, .28); z-index: 2; pointer-events: none; }
   .back h2 { font-family: var(--serif); font-weight: 500; font-size: 58px; line-height: 1; margin-top: 22px; }
   .back .time { font-family: var(--serif); font-style: italic; font-size: 34px; color: rgba(243, 214, 196, .88); margin-top: 6px; }
-  .back .place { margin-top: 30px; font-size: 10px; font-weight: 600; letter-spacing: .32em; line-height: 2.2; }
-  .back .place small { display: block; font-size: 9px; font-weight: 500; letter-spacing: .22em; color: rgba(243, 214, 196, .75); }
+  .back .place { margin-top: 30px; font-size: 13px; font-weight: 600; letter-spacing: .26em; line-height: 2.2; }
+  .back .place small { display: block; font-size: 11.5px; font-weight: 500; letter-spacing: .14em; color: rgba(243, 214, 196, .75); }
   .back .rule { margin-top: 30px; }
-  .back .deadline { margin-top: 28px; font-family: var(--serif); font-size: 24px; font-style: italic; }
+  .back .deadline { margin-top: 28px; font-family: var(--serif); font-size: 30px; font-style: italic; }
   .cta {
     margin-top: 26px; display: inline-flex; align-items: center; gap: 12px;
-    padding: 15px 26px; border-radius: 999px;
+    padding: 17px 30px; border-radius: 999px;
     background: var(--cream); color: var(--rust);
-    font-size: 10px; font-weight: 600; letter-spacing: .3em; text-decoration: none;
+    font-size: 12px; font-weight: 600; letter-spacing: .22em; text-decoration: none;
     box-shadow: 0 10px 24px -10px rgba(25, 3, 0, .7);
     transition: transform .3s, box-shadow .3s;
   }
   .cta:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -10px rgba(25, 3, 0, .8); }
-  .countdown { margin-top: 22px; font-size: 9px; font-weight: 600; letter-spacing: .4em; color: rgba(243, 214, 196, .7); }
+  .countdown { margin-top: 22px; font-size: 11px; font-weight: 600; letter-spacing: .3em; color: rgba(243, 214, 196, .7); }
 
   .hint {
-    position: absolute; left: 0; right: 0; top: 862px; z-index: 30; text-align: center;
+    position: fixed; left: 0; right: 0; bottom: 70px; z-index: 45; text-align: center;
     font-size: 10px; font-weight: 600; letter-spacing: .4em; color: rgba(243, 214, 196, .65);
   }
 
@@ -205,6 +206,7 @@
   <div class="vignette"></div>
 
   <main class="stage" id="stage" aria-label="Uitnodiging voor de opening van Lilou">
+   <div class="cam" id="cam">
     <!-- Envelop -->
     <div class="abs env env-back" id="envBack" aria-hidden="true"></div>
 
@@ -283,8 +285,9 @@
     <div class="abs seal seal-l" id="sealL" aria-hidden="true"><svg viewBox="0 0 100 100"><use href="#sealArt"/></svg></div>
     <div class="abs seal seal-r" id="sealR" aria-hidden="true"><svg viewBox="0 0 100 100"><use href="#sealArt"/></svg></div>
 
-    <p class="hint" id="hint">KLIK OP DE KAART OM TE DRAAIEN</p>
+   </div>
   </main>
+  <p class="hint" id="hint">KLIK OP DE KAART OM TE DRAAIEN</p>
 
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
@@ -391,10 +394,11 @@
     .fromTo(card3d, { rotationY: 0 }, { rotationY: 360, duration: 1.5, ease: 'power3.inOut' }, 4.3)
     .set(card3d, { rotationY: 0 }, 5.85)
     .fromTo('#spot', { scale: 1 }, { scale: 1.25, duration: 2 }, 4.3)
+    .fromTo('#cam', { scale: 1 }, { scale: () => camZoom(), duration: 2, ease: 'power2.inOut' }, 5.4)
     .fromTo('#shadows', { opacity: 0 }, { opacity: 1, duration: 1.2, ease: 'power1.inOut' }, 4.6)
 
     // inhoud voorkant
-    .fromTo('.f-kicker', { opacity: 0, y: 12, letterSpacing: '1em' }, { opacity: 1, y: 0, letterSpacing: '.5em', duration: 1.2 }, 5.7)
+    .fromTo('.f-kicker', { opacity: 0, y: 12, letterSpacing: '1em' }, { opacity: 1, y: 0, letterSpacing: '.4em', duration: 1.2 }, 5.7)
     .fromTo(letters, { opacity: 0, y: 46, filter: 'blur(10px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.4, stagger: .1 }, 5.9)
     .fromTo(light, { x: -3, y: -2.2 }, { x: 1, y: 1.3, duration: 3, ease: 'power2.inOut', onUpdate: applyLight }, 5.9)
     .fromTo('.arc', { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.8, stagger: .25, ease: 'power2.inOut' }, 6.1)
@@ -409,6 +413,12 @@
     .fromTo('#hint', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 1 }, 9);
 
   let introDone = false;
+  function camZoom() {
+    const s = parseFloat(getComputedStyle(stage).getPropertyValue('--scale')) || .8;
+    const z = Math.min(innerWidth * .9 / (520 * s), innerHeight * .84 / (680 * s));
+    return Math.max(1, Math.min(z, 2.2));
+  }
+  addEventListener('resize', () => { if (introDone) gsap.set('#cam', { scale: camZoom() }); });
   tl.eventCallback('onComplete', () => { introDone = true; });
 
   /* ---------- 3D-tilt + glans ---------- */
@@ -459,8 +469,8 @@
     stage.classList.add('ready');
     introDone = false; side = 0;
     gsap.set(tilt, { rotationX: 0, rotationY: 0 });
-    if (reduce) { tl.progress(1).pause(); introDone = true; return; }
-    tl.restart();
+    if (reduce) { tl.invalidate().progress(1).pause(); introDone = true; return; }
+    tl.invalidate().restart();
   }
   $('#replayBtn').addEventListener('click', play);
   addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') play(); });

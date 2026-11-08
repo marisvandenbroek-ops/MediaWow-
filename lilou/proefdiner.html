@@ -41,7 +41,7 @@
 
   .stage { position: absolute; left: 50%; top: 50%; width: 800px; height: 1000px; transform: translate(-50%, -50%) scale(var(--scale, .8)); }
   .stage:not(.ready) { visibility: hidden; }
-  .cam { position: absolute; inset: 0; transform-origin: 50% 45%; }
+  .cam { position: absolute; inset: 0; transform-origin: 400px 500px; }
   .abs { position: absolute; }
 
   /* ---------- Bord & bestek ---------- */
@@ -90,41 +90,41 @@
   /* letterpress: inkt licht in het papier gedrukt */
   .press { text-shadow: 0 .8px 0 rgba(255, 255, 255, .75), 0 -.5px .4px rgba(70, 15, 3, .35); }
 
-  .front .content { position: absolute; inset: 0; padding: 72px 56px 0; z-index: 2; }
-  .mark { font-family: var(--serif); font-weight: 400; font-size: 168px; line-height: .78; letter-spacing: -.02em; }
+  .front .content { position: absolute; inset: 0; padding: 64px 40px 0; z-index: 2; }
+  .mark { font-family: var(--serif); font-weight: 400; font-size: 156px; line-height: .78; letter-spacing: -.02em; }
   .mark span { display: inline-block; }
-  .lead { margin-top: 30px; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 36px; line-height: 1.05; display: inline-block; }
+  .lead { margin-top: 26px; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 40px; line-height: 1.05; display: inline-block; }
   .lead .dot { display: inline-block; }
-  .title { margin-top: 10px; font-family: var(--serif); font-weight: 500; font-size: 60px; line-height: .92; letter-spacing: .02em; perspective: 600px; }
+  .title { margin-top: 8px; font-family: var(--serif); font-weight: 500; font-size: 64px; line-height: .92; letter-spacing: .02em; perspective: 600px; }
   .title span { display: inline-block; transform-origin: 50% 100%; }
-  .date { margin-top: 38px; color: var(--ink-dark); font-size: 12px; font-weight: 600; letter-spacing: .34em; padding-left: .34em; }
-  .body { margin-top: 18px; color: var(--ink-dark); font-size: 9.2px; font-weight: 500; letter-spacing: .2em; line-height: 2.1; }
+  .date { margin-top: 32px; color: var(--ink-dark); font-size: 15px; font-weight: 600; letter-spacing: .26em; padding-left: .26em; }
+  .body { margin-top: 16px; color: var(--ink-dark); font-size: 11.6px; font-weight: 500; letter-spacing: .13em; line-height: 1.95; }
   .body span { display: block; }
-  .url { position: absolute; left: 56px; right: 56px; bottom: 70px; z-index: 2; font-size: 9.6px; font-weight: 600; letter-spacing: .3em; }
-  .url .ul { display: block; width: 200px; height: 1px; margin: 10px auto 0; background: var(--line); }
+  .url { position: absolute; left: 40px; right: 40px; bottom: 60px; z-index: 2; font-size: 12px; font-weight: 600; letter-spacing: .2em; }
+  .url .ul { display: block; width: 240px; height: 1px; margin: 10px auto 0; background: var(--line); }
 
   /* Achterkant */
-  .back .content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 50px; }
+  .back .content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 36px; }
   .back .watermark { position: absolute; left: -30px; top: -60px; z-index: 1; font-family: var(--serif); font-size: 560px; line-height: 1; color: rgba(139, 38, 17, .045); }
-  .kicker { font-size: 10px; font-weight: 600; letter-spacing: .44em; padding-left: .44em; color: var(--ink-dark); }
-  .back h2 { margin-top: 16px; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 42px; line-height: 1.05; }
+  .kicker { font-size: 12px; font-weight: 600; letter-spacing: .34em; padding-left: .34em; color: var(--ink-dark); }
+  .back h2 { margin-top: 14px; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 48px; line-height: 1.05; }
   .nights { margin-top: 30px; display: flex; gap: 14px; }
   .night {
-    width: 150px; padding: 18px 10px 16px; border: 1px solid var(--line); border-radius: 2px;
+    width: 166px; padding: 18px 10px 16px; border: 1px solid var(--line); border-radius: 2px;
     background: rgba(255, 255, 255, .35); color: var(--ink-red); cursor: pointer; font-family: var(--sans);
     transition: background .35s, color .35s, transform .35s, box-shadow .35s;
   }
   .night:hover { transform: translateY(-3px); box-shadow: 0 12px 20px -12px rgba(60, 10, 0, .5); }
-  .night small { display: block; font-size: 8.5px; font-weight: 600; letter-spacing: .3em; }
-  .night b { display: block; margin-top: 6px; font-family: var(--serif); font-weight: 500; font-size: 44px; line-height: 1; }
-  .night i { display: block; margin-top: 4px; font-family: var(--serif); font-size: 18px; }
+  .night small { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .2em; }
+  .night b { display: block; margin-top: 6px; font-family: var(--serif); font-weight: 500; font-size: 50px; line-height: 1; }
+  .night i { display: block; margin-top: 4px; font-family: var(--serif); font-size: 22px; }
   .night[aria-pressed="true"] { background: var(--ink-red); color: var(--cream); box-shadow: 0 14px 24px -12px rgba(60, 10, 0, .7); }
-  .back .note { margin-top: 26px; color: var(--ink-dark); font-size: 9.2px; font-weight: 500; letter-spacing: .2em; line-height: 2; }
-  .cta { margin-top: 24px; display: inline-flex; align-items: center; gap: 12px; padding: 15px 26px; border-radius: 999px; background: var(--ink-red); color: var(--cream); font-size: 10px; font-weight: 600; letter-spacing: .28em; text-decoration: none; box-shadow: 0 10px 24px -10px rgba(60, 10, 0, .7); transition: transform .3s; }
+  .back .note { margin-top: 26px; color: var(--ink-dark); font-size: 11.4px; font-weight: 500; letter-spacing: .13em; line-height: 1.95; }
+  .cta { margin-top: 24px; display: inline-flex; align-items: center; gap: 12px; padding: 17px 28px; border-radius: 999px; background: var(--ink-red); color: var(--cream); font-size: 12px; font-weight: 600; letter-spacing: .2em; text-decoration: none; box-shadow: 0 10px 24px -10px rgba(60, 10, 0, .7); transition: transform .3s; }
   .cta:hover { transform: translateY(-2px); }
-  .countdown { margin-top: 20px; font-size: 9px; font-weight: 600; letter-spacing: .36em; color: rgba(139, 38, 17, .7); }
+  .countdown { margin-top: 20px; font-size: 11px; font-weight: 600; letter-spacing: .26em; color: rgba(139, 38, 17, .7); }
 
-  .hint { position: absolute; left: 0; right: 0; top: 862px; z-index: 30; text-align: center; font-size: 10px; font-weight: 600; letter-spacing: .4em; color: rgba(243, 214, 196, .65); }
+  .hint { position: fixed; left: 0; right: 0; bottom: 70px; z-index: 45; text-align: center; font-size: 10px; font-weight: 600; letter-spacing: .4em; color: rgba(243, 214, 196, .65); }
   .controls { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: flex; gap: 8px; }
   .controls button {
     display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px;
@@ -269,9 +269,9 @@
       </svg>
     </div>
 
-    <p class="hint" id="hint">KLIK OP DE KAART OM TE DRAAIEN</p>
    </div>
   </main>
+  <p class="hint" id="hint">KLIK OP DE KAART OM TE DRAAIEN</p>
 
   <div class="controls">
     <button type="button" id="flipBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Draai</button>
@@ -370,6 +370,14 @@
     gsap.set('#shCon', { x: 2 - rY * .25, y: 3 + rX * .25, scaleX: Math.max(c, .05), opacity: Math.max(0, 1 - lift * 2.5) });
   }
 
+  /* Hoeveel de camera inzoomt zodat de kaart het beeld vult */
+  function camZoom() {
+    const s = parseFloat(getComputedStyle(stage).getPropertyValue('--scale')) || .8;
+    const z = Math.min(innerWidth * (VIDEO ? .92 : .9) / (460 * s), innerHeight * (VIDEO ? .92 : .84) / (660 * s));
+    return Math.max(1, Math.min(z, 2.2));
+  }
+  addEventListener('resize', () => { if (introDone) gsap.set('#cam', { scale: camZoom() }); });
+
   let tl, introDone = false;
   function build() {
     const T = oTarget();
@@ -379,7 +387,8 @@
     tl = gsap.timeline({ paused: !VIDEO, defaults: { ease: 'power3.out' } });
     tl
       .fromTo('#glowWrap', { autoAlpha: 0 }, { autoAlpha: 1, duration: 1.6 }, 0)
-      .fromTo('#cam', { scale: 1.06 }, { scale: 1, duration: 9.5, ease: 'sine.inOut' }, 0)
+      .fromTo('#cam', { scale: 1.06 }, { scale: 1, duration: 3.6, ease: 'sine.inOut' }, 0)
+      .to('#cam', { scale: () => camZoom(), duration: 2, ease: 'power2.inOut' }, 4.6)
       .fromTo(plate, { scale: 1.3, rotation: -25, y: -40, opacity: 0, x: 0 }, { scale: 1, rotation: 0, y: 0, opacity: 1, duration: 1.5 }, .25)
       .fromTo('#plateBody', { opacity: 1 }, { opacity: 1, duration: .01 }, 0)
       .fromTo('#ring', { opacity: 1 }, { opacity: 1, duration: .01 }, 0)
@@ -404,7 +413,7 @@
       .fromTo('#lead', { clipPath: 'inset(-20% 100% -20% 0)' }, { clipPath: 'inset(-20% 0% -20% 0)', duration: 1.5, ease: 'power1.inOut' }, 5.05)
       .fromTo('#lead .dot', { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: .35, stagger: .18, ease: 'back.out(3)' }, 6.15)
       .fromTo('#title span', { opacity: 0, rotationX: -95, y: 10 }, { opacity: 1, rotationX: 0, y: 0, duration: .9, stagger: .045, ease: 'back.out(1.6)' }, 5.65)
-      .fromTo('.f-date', { opacity: 0, letterSpacing: '1em' }, { opacity: 1, letterSpacing: '.34em', duration: 1.3 }, 6.45)
+      .fromTo('.f-date', { opacity: 0, letterSpacing: '1em' }, { opacity: 1, letterSpacing: '.26em', duration: 1.3 }, 6.45)
       .fromTo('.f-body', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .9, stagger: .14 }, 6.75)
       .fromTo('.f-url', { opacity: 0 }, { opacity: 1, duration: .9 }, 7.25)
       .fromTo('.f-ul', { scaleX: 0 }, { scaleX: 1, duration: 1, ease: 'power2.inOut' }, 7.4)
@@ -445,8 +454,8 @@
     introDone = false; side = 0; cur = { x: 0, y: 0 };
     gsap.set(card3d, { rotationY: 0 }); pose(0, 0);
     if (!tl) build();
-    if (reduce) { tl.progress(1).pause(); introDone = true; return; }
-    tl.restart();
+    if (reduce) { tl.invalidate().progress(1).pause(); introDone = true; return; }
+    tl.invalidate().restart();
   }
 
   /* ---------- Videomodus: één master-tijdlijn, frame voor frame te renderen ---------- */
@@ -456,17 +465,17 @@
       build();
       const master = gsap.timeline({ paused: true });
       master.add(tl, 0)
-        .fromTo(card3d, { rotationY: 0 }, { rotationY: 180, duration: 1.3, ease: 'power3.inOut' }, 11.4)
-        .set('#n1', { attr: { 'aria-pressed': 'false' } }, 13.7)
-        .set('#n2', { attr: { 'aria-pressed': 'true' } }, 13.7)
-        .to(card3d, { rotationY: 360, duration: 1.3, ease: 'power3.inOut' }, 15.6)
-        .to({}, { duration: .01 }, 19);
-      window.__duration = 19;
+        .fromTo(card3d, { rotationY: 0 }, { rotationY: 180, duration: 1.3, ease: 'power3.inOut' }, 12.6)
+        .set('#n1', { attr: { 'aria-pressed': 'false' } }, 15.2)
+        .set('#n2', { attr: { 'aria-pressed': 'true' } }, 15.2)
+        .to(card3d, { rotationY: 360, duration: 1.3, ease: 'power3.inOut' }, 18.2)
+        .to({}, { duration: .01 }, 22.5);
+      window.__duration = 22.5;
       window.__seek = t => {
         master.seek(t, true);
         const a = Math.min(1, Math.max(0, (t - 8.6) / 1.6));
         const e = a * a * (3 - 2 * a);
-        pose(Math.sin((t - 8.6) * .7) * .5 * e, Math.sin((t - 8.6) * .55 + .6) * .32 * e);
+        pose(Math.sin((t - 8.6) * .6) * .3 * e, Math.sin((t - 8.6) * .5 + .6) * .2 * e);
         drawFx(t);
       };
       window.__seek(0);
