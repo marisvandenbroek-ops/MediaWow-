@@ -1173,11 +1173,10 @@ function downloadIcs(shifts) {
       `SUMMARY:${icsEsc(`Werken ${CFG.bedrijf}${s.position ? ' – ' + s.position : ''}`)}`, s.note ? `DESCRIPTION:${icsEsc(s.note)}` : null, 'END:VEVENT'].filter(Boolean).join('\r\n');
   });
   const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Rooster//NL', 'CALSCALE:GREGORIAN', ...ev, 'END:VCALENDAR'].join('\r\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
-  a.download = 'mijn-rooster.ics';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  saveFile('mijn-rooster.ics', ics, 'text/calendar', null).then(r => {
+    if (r === 'downloaded') toast('Agendabestand gedownload — open het om je diensten toe te voegen');
+    if (r === 'shared') toast('Gedeeld');
+  });
 }
 
 /* ================= Requests ================= */
@@ -1860,15 +1859,47 @@ function shiftPeriod(mode, anchor, dir) {
 }
 
 /* ================= Export helpers ================= */
-function saveFile(name, text, type) {
+// Draait de app in een ingesloten voorbeeld (zoals de demo op claude.ai)? Daar zijn downloads geblokkeerd.
+const IN_PREVIEW = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+const IS_TOUCH = matchMedia('(pointer: coarse)').matches;
+
+// Bestand opslaan: op de telefoon via het deelmenu (mail, Bestanden, WhatsApp), anders als download.
+// Geeft terug wat er gebeurde: 'shared' | 'downloaded' | 'preview' | 'cancel'
+async function saveFile(name, text, type, rows) {
+  const file = new File([text], name, { type });
+  if (IS_TOUCH && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); return 'shared'; }
+    catch (e) { if (e.name === 'AbortError') return 'cancel'; /* anders: terugvallen op downloaden */ }
+  }
+  if (IN_PREVIEW) { exportPreview(name, rows, text); return 'preview'; }
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.href = URL.createObjectURL(file);
   a.download = name; document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  return 'downloaded';
 }
-function exportCsv(name, rows) {
+const SAVE_MSG = { shared: 'Bestand gedeeld', downloaded: 'Bestand gedownload — kijk in je map Downloads' };
+function csvText(rows) {
   const q = v => { const s = typeof v === 'number' ? String(v).replace('.', ',') : String(v ?? ''); return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-  saveFile(name + '.csv', '﻿' + rows.map(r => r.map(q).join(';')).join('\r\n'), 'text/csv;charset=utf-8');
+  return '﻿' + rows.map(r => r.map(q).join(';')).join('\r\n');
+}
+async function exportCsv(name, rows) {
+  const r = await saveFile(name + '.csv', csvText(rows), 'text/csv;charset=utf-8', rows);
+  if (SAVE_MSG[r]) toast(SAVE_MSG[r]);
+  return r;
+}
+// In de voorbeeldweergave: laat zien wat er in het bestand staat, met een kopieerknop
+function exportPreview(name, rows, text) {
+  const head = rows ? rows[0] : null, body = rows ? rows.slice(1, 31) : [];
+  openDialog('Exporteren', `
+    <div class="warnbox">Je bekijkt de demo in een voorbeeldweergave. Daar mag de app geen bestanden opslaan. Op jullie eigen adres (bijv. rooster.lilou.nl) wordt <strong>${esc(name)}</strong> gewoon gedownload of gedeeld.</div>
+    ${rows ? `<div class="table-wrap exportprev"><table class="list"><thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+      <tbody>${body.map(r => `<tr>${r.map(v => `<td>${esc(typeof v === 'number' ? String(v).replace('.', ',') : v ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+      ${rows.length > 31 ? `<p class="hint">+ ${rows.length - 31} regels meer in het bestand</p>` : ''}` : `<pre class="exportprev">${esc(text.slice(0, 2000))}</pre>`}
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Sluiten</button>${rows ? '<button type="button" class="btn primary" data-copyprev>Kopieer tabel (plakken in Excel)</button>' : ''}</div>`, {
+    onReady(dlg) { const b = $('[data-copyprev]', dlg); if (b) b.onclick = () => copyRows(rows); },
+    onSubmit() {},
+  });
 }
 async function copyRows(rows) {
   const tsv = rows.map(r => r.map(v => (typeof v === 'number' ? String(v).replace('.', ',') : String(v ?? '').replace(/[\t\n\r]+/g, ' '))).join('\t')).join('\n');
@@ -1994,7 +2025,7 @@ async function viewHours(el) {
     const sr = ev.target.closest('[data-src]'); if (sr) { S.hsrc = sr.dataset.src; return rerender(); }
     const gt = ev.target.closest('[data-goto]'); if (gt) return go(gt.dataset.goto);
     if (ev.target.closest('[data-loonset]')) return loonSettingsDialog(stH);
-    const c = ev.target.closest('[data-csv]'); if (c) { const x = EXPORTS[c.dataset.csv]; exportCsv(x[3], x[2]()); return toast('Bestand gedownload'); }
+    const c = ev.target.closest('[data-csv]'); if (c) { const x = EXPORTS[c.dataset.csv]; return exportCsv(x[3], x[2]()); }
     const cp = ev.target.closest('[data-copy]'); if (cp) return copyRows(EXPORTS[cp.dataset.copy][2]());
   };
   el.onchange = ev => { if (ev.target.matches('[data-onlypub]')) { S.onlyPub = ev.target.checked; rerender(); } };

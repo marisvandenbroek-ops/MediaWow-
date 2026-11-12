@@ -172,6 +172,29 @@ async function test(name, fn) {
     assert.match(await shared.textContent('table.list tfoot'), /€/);
     const rows = await shared.evaluate(() => document.querySelector('[data-csv=kosten]') !== null); assert.ok(rows);
   });
+  await test('export levert een echt CSV-bestand op (urenoverzicht en loonkosten)', async () => {
+    const ctx = await browser.newContext({ acceptDownloads: true, viewport: { width: 1360, height: 900 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark'); await p.click('[data-tab=uren]'); await p.waitForSelector('.exports');
+    for (const [k, header] of [['payroll', 'Gewerkte uren (netto)'], ['kosten', 'Kostenplaats (functie)'], ['klok', 'Telt mee (u)']]) {
+      const [dl] = await Promise.all([p.waitForEvent('download'), p.click(`[data-csv=${k}]`)]);
+      const txt = fs.readFileSync(await dl.path(), 'utf8');
+      assert.ok(txt.includes(header), `${k}: kolom "${header}" ontbreekt`);
+      assert.ok(txt.split('\n').length > 1, `${k}: geen regels`);
+    }
+    await ctx.close();
+  });
+  await test('in een voorbeeldweergave (zoals de demo) geen valse download-melding, wel een voorbeeld', async () => {
+    const p = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
+    await p.setContent(`<iframe src="${URL}#directie" sandbox="allow-scripts allow-same-origin allow-forms allow-modals" style="width:1360px;height:950px;border:0"></iframe>`);
+    let downloaded = false; p.on('download', () => (downloaded = true));
+    const f = await (await p.waitForSelector('iframe')).contentFrame();
+    await f.waitForSelector('[data-demo]'); await f.click('[data-demo]:has-text("Mark")'); await f.waitForSelector('#view > *', { state: 'attached' });
+    await f.click('[data-tab=uren]'); await f.waitForSelector('.exports'); await f.click('[data-csv=payroll]');
+    await f.waitForSelector('dialog .exportprev');
+    assert.ok(!(await f.$('.toast:has-text("gedownload")')), 'valse melding "gedownload"');
+    assert.ok(!downloaded);
+    await p.close();
+  });
   await test('klokregistratie aanpassen komt in de geschiedenis', async () => {
     await shared.click('[data-tab=klokken]'); await shared.click('[data-cf=all]'); await shared.click('article.entry [data-eedit] >> nth=0');
     await shared.waitForSelector('dialog [name=break_minutes]'); await shared.fill('dialog [name=manager_note]', 'Testnotitie'); await shared.click('dialog button[value=save]'); await shared.waitForTimeout(200);

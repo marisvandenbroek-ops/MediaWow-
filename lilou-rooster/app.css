@@ -443,6 +443,11 @@ dialog #toasts { position: fixed; }
 .balance b { font-family: var(--serif); font-size: 26px; font-weight: 500; }
 .balance .hint { margin: 0; }
 
+.exportprev { max-height: 46vh; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+.exportprev table.list th, .exportprev table.list td { padding: 6px 10px; font-size: 12.5px; white-space: nowrap; }
+pre.exportprev { padding: 10px; font-size: 12px; white-space: pre-wrap; margin: 0; }
+dialog.dlg:has(.exportprev) { width: min(900px, calc(100vw - 32px)); }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }
