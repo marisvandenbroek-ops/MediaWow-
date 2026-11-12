@@ -57,6 +57,7 @@ function errMsg(e) {
 
 const ICON = {
   planning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 14h3M13.5 14h3M7.5 17.5h3"/></svg>',
+  klokken: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><path d="M12 7v3.5l2 1.3"/></svg>',
   mijn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
   team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9.5" r="2.5"/><path d="M16.5 14.6c2.3.2 4 1.7 4.5 4.4"/></svg>',
   aanvragen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20.5V5a1.5 1.5 0 0 1 1.5-1.5h11A1.5 1.5 0 0 1 19 5v15.5l-3.5-2-3.5 2-3.5-2z"/><path d="M9 9h6M9 12.5h4"/></svg>',
@@ -97,11 +98,28 @@ function demoSeed() {
     { id: uid(), employee_id: eva.id, type: 'vrij', start_date: D(13), end_date: D(13), note: 'Verjaardag van mijn oma.', status: 'pending', manager_note: null, created_at: now },
     { id: uid(), employee_id: daan.id, type: 'vrij', start_date: D(1), end_date: D(1), note: 'Tentamen', status: 'approved', manager_note: 'Succes!', created_at: now },
   ];
-  return { employees: E, shifts: S, requests: R };
+  // Klokregistraties voor afgelopen diensten
+  const T = [];
+  const at = (ds, t, plusMin) => { const d = parse(ds); const [h, m] = t.split(':').map(Number); d.setHours(h, m + plusMin, 0, 0); return d; };
+  const nowD = new Date();
+  S.filter(s => s.published).forEach((s, i) => {
+    const inD = at(s.date, s.start_time, [-4, 2, -1, 7, 0, -3][i % 6]);
+    let outD = at(s.date, s.end_time, [6, -2, 12, 0, 3, 25][i % 6]);
+    if (outD <= inD) outD = new Date(outD.getTime() + 86400000);
+    if (outD > nowD) return;
+    const old = (nowD - outD) / 86400000 > 2;
+    T.push({ id: uid(), employee_id: s.employee_id, clock_in: inD.toISOString(), clock_out: outD.toISOString(), break_minutes: s.break_minutes, break_started_at: null,
+      in_distance_m: 12 + (i * 7) % 40, out_distance_m: 9 + (i * 11) % 50, flags: [], reason: null, status: old ? 'approved' : 'pending', manager_note: null, edited: false });
+  });
+  const flagged = T.filter(t => t.status === 'pending')[0];
+  if (flagged) Object.assign(flagged, { flags: ['uit_buiten_locatie'], out_distance_m: 1840, reason: 'Na sluiting nog boodschappen weggebracht bij de groothandel' });
+  T.push({ id: uid(), employee_id: mariska.id, clock_in: new Date(nowD.getTime() - 95 * 60000).toISOString(), clock_out: null, break_minutes: 0, break_started_at: null, in_distance_m: 18, out_distance_m: null, flags: [], reason: null, status: 'open', manager_note: null, edited: false });
+  const settings = { lat: 52.3702, lng: 4.8952, radius_m: 150, allow_override: true, demo: true };
+  return { employees: E, shifts: S, requests: R, entries: T, settings };
 }
 
 function demoStore() {
-  const KEY = 'lilou-rooster-demo-v2';
+  const KEY = 'lilou-rooster-demo-v3';
   let mem = null;
   let db;
   try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* ignore */ }
@@ -151,6 +169,44 @@ function demoStore() {
     async saveRequest(r) { db.requests.push({ ...r, id: uid(), status: 'pending', manager_note: null, created_at: new Date().toISOString() }); save(); },
     async decideRequest(id, status, note) { Object.assign(db.requests.find(r => r.id === id), { status, manager_note: note || null, decided_at: new Date().toISOString() }); save(); },
     async deleteRequest(id) { db.requests = db.requests.filter(r => r.id !== id); save(); },
+    // --- klokken
+    async settings() { return clone(db.settings); },
+    async saveSettings(st) { Object.assign(db.settings, st); save(); },
+    async entries(from, to) {
+      const a = new Date(parse(from)).toISOString(), b = addDays(parse(to), 1).toISOString();
+      return clone(db.entries.filter(e => e.clock_in >= a && e.clock_in < b && (isMgr() || e.employee_id === mem))).sort((x, y) => x.clock_in.localeCompare(y.clock_in));
+    },
+    async openEntries() { return clone(db.entries.filter(e => !e.clock_out && (isMgr() || e.employee_id === mem))); },
+    async clock(action, pos, reason) {
+      const st = db.settings;
+      const open = db.entries.find(e => e.employee_id === mem && !e.clock_out);
+      const now = new Date().toISOString();
+      let dist = null, flag = null;
+      if (action === 'in' || action === 'uit') {
+        if (!pos) flag = 'geen_locatie';
+        else { dist = Math.round(distanceM(st.lat, st.lng, pos.lat, pos.lng)); if (dist - Math.min(pos.accuracy || 0, 100) > st.radius_m) flag = 'buiten_locatie'; }
+        if (flag && (!st.allow_override || !(reason || '').trim())) throw Object.assign(new Error(flag === 'geen_locatie' ? 'Locatie onbekend. Zet locatievoorzieningen aan om te klokken.' : `Je bent ${dist} meter van de werklocatie. Klokken kan alleen op locatie.`), { code: 'LC001' });
+      }
+      const r = (reason || '').trim() || null;
+      if (action === 'in') {
+        if (open) throw new Error('Je bent al ingeklokt.');
+        db.entries.push({ id: uid(), employee_id: mem, clock_in: now, clock_out: null, break_minutes: 0, break_started_at: null, in_distance_m: dist, out_distance_m: null, flags: flag ? ['in_' + flag] : [], reason: r, status: 'open', manager_note: null, edited: false });
+      } else {
+        if (!open) throw new Error('Je bent niet ingeklokt.');
+        const brk = () => (open.break_started_at ? Math.round((Date.now() - new Date(open.break_started_at)) / 60000) : 0);
+        if (action === 'pauze_start') { if (open.break_started_at) throw new Error('Pauze loopt al.'); open.break_started_at = now; }
+        else if (action === 'pauze_eind') { if (!open.break_started_at) throw new Error('Er loopt geen pauze.'); open.break_minutes += brk(); open.break_started_at = null; }
+        else { open.break_minutes += brk(); open.break_started_at = null; open.clock_out = now; open.out_distance_m = dist; if (flag) open.flags.push('uit_' + flag); if (r) open.reason = [open.reason, r].filter(Boolean).join(' / '); open.status = 'pending'; }
+      }
+      save();
+    },
+    async saveEntry(e) {
+      if (e.id) Object.assign(db.entries.find(x => x.id === e.id), e, { edited: true });
+      else db.entries.push({ id: uid(), break_started_at: null, in_distance_m: null, out_distance_m: null, flags: ['handmatig'], reason: null, ...e, edited: true });
+      save();
+    },
+    async deleteEntry(id) { db.entries = db.entries.filter(e => e.id !== id); save(); },
+    async setEntryStatus(id, status, note) { const e = db.entries.find(x => x.id === id); e.status = status; if (note !== undefined) e.manager_note = note; save(); },
   };
 }
 
@@ -199,6 +255,23 @@ async function supabaseStore() {
     async saveRequest(r) { ok(await sb.from('requests').insert(r)); },
     async decideRequest(id, status, note) { ok(await sb.from('requests').update({ status, manager_note: note || null, decided_at: new Date().toISOString() }).eq('id', id)); },
     async deleteRequest(id) { ok(await sb.from('requests').delete().eq('id', id)); },
+    // --- klokken
+    async settings() { return ok(await sb.from('settings').select('*').eq('id', 1).maybeSingle()) || {}; },
+    async saveSettings(st) { ok(await sb.from('settings').update({ lat: st.lat, lng: st.lng, radius_m: st.radius_m, allow_override: st.allow_override, updated_at: new Date().toISOString() }).eq('id', 1)); },
+    async entries(from, to) {
+      return ok(await sb.from('time_entries').select('*').gte('clock_in', parse(from).toISOString()).lt('clock_in', addDays(parse(to), 1).toISOString()).order('clock_in'));
+    },
+    async openEntries() { return ok(await sb.from('time_entries').select('*').is('clock_out', null)); },
+    async clock(action, pos, reason) {
+      ok(await sb.rpc('clock', { p_action: action, p_lat: pos?.lat ?? null, p_lng: pos?.lng ?? null, p_accuracy: pos?.accuracy ?? null, p_reason: reason || null }));
+    },
+    async saveEntry(e) {
+      const { id, ...rest } = e;
+      if (id) ok(await sb.from('time_entries').update({ ...rest, edited: true }).eq('id', id));
+      else ok(await sb.from('time_entries').insert({ ...rest, flags: ['handmatig'], edited: true }));
+    },
+    async deleteEntry(id) { ok(await sb.from('time_entries').delete().eq('id', id)); },
+    async setEntryStatus(id, status, note) { ok(await sb.from('time_entries').update(note === undefined ? { status } : { status, manager_note: note }).eq('id', id)); },
   };
 }
 
@@ -347,7 +420,7 @@ function handleSession(r) {
 /* ================= Shell ================= */
 function tabsFor() {
   return isMgr()
-    ? [['planning', 'Planning'], ['aanvragen', 'Aanvragen'], ['team', 'Team'], ['uren', 'Uren & export'], ['mijn', 'Mijn rooster']]
+    ? [['planning', 'Planning'], ['klokken', 'Klokken'], ['aanvragen', 'Aanvragen'], ['team', 'Team'], ['uren', 'Uren & export']]
     : [['mijn', 'Mijn rooster'], ['planning', 'Teamrooster'], ['aanvragen', 'Aanvragen']];
 }
 
@@ -378,6 +451,7 @@ async function refreshBadge() {
 }
 
 async function go(view) {
+  clearInterval(S.timer);
   if (S.view !== view) window.scrollTo(0, 0);
   S.view = view;
   $$('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === view));
@@ -389,6 +463,7 @@ async function go(view) {
     else if (view === 'aanvragen') await (isMgr() ? viewRequestsMgr(el) : viewRequestsStaff(el));
     else if (view === 'team') await viewTeam(el);
     else if (view === 'uren') await viewHours(el);
+    else if (view === 'klokken') await viewClockMgr(el);
   } catch (e) {
     console.error(e);
     el.innerHTML = `<div class="card pad"><p class="msg err">Er ging iets mis bij het laden: ${esc(errMsg(e))}</p><button class="btn" onclick="location.reload()">Opnieuw laden</button></div>`;
@@ -649,6 +724,15 @@ async function viewMine(el) {
   const today = todayIso();
   const nowHM = `${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
   const next = mine.find(s => s.date > today || (s.date === today && hm(s.end_time) > nowHM) || (s.date === today && mins(s.end_time) <= mins(s.start_time)));
+  const clockHTML = await clockCard(mine.find(s => s.date === today));
+  let workedHTML = '';
+  if (sel) {
+    const ents = (await store.entries(iso(sel), iso(addDays(sel, 6)))).filter(x => x.employee_id === S.me.id && x.clock_out);
+    if (ents.length) {
+      const tot = ents.reduce((t, x) => t + entryHours(x), 0), ok = ents.filter(x => x.status === 'approved').reduce((t, x) => t + entryHours(x), 0);
+      workedHTML = `<div class="card pad worked"><div><small>Gewerkt deze week</small><b>${fmtH(tot)} uur</b></div><div><small>Goedgekeurd</small><b>${fmtH(ok)} uur</b></div><div><small>Registraties</small><b>${ents.length}</b></div></div>`;
+    }
+  }
 
   const weekBlock = (mon, showOff, compact) => {
     const wFrom = iso(mon), wTo = iso(addDays(mon, 6));
@@ -682,6 +766,7 @@ async function viewMine(el) {
         ${iso(sel) !== iso(start) ? '<button class="btn ghost sm" data-w="0">Deze week</button>' : ''}
       </div></div>
       ${weekBlock(sel, true, true)}
+      ${workedHTML}
       ${sel > addDays(start, 7 * 5) || !mine.some(s => s.date >= iso(sel) && s.date <= iso(addDays(sel, 6))) ? '<p class="hint" style="text-align:center">Diensten verschijnen hier zodra de week is gepubliceerd.</p>' : ''}`;
   } else {
     let weeks = '';
@@ -692,11 +777,14 @@ async function viewMine(el) {
   el.innerHTML = `
     <div class="page-head"><div><h1>Hoi ${esc(S.me.name.split(' ')[0])}</h1><p>Je rooster${sel ? ' per week' : ' voor de komende weken'}.</p></div>
       ${mine.length ? '<button class="btn" data-ics>📅 Zet in mijn agenda</button>' : ''}</div>
+    ${clockHTML}
     ${next && !sel ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
     <div class="filters mine-filter"><button data-mf="all" class="${sel ? '' : 'active'}">Komende weken</button><button data-mf="week" class="${sel ? 'active' : ''}">Per week</button></div>
     ${body}
   `;
+  bindClock(el);
   el.onclick = ev => {
+    if (clockClicks(ev)) return;
     if (ev.target.closest('[data-ics]')) downloadIcs(mine);
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
     const mf = ev.target.closest('[data-mf]'); if (mf) { S.mineWeek = mf.dataset.mf === 'week' ? start : null; return rerender(); }
@@ -989,7 +1077,13 @@ async function viewHours(el) {
   const from = iso(P.from), to = iso(P.to);
   const [emps0, allShifts, reqs] = await Promise.all([store.employees(), store.shifts(from, to), store.requests()]);
   const emps = sortEmps(emps0);
-  const shifts = S.onlyPub ? allShifts.filter(s => s.published) : allShifts;
+  S.hsrc ||= 'gepland';
+  const ents = await store.entries(from, to);
+  const done = ents.filter(x => x.clock_out);
+  const shifts = S.hsrc === 'gewerkt'
+    ? done.filter(x => x.status === 'approved').map(x => entryAsShift(x, matchShift(x, allShifts)))
+    : S.onlyPub ? allShifts.filter(s => s.published) : allShifts;
+  const entPending = done.filter(x => x.status === 'pending').length;
   const weeks = daysBetween(from, to) / 7;
   const approved = reqs.filter(r => r.status === 'approved');
 
@@ -1007,7 +1101,7 @@ async function viewHours(el) {
   const T = rows.reduce((t, r) => ({ n: t.n + r.n, h: t.h + r.h, avond: t.avond + r.avond, nacht: t.nacht + r.nacht, zondag: t.zondag + r.zondag, feestdag: t.feestdag + r.feestdag }), { n: 0, h: 0, avond: 0, nacht: 0, zondag: 0, feestdag: 0 });
   const conceptCount = allShifts.filter(s => !s.published).length;
   const fdIn = []; for (let d = new Date(P.from); d <= P.to; d = addDays(d, 1)) { const f = feestdag(iso(d)); if (f) fdIn.push(`${f} (${fmtShort(iso(d))})`); }
-  const slug = `${S.pmode}-${from}_${to}`;
+  const slug = `${S.hsrc}-${S.pmode}-${from}_${to}`;
 
   const payroll = () => [
     ['Periode van', 'Periode tot', 'Medewerker', 'E-mail', 'Functie', 'Contract u/week', 'Diensten', 'Gewerkte uren (netto)', 'Pauze (u)', 'Avonduren', 'Nachturen', 'Zondaguren', 'Feestdaguren', 'Vakantie/vrij (dagen)', 'Ziek (dagen)', 'Contracturen periode', 'Verschil t.o.v. contract'],
@@ -1029,6 +1123,11 @@ async function viewHours(el) {
     payroll: ['Urenoverzicht voor salarisadministratie', 'Per medewerker: gewerkte uren, avond-/nacht-/zondag-/feestdaguren, verlof- en ziektedagen. Dit bestand stuur je naar je salarisverwerker.', payroll, `salaris-${slug}`],
     detail: ['Alle diensten (detail)', 'Elke dienst als losse regel met tijden, pauze en toeslaguren. Handig voor controle of voor je accountant.', detail, `diensten-${slug}`],
     leave: ['Verlof & ziekte', 'Alle aanvragen die in deze periode vallen, met status en reactie.', leave, `verlof-${slug}`],
+    klok: ['Klokregistratie', 'Alle in- en uitkloktijden met pauze, afstand tot de zaak, meldingen en status. Bewijs bij vragen over gewerkte uren.', () => {
+      const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+      return [['Datum', 'Medewerker', 'Gepland', 'In', 'Uit', 'Pauze (min)', 'Gewerkt (u)', 'Afstand in (m)', 'Afstand uit (m)', 'Meldingen', 'Reden medewerker', 'Status', 'Aangepast', 'Notitie directie'],
+        ...ents.map(x => { const sh = matchShift(x, allShifts); return [tDate(x.clock_in), byId[x.employee_id]?.name || '', sh ? `${hm(sh.start_time)}-${hm(sh.end_time)}` : '', tHM(x.clock_in), x.clock_out ? tHM(x.clock_out) : '', x.break_minutes || 0, x.clock_out ? r2(entryHours(x)) : '', x.in_distance_m ?? '', x.out_distance_m ?? '', (x.flags || []).map(f => FLAG[f] || f).join(', '), x.reason || '', ESTATUS[x.status], x.edited ? 'ja' : 'nee', x.manager_note || '']; })];
+    }, `klokregistratie-${S.pmode}-${from}_${to}`],
     team: ['Medewerkerslijst', 'Contactgegevens, functies en contracturen van het hele team.', team, 'medewerkers'],
   };
 
@@ -1042,10 +1141,12 @@ async function viewHours(el) {
       </div>
       <div class="actions">
         <div class="filters">${[['maand', 'Maand'], ['4weken', '4 weken'], ['week', 'Week']].map(([k, l]) => `<button data-mode="${k}" class="${S.pmode === k ? 'active' : ''}">${l}</button>`).join('')}</div>
-        <label class="check small"><input type="checkbox" data-onlypub ${S.onlyPub ? 'checked' : ''}> Alleen gepubliceerd</label>
+        <div class="filters">${[['gepland', 'Gepland'], ['gewerkt', 'Gewerkt (geklokt)']].map(([k, l]) => `<button data-src="${k}" class="${S.hsrc === k ? 'active' : ''}">${l}</button>`).join('')}</div>
+        ${S.hsrc === 'gepland' ? `<label class="check small"><input type="checkbox" data-onlypub ${S.onlyPub ? 'checked' : ''}> Alleen gepubliceerd</label>` : ''}
       </div>
     </div>
-    ${conceptCount && S.onlyPub ? `<p class="warnbox" style="margin:0 0 12px">Let op: ${conceptCount} dienst(en) in deze periode zijn nog concept en tellen niet mee.</p>` : ''}
+    ${S.hsrc === 'gewerkt' && entPending ? `<p class="warnbox" style="margin:0 0 12px">Let op: ${entPending} klokregistratie(s) in deze periode zijn nog niet goedgekeurd en tellen niet mee. <button class="linkbtn" data-goto="klokken">Naar Klokken →</button></p>` : ''}
+    ${S.hsrc === 'gepland' && conceptCount && S.onlyPub ? `<p class="warnbox" style="margin:0 0 12px">Let op: ${conceptCount} dienst(en) in deze periode zijn nog concept en tellen niet mee.</p>` : ''}
     ${fdIn.length ? `<p class="hint" style="margin:0 0 12px">Feestdagen in deze periode: ${esc(fdIn.join(', '))}</p>` : ''}
     <div class="card table-wrap"><table class="list">
       <thead><tr><th>Medewerker</th><th class="num">Diensten</th><th class="num">Uren</th><th class="num hide-sm">Avond</th><th class="num hide-sm">Nacht</th><th class="num hide-sm">Zondag</th><th class="num hide-sm">Feestdag</th><th class="num hide-sm">Verlof</th><th class="num hide-sm">Ziek</th><th class="num">t.o.v. contract</th></tr></thead>
@@ -1058,15 +1159,268 @@ async function viewHours(el) {
     </table></div>
     <h2 style="font-size:21px;margin:28px 0 12px">Exporteren</h2>
     <div class="exports">${Object.entries(EXPORTS).map(([k, [t, d]]) => `<div class="card pad export"><h3>${t}</h3><p class="hint">${d}</p><div class="req-actions"><button class="btn primary sm" data-csv="${k}">⬇︎ Download (Excel/CSV)</button><button class="btn sm" data-copy="${k}">Kopieer tabel</button></div></div>`).join('')}</div>
-    <p class="hint" style="margin-top:14px">Uren zijn <strong>geplande</strong> uren (netto, na pauze). Toeslaguren zijn bruto (pauze niet afgetrokken), venster instelbaar in <code>config.js</code>: avond ${esc((CFG.toeslagen || {}).avondVan || '20:00')}–${esc((CFG.toeslagen || {}).avondTot || '24:00')}, nacht ${esc((CFG.toeslagen || {}).nachtVan || '00:00')}–${esc((CFG.toeslagen || {}).nachtTot || '06:00')}. CSV-bestanden openen direct in Excel (puntkomma, komma als decimaalteken).</p>`;
+    <p class="hint" style="margin-top:14px">Uren zijn <strong>${S.hsrc === 'gewerkt' ? 'goedgekeurde gewerkte' : 'geplande'}</strong> uren (netto, na pauze). Toeslaguren zijn bruto (pauze niet afgetrokken), venster instelbaar in <code>config.js</code>: avond ${esc((CFG.toeslagen || {}).avondVan || '20:00')}–${esc((CFG.toeslagen || {}).avondTot || '24:00')}, nacht ${esc((CFG.toeslagen || {}).nachtVan || '00:00')}–${esc((CFG.toeslagen || {}).nachtTot || '06:00')}. CSV-bestanden openen direct in Excel (puntkomma, komma als decimaalteken).</p>`;
 
   el.onclick = ev => {
     const p = ev.target.closest('[data-p]'); if (p) { S.panchor = shiftPeriod(S.pmode, S.panchor, Number(p.dataset.p)); return rerender(); }
     const m = ev.target.closest('[data-mode]'); if (m) { S.pmode = m.dataset.mode; return rerender(); }
+    const sr = ev.target.closest('[data-src]'); if (sr) { S.hsrc = sr.dataset.src; return rerender(); }
+    const gt = ev.target.closest('[data-goto]'); if (gt) return go(gt.dataset.goto);
     const c = ev.target.closest('[data-csv]'); if (c) { const x = EXPORTS[c.dataset.csv]; exportCsv(x[3], x[2]()); return toast('Bestand gedownload'); }
     const cp = ev.target.closest('[data-copy]'); if (cp) return copyRows(EXPORTS[cp.dataset.copy][2]());
   };
   el.onchange = ev => { if (ev.target.matches('[data-onlypub]')) { S.onlyPub = ev.target.checked; rerender(); } };
+}
+
+/* ================= Klokken ================= */
+function distanceM(lat1, lng1, lat2, lng2) {
+  const R = 6371000, toR = x => (x * Math.PI) / 180;
+  const dLat = toR(lat2 - lat1), dLng = toR(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toR(lat1)) * Math.cos(toR(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+// Demo: gesimuleerde positie (de demo-omgeving mag geen echte locatie opvragen)
+async function getPosition() {
+  if (store.demo) {
+    const st = await store.settings();
+    const off = S.demoLoc === 'buiten' ? 0.018 : 0.0002;
+    return { lat: st.lat + off, lng: st.lng + off / 2, accuracy: 15 };
+  }
+  return new Promise(res => {
+    if (!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(
+      p => res({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
+      () => res(null),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+  });
+}
+const tHM = ts => { const d = new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const tDate = ts => iso(new Date(ts));
+const entryHours = e => {
+  const end = e.clock_out ? new Date(e.clock_out) : new Date();
+  let brk = Number(e.break_minutes) || 0;
+  if (!e.clock_out && e.break_started_at) brk += (Date.now() - new Date(e.break_started_at)) / 60000;
+  return Math.max(0, (end - new Date(e.clock_in)) / 3600000 - brk / 60);
+};
+const fmtDiff = h => { const m = Math.round(h * 60), a = Math.abs(m), sg = m > 0 ? '+' : m < 0 ? '−' : ''; return a < 60 ? `${sg}${a} min` : `${sg}${fmtDur(a / 60)} u`; };
+const fmtDur = h => { const m = Math.round(h * 60); return `${Math.floor(m / 60)}:${pad(m % 60)}`; };
+const FLAG = { in_buiten_locatie: 'Ingeklokt buiten locatie', uit_buiten_locatie: 'Uitgeklokt buiten locatie', in_geen_locatie: 'Inklokken zonder locatie', uit_geen_locatie: 'Uitklokken zonder locatie', handmatig: 'Handmatig toegevoegd' };
+const ESTATUS = { open: 'Aan het werk', pending: 'Te controleren', approved: 'Goedgekeurd', rejected: 'Afgekeurd' };
+// Koppel een registratie aan de geplande dienst (zelfde dag, dichtstbijzijnde begintijd)
+function matchShift(e, shifts) {
+  const ds = tDate(e.clock_in), m = mins(tHM(e.clock_in));
+  const c = shifts.filter(s => s.employee_id === e.employee_id && s.date === ds);
+  return c.sort((a, b) => Math.abs(mins(a.start_time) - m) - Math.abs(mins(b.start_time) - m))[0] || null;
+}
+// Registratie omzetten naar 'dienst-vorm' voor urentotalen en toeslagen
+const entryAsShift = (e, sh) => ({ id: e.id, employee_id: e.employee_id, date: tDate(e.clock_in), start_time: tHM(e.clock_in), end_time: tHM(e.clock_out), break_minutes: e.break_minutes || 0, position: sh?.position || '', note: e.manager_note || '', published: true });
+
+async function clockCard(todayShift) {
+  const [open] = await store.openEntries().then(l => l.filter(e => e.employee_id === S.me.id));
+  const st = await store.settings();
+  const onBreak = open && open.break_started_at;
+  const state = !open
+    ? `<span class="pulse"></span><div><strong>Niet ingeklokt</strong><small>${todayShift ? `Je dienst vandaag: ${hm(todayShift.start_time)} – ${hm(todayShift.end_time)}` : 'Geen dienst gepland vandaag'}</small></div>`
+    : `<span class="pulse ${onBreak ? 'brk' : 'on'}"></span><div><strong>${onBreak ? 'Pauze sinds ' + tHM(open.break_started_at) : 'Ingeklokt sinds ' + tHM(open.clock_in)}</strong><small data-live="${open.id}">${fmtDur(entryHours(open))} gewerkt${open.break_minutes ? ` · ${open.break_minutes} min pauze` : ''}</small></div>`;
+  const btns = !open
+    ? `<button class="btn primary big" data-clock="in">Inklokken</button>`
+    : `${onBreak ? '<button class="btn big" data-clock="pauze_eind">Pauze stoppen</button>' : '<button class="btn big" data-clock="pauze_start">Pauze</button>'}<button class="btn primary big" data-clock="uit">Uitklokken</button>`;
+  const noLoc = st.lat == null;
+  return `<div class="card clock ${open ? 'is-on' : ''}" data-clockcard>
+    <div class="clock-state">${state}</div>
+    <div class="clock-btns">${noLoc ? '<p class="hint">De werklocatie is nog niet ingesteld. Vraag de directie om dit te doen.</p>' : btns}</div>
+    <p class="hint clock-hint">📍 Bij in- en uitklokken wordt gecontroleerd of je op de werklocatie bent.</p>
+    ${store.demo ? `<div class="demo-loc"><span>Demo – doe alsof ik ben:</span><div class="filters"><button data-demoloc="op" class="${S.demoLoc !== 'buiten' ? 'active' : ''}">Op locatie</button><button data-demoloc="buiten" class="${S.demoLoc === 'buiten' ? 'active' : ''}">Thuis</button></div></div>` : ''}
+  </div>`;
+}
+
+function bindClock(el) {
+  clearInterval(S.timer);
+  S.timer = setInterval(async () => {
+    const live = $('[data-live]', el); if (!live) return;
+    const [open] = (await store.openEntries()).filter(e => e.id === live.dataset.live);
+    if (open) live.textContent = `${fmtDur(entryHours(open))} gewerkt${open.break_minutes ? ` · ${open.break_minutes} min pauze` : ''}`;
+  }, 30000);
+}
+
+async function doClock(action, btn) {
+  const needLoc = action === 'in' || action === 'uit';
+  const label = btn.textContent;
+  btn.disabled = true;
+  if (needLoc) btn.textContent = 'Locatie bepalen…';
+  const pos = needLoc ? await getPosition() : null;
+  const done = { in: 'Ingeklokt — fijne dienst!', uit: 'Uitgeklokt — tot de volgende keer!', pauze_start: 'Pauze gestart', pauze_eind: 'Pauze gestopt' };
+  try {
+    await store.clock(action, pos, null);
+    toast(done[action]); rerender();
+  } catch (e) {
+    btn.disabled = false; btn.textContent = label;
+    const st = await store.settings();
+    if (e.code === 'LC001' && st.allow_override) {
+      openDialog(action === 'in' ? 'Inklokken buiten locatie' : 'Uitklokken buiten locatie', `
+        <div class="warnbox">${esc(e.message)}</div>
+        <label class="field">Waarom klok je niet op de werklocatie? (de directie ziet dit)<textarea name="reason" required placeholder="Bijv. catering op locatie, inkoop bij de groothandel"></textarea></label>
+        <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Toch ${action === 'in' ? 'inklokken' : 'uitklokken'}</button></div>`, {
+        async onSubmit(fd) { await store.clock(action, pos, fd.get('reason')); toast(done[action] + ' (gemarkeerd voor controle)'); rerender(); },
+      });
+    } else toast(errMsg(e), 'error');
+  }
+}
+
+function clockClicks(ev) {
+  const c = ev.target.closest('[data-clock]'); if (c) { doClock(c.dataset.clock, c); return true; }
+  const d = ev.target.closest('[data-demoloc]'); if (d) { S.demoLoc = d.dataset.demoloc; rerender(); return true; }
+  return false;
+}
+
+function settingsDialog(st) {
+  openDialog('Werklocatie', `
+    <p class="hint">Klokken kan alleen binnen de straal rond dit punt. Tip: sta in de zaak en tik op <strong>Gebruik mijn huidige locatie</strong>.</p>
+    <button type="button" class="btn" data-here>📍 Gebruik mijn huidige locatie</button>
+    <div class="row keep">
+      <label class="field">Breedtegraad<input name="lat" inputmode="decimal" value="${st.lat ?? ''}" required></label>
+      <label class="field">Lengtegraad<input name="lng" inputmode="decimal" value="${st.lng ?? ''}" required></label>
+    </div>
+    <label class="field">Straal in meters (aanbevolen 100–200)<input type="number" name="radius_m" min="25" max="2000" step="25" value="${st.radius_m || 150}" required></label>
+    <label class="check"><input type="checkbox" name="allow_override" ${st.allow_override !== false ? 'checked' : ''}> Buiten de straal toch toestaan met een reden (wordt gemarkeerd voor controle)</label>
+    <p class="hint" data-maplink>${st.lat != null ? `Controleer op de kaart: <a href="https://www.google.com/maps?q=${st.lat},${st.lng}" target="_blank" rel="noopener">${st.lat}, ${st.lng}</a>` : ''}</p>
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
+    onReady(dlg) {
+      $('[data-here]', dlg).onclick = async () => {
+        const b = $('[data-here]', dlg); b.textContent = 'Locatie bepalen…';
+        const p = store.demo ? { lat: st.lat, lng: st.lng, accuracy: 10 } : await getPosition();
+        b.textContent = '📍 Gebruik mijn huidige locatie';
+        if (!p) return toast('Locatie niet beschikbaar. Sta locatietoegang toe in je browser.', 'error');
+        $('[name=lat]', dlg).value = p.lat.toFixed(6); $('[name=lng]', dlg).value = p.lng.toFixed(6);
+        toast(`Locatie overgenomen (nauwkeurigheid ±${Math.round(p.accuracy)} m)`);
+      };
+    },
+    async onSubmit(fd) {
+      const lat = Number(String(fd.get('lat')).replace(',', '.')), lng = Number(String(fd.get('lng')).replace(',', '.'));
+      if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) throw new Error('Ongeldige coördinaten.');
+      await store.saveSettings({ lat, lng, radius_m: Number(fd.get('radius_m')), allow_override: fd.get('allow_override') === 'on' });
+      toast('Werklocatie opgeslagen'); rerender();
+    },
+  });
+}
+
+function entryDialog(e, emps, defaults = {}) {
+  const isNew = !e.id;
+  const date = e.clock_in ? tDate(e.clock_in) : defaults.date || todayIso();
+  openDialog(isNew ? 'Registratie toevoegen' : 'Registratie aanpassen', `
+    <label class="field">Medewerker<select name="employee_id" ${isNew ? '' : 'disabled'}>${emps.map(x => `<option value="${x.id}" ${x.id === (e.employee_id || defaults.employee_id) ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
+    <div class="row three keep">
+      <label class="field">Datum<input type="date" name="date" value="${date}" required></label>
+      <label class="field">In<input type="time" name="in" value="${e.clock_in ? tHM(e.clock_in) : defaults.start || ''}" required></label>
+      <label class="field">Uit<input type="time" name="out" value="${e.clock_out ? tHM(e.clock_out) : defaults.end || ''}"></label>
+    </div>
+    <div class="row keep">
+      <label class="field">Pauze (min)<input type="number" name="break_minutes" min="0" step="5" value="${e.break_minutes ?? defaults.pauze ?? 0}"></label>
+      <label class="field">Status<select name="status">${['pending', 'approved', 'rejected'].map(k => `<option value="${k}" ${(e.status === k || (k === 'approved' && (isNew || e.status === 'open'))) ? 'selected' : ''}>${ESTATUS[k]}</option>`).join('')}</select></label>
+    </div>
+    ${e.reason ? `<div class="warnbox">Reden medewerker: ${esc(e.reason)}</div>` : ''}
+    <label class="field">Notitie directie<input name="manager_note" value="${esc(e.manager_note || '')}" placeholder="Bijv. vergeten uit te klokken, gecorrigeerd"></label>
+    <p class="hint">Laat “Uit” leeg als de medewerker nog aan het werk is. Een eindtijd vóór de begintijd telt als de volgende dag.</p>
+    <div class="dlg-foot">${isNew ? '' : '<button class="btn danger" value="delete" formnovalidate>Verwijderen</button>'}<span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
+    async onSubmit(fd, action) {
+      if (action === 'delete') { if (!await ask('Deze registratie verwijderen?')) throw 'cancel'; await store.deleteEntry(e.id); toast('Registratie verwijderd'); return rerender(); }
+      const d = parse(fd.get('date'));
+      const mk = t => { const [h, m] = t.split(':').map(Number); const x = new Date(d); x.setHours(h, m, 0, 0); return x; };
+      const cin = mk(fd.get('in'));
+      let cout = fd.get('out') ? mk(fd.get('out')) : null;
+      if (cout && cout <= cin) cout = new Date(cout.getTime() + 86400000);
+      const payload = { clock_in: cin.toISOString(), clock_out: cout ? cout.toISOString() : null, break_minutes: Number(fd.get('break_minutes')) || 0, break_started_at: null, status: cout ? fd.get('status') : 'open', manager_note: fd.get('manager_note').trim() || null };
+      if (isNew) payload.employee_id = fd.get('employee_id'); else payload.id = e.id;
+      await store.saveEntry(payload); toast('Registratie opgeslagen'); rerender();
+    },
+  });
+}
+
+async function viewClockMgr(el) {
+  const from = iso(S.week), to = iso(addDays(S.week, 6));
+  const [emps0, entries, shifts, open, st] = await Promise.all([store.employees(), store.entries(from, to), store.shifts(iso(addDays(S.week, -1)), to), store.openEntries(), store.settings()]);
+  const emps = sortEmps(emps0);
+  const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+  const today = todayIso(), now = new Date(), nowM = now.getHours() * 60 + now.getMinutes();
+  const wl = weekLabel(S.week);
+  S.clockFilter ||= 'check';
+  const todayShift = shifts.find(s => s.employee_id === S.me.id && s.date === today);
+
+  // Signalen
+  const notIn = shifts.filter(s => s.date === today && s.published && mins(s.start_time) + 10 < nowM && mins(s.end_time) > nowM
+    && !open.some(o => o.employee_id === s.employee_id) && !entries.some(x => x.employee_id === s.employee_id && tDate(x.clock_in) === today));
+  const forgot = open.filter(o => (now - new Date(o.clock_in)) / 3600000 > 12);
+  const pending = entries.filter(x => x.status === 'pending');
+  const isClean = x => { const sh = matchShift(x, shifts); return !x.flags?.length && sh && Math.abs(entryHours(x) - shiftHours(sh)) <= 0.25; };
+  const list = (S.clockFilter === 'check' ? pending : entries.filter(x => x.clock_out)).slice().sort((a, b) => b.clock_in.localeCompare(a.clock_in));
+
+  const entryCard = x => {
+    const e = byId[x.employee_id] || { name: '?' };
+    const sh = matchShift(x, shifts);
+    const h = entryHours(x), diff = sh ? h - shiftHours(sh) : null;
+    const flags = (x.flags || []).map(f => `<span class="pill warn">${esc(FLAG[f] || f)}${f.includes('buiten') && (f.startsWith('in') ? x.in_distance_m : x.out_distance_m) ? ` · ${(f.startsWith('in') ? x.in_distance_m : x.out_distance_m)} m` : ''}</span>`).join('');
+    return `<article class="card entry">
+      <div class="entry-head"><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name)}</strong><span class="muted small">${esc(fmtShort(tDate(x.clock_in)))}</span><span class="status ${x.status === 'approved' ? 'approved' : x.status === 'rejected' ? 'rejected' : 'pending'}">${ESTATUS[x.status]}</span></div>
+      <div class="entry-grid">
+        <div><small>Gepland</small><b>${sh ? `${hm(sh.start_time)} – ${hm(sh.end_time)}` : '—'}</b><span>${sh ? fmtH(shiftHours(sh)) + ' u' : 'geen dienst'}</span></div>
+        <div><small>Gewerkt</small><b>${tHM(x.clock_in)} – ${x.clock_out ? tHM(x.clock_out) : '…'}</b><span>${fmtH(h)} u · ${x.break_minutes || 0} min pauze</span></div>
+        <div><small>Verschil</small><b class="${diff == null ? '' : Math.abs(diff) <= 0.25 ? 'pos' : diff > 0 ? 'warnc' : 'neg'}">${diff == null ? '—' : fmtDiff(diff)}</b><span>${diff == null ? '' : Math.abs(diff) <= 0.25 ? 'volgens planning' : diff > 0 ? 'langer gewerkt' : 'korter gewerkt'}</span></div>
+      </div>
+      ${flags || x.edited ? `<div class="entry-flags">${flags}${x.edited ? '<span class="pill">aangepast</span>' : ''}</div>` : ''}
+      ${x.reason ? `<p class="note">“${esc(x.reason)}”</p>` : ''}${x.manager_note ? `<p class="reply"><strong>Notitie:</strong> ${esc(x.manager_note)}</p>` : ''}
+      <div class="req-actions">${x.status === 'pending' ? `<button class="btn sm ok" data-eok="${x.id}">Goedkeuren</button>` : ''}<button class="btn sm" data-eedit="${x.id}">Aanpassen</button>${x.status === 'pending' ? `<button class="btn sm danger" data-eno="${x.id}">Afkeuren</button>` : ''}</div>
+    </article>`;
+  };
+
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Klokken</h1><p>Wie is er aan het werk, en gewerkte uren controleren.</p></div>
+      <div class="actions"><button class="btn" data-settings>📍 Werklocatie</button><button class="btn" data-newentry>+ Registratie</button></div></div>
+    ${st.lat == null ? '<div class="warnbox" style="margin-bottom:14px">Stel eerst de <strong>werklocatie</strong> in, anders kan niemand klokken.</div>' : ''}
+    <div class="clock-top">
+      ${await clockCard(todayShift)}
+      <div class="card pad live">
+        <h3>Nu aan het werk <span class="muted">(${open.length})</span></h3>
+        ${open.length ? `<ul class="livelist">${open.map(o => { const e = byId[o.employee_id] || {}; return `<li><span class="pulse ${o.break_started_at ? 'brk' : 'on'}"></span><strong>${esc(e.name || '?')}</strong><span class="muted">${o.break_started_at ? 'pauze' : 'sinds ' + tHM(o.clock_in)} · ${fmtDur(entryHours(o))}</span>${(o.flags || []).length ? '<span class="pill warn">buiten locatie</span>' : ''}<button class="linkbtn small" data-eedit="${o.id}">aanpassen</button></li>`; }).join('')}</ul>` : '<p class="hint">Niemand ingeklokt.</p>'}
+        ${notIn.length ? `<div class="alert"><strong>Nog niet ingeklokt:</strong> ${notIn.map(s => `${esc(byId[s.employee_id]?.name || '')} (${hm(s.start_time)})`).join(', ')}</div>` : ''}
+        ${forgot.length ? `<div class="alert"><strong>Vergeten uit te klokken?</strong> ${forgot.map(o => esc(byId[o.employee_id]?.name || '')).join(', ')} — langer dan 12 uur ingeklokt.</div>` : ''}
+      </div>
+    </div>
+    <div class="toolbar" style="margin-top:22px">
+      <div class="weeknav">
+        <button class="btn icon" data-act="prev" aria-label="Vorige week">‹</button>
+        <div class="label"><strong>${wl.title}</strong><span>${wl.sub}</span></div>
+        <button class="btn icon" data-act="next" aria-label="Volgende week">›</button>
+      </div>
+      <div class="actions">
+        <div class="filters"><button data-cf="check" class="${S.clockFilter === 'check' ? 'active' : ''}">Te controleren (${pending.length})</button><button data-cf="all" class="${S.clockFilter === 'all' ? 'active' : ''}">Alles</button></div>
+        ${pending.filter(isClean).length ? `<button class="btn ok" data-okall>✓ ${pending.filter(isClean).length} zonder afwijking goedkeuren</button>` : ''}
+      </div>
+    </div>
+    ${list.length ? `<div class="reqs">${list.map(entryCard).join('')}</div>` : `<div class="card empty">${S.clockFilter === 'check' ? 'Alles is gecontroleerd. 🎉' : 'Geen registraties deze week.'}</div>`}
+    <p class="hint" style="margin-top:12px">“Zonder afwijking” = geen locatiemelding en maximaal 15 minuten verschil met de planning.</p>`;
+
+  bindClock(el);
+  el.onclick = async ev => {
+    if (clockClicks(ev)) return;
+    const act = ev.target.closest('[data-act]')?.dataset.act;
+    if (act === 'prev') { S.week = addDays(S.week, -7); return rerender(); }
+    if (act === 'next') { S.week = addDays(S.week, 7); return rerender(); }
+    if (ev.target.closest('[data-settings]')) return settingsDialog(st);
+    if (ev.target.closest('[data-newentry]')) return entryDialog({}, emps.filter(e => e.active !== false), { date: today });
+    const cf = ev.target.closest('[data-cf]'); if (cf) { S.clockFilter = cf.dataset.cf; return rerender(); }
+    const all = [...entries, ...open];
+    const ed = ev.target.closest('[data-eedit]'); if (ed) return entryDialog(all.find(x => x.id === ed.dataset.eedit), emps);
+    const okB = ev.target.closest('[data-eok]'); if (okB) { const x = all.find(y => y.id === okB.dataset.eok); await store.setEntryStatus(x.id, 'approved'); toast('Goedgekeurd'); return rerender(); }
+    const no = ev.target.closest('[data-eno]');
+    if (no) return openDialog('Registratie afkeuren', `<label class="field">Reden<input name="note" placeholder="Bijv. dubbele registratie"></label><div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn danger" value="save">Afkeuren</button></div>`, {
+      async onSubmit(fd) { await store.setEntryStatus(no.dataset.eno, 'rejected', fd.get('note').trim() || null); toast('Afgekeurd'); rerender(); } });
+    if (ev.target.closest('[data-okall]')) {
+      const ids = pending.filter(isClean).map(x => x.id);
+      if (!await ask(`${ids.length} registratie(s) zonder afwijking goedkeuren?`)) return;
+      for (const id of ids) await store.setEntryStatus(id, 'approved');
+      toast(`${ids.length} goedgekeurd`); rerender();
+    }
+  };
 }
 
 /* ================= Boot ================= */

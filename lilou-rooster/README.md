@@ -20,6 +20,19 @@ op hun telefoon of computer om hun rooster te zien en vragen zelf vakantie of vr
   alle diensten in detail, verlof & ziekte, medewerkerslijst.
 - **Afdrukken / PDF** van het weekrooster (A4 liggend), om op te hangen in de keuken.
 
+**Klokken (met locatiecontrole)**
+- Medewerkers klokken in, nemen pauze en klokken uit op hun telefoon (in *Mijn rooster*).
+- Bij in- en uitklokken wordt de locatie gecontroleerd: alleen binnen de ingestelde straal
+  rond de zaak. Buiten de straal kan (instelbaar) alleen met een reden, en dan wordt de
+  registratie gemarkeerd voor controle.
+- De **tijd komt van de server**, niet van de telefoon; medewerkers kunnen hun eigen
+  registraties niet wijzigen.
+- Directie (*Klokken*): wie is er nu aan het werk, wie is nog niet ingeklokt, wie is vergeten
+  uit te klokken, gepland naast gewerkt per dienst, goedkeuren (ook in één keer alles zonder
+  afwijking), corrigeren en handmatig toevoegen.
+- *Uren & export* rekent op **gepland** of op **goedgekeurde gewerkte** uren, plus een
+  export van de volledige klokregistratie.
+
 **Voor medewerkers**
 - **Mijn rooster**: eerstvolgende dienst en de komende 6 weken, met uren per week.
 - **Zet in mijn agenda**: download alle diensten als agendabestand (iPhone, Google, Outlook).
@@ -59,6 +72,15 @@ servers in de EU mogelijk).
    Optioneel: pas onder *Email Templates* de teksten aan naar het Nederlands.
 7. **Inloggen** — open de site, kies *Eerste keer inloggen* met het e-mailadres uit stap 3,
    bevestig via de mail en je bent binnen als leidinggevende.
+
+### Werklocatie instellen (voor klokken)
+Ga in de app naar **Klokken → Werklocatie**, sta in de zaak en tik op *Gebruik mijn huidige
+locatie*. Kies een straal van 100–200 meter (gps binnen is minder nauwkeurig).
+Medewerkers moeten bij de eerste keer klokken locatietoegang toestaan in hun browser.
+
+> Eerlijk is eerlijk: locatie op een telefoon is met speciale apps te vervalsen. De
+> controle houdt het overgrote deel van de fouten en gemakzucht tegen; de directie ziet
+> afstand en meldingen bij elke registratie terug.
 
 ### Medewerkers toevoegen
 Voeg ze toe onder **Team** met hun e-mailadres. Daarna kiezen ze zelf *Eerste keer inloggen*
