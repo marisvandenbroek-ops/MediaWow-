@@ -59,6 +59,19 @@ async function test(name, fn) {
     assert.ok(names.length >= 4 && names.every(n => !/leidinggevende/.test(n)), names.join(','));
   });
 
+  await test('inlogscherm schuift niet zijwaarts op smalle telefoons (320–390 px)', async () => {
+    for (const w of [320, 375, 390]) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: 760 }, isMobile: true, hasTouch: true });
+      const p = await ctx.newPage();
+      for (const h of ['#directie', '#personeel', '']) {
+        await p.goto(URL + h); await p.waitForSelector('[data-demo]');
+        const bad = await p.evaluate(() => { const W = document.documentElement.clientWidth; return [...document.querySelectorAll('.auth *')].filter(el => el.getBoundingClientRect().right > W + 1).map(el => el.className).slice(0, 3); });
+        assert.deepStrictEqual(bad, [], `${w}px ${h || 'alles'}: te breed: ${bad.join(', ')}`);
+      }
+      await ctx.close();
+    }
+  });
+
   console.log('Alle schermen laden');
   await test('directie: alle tabbladen zonder fouten', async () => {
     await fresh(desk, '#directie'); await login(desk, 'Mark');
