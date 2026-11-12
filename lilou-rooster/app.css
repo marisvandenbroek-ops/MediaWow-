@@ -403,6 +403,11 @@ button.chip:hover { filter: brightness(.97); }
   .userbox { gap: 2px; }
 }
 
+.wifibox { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--surface-2); display: grid; gap: 8px; justify-items: start; }
+.wifibox .hint { margin: 0; }
+.wifilist { display: flex; gap: 6px; flex-wrap: wrap; }
+.wifilist .pill { display: inline-flex; align-items: center; gap: 6px; }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }

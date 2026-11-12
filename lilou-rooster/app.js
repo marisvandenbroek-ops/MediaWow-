@@ -115,12 +115,12 @@ function demoSeed() {
     if (outD > nowD) return;
     const old = (nowD - outD) / 86400000 > 2;
     T.push({ id: uid(), employee_id: s.employee_id, clock_in: inD.toISOString(), clock_out: outD.toISOString(), break_minutes: s.break_minutes, break_started_at: null,
-      in_distance_m: 12 + (i * 7) % 40, out_distance_m: 9 + (i * 11) % 50, flags: [], reason: null, status: old ? 'approved' : 'pending', manager_note: null, edited: false });
+      in_method: i % 3 ? 'wifi' : 'gps', out_method: i % 4 ? 'wifi' : 'gps', in_distance_m: i % 3 ? null : 12 + (i * 7) % 40, out_distance_m: i % 4 ? null : 9 + (i * 11) % 50, flags: [], reason: null, status: old ? 'approved' : 'pending', manager_note: null, edited: false });
   });
   const flagged = T.filter(t => t.status === 'pending')[0];
   if (flagged) Object.assign(flagged, { flags: ['uit_buiten_locatie'], out_distance_m: 1840, reason: 'Na sluiting nog boodschappen weggebracht bij de groothandel' });
   T.push({ id: uid(), employee_id: mariska.id, clock_in: new Date(nowD.getTime() - 95 * 60000).toISOString(), clock_out: null, break_minutes: 0, break_started_at: null, in_distance_m: 18, out_distance_m: null, flags: [], reason: null, status: 'open', manager_note: null, edited: false });
-  const settings = { lat: 52.3702, lng: 4.8952, radius_m: 150, allow_override: true, swap_needs_approval: true, demo: true };
+  const settings = { lat: 52.3702, lng: 4.8952, radius_m: 150, allow_override: true, swap_needs_approval: true, wifi_ips: ['84.12.34.56'], demo: true };
   // Open diensten, ruilen, beschikbaarheid, meldingen
   const open1 = { id: uid(), employee_id: null, date: D(6), start_time: '17:00', end_time: '23:00', break_minutes: 30, position: 'Bediening', note: 'Extra drukte verwacht', published: true };
   const open2 = { id: uid(), employee_id: null, date: D(12), start_time: '12:00', end_time: '18:00', break_minutes: 30, position: 'Keuken', note: '', published: false };
@@ -141,7 +141,7 @@ function demoSeed() {
 }
 
 function demoStore() {
-  const KEY = 'lilou-rooster-demo-v4';
+  const KEY = 'lilou-rooster-demo-v5';
   let mem = null;
   let db;
   try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* ignore */ }
@@ -317,6 +317,7 @@ function demoStore() {
     // --- klokken
     async settings() { return clone(db.settings); },
     async saveSettings(st) { Object.assign(db.settings, st); save(); },
+    async registerWifi() { const ip = '84.12.34.56'; db.settings.wifi_ips = [...new Set([...(db.settings.wifi_ips || []), ip])]; save(); return ip; },
     async entries(from, to) {
       const a = new Date(parse(from)).toISOString(), b = addDays(parse(to), 1).toISOString();
       return clone(db.entries.filter(e => e.clock_in >= a && e.clock_in < b && (isMgr() || e.employee_id === mem))).sort((x, y) => x.clock_in.localeCompare(y.clock_in));
@@ -326,22 +327,26 @@ function demoStore() {
       const st = db.settings;
       const open = db.entries.find(e => e.employee_id === mem && !e.clock_out);
       const now = new Date().toISOString();
-      let dist = null, flag = null;
+      let dist = null, flag = null, method = null;
       if (action === 'in' || action === 'uit') {
-        if (!pos) flag = 'geen_locatie';
-        else { dist = Math.round(distanceM(st.lat, st.lng, pos.lat, pos.lng)); if (dist - Math.min(pos.accuracy || 0, 100) > st.radius_m) flag = 'buiten_locatie'; }
-        if (flag && (!st.allow_override || !(reason || '').trim())) throw Object.assign(new Error(flag === 'geen_locatie' ? 'Locatie onbekend. Zet locatievoorzieningen aan om te klokken.' : `Je bent ${dist} meter van de werklocatie. Klokken kan alleen op locatie.`), { code: 'LC001' });
+        const ip = S.demoLoc === 'wifi' ? '84.12.34.56' : '31.20.99.1';
+        if ((st.wifi_ips || []).includes(ip)) method = 'wifi';
+        else {
+          if (!pos || st.lat == null) flag = 'geen_locatie';
+          else { dist = Math.round(distanceM(st.lat, st.lng, pos.lat, pos.lng)); if (dist - Math.min(pos.accuracy || 0, 100) > st.radius_m) flag = 'buiten_locatie'; else method = 'gps'; }
+          if (flag && (!st.allow_override || !(reason || '').trim())) throw Object.assign(new Error(flag === 'geen_locatie' ? ((st.wifi_ips || []).length ? 'Je zit niet op de wifi van de zaak en je locatie is onbekend. Verbind met de wifi of zet locatievoorzieningen aan.' : 'Locatie onbekend. Zet locatievoorzieningen aan om te klokken.') : `Je bent ${dist} meter van de werklocatie. Klokken kan alleen op locatie.`), { code: 'LC001' });
+        }
       }
       const r = (reason || '').trim() || null;
       if (action === 'in') {
         if (open) throw new Error('Je bent al ingeklokt.');
-        db.entries.push({ id: uid(), employee_id: mem, clock_in: now, clock_out: null, break_minutes: 0, break_started_at: null, in_distance_m: dist, out_distance_m: null, flags: flag ? ['in_' + flag] : [], reason: r, status: 'open', manager_note: null, edited: false });
+        db.entries.push({ id: uid(), employee_id: mem, clock_in: now, clock_out: null, break_minutes: 0, break_started_at: null, in_method: method, in_distance_m: dist, out_distance_m: null, flags: flag ? ['in_' + flag] : [], reason: r, status: 'open', manager_note: null, edited: false });
       } else {
         if (!open) throw new Error('Je bent niet ingeklokt.');
         const brk = () => (open.break_started_at ? Math.round((Date.now() - new Date(open.break_started_at)) / 60000) : 0);
         if (action === 'pauze_start') { if (open.break_started_at) throw new Error('Pauze loopt al.'); open.break_started_at = now; }
         else if (action === 'pauze_eind') { if (!open.break_started_at) throw new Error('Er loopt geen pauze.'); open.break_minutes += brk(); open.break_started_at = null; }
-        else { open.break_minutes += brk(); open.break_started_at = null; open.clock_out = now; open.out_distance_m = dist; if (flag) open.flags.push('uit_' + flag); if (r) open.reason = [open.reason, r].filter(Boolean).join(' / '); open.status = 'pending'; }
+        else { open.break_minutes += brk(); open.break_started_at = null; open.clock_out = now; open.out_distance_m = dist; open.out_method = method; if (flag) open.flags.push('uit_' + flag); if (r) open.reason = [open.reason, r].filter(Boolean).join(' / '); open.status = 'pending'; }
       }
       save();
     },
@@ -403,6 +408,7 @@ async function supabaseStore() {
     // --- klokken
     async settings() { return ok(await sb.from('settings').select('*').eq('id', 1).maybeSingle()) || {}; },
     async saveSettings(st) { ok(await sb.from('settings').update({ ...st, updated_at: new Date().toISOString() }).eq('id', 1)); },
+    async registerWifi() { return ok(await sb.rpc('register_wifi')); },
     // --- open diensten
     async applications() { return ok(await sb.from('shift_applications').select('*')); },
     async openApply(shiftId) { ok(await sb.rpc('open_apply', { p_shift: shiftId })); },
@@ -1666,8 +1672,8 @@ async function viewHours(el) {
     leave: ['Verlof & ziekte', 'Alle aanvragen die in deze periode vallen, met status en reactie.', leave, `verlof-${slug}`],
     klok: ['Klokregistratie', 'Alle in- en uitkloktijden met pauze, afstand tot de zaak, meldingen en status. Bewijs bij vragen over gewerkte uren.', () => {
       const byId = Object.fromEntries(emps.map(e => [e.id, e]));
-      return [['Datum', 'Medewerker', 'Gepland', 'In', 'Uit', 'Pauze (min)', 'Gewerkt (u)', 'Afstand in (m)', 'Afstand uit (m)', 'Meldingen', 'Reden medewerker', 'Status', 'Aangepast', 'Notitie directie'],
-        ...ents.map(x => { const sh = matchShift(x, allShifts); return [tDate(x.clock_in), byId[x.employee_id]?.name || '', sh ? `${hm(sh.start_time)}-${hm(sh.end_time)}` : '', tHM(x.clock_in), x.clock_out ? tHM(x.clock_out) : '', x.break_minutes || 0, x.clock_out ? r2(entryHours(x)) : '', x.in_distance_m ?? '', x.out_distance_m ?? '', (x.flags || []).map(f => FLAG[f] || f).join(', '), x.reason || '', ESTATUS[x.status], x.edited ? 'ja' : 'nee', x.manager_note || '']; })];
+      return [['Datum', 'Medewerker', 'Gepland', 'In', 'Uit', 'Pauze (min)', 'Gewerkt (u)', 'Controle in', 'Controle uit', 'Afstand in (m)', 'Afstand uit (m)', 'Meldingen', 'Reden medewerker', 'Status', 'Aangepast', 'Notitie directie'],
+        ...ents.map(x => { const sh = matchShift(x, allShifts); return [tDate(x.clock_in), byId[x.employee_id]?.name || '', sh ? `${hm(sh.start_time)}-${hm(sh.end_time)}` : '', tHM(x.clock_in), x.clock_out ? tHM(x.clock_out) : '', x.break_minutes || 0, x.clock_out ? r2(entryHours(x)) : '', x.in_method || '', x.out_method || '', x.in_distance_m ?? '', x.out_distance_m ?? '', (x.flags || []).map(f => FLAG[f] || f).join(', '), x.reason || '', ESTATUS[x.status], x.edited ? 'ja' : 'nee', x.manager_note || '']; })];
     }, `klokregistratie-${S.pmode}-${from}_${to}`],
     team: ['Medewerkerslijst', 'Contactgegevens, functies en contracturen van het hele team.', team, 'medewerkers'],
   };
@@ -1766,12 +1772,12 @@ async function clockCard(todayShift) {
   const btns = !open
     ? `<button class="btn primary big" data-clock="in">Inklokken</button>`
     : `${onBreak ? '<button class="btn big" data-clock="pauze_eind">Pauze stoppen</button>' : '<button class="btn big" data-clock="pauze_start">Pauze</button>'}<button class="btn primary big" data-clock="uit">Uitklokken</button>`;
-  const noLoc = st.lat == null;
+  const noLoc = st.lat == null && !(st.wifi_ips || []).length;
   return `<div class="card clock ${open ? 'is-on' : ''}" data-clockcard>
     <div class="clock-state">${state}</div>
     <div class="clock-btns">${noLoc ? '<p class="hint">De werklocatie is nog niet ingesteld. Vraag de directie om dit te doen.</p>' : btns}</div>
-    <p class="hint clock-hint">📍 Bij in- en uitklokken wordt gecontroleerd of je op de werklocatie bent.</p>
-    ${store.demo ? `<div class="demo-loc"><span>Demo – doe alsof ik ben:</span><div class="filters"><button data-demoloc="op" class="${S.demoLoc !== 'buiten' ? 'active' : ''}">Op locatie</button><button data-demoloc="buiten" class="${S.demoLoc === 'buiten' ? 'active' : ''}">Thuis</button></div></div>` : ''}
+    <p class="hint clock-hint">${(st.wifi_ips || []).length ? '📶 Klokken kan op de wifi van de zaak, of op locatie via gps.' : '📍 Bij in- en uitklokken wordt gecontroleerd of je op de werklocatie bent.'}</p>
+    ${store.demo ? `<div class="demo-loc"><span>Demo – doe alsof ik ben:</span><div class="filters"><button data-demoloc="wifi" class="${S.demoLoc === 'wifi' ? 'active' : ''}">Op de wifi</button><button data-demoloc="op" class="${!S.demoLoc || S.demoLoc === 'op' ? 'active' : ''}">Op locatie (gps)</button><button data-demoloc="buiten" class="${S.demoLoc === 'buiten' ? 'active' : ''}">Thuis</button></div></div>` : ''}
   </div>`;
 }
 
@@ -1788,10 +1794,17 @@ async function doClock(action, btn) {
   const needLoc = action === 'in' || action === 'uit';
   const label = btn.textContent;
   btn.disabled = true;
-  if (needLoc) btn.textContent = 'Locatie bepalen…';
-  const pos = needLoc ? await getPosition() : null;
   const done = { in: 'Ingeklokt — fijne dienst!', uit: 'Uitgeklokt — tot de volgende keer!', pauze_start: 'Pauze gestart', pauze_eind: 'Pauze gestopt' };
+  const st0 = needLoc ? await store.settings() : {};
+  let pos = null;
   try {
+    // Eerst via de wifi van de zaak (geen locatievraag); lukt dat niet, dan via gps
+    if (needLoc && (st0.wifi_ips || []).length) {
+      btn.textContent = 'Wifi controleren…';
+      try { await store.clock(action, null, null); toast(done[action]); return rerender(); }
+      catch (e) { if (e.code !== 'LC001') throw e; }
+    }
+    if (needLoc) { btn.textContent = 'Locatie bepalen…'; pos = await getPosition(); }
     await store.clock(action, pos, null);
     toast(done[action]); rerender();
   } catch (e) {
@@ -1819,14 +1832,26 @@ function settingsDialog(st) {
     <p class="hint">Klokken kan alleen binnen de straal rond dit punt. Tip: sta in de zaak en tik op <strong>Gebruik mijn huidige locatie</strong>.</p>
     <button type="button" class="btn" data-here>📍 Gebruik mijn huidige locatie</button>
     <div class="row keep">
-      <label class="field">Breedtegraad<input name="lat" inputmode="decimal" value="${st.lat ?? ''}" required></label>
-      <label class="field">Lengtegraad<input name="lng" inputmode="decimal" value="${st.lng ?? ''}" required></label>
+      <label class="field">Breedtegraad<input name="lat" inputmode="decimal" value="${st.lat ?? ''}"></label>
+      <label class="field">Lengtegraad<input name="lng" inputmode="decimal" value="${st.lng ?? ''}"></label>
     </div>
     <label class="field">Straal in meters (aanbevolen 100–200)<input type="number" name="radius_m" min="25" max="2000" step="25" value="${st.radius_m || 150}" required></label>
     <label class="check"><input type="checkbox" name="allow_override" ${st.allow_override !== false ? 'checked' : ''}> Buiten de straal toch toestaan met een reden (wordt gemarkeerd voor controle)</label>
+    <div class="wifibox">
+      <strong>📶 Wifi van de zaak</strong>
+      <p class="hint">Wie op de wifi van de zaak zit, kan direct klokken — zonder gps. Verbind <em>dit toestel</em> met de wifi van Lilou en tik op de knop. Werkt alleen met een vast internetadres (vraag je provider).</p>
+      <div class="wifilist">${(st.wifi_ips || []).map(ip => `<span class="pill ok">${esc(ip)} <button type="button" class="linkbtn small" data-wifidel="${esc(ip)}" aria-label="Verwijderen">✕</button></span>`).join('') || '<span class="muted small">Nog geen netwerk ingesteld.</span>'}</div>
+      <button type="button" class="btn sm" data-wifiadd>Huidig netwerk toevoegen</button>
+    </div>
     <p class="hint" data-maplink>${st.lat != null ? `Controleer op de kaart: <a href="https://www.google.com/maps?q=${st.lat},${st.lng}" target="_blank" rel="noopener">${st.lat}, ${st.lng}</a>` : ''}</p>
     <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
     onReady(dlg) {
+      $('[data-wifiadd]', dlg).onclick = async () => {
+        try { const ip = await store.registerWifi(); toast(`Netwerk toegevoegd (${ip})`); dlg.close(); settingsDialog(await store.settings()); } catch (e) { toast(errMsg(e), 'error'); }
+      };
+      $$('[data-wifidel]', dlg).forEach(b => (b.onclick = async () => {
+        await store.saveSettings({ wifi_ips: (st.wifi_ips || []).filter(x => x !== b.dataset.wifidel) }); toast('Netwerk verwijderd'); dlg.close(); settingsDialog(await store.settings());
+      }));
       $('[data-here]', dlg).onclick = async () => {
         const b = $('[data-here]', dlg); b.textContent = 'Locatie bepalen…';
         const p = store.demo ? { lat: st.lat, lng: st.lng, accuracy: 10 } : await getPosition();
@@ -1837,8 +1862,11 @@ function settingsDialog(st) {
       };
     },
     async onSubmit(fd) {
-      const lat = Number(String(fd.get('lat')).replace(',', '.')), lng = Number(String(fd.get('lng')).replace(',', '.'));
-      if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) throw new Error('Ongeldige coördinaten.');
+      const rawLat = String(fd.get('lat')).trim(), rawLng = String(fd.get('lng')).trim();
+      const lat = rawLat ? Number(rawLat.replace(',', '.')) : null, lng = rawLng ? Number(rawLng.replace(',', '.')) : null;
+      if ((lat == null) !== (lng == null)) throw new Error('Vul zowel breedte- als lengtegraad in.');
+      if (lat != null && (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)) throw new Error('Ongeldige coördinaten.');
+      if (lat == null && !(st.wifi_ips || []).length) throw new Error('Stel een gps-locatie of een wifi-netwerk in.');
       await store.saveSettings({ lat, lng, radius_m: Number(fd.get('radius_m')), allow_override: fd.get('allow_override') === 'on' });
       toast('Werklocatie opgeslagen'); rerender();
     },
@@ -1904,7 +1932,7 @@ async function viewClockMgr(el) {
       <div class="entry-head"><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name)}</strong><span class="muted small">${esc(fmtShort(tDate(x.clock_in)))}</span><span class="status ${x.status === 'approved' ? 'approved' : x.status === 'rejected' ? 'rejected' : 'pending'}">${ESTATUS[x.status]}</span></div>
       <div class="entry-grid">
         <div><small>Gepland</small><b>${sh ? `${hm(sh.start_time)} – ${hm(sh.end_time)}` : '—'}</b><span>${sh ? fmtH(shiftHours(sh)) + ' u' : 'geen dienst'}</span></div>
-        <div><small>Gewerkt</small><b>${tHM(x.clock_in)} – ${x.clock_out ? tHM(x.clock_out) : '…'}</b><span>${fmtH(h)} u · ${x.break_minutes || 0} min pauze</span></div>
+        <div><small>Gewerkt</small><b>${tHM(x.clock_in)} – ${x.clock_out ? tHM(x.clock_out) : '…'}</b><span>${fmtH(h)} u · ${x.break_minutes || 0} min pauze${x.in_method ? ` · ${x.in_method === 'wifi' ? '📶 wifi' : '📍 gps'}` : ''}</span></div>
         <div><small>Verschil</small><b class="${diff == null ? '' : Math.abs(diff) <= 0.25 ? 'pos' : diff > 0 ? 'warnc' : 'neg'}">${diff == null ? '—' : fmtDiff(diff)}</b><span>${diff == null ? '' : Math.abs(diff) <= 0.25 ? 'volgens planning' : diff > 0 ? 'langer gewerkt' : 'korter gewerkt'}</span></div>
       </div>
       ${flags || x.edited ? `<div class="entry-flags">${flags}${x.edited ? '<span class="pill">aangepast</span>' : ''}</div>` : ''}

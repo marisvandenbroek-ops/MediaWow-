@@ -192,33 +192,68 @@ returns double precision language sql immutable as $$
     cos(radians(lat1)) * cos(radians(lat2)) * power(sin(radians(lng2 - lng1) / 2), 2)))
 $$;
 
+-- Wifi van de zaak: klokken zonder gps als het verzoek van het internetadres van de zaak komt
+alter table public.settings add column if not exists wifi_ips text[] not null default '{}';
+alter table public.time_entries add column if not exists in_method text;
+alter table public.time_entries add column if not exists out_method text;
+
+create or replace function public.request_ip() returns text
+language plpgsql stable as $$
+declare h json; ip text;
+begin
+  begin h := current_setting('request.headers', true)::json; exception when others then return null; end;
+  if h is null then return null; end if;
+  ip := coalesce(h->>'cf-connecting-ip', h->>'x-real-ip', split_part(coalesce(h->>'x-forwarded-for', ''), ',', 1));
+  return nullif(trim(ip), '');
+end $$;
+
+create or replace function public.register_wifi() returns text
+language plpgsql security definer set search_path = public as $$
+declare ip text := public.request_ip();
+begin
+  if not public.is_manager() then raise exception 'Alleen de directie kan het netwerk instellen.'; end if;
+  if ip is null then raise exception 'Kon het internetadres niet bepalen.'; end if;
+  update public.settings set wifi_ips = array(select distinct unnest(wifi_ips || ip)), updated_at = now() where id = 1;
+  return ip;
+end $$;
+revoke execute on function public.register_wifi() from public, anon;
+grant execute on function public.register_wifi() to authenticated;
+
+drop function if exists public.clock(text, double precision, double precision, double precision, text);
 create or replace function public.clock(p_action text, p_lat double precision, p_lng double precision,
                                         p_accuracy double precision, p_reason text default null)
 returns public.time_entries
 language plpgsql security definer set search_path = public as $$
 declare
-  me   uuid := public.my_employee_id();
-  st   public.settings;
-  d    double precision;
-  flag text;
-  r    text := nullif(trim(coalesce(p_reason, '')), '');
-  e    public.time_entries;
-  brk  int;
+  me     uuid := public.my_employee_id();
+  st     public.settings;
+  d      double precision;
+  flag   text;
+  method text;
+  r      text := nullif(trim(coalesce(p_reason, '')), '');
+  e      public.time_entries;
+  brk    int;
 begin
   if me is null then raise exception 'Je account is niet gekoppeld aan een medewerker.'; end if;
   select * into st from public.settings where id = 1;
   if p_action in ('in', 'uit') then
-    if st.lat is null then raise exception 'De werklocatie is nog niet ingesteld.'; end if;
-    if p_lat is null or p_lng is null then
-      flag := 'geen_locatie';
+    if coalesce(public.request_ip() = any(st.wifi_ips), false) then
+      method := 'wifi';
     else
-      d := public.distance_m(st.lat, st.lng, p_lat, p_lng);
-      if d - least(coalesce(p_accuracy, 0), 100) > st.radius_m then flag := 'buiten_locatie'; end if;
-    end if;
-    if flag is not null and (not st.allow_override or r is null) then
-      raise exception using errcode = 'LC001', message =
-        case when flag = 'geen_locatie' then 'Locatie onbekend. Zet locatievoorzieningen aan om te klokken.'
-             else format('Je bent %s meter van de werklocatie. Klokken kan alleen op locatie.', round(d)) end;
+      if st.lat is null and cardinality(st.wifi_ips) = 0 then raise exception 'De werklocatie is nog niet ingesteld.'; end if;
+      if p_lat is null or p_lng is null or st.lat is null then
+        flag := 'geen_locatie';
+      else
+        d := public.distance_m(st.lat, st.lng, p_lat, p_lng);
+        if d - least(coalesce(p_accuracy, 0), 100) > st.radius_m then flag := 'buiten_locatie'; else method := 'gps'; end if;
+      end if;
+      if flag is not null and (not st.allow_override or r is null) then
+        raise exception using errcode = 'LC001', message =
+          case when flag = 'geen_locatie' and cardinality(st.wifi_ips) > 0
+                 then 'Je zit niet op de wifi van de zaak en je locatie is onbekend. Verbind met de wifi of zet locatievoorzieningen aan.'
+               when flag = 'geen_locatie' then 'Locatie onbekend. Zet locatievoorzieningen aan om te klokken.'
+               else format('Je bent %s meter van de werklocatie. Klokken kan alleen op locatie.', round(d)) end;
+      end if;
     end if;
   end if;
 
@@ -226,8 +261,8 @@ begin
 
   if p_action = 'in' then
     if found then raise exception 'Je bent al ingeklokt.'; end if;
-    insert into public.time_entries (employee_id, clock_in, in_lat, in_lng, in_accuracy, in_distance_m, flags, reason)
-    values (me, now(), p_lat, p_lng, p_accuracy, round(d),
+    insert into public.time_entries (employee_id, clock_in, in_lat, in_lng, in_accuracy, in_distance_m, in_method, flags, reason)
+    values (me, now(), p_lat, p_lng, p_accuracy, round(d), method,
             case when flag is null then '{}'::text[] else array['in_' || flag] end, r)
     returning * into e;
   elsif p_action in ('pauze_start', 'pauze_eind', 'uit') then
@@ -242,7 +277,7 @@ begin
     else
       update public.time_entries set
         break_minutes = break_minutes + brk, break_started_at = null, clock_out = now(),
-        out_lat = p_lat, out_lng = p_lng, out_accuracy = p_accuracy, out_distance_m = round(d),
+        out_lat = p_lat, out_lng = p_lng, out_accuracy = p_accuracy, out_distance_m = round(d), out_method = method,
         flags = flags || case when flag is null then '{}'::text[] else array['uit_' || flag] end,
         reason = case when r is null then reason else concat_ws(' / ', reason, r) end,
         status = 'pending'

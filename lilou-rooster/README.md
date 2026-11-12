@@ -85,6 +85,12 @@ servers in de EU mogelijk).
    bevestig via de mail en je bent binnen als leidinggevende.
 
 ### Werklocatie instellen (voor klokken)
+**Wifi (aanbevolen):** verbind in de zaak met de wifi van Lilou, ga naar **Klokken →
+Werklocatie** en tik op *Huidig netwerk toevoegen*. Medewerkers op die wifi klokken dan
+direct, zonder locatievraag. Vereist een **vast IP-adres** van de internetverbinding
+(vraag Kassamann of de provider); het gastnetwerk werkt ook als het via dezelfde
+verbinding loopt. Daarnaast kun je gps instellen als terugval:
+
 Ga in de app naar **Klokken → Werklocatie**, sta in de zaak en tik op *Gebruik mijn huidige
 locatie*. Kies een straal van 100–200 meter (gps binnen is minder nauwkeurig).
 Medewerkers moeten bij de eerste keer klokken locatietoegang toestaan in hun browser.
