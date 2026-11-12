@@ -69,19 +69,21 @@ function demoSeed() {
   const mon = mondayOf(new Date());
   const D = n => iso(addDays(mon, n));
   const E = [
-    { name: 'Lotte de Vries', email: 'lotte@voorbeeld.nl', position: 'Shiftleader', role: 'manager', contract_hours: 32, color: COLORS[0] },
+    { name: 'Mark Minkman', email: 'mark@voorbeeld.nl', position: 'Eigenaar', role: 'manager', contract_hours: 38, color: COLORS[0] },
+    { name: 'Mariska van den Broek', email: 'mariska@voorbeeld.nl', position: 'Shiftleader', role: 'manager', contract_hours: 32, color: COLORS[6] },
     { name: 'Sanne Bakker', email: 'sanne@voorbeeld.nl', position: 'Bediening', role: 'staff', contract_hours: 24, color: COLORS[1] },
     { name: 'Daan Jansen', email: 'daan@voorbeeld.nl', position: 'Bar', role: 'staff', contract_hours: 20, color: COLORS[2] },
     { name: 'Noor El Amrani', email: 'noor@voorbeeld.nl', position: 'Keuken', role: 'staff', contract_hours: 32, color: COLORS[3] },
     { name: 'Mehmet Yilmaz', email: 'mehmet@voorbeeld.nl', position: 'Keuken', role: 'staff', contract_hours: 16, color: COLORS[4] },
     { name: 'Eva Smit', email: 'eva@voorbeeld.nl', position: 'Bediening', role: 'staff', contract_hours: 12, color: COLORS[5] },
   ].map(e => ({ id: uid(), user_id: 'demo', phone: '', active: true, ...e }));
-  const [lotte, sanne, daan, noor, mehmet, eva] = E;
+  const [mark, mariska, sanne, daan, noor, mehmet, eva] = E;
   const S = [];
   const add = (e, day, start, end, pauze, pub, pos) => S.push({ id: uid(), employee_id: e.id, date: D(day), start_time: start, end_time: end, break_minutes: pauze, position: pos || e.position, note: '', published: pub });
   for (const wk of [0, 7]) {
     const pub = wk === 0;
-    [1, 2, 4, 5].forEach(d => add(lotte, wk + d, '16:00', '23:00', 30, pub));
+    [1, 2, 4, 5].forEach(d => add(mariska, wk + d, '16:00', '23:00', 30, pub));
+    [3, 4, 5].forEach(d => add(mark, wk + d, '11:00', '19:00', 30, pub));
     [0, 2, 5].forEach(d => add(sanne, wk + d, '11:00', '17:00', 30, pub));
     add(sanne, wk + 4, '17:00', '23:00', 30, pub);
     [3, 4, 5].forEach(d => add(daan, wk + d, '17:00', '01:00', 30, pub));
@@ -99,7 +101,7 @@ function demoSeed() {
 }
 
 function demoStore() {
-  const KEY = 'lilou-rooster-demo-v1';
+  const KEY = 'lilou-rooster-demo-v2';
   let mem = null;
   let db;
   try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* ignore */ }
@@ -210,6 +212,7 @@ const S = {
 };
 let store;
 const isMgr = () => S.me?.role === 'manager';
+const sortEmps = list => list.sort((a, b) => (a.role === 'manager' ? 0 : 1) - (b.role === 'manager' ? 0 : 1) || a.name.localeCompare(b.name, 'nl'));
 
 /* ================= Dialog ================= */
 function openDialog(title, body, { onSubmit, onReady } = {}) {
@@ -348,12 +351,13 @@ function tabsFor() {
 }
 
 function renderShell() {
+  window.scrollTo(0, 0);
   const letter = esc((CFG.bedrijf || CFG.appName).charAt(0));
   app.innerHTML = `
-    ${store.demo ? '<div class="demo-banner">Demo-modus · gegevens worden alleen in deze browser bewaard</div>' : ''}
+    ${store.demo ? '<div class="demo-banner">Demo-modus<span class="hide-sm"> · gegevens worden alleen in deze browser bewaard</span></div>' : ''}
     <header class="topbar"><div class="topbar-inner">
       <div class="brand">${CFG.logo ? `<div class="stack-brand"><img class="wordmark light" src="${esc(CFG.logo)}" alt="${esc(CFG.bedrijf)}"><img class="wordmark dark" src="${esc(CFG.logoDark || CFG.logo)}" alt="${esc(CFG.bedrijf)}"><div class="sub">Rooster · ${isMgr() ? 'Leiding' : esc(S.me.position || 'Team')}</div></div>` : `<div class="logo">${letter}</div><div><strong>${esc(CFG.appName)}</strong><small>${isMgr() ? 'Leidinggevende' : esc(S.me.position || 'Medewerker')}</small></div>`}</div>
-      <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !isMgr() ? 'team' : k] || ''}<span>${l}</span>${k === 'aanvragen' ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}</nav>
+      <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !isMgr() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l}</span>${k === 'aanvragen' ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}</nav>
       <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
     </div></header>
     <main id="view"></main>`;
@@ -373,10 +377,11 @@ async function refreshBadge() {
 }
 
 async function go(view) {
+  if (S.view !== view) window.scrollTo(0, 0);
   S.view = view;
   $$('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === view));
   const el = $('#view');
-  el.onclick = null; el.onchange = null;
+  el.onclick = null; el.onchange = null; el.ontouchstart = null; el.ontouchend = null;
   try {
     if (view === 'planning') await viewWeek(el, isMgr());
     else if (view === 'mijn') await viewMine(el);
@@ -392,6 +397,9 @@ async function go(view) {
 const rerender = () => go(S.view);
 
 /* ================= Week planning ================= */
+const MQ = window.matchMedia('(max-width: 760px)');
+const isMobile = () => MQ.matches;
+try { MQ.addEventListener('change', () => { if (S.me && S.view === 'planning') rerender(); }); } catch (e) { /* oude browsers */ }
 function weekLabel(mon) {
   const sun = addDays(mon, 6);
   const sameMonth = mon.getMonth() === sun.getMonth();
@@ -403,7 +411,8 @@ function weekLabel(mon) {
 
 async function viewWeek(el, editable) {
   const from = iso(S.week), to = iso(addDays(S.week, 6));
-  const [emps, shifts, reqs] = await Promise.all([store.employees(), store.shifts(from, to), store.requests()]);
+  const [emps0, shifts, reqs] = await Promise.all([store.employees(), store.shifts(from, to), store.requests()]);
+  const emps = sortEmps(emps0);
   const people = emps.filter(e => e.active !== false || shifts.some(s => s.employee_id === e.id));
   const days = [...Array(7)].map((_, i) => addDays(S.week, i));
   const today = todayIso();
@@ -437,6 +446,31 @@ async function viewWeek(el, editable) {
     return `<td>${list.length ? `${new Set(list.map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : '—'}</td>`;
   }).join('');
   const totalH = shifts.reduce((t, s) => t + shiftHours(s), 0);
+  const mobile = isMobile();
+  if (S.dayWeek !== from) { S.dayWeek = from; const ti = days.findIndex(d => iso(d) === today); S.dayI = S.dayNext ?? (ti >= 0 ? ti : 0); }
+  S.dayNext = undefined;
+  const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+  const mobileHTML = () => {
+    const di = S.dayI, ds = iso(days[di]);
+    const list = shifts.filter(s => s.date === ds).sort((a, b) => hm(a.start_time).localeCompare(hm(b.start_time)) || (byId[a.employee_id]?.name || '').localeCompare(byId[b.employee_id]?.name || ''));
+    const lv = leaves.filter(r => r.start_date <= ds && r.end_date >= ds);
+    const h = list.reduce((t, s) => t + shiftHours(s), 0);
+    const fd = feestdag(ds);
+    const strip = days.map((d, i) => { const n = new Set(shifts.filter(s => s.date === iso(d)).map(s => s.employee_id)).size; const mineThere = shifts.some(s => s.date === iso(d) && s.employee_id === S.me.id);
+      return `<button class="ds ${i === di ? 'on' : ''} ${iso(d) === today ? 'today' : ''}" data-day="${i}" aria-label="${fmtLong(iso(d))}"><span>${DAG[i]}</span><b>${d.getDate()}</b><i class="${mineThere && !editable ? 'mine' : ''}">${n || ''}</i></button>`; }).join('');
+    const items = list.map(s => { const e = byId[s.employee_id] || {}; const me = e.id === S.me.id; const tag = editable ? 'button' : 'div';
+      return `<${tag} class="mshift ${s.published ? '' : 'concept'} ${me ? 'me' : ''}" style="--c:${esc(e.color || COLORS[0])}" ${editable ? `data-shift="${s.id}"` : ''}>
+        <span class="mtime"><b>${hm(s.start_time)}</b><small>${hm(s.end_time)}</small></span>
+        <span class="mwho"><strong>${esc(e.name || '?')}${me ? ' <em>jij</em>' : ''}</strong><small>${esc(s.position || '')}${s.position ? ' · ' : ''}${fmtH(shiftHours(s))} u${s.published ? '' : ' · concept'}${s.note ? ' · ' + esc(s.note) : ''}</small></span>
+        ${editable ? '<span class="chev" aria-hidden="true">›</span>' : ''}</${tag}>`; }).join('');
+    const leaveHTML = lv.length ? `<div class="mleaves">${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}</div>` : '';
+    return `<div class="daystrip">${strip}</div>
+      <div class="dayhead"><div><h2>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}</h2>${fd ? `<span class="fdtag">${esc(fd)}</span>` : ''}</div><span>${list.length ? `${new Set(list.map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
+      ${leaveHTML}
+      <div class="mlist">${items || `<div class="card empty">${editable ? 'Nog niemand ingepland.' : 'Geen diensten op deze dag.'}</div>`}</div>
+      ${editable ? '<button class="btn primary block madd" data-addday>+ Dienst toevoegen</button>' : ''}
+      <p class="hint swipehint">Veeg naar links of rechts voor een andere dag · week totaal ${fmtH(totalH)} u</p>`;
+  };
 
   el.innerHTML = `
     <div class="print-title">${esc(CFG.appName)} · ${wl.title} · ${wl.sub}</div>
@@ -449,17 +483,18 @@ async function viewWeek(el, editable) {
         <button class="btn ghost sm" data-act="today">Vandaag</button>
       </div>
       ${editable ? `<div class="actions">
-        <button class="btn" data-act="print">Afdrukken / PDF</button>
+        <button class="btn hide-sm" data-act="print">Afdrukken / PDF</button>
         <button class="btn" data-act="copy">Kopieer vorige week</button>
         <button class="btn primary" data-act="publish" ${concept ? '' : 'disabled'}>${concept ? `Publiceer ${concept} dienst${concept > 1 ? 'en' : ''}` : 'Alles gepubliceerd ✓'}</button>
       </div>` : ''}
     </div>
-    ${editable ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof / niet beschikbaar</span></div>` : ''}
-    ${people.length ? `<div class="grid-wrap"><table class="grid">
+    ${editable && !mobile ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof / niet beschikbaar</span></div>` : ''}
+    ${people.length && mobile ? mobileHTML() : ''}
+    ${people.length && !mobile ? `<div class="grid-wrap"><table class="grid">
       <thead><tr><th class="who">Medewerker</th>${days.map(d => `<th class="${iso(d) === today ? 'today' : ''}" ${feestdag(iso(d)) ? `title="${esc(feestdag(iso(d)))}"` : ''}>${DAG[dayIdx(d)]}<b>${d.getDate()}</b>${feestdag(iso(d)) ? `<em class="fd">${esc(feestdag(iso(d)))}</em>` : ''}</th>`).join('')}</tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr><th class="who">${fmtH(totalH)} u totaal</th>${foot}</tr></tfoot>
-    </table></div>` : `<div class="card empty">Nog geen medewerkers. ${editable ? 'Voeg ze toe via <strong>Team</strong>.' : ''}</div>`}
+    </table></div>` : people.length ? '' : `<div class="card empty">Nog geen medewerkers. ${editable ? 'Voeg ze toe via <strong>Team</strong>.' : ''}</div>`}
     ${!editable && !shifts.length && people.length ? '<p class="hint" style="margin-top:12px">Voor deze week is nog geen rooster gepubliceerd.</p>' : ''}
   `;
 
@@ -467,7 +502,14 @@ async function viewWeek(el, editable) {
     const act = ev.target.closest('[data-act]')?.dataset.act;
     if (act === 'prev') { S.week = addDays(S.week, -7); return rerender(); }
     if (act === 'next') { S.week = addDays(S.week, 7); return rerender(); }
-    if (act === 'today') { S.week = mondayOf(new Date()); return rerender(); }
+    if (act === 'today') { S.week = mondayOf(new Date()); S.dayWeek = null; return rerender(); }
+    const dayB = ev.target.closest('[data-day]'); if (dayB) { S.dayI = Number(dayB.dataset.day); return rerender(); }
+    if (ev.target.closest('[data-addday]')) {
+      const ds = iso(days[S.dayI]);
+      const free = people.find(e => e.active !== false && !shifts.some(s => s.employee_id === e.id && s.date === ds)) || people[0];
+      const t = CFG.diensten[0] || { start: '09:00', end: '17:00', pauze: 30 };
+      return shiftDialog({ employee_id: free.id, date: ds, start_time: t.start, end_time: t.end, break_minutes: t.pauze || 0, position: free.position || '', note: '' }, emps, shifts, leaves);
+    }
     if (act === 'publish') {
       if (!await ask(`${concept} dienst(en) publiceren? Het team ziet ze daarna direct in hun rooster.`)) return;
       await store.publish(from, to); toast('Week gepubliceerd'); return rerender();
@@ -483,6 +525,20 @@ async function viewWeek(el, editable) {
       return shiftDialog({ employee_id: e.id, date: cell.dataset.date, start_time: t.start, end_time: t.end, break_minutes: t.pauze || 0, position: e.position || '', note: '' }, emps, shifts, leaves);
     }
   };
+  if (mobile) {
+    let x0 = null, y0 = null;
+    el.ontouchstart = ev => { if (ev.target.closest('dialog')) return; x0 = ev.touches[0].clientX; y0 = ev.touches[0].clientY; };
+    el.ontouchend = ev => {
+      if (x0 == null) return;
+      const dx = ev.changedTouches[0].clientX - x0, dy = ev.changedTouches[0].clientY - y0; x0 = null;
+      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      const dir = dx < 0 ? 1 : -1, n = S.dayI + dir;
+      if (n < 0) { S.week = addDays(S.week, -7); S.dayNext = 6; }
+      else if (n > 6) { S.week = addDays(S.week, 7); S.dayNext = 0; }
+      else S.dayI = n;
+      rerender();
+    };
+  }
 }
 
 async function copyWeek(current) {
@@ -581,7 +637,9 @@ function shiftDialog(s, emps, weekShifts, leaves) {
 async function viewMine(el) {
   const start = mondayOf(new Date());
   const from = iso(start), to = iso(addDays(start, 6 * 7 - 1));
-  const [all, reqs] = await Promise.all([store.shifts(from, to), store.requests()]);
+  const [all, reqs, emps] = await Promise.all([store.shifts(from, to), store.requests(), store.employees()]);
+  const nameOf = Object.fromEntries(emps.map(e => [e.id, e.name.split(' ')[0]]));
+  const withWho = s => { const o = all.filter(x => x.date === s.date && x.employee_id !== S.me.id && x.published).map(x => nameOf[x.employee_id]).filter(Boolean); return [...new Set(o)]; };
   const mine = all.filter(s => s.employee_id === S.me.id && s.published);
   const myLeaves = reqs.filter(r => r.employee_id === S.me.id && r.status === 'approved' && overlaps(r.start_date, r.end_date, from, to));
   const today = todayIso();
@@ -601,7 +659,7 @@ async function viewMine(el) {
       const ds = iso(addDays(mon, i));
       const d = parse(ds);
       const dayHead = `<div class="d"><span>${DAG[i]}</span><b>${d.getDate()}</b></div>`;
-      ws.filter(s => s.date === ds).forEach(s => items.push(`<li class="${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${hm(s.start_time)} – ${hm(s.end_time)}</strong><small>${esc(s.position || '')}${s.break_minutes ? ` · ${s.break_minutes} min pauze` : ''}${s.note ? ` · ${esc(s.note)}` : ''}</small></div><div class="h">${fmtH(shiftHours(s))} u</div></li>`));
+      ws.filter(s => s.date === ds).forEach(s => items.push(`<li class="${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${hm(s.start_time)} – ${hm(s.end_time)}</strong><small>${esc(s.position || '')}${s.break_minutes ? ` · ${s.break_minutes} min pauze` : ''}${s.note ? ` · ${esc(s.note)}` : ''}</small>${withWho(s).length ? `<small class="with">Met ${esc(withWho(s).join(', '))}</small>` : ''}</div><div class="h">${fmtH(shiftHours(s))} u</div></li>`));
       const lv = wl.find(r => r.start_date <= ds && r.end_date >= ds);
       if (lv && !ws.some(s => s.date === ds)) items.push(`<li class="off ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${esc(REQ[lv.type])}</strong></div><div class="h"><span class="pill ok">vrij</span></div></li>`);
     }
@@ -611,7 +669,7 @@ async function viewMine(el) {
   el.innerHTML = `
     <div class="page-head"><div><h1>Hoi ${esc(S.me.name.split(' ')[0])}</h1><p>Je rooster voor de komende weken.</p></div>
       ${mine.length ? '<button class="btn" data-ics>📅 Zet in mijn agenda</button>' : ''}</div>
-    ${next ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p></div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
+    ${next ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
     ${weeks || '<div class="card empty">Er staan nog geen gepubliceerde diensten voor je ingepland.</div>'}
   `;
   el.onclick = ev => {
@@ -735,7 +793,7 @@ async function viewRequestsMgr(el) {
 
 /* ================= Team ================= */
 async function viewTeam(el) {
-  const emps = await store.employees();
+  const emps = sortEmps(await store.employees());
   el.innerHTML = `
     <div class="page-head"><div><h1>Team</h1><p>Medewerkers, functies en contracturen.</p></div><button class="btn primary" data-new>+ Medewerker</button></div>
     ${emps.length ? `<div class="card table-wrap"><table class="list">
@@ -892,7 +950,8 @@ async function viewHours(el) {
   S.pmode ||= 'maand'; S.panchor ||= new Date(); if (S.onlyPub === undefined) S.onlyPub = true;
   const P = periodRange(S.pmode, S.panchor);
   const from = iso(P.from), to = iso(P.to);
-  const [emps, allShifts, reqs] = await Promise.all([store.employees(), store.shifts(from, to), store.requests()]);
+  const [emps0, allShifts, reqs] = await Promise.all([store.employees(), store.shifts(from, to), store.requests()]);
+  const emps = sortEmps(emps0);
   const shifts = S.onlyPub ? allShifts.filter(s => s.published) : allShifts;
   const weeks = daysBetween(from, to) / 7;
   const approved = reqs.filter(r => r.status === 'approved');
