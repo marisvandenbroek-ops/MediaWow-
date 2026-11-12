@@ -419,6 +419,11 @@ button.chip:hover { filter: brightness(.97); }
 @media (prefers-reduced-motion: reduce) { .dlgerr { animation: none; } }
 dialog #toasts { position: fixed; }
 
+.history { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--surface-2); }
+.history summary { cursor: pointer; font-size: 13.5px; font-weight: 500; }
+.auditlist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; font-size: 13px; }
+.auditlist small { color: var(--muted); }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }

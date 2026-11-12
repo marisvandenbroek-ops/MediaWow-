@@ -163,6 +163,16 @@ function demoStore() {
   const notifyMgrs = (t, b, v, except) => db.employees.filter(e => e.role === 'manager' && e.active !== false && e.id !== except).forEach(e => notify(e.id, t, b, v));
   const notifyTeam = (t, b, v, except) => db.employees.filter(e => e.active !== false && e.id !== except).forEach(e => notify(e.id, t, b, v));
   const shiftById = id => db.shifts.find(s => s.id === id);
+  db.audit ||= [];
+  const audit = (tbl, rowId, action, oldObj, newObj) => {
+    let o = oldObj ? { ...oldObj } : null, n = newObj ? { ...newObj } : null;
+    if (action === 'update') {
+      const keys = Object.keys(n).filter(k => k !== 'updated_at' && JSON.stringify(o[k] ?? null) !== JSON.stringify(n[k] ?? null));
+      if (!keys.length) return;
+      o = Object.fromEntries(keys.map(k => [k, oldObj[k] ?? null])); n = Object.fromEntries(keys.map(k => [k, newObj[k] ?? null]));
+    }
+    db.audit.push({ id: uid(), at: new Date().toISOString(), actor: mem, actor_name: me()?.name || 'Systeem', tbl, row_id: rowId, action, old: o, new: n });
+  };
   const swapExec = w => {
     const a = shiftById(w.shift_id);
     if (!a || a.employee_id !== w.from_employee) throw new Error('De dienst is intussen gewijzigd; de ruil kan niet doorgaan.');
@@ -356,12 +366,54 @@ function demoStore() {
       save();
     },
     async saveEntry(e) {
-      if (e.id) Object.assign(db.entries.find(x => x.id === e.id), e, { edited: true });
-      else db.entries.push({ id: uid(), break_started_at: null, in_distance_m: null, out_distance_m: null, flags: ['handmatig'], reason: null, ...e, edited: true });
+      if (e.id) { const cur = db.entries.find(x => x.id === e.id), old = { ...cur }; Object.assign(cur, e, { edited: true }); audit('time_entries', cur.id, 'update', old, { ...cur }); }
+      else { const row = { id: uid(), break_started_at: null, in_distance_m: null, out_distance_m: null, flags: ['handmatig'], reason: null, ...e, edited: true }; db.entries.push(row); audit('time_entries', row.id, 'insert', null, row); }
       save();
     },
-    async deleteEntry(id) { db.entries = db.entries.filter(e => e.id !== id); save(); },
-    async setEntryStatus(id, status, note, ot) { const e = db.entries.find(x => x.id === id); e.status = status; if (note !== undefined && note !== null) e.manager_note = note; if (ot) e.overtime_status = ot; save(); },
+    async deleteEntry(id) { const old = db.entries.find(e => e.id === id); audit('time_entries', id, 'delete', old, null); db.entries = db.entries.filter(e => e.id !== id); save(); },
+    async setEntryStatus(id, status, note, ot) {
+      const e = db.entries.find(x => x.id === id), old = { ...e };
+      e.status = status; if (note !== undefined && note !== null) e.manager_note = note; if (ot) e.overtime_status = ot;
+      audit('time_entries', id, 'update', old, { ...e }); save();
+    },
+    async audit(rowId) { return clone(db.audit.filter(a => a.row_id === rowId)).sort((a, b) => b.at.localeCompare(a.at)); },
+    // Automatische taken (in de echte versie: run_jobs() in de database, elke 15 min)
+    async runJobs() {
+      const now = Date.now(); db.reminders ||= {};
+      let n = 0;
+      db.entries.filter(e => !e.clock_out).forEach(e => {
+        const ds = tDate(e.clock_in);
+        const sh = matchShift(e, db.shifts.filter(x => x.employee_id === e.employee_id && x.published && x.date === ds));
+        if (sh) {
+          const pe = shiftWindow(sh)[1].getTime();
+          if (now > pe + 3600000) {
+            const old = { ...e };
+            e.clock_out = new Date(Math.max(pe, new Date(e.clock_in).getTime() + 60000)).toISOString();
+            if (e.break_started_at) { e.break_minutes += Math.max(0, Math.round((pe - new Date(e.break_started_at)) / 60000)); e.break_started_at = null; }
+            e.flags = [...(e.flags || []), 'auto_uit']; e.status = 'pending';
+            const m0 = mem; mem = null; audit('time_entries', e.id, 'update', old, { ...e }); mem = m0;
+            notify(e.employee_id, 'Automatisch uitgeklokt', `Je was vergeten uit te klokken en bent uitgeklokt op ${tHM(pe)} (einde dienst). Langer gewerkt? Laat het de directie weten.`, 'mijn');
+            n++;
+          } else if (now > pe + 900000 && !db.reminders['u' + e.id]) {
+            db.reminders['u' + e.id] = 1;
+            notify(e.employee_id, 'Vergeet niet uit te klokken', `Je dienst eindigde om ${tHM(pe)}.`, 'mijn');
+          }
+        } else if (now > new Date(e.clock_in).getTime() + 16 * 3600000) {
+          e.clock_out = new Date(new Date(e.clock_in).getTime() + 8 * 3600000).toISOString(); e.break_started_at = null;
+          e.flags = [...(e.flags || []), 'auto_uit']; e.status = 'pending'; n++;
+          notify(e.employee_id, 'Automatisch uitgeklokt', 'Je stond langer dan 16 uur ingeklokt zonder geplande dienst. De directie controleert je uren.', 'mijn');
+          notifyMgrs('Registratie controleren', `${fname(e.employee_id)} stond langer dan 16 uur ingeklokt zonder dienst.`, 'klokken');
+        }
+      });
+      db.shifts.filter(x => x.published && x.employee_id).forEach(x => {
+        const st = shiftWindow(x)[0].getTime();
+        if (st - now > 45 * 60000 && st - now < 75 * 60000 && !db.reminders['d' + x.id]) {
+          db.reminders['d' + x.id] = 1;
+          notify(x.employee_id, `Je dienst begint om ${hm(x.start_time)}`, lbl(x) + (x.position ? ' · ' + x.position : ''), 'mijn');
+        }
+      });
+      save(); return n;
+    },
   };
 }
 
@@ -455,6 +507,8 @@ async function supabaseStore() {
       else ok(await sb.from('time_entries').insert({ ...rest, flags: ['handmatig'], edited: true }));
     },
     async deleteEntry(id) { ok(await sb.from('time_entries').delete().eq('id', id)); },
+    async audit(rowId) { return ok(await sb.from('audit_log').select('*').eq('row_id', rowId).order('at', { ascending: false }).limit(50)); },
+    async runJobs() { return ok(await sb.rpc('run_jobs')); },
     async setEntryStatus(id, status, note, ot) {
       const u = { status }; if (note !== undefined && note !== null) u.manager_note = note; if (ot) u.overtime_status = ot;
       ok(await sb.from('time_entries').update(u).eq('id', id));
@@ -651,6 +705,7 @@ function renderShell() {
 async function refreshBadge() {
   if (!S.me) return;
   try {
+    await maybeRunJobs();
     const notes = await store.notifications();
     const unread = notes.filter(n => !n.read_at).length;
     const nc = $('[data-ncount]');
@@ -670,8 +725,16 @@ async function refreshBadge() {
   } catch (e) { /* ignore */ }
 }
 
+// Automatische taken (vergeten uit te klokken, herinneringen) max. 1× per 2 minuten vanuit de app
+async function maybeRunJobs() {
+  if (S.jobsAt && Date.now() - S.jobsAt < 120000) return;
+  S.jobsAt = Date.now();
+  try { await store.runJobs(); } catch (e) { /* niet kritiek: de database doet dit ook elke 15 min */ }
+}
+
 async function go(view) {
   clearInterval(S.timer);
+  await maybeRunJobs();
   if (S.view !== view) window.scrollTo(0, 0);
   S.view = view;
   $$('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === view));
@@ -1783,7 +1846,7 @@ const entryHours = e => {
 };
 const fmtDiff = h => { const m = Math.round(h * 60), a = Math.abs(m), sg = m > 0 ? '+' : m < 0 ? '−' : ''; return a < 60 ? `${sg}${a} min` : `${sg}${fmtDur(a / 60)} u`; };
 const fmtDur = h => { const m = Math.round(h * 60); return `${Math.floor(m / 60)}:${pad(m % 60)}`; };
-const FLAG = { in_buiten_locatie: 'Ingeklokt buiten locatie', uit_buiten_locatie: 'Uitgeklokt buiten locatie', in_geen_locatie: 'Inklokken zonder locatie', uit_geen_locatie: 'Uitklokken zonder locatie', handmatig: 'Handmatig toegevoegd' };
+const FLAG = { in_buiten_locatie: 'Ingeklokt buiten locatie', uit_buiten_locatie: 'Uitgeklokt buiten locatie', in_geen_locatie: 'Inklokken zonder locatie', uit_geen_locatie: 'Uitklokken zonder locatie', handmatig: 'Handmatig toegevoegd', auto_uit: 'Automatisch uitgeklokt (vergeten)' };
 const ESTATUS = { open: 'Aan het werk', pending: 'Te controleren', approved: 'Goedgekeurd', rejected: 'Afgekeurd' };
 // Koppel een registratie aan de geplande dienst (zelfde dag, dichtstbijzijnde begintijd)
 function matchShift(e, shifts) {
@@ -1990,7 +2053,9 @@ function entryDialog(e, emps, defaults = {}) {
     ${e.reason ? `<div class="warnbox">Reden medewerker: ${esc(e.reason)}</div>` : ''}
     <label class="field">Notitie directie<input name="manager_note" value="${esc(e.manager_note || '')}" placeholder="Bijv. vergeten uit te klokken, gecorrigeerd"></label>
     <p class="hint">Laat “Uit” leeg als de medewerker nog aan het werk is. Een eindtijd vóór de begintijd telt als de volgende dag.</p>
+    ${isNew ? '' : '<details class="history" data-history><summary>Geschiedenis van wijzigingen</summary><div class="hint">Laden…</div></details>'}
     <div class="dlg-foot">${isNew ? '' : '<button class="btn danger" value="delete" formnovalidate>Verwijderen</button>'}<span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
+    onReady(dlg) { const h = $('[data-history]', dlg); if (h) h.addEventListener('toggle', () => { if (h.open && !h.dataset.loaded) { h.dataset.loaded = 1; historyHTML(e.id).then(x => { $('div', h).outerHTML = x; }); } }); },
     async onSubmit(fd, action) {
       if (action === 'delete') { if (!await ask('Deze registratie verwijderen?')) throw 'cancel'; await store.deleteEntry(e.id); toast('Registratie verwijderd'); return rerender(); }
       const d = parse(fd.get('date'));
@@ -1998,11 +2063,39 @@ function entryDialog(e, emps, defaults = {}) {
       const cin = mk(fd.get('in'));
       let cout = fd.get('out') ? mk(fd.get('out')) : null;
       if (cout && cout <= cin) cout = new Date(cout.getTime() + 86400000);
-      const payload = { clock_in: cin.toISOString(), clock_out: cout ? cout.toISOString() : null, break_minutes: Number(fd.get('break_minutes')) || 0, break_started_at: null, status: cout ? fd.get('status') : 'open', manager_note: fd.get('manager_note').trim() || null, overtime_status: fd.get('overtime_status') || null };
+      // Ongewijzigde tijden exact laten staan (geen schijnwijziging in het logboek)
+      const same = (ts, d2) => ts && d2 && tHM(ts) === tHM(d2) && Math.abs(new Date(ts) - d2) < 60000;
+      const cinIso = same(e.clock_in, cin) ? e.clock_in : cin.toISOString();
+      const coutIso = cout ? (same(e.clock_out, cout) ? e.clock_out : cout.toISOString()) : null;
+      const payload = { clock_in: cinIso, clock_out: coutIso, break_minutes: Number(fd.get('break_minutes')) || 0, break_started_at: null, status: cout ? fd.get('status') : 'open', manager_note: fd.get('manager_note').trim() || null, overtime_status: fd.get('overtime_status') || null };
       if (isNew) payload.employee_id = fd.get('employee_id'); else payload.id = e.id;
       await store.saveEntry(payload); toast('Registratie opgeslagen'); rerender();
     },
   });
+}
+
+// Leesbare geschiedenis uit het logboek
+const AUDIT_LABEL = { clock_in: 'In', clock_out: 'Uit', break_minutes: 'Pauze (min)', status: 'Status', overtime_status: 'Overuren', manager_note: 'Notitie', flags: 'Meldingen', hourly_wage: 'Uurloon', birth_date: 'Geboortedatum', leave_hours_year: 'Verlofuren per jaar', leave_opening: 'Beginsaldo verlof', role: 'Rol', contract_hours: 'Contracturen', active: 'Actief', name: 'Naam', email: 'E-mail', position: 'Functie' };
+const auditVal = (k, v) => {
+  if (v == null || v === '') return '—';
+  if (k === 'clock_in' || k === 'clock_out') return `${fmtShort(tDate(v))} ${tHM(v)}`;
+  if (k === 'status') return ESTATUS[v] || STATUS[v] || v;
+  if (k === 'overtime_status') return { requested: 'aangevraagd', approved: 'goedgekeurd', rejected: 'afgekeurd' }[v] || v;
+  if (k === 'flags') return (v || []).map(f => FLAG[f] || f).join(', ') || '—';
+  if (k === 'hourly_wage') return '€ ' + Number(v).toFixed(2).replace('.', ',');
+  if (typeof v === 'boolean') return v ? 'ja' : 'nee';
+  return String(v);
+};
+async function historyHTML(rowId) {
+  let rows = [];
+  try { rows = await store.audit(rowId); } catch (e) { return `<p class="hint">${esc(errMsg(e))}</p>`; }
+  if (!rows.length) return '<p class="hint">Nog geen wijzigingen door de directie.</p>';
+  return `<ul class="auditlist">${rows.map(a => {
+    const keys = Object.keys(a.new || a.old || {}).filter(k => AUDIT_LABEL[k]);
+    const what = a.action === 'insert' ? 'Toegevoegd' : a.action === 'delete' ? 'Verwijderd'
+      : keys.map(k => `${AUDIT_LABEL[k]}: ${esc(auditVal(k, a.old?.[k]))} → <strong>${esc(auditVal(k, a.new?.[k]))}</strong>`).join('<br>');
+    return what ? `<li><small>${esc(fmtShort(tDate(a.at)))} ${tHM(a.at)} · ${esc(a.actor_name || 'Systeem')}</small><div>${what}</div></li>` : '';
+  }).join('')}</ul>`;
 }
 
 async function viewClockMgr(el) {

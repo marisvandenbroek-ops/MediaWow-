@@ -56,6 +56,10 @@ returns uuid language sql stable security definer set search_path = public as $$
   select id from public.employees where user_id = auth.uid() and active
 $$;
 
+-- "Vandaag" in Nederland (de database draait in UTC)
+create or replace function public.today_nl() returns date
+language sql stable as $$ select (now() at time zone 'Europe/Amsterdam')::date $$;
+
 create or replace function public.is_manager()
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.employees where user_id = auth.uid() and role = 'manager' and active)
@@ -240,6 +244,7 @@ declare
   brk    int;
 begin
   if me is null then raise exception 'Je account is niet gekoppeld aan een medewerker.'; end if;
+  perform set_config('rooster.via_clock', '1', true);
   select * into st from public.settings where id = 1;
   if p_action in ('in', 'uit') then
     if coalesce(public.request_ip() = any(st.wifi_ips), false) then
@@ -444,12 +449,12 @@ language plpgsql security definer set search_path = public as $$
 begin
   if coalesce(current_setting('rooster.skip_notify', true), '') = '1' then return null; end if;
   if tg_op = 'DELETE' then
-    if old.published and old.employee_id is not null and old.date >= current_date then
+    if old.published and old.employee_id is not null and old.date >= public.today_nl() then
       perform public.notify(old.employee_id, 'Dienst vervallen', public.shift_label(old.date, old.start_time, old.end_time), 'mijn');
     end if;
     return old;
   end if;
-  if old.published and new.published and new.date >= current_date
+  if old.published and new.published and new.date >= public.today_nl()
      and (old.date, old.start_time, old.end_time, old.employee_id) is distinct from (new.date, new.start_time, new.end_time, new.employee_id) then
     if new.employee_id is not null then
       perform public.notify(new.employee_id,
@@ -513,7 +518,7 @@ declare me uuid := public.my_employee_id(); s public.shifts;
 begin
   if me is null then raise exception 'Je account is niet gekoppeld aan een medewerker.'; end if;
   select * into s from public.shifts where id = p_shift;
-  if not found or s.employee_id is not null or not s.published or s.date < current_date then
+  if not found or s.employee_id is not null or not s.published or s.date < public.today_nl() then
     raise exception 'Deze dienst is niet (meer) open.';
   end if;
   insert into public.shift_applications (shift_id, employee_id) values (p_shift, me)
@@ -568,14 +573,14 @@ declare me uuid := public.my_employee_id(); s public.shifts; s2 public.shifts; n
 begin
   if me is null then raise exception 'Je account is niet gekoppeld aan een medewerker.'; end if;
   select * into s from public.shifts where id = p_shift;
-  if not found or s.employee_id is distinct from me or not s.published or s.date < current_date then
+  if not found or s.employee_id is distinct from me or not s.published or s.date < public.today_nl() then
     raise exception 'Je kunt alleen je eigen, komende diensten aanbieden.';
   end if;
   if p_to = me then raise exception 'Kies een collega.'; end if;
   if p_to is not null and not exists (select 1 from public.employees where id = p_to and active) then raise exception 'Onbekende collega.'; end if;
   if p_swap_shift is not null then
     select * into s2 from public.shifts where id = p_swap_shift;
-    if p_to is null or not found or s2.employee_id is distinct from p_to or not s2.published or s2.date < current_date then
+    if p_to is null or not found or s2.employee_id is distinct from p_to or not s2.published or s2.date < public.today_nl() then
       raise exception 'Je kunt alleen ruilen tegen een komende dienst van de gekozen collega.';
     end if;
   end if;
@@ -668,6 +673,173 @@ revoke execute on function public.swap_cancel(uuid) from public, anon;
 grant execute on function public.publish_week(date, date), public.open_apply(uuid), public.open_withdraw(uuid),
   public.open_assign(uuid, uuid), public.swap_offer(uuid, uuid, uuid, text), public.swap_respond(uuid, boolean),
   public.swap_decide(uuid, boolean, text), public.swap_cancel(uuid) to authenticated;
+
+-- =====================================================================
+--  LOONGEGEVENS, VERLOFSALDO, LOGBOEK en AUTOMATISCHE TAKEN
+-- =====================================================================
+-- Vertrouwelijke gegevens per medewerker: alleen directie (en de medewerker zelf) kan ze zien
+create table if not exists public.employee_private (
+  employee_id      uuid primary key references public.employees(id) on delete cascade,
+  hourly_wage      numeric(8, 2),
+  birth_date       date,
+  leave_hours_year numeric(6, 2),               -- leeg = 4 × contracturen per week (wettelijk minimum)
+  leave_opening    numeric(6, 2) not null default 0,   -- saldo aan het begin van leave_year
+  leave_year       int not null default extract(year from now())::int,
+  updated_at       timestamptz not null default now()
+);
+alter table public.employee_private enable row level security;
+drop policy if exists priv_select on public.employee_private;
+create policy priv_select on public.employee_private for select to authenticated
+  using (public.is_manager() or employee_id = public.my_employee_id());
+drop policy if exists priv_write on public.employee_private;
+create policy priv_write on public.employee_private for all to authenticated
+  using (public.is_manager()) with check (public.is_manager());
+
+alter table public.requests add column if not exists leave_hours numeric(6, 2);   -- verlofuren, ingevuld bij goedkeuren
+
+alter table public.settings add column if not exists pct_avond        numeric(5, 2) not null default 0;
+alter table public.settings add column if not exists pct_nacht        numeric(5, 2) not null default 0;
+alter table public.settings add column if not exists pct_zondag       numeric(5, 2) not null default 0;
+alter table public.settings add column if not exists pct_feestdag     numeric(5, 2) not null default 0;
+alter table public.settings add column if not exists pct_vakantiegeld numeric(5, 2) not null default 8;
+alter table public.settings add column if not exists pct_werkgever    numeric(5, 2) not null default 25;
+
+-- ---------- Logboek van wijzigingen ----------
+create table if not exists public.audit_log (
+  id         bigserial primary key,
+  at         timestamptz not null default now(),
+  actor      uuid references public.employees(id) on delete set null,
+  actor_name text,
+  tbl        text not null,
+  row_id     uuid,
+  action     text not null,
+  old        jsonb,
+  new        jsonb
+);
+create index if not exists audit_row_idx on public.audit_log (tbl, row_id, at desc);
+alter table public.audit_log enable row level security;
+drop policy if exists audit_select on public.audit_log;
+create policy audit_select on public.audit_log for select to authenticated using (public.is_manager());
+revoke insert, update, delete on public.audit_log from authenticated, anon;
+
+create or replace function public.trg_audit() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare me uuid := public.my_employee_id(); o jsonb; n jsonb; rid uuid;
+begin
+  if coalesce(current_setting('rooster.via_clock', true), '') = '1' then return null; end if;
+  o := case when tg_op <> 'INSERT' then to_jsonb(old) end;
+  n := case when tg_op <> 'DELETE' then to_jsonb(new) end;
+  rid := coalesce((n->>'id')::uuid, (o->>'id')::uuid, (n->>'employee_id')::uuid, (o->>'employee_id')::uuid);
+  -- Diensten: alleen wijzigingen aan gepubliceerde diensten vastleggen
+  if tg_table_name = 'shifts' and (tg_op = 'INSERT' or coalesce((o->>'published')::boolean, false) = false) then return null; end if;
+  if tg_op = 'UPDATE' then
+    select coalesce(jsonb_object_agg(k.key, o->k.key), '{}'), coalesce(jsonb_object_agg(k.key, n->k.key), '{}')
+      into o, n from jsonb_object_keys(n) as k(key) where o->k.key is distinct from n->k.key and k.key not in ('updated_at');
+    if o = '{}'::jsonb then return null; end if;
+  end if;
+  insert into public.audit_log (actor, actor_name, tbl, row_id, action, old, new)
+  values (me, (select name from public.employees where id = me), tg_table_name, rid, lower(tg_op), o, n);
+  return null;
+end $$;
+
+drop trigger if exists audit_time_entries on public.time_entries;
+create trigger audit_time_entries after insert or update or delete on public.time_entries for each row execute function public.trg_audit();
+drop trigger if exists audit_employees on public.employees;
+create trigger audit_employees after insert or update or delete on public.employees for each row execute function public.trg_audit();
+drop trigger if exists audit_requests on public.requests;
+create trigger audit_requests after update or delete on public.requests for each row execute function public.trg_audit();
+drop trigger if exists audit_shifts on public.shifts;
+create trigger audit_shifts after update or delete on public.shifts for each row execute function public.trg_audit();
+drop trigger if exists audit_private on public.employee_private;
+create trigger audit_private after insert or update or delete on public.employee_private for each row execute function public.trg_audit();
+
+-- ---------- Automatische taken ----------
+create table if not exists public.reminder_log (
+  kind text not null,
+  ref  uuid not null,
+  at   timestamptz not null default now(),
+  primary key (kind, ref)
+);
+alter table public.reminder_log enable row level security;   -- geen policies: alleen via run_jobs()
+
+create or replace function public.shift_start_ts(x public.shifts) returns timestamptz
+language sql stable as $$ select (x.date + x.start_time) at time zone 'Europe/Amsterdam' $$;
+create or replace function public.shift_end_ts(x public.shifts) returns timestamptz
+language sql stable as $$
+  select ((x.date + x.end_time) + case when x.end_time <= x.start_time then interval '1 day' else interval '0' end) at time zone 'Europe/Amsterdam'
+$$;
+create or replace function public.entry_shift(e public.time_entries) returns public.shifts
+language sql stable security definer set search_path = public as $$
+  select x.* from public.shifts x
+   where x.employee_id = e.employee_id and x.published
+     and x.date = (e.clock_in at time zone 'Europe/Amsterdam')::date
+   order by abs(extract(epoch from (public.shift_start_ts(x) - e.clock_in))) limit 1
+$$;
+
+-- Wordt elke 15 minuten uitgevoerd (pg_cron) en daarnaast door de app zelf; doet niets dubbel.
+create or replace function public.run_jobs() returns int
+language plpgsql security definer set search_path = public as $$
+declare e public.time_entries; x public.shifts; pe timestamptz; n int := 0; hhmm text;
+begin
+  -- 1. Vergeten uit te klokken: herinnering na 15 min, automatisch uitklokken op de geplande eindtijd na 60 min
+  for e in select * from public.time_entries where clock_out is null loop
+    x := public.entry_shift(e);
+    if x.id is not null then
+      pe := public.shift_end_ts(x);
+      hhmm := to_char(pe at time zone 'Europe/Amsterdam', 'HH24:MI');
+      if now() > pe + interval '60 minutes' then
+        update public.time_entries set
+          clock_out = greatest(pe, clock_in + interval '1 minute'),
+          break_minutes = break_minutes + case when break_started_at is null then 0
+                            else greatest(0, round(extract(epoch from (greatest(pe, break_started_at) - break_started_at)) / 60))::int end,
+          break_started_at = null, flags = flags || array['auto_uit'], status = 'pending'
+        where id = e.id;
+        perform public.notify(e.employee_id, 'Automatisch uitgeklokt',
+          'Je was vergeten uit te klokken en bent uitgeklokt op ' || hhmm || ' (einde dienst). Langer gewerkt? Laat het de directie weten.', 'mijn');
+        n := n + 1;
+      elsif now() > pe + interval '15 minutes' then
+        insert into public.reminder_log (kind, ref) values ('uitklokken', e.id) on conflict do nothing;
+        if found then perform public.notify(e.employee_id, 'Vergeet niet uit te klokken', 'Je dienst eindigde om ' || hhmm || '.', 'mijn'); end if;
+      end if;
+    elsif now() > e.clock_in + interval '16 hours' then
+      update public.time_entries set clock_out = clock_in + interval '8 hours', break_started_at = null,
+             flags = flags || array['auto_uit'], status = 'pending' where id = e.id;
+      perform public.notify(e.employee_id, 'Automatisch uitgeklokt', 'Je stond langer dan 16 uur ingeklokt zonder geplande dienst. De directie controleert je uren.', 'mijn');
+      perform public.notify_managers('Registratie controleren', public.first_name(e.employee_id) || ' stond langer dan 16 uur ingeklokt zonder dienst.', 'klokken');
+      n := n + 1;
+    end if;
+  end loop;
+
+  -- 2. Herinnering: dienst begint over ongeveer een uur
+  for x in select y.* from public.shifts y
+            where y.published and y.employee_id is not null and y.date between public.today_nl() - 1 and public.today_nl() + 1
+              and public.shift_start_ts(y) between now() + interval '45 minutes' and now() + interval '75 minutes' loop
+    insert into public.reminder_log (kind, ref) values ('dienst', x.id) on conflict do nothing;
+    if found then
+      perform public.notify(x.employee_id, 'Je dienst begint om ' || to_char(x.start_time, 'HH24:MI'),
+        public.shift_label(x.date, x.start_time, x.end_time) || coalesce(' · ' || x.position, ''), 'mijn');
+    end if;
+  end loop;
+
+  -- 3. Privacy: exacte locaties na 90 dagen wissen (afstand en wifi/gps blijven), oude meldingen opruimen
+  update public.time_entries set in_lat = null, in_lng = null, in_accuracy = null, out_lat = null, out_lng = null, out_accuracy = null
+   where clock_in < now() - interval '90 days' and (in_lat is not null or out_lat is not null);
+  delete from public.notifications where created_at < now() - interval '180 days';
+  delete from public.reminder_log where at < now() - interval '30 days';
+  return n;
+end $$;
+revoke execute on function public.run_jobs() from public, anon;
+grant execute on function public.run_jobs() to authenticated;
+
+-- Elke 15 minuten automatisch (Supabase: Database → Extensions → pg_cron aanzetten)
+do $$
+begin
+  create extension if not exists pg_cron;
+  perform cron.unschedule(jobid) from cron.job where jobname = 'rooster-jobs';
+  perform cron.schedule('rooster-jobs', '*/15 * * * *', 'select public.run_jobs()');
+exception when others then
+  raise notice 'pg_cron niet beschikbaar (%). Zet pg_cron aan en voer dit blok opnieuw uit; de app voert de taken ook zelf uit.', sqlerrm;
+end $$;
 
 -- =====================================================================
 --  EERSTE LEIDINGGEVENDE — pas naam en e-mail aan en voer daarna uit:
