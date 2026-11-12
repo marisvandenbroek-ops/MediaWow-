@@ -414,6 +414,11 @@ button.chip:hover { filter: brightness(.97); }
 .otchoice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
 .otchoice input { margin-top: 3px; accent-color: var(--accent); }
 
+.dlgerr { margin: 0; animation: shake .35s; }
+@keyframes shake { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
+@media (prefers-reduced-motion: reduce) { .dlgerr { animation: none; } }
+dialog #toasts { position: fixed; }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }

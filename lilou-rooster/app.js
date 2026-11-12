@@ -45,7 +45,10 @@ function toast(msg, type) {
   const t = document.createElement('div');
   t.className = 'toast' + (type ? ' ' + type : '');
   t.textContent = msg;
-  $('#toasts').append(t);
+  const box = $('#toasts');
+  const host = [...document.querySelectorAll('dialog[open]')].pop() || document.body;
+  if (box.parentElement !== host) host.append(box);
+  box.append(t);
   setTimeout(() => t.remove(), 3600);
 }
 function errMsg(e) {
@@ -477,21 +480,38 @@ function openDialog(title, body, { onSubmit, onReady } = {}) {
   dlg.className = 'dlg';
   dlg.innerHTML = `<form class="dlg-form" novalidate><header><h2>${esc(title)}</h2><button type="button" class="x" data-close aria-label="Sluiten">×</button></header><div class="dlg-body">${body}</div></form>`;
   document.body.append(dlg);
-  dlg.addEventListener('close', () => dlg.remove());
+  dlg.addEventListener('close', () => {
+    const box = $('#toasts', dlg);
+    if (box) (([...document.querySelectorAll('dialog[open]')].filter(d => d !== dlg).pop()) || document.body).append(box);
+    dlg.remove();
+  });
   $$('[data-close]', dlg).forEach(b => (b.onclick = () => dlg.close()));
   const form = $('form', dlg);
   form.addEventListener('submit', async ev => {
     ev.preventDefault();
     const btn = ev.submitter;
     const action = btn?.value || 'save';
+    if (form.dataset.busy) return;
     if (action !== 'delete' && !form.checkValidity()) { form.reportValidity(); return; }
+    form.dataset.busy = '1';
+    const label = btn ? btn.textContent : '';
     $$('button', form).forEach(b => (b.disabled = true));
+    if (btn) btn.textContent = 'Bezig…';
+    $('[data-dlgerr]', dlg)?.remove();
     try {
       const keep = await onSubmit(new FormData(form), action, dlg);
       if (keep !== false) dlg.close();
     } catch (e) {
-      if (e !== 'cancel') toast(errMsg(e), 'error');
+      if (e !== 'cancel') {
+        const box = document.createElement('div');
+        box.className = 'msg err dlgerr'; box.dataset.dlgerr = ''; box.setAttribute('role', 'alert');
+        box.textContent = errMsg(e);
+        $('.dlg-body', dlg).prepend(box);
+        box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
     } finally {
+      delete form.dataset.busy;
+      if (btn) btn.textContent = label;
       $$('button', form).forEach(b => (b.disabled = false));
     }
   });
@@ -982,7 +1002,7 @@ async function viewMine(el) {
       const d = parse(ds);
       const dayHead = `<div class="d"><span>${DAG[i]}</span><b>${d.getDate()}</b></div>`;
       const fd = feestdag(ds);
-      ws.filter(s => s.date === ds).forEach(s => items.push(`<li class="${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${hm(s.start_time)} – ${hm(s.end_time)}</strong><small>${esc(s.position || '')}${s.break_minutes ? ` · ${s.break_minutes} min pauze` : ''}${s.note ? ` · ${esc(s.note)}` : ''}${fd ? ` · ${esc(fd)}` : ''}</small>${withWho(s).length ? `<small class="with">Met ${esc(withWho(s).join(', '))}</small>` : ''}${s.date >= today ? (swapOf(s.id) ? `<small class="swapst">⇄ ${SWAPST[swapOf(s.id).status].toLowerCase()}</small>` : `<button class="linkbtn small swapbtn" data-swap="${s.id}">⇄ Ruilen of overdragen</button>`) : ''}</div><div class="h">${fmtH(shiftHours(s))} u</div></li>`));
+      ws.filter(s => s.date === ds).forEach(s => items.push(`<li class="${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${hm(s.start_time)} – ${hm(s.end_time)}</strong><small>${esc(s.position || '')}${s.break_minutes ? ` · ${s.break_minutes} min pauze` : ''}${s.note ? ` · ${esc(s.note)}` : ''}${fd ? ` · ${esc(fd)}` : ''}</small>${withWho(s).length ? `<small class="with">Met ${esc(withWho(s).join(', '))}</small>` : ''}${shiftWindow(s)[0] > new Date() ? (swapOf(s.id) ? `<small class="swapst">⇄ ${SWAPST[swapOf(s.id).status].toLowerCase()}</small>` : `<button class="linkbtn small swapbtn" data-swap="${s.id}">⇄ Ruilen of overdragen</button>`) : ''}</div><div class="h">${fmtH(shiftHours(s))} u</div></li>`));
       if (ws.some(s => s.date === ds)) continue;
       const lv = wl.find(r => r.start_date <= ds && r.end_date >= ds);
       if (lv) items.push(`<li class="off ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${esc(REQ[lv.type])}</strong></div><div class="h"><span class="pill ok">vrij</span></div></li>`);
@@ -1021,7 +1041,7 @@ async function viewMine(el) {
   bindClock(el);
   el.onclick = ev => {
     if (clockClicks(ev)) return;
-    const sw = ev.target.closest('[data-swap]'); if (sw) return swapDialog(mine, emps, all, sw.dataset.swap);
+    const sw = ev.target.closest('[data-swap]'); if (sw) return swapDialog(mine, emps, all, sw.dataset.swap, swaps);
     if (ev.target.closest('[data-ics]')) downloadIcs(mine);
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
     const mf = ev.target.closest('[data-mf]'); if (mf) { S.mineWeek = mf.dataset.mf === 'week' ? start : null; return rerender(); }
@@ -1303,15 +1323,20 @@ function openView(v) {
 }
 
 /* ================= Ruilen (medewerker) ================= */
-function swapDialog(myShifts, emps, allShifts, preselect) {
+function swapDialog(myShifts, emps, allShifts, preselect, swaps = []) {
   const today = todayIso();
-  const mine = myShifts.filter(s => s.date >= today);
-  if (!mine.length) return toast('Je hebt geen komende diensten om te ruilen');
+  const busy = new Set(swaps.filter(w => ['open', 'accepted'].includes(w.status)).flatMap(w => [w.shift_id, w.swap_shift_id]).filter(Boolean));
+  const now = new Date();
+  const all = myShifts.filter(s => s.date >= today && shiftWindow(s)[0] > now);   // alleen diensten die nog niet begonnen zijn
+  const mine = all.filter(s => !busy.has(s.id));
+  if (!all.length) return toast('Je hebt geen komende diensten om te ruilen');
+  if (!mine.length) return toast('Voor al je komende diensten loopt al een ruilverzoek');
+  if (preselect && busy.has(preselect)) return toast('Voor deze dienst loopt al een ruilverzoek');
   const colleagues = emps.filter(e => e.id !== S.me.id && e.active !== false);
-  const theirs = id => allShifts.filter(s => s.employee_id === id && s.published && s.date >= today);
+  const theirs = id => allShifts.filter(s => s.employee_id === id && s.published && s.date >= today && shiftWindow(s)[0] > now && !busy.has(s.id));
   const opt = s => `${fmtShort(s.date)} ${hm(s.start_time)}–${hm(s.end_time)}${s.position ? ' · ' + s.position : ''}`;
   openDialog('Dienst ruilen of overdragen', `
-    <label class="field">Welke dienst?<select name="shift_id">${mine.map(s => `<option value="${s.id}" ${s.id === preselect ? 'selected' : ''}>${esc(opt(s))}</option>`).join('')}</select></label>
+    <label class="field">Welke dienst?<select name="shift_id">${all.map(s => `<option value="${s.id}" ${s.id === preselect ? 'selected' : ''} ${busy.has(s.id) ? 'disabled' : ''}>${esc(opt(s))}${busy.has(s.id) ? ' — verzoek loopt al' : ''}</option>`).join('')}</select></label>
     <label class="field">Aan wie?<select name="to"><option value="">Iedereen — wie het eerst reageert</option>${colleagues.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></label>
     <label class="field" data-swapwrap hidden>In ruil voor (optioneel)<select name="swap_shift_id"><option value="">Niets — alleen overdragen</option></select></label>
     <label class="field">Toelichting<input name="note" placeholder="Bijv. verjaardag, tentamen"></label>
@@ -1381,7 +1406,7 @@ async function viewDiensten(el) {
   el.onclick = async ev => {
     const t = ev.target.closest('button'); if (!t) return;
     try {
-      if (t.matches('[data-newswap]')) return swapDialog(myShifts, emps, shifts);
+      if (t.matches('[data-newswap]')) return swapDialog(myShifts, emps, shifts, null, swaps);
       if (t.dataset.apply) { await store.openApply(t.dataset.apply); toast('Aangemeld — de directie laat het weten'); return rerender(); }
       if (t.dataset.withdraw) { await store.openWithdraw(t.dataset.withdraw); toast('Afgemeld'); return rerender(); }
       if (t.dataset.accept) {
