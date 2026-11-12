@@ -36,6 +36,9 @@ const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 86400000) + 1;
 const overlaps = (aFrom, aTo, bFrom, bTo) => aFrom <= bTo && bFrom <= aTo;
 const REQ = { vakantie: 'Vakantie', vrij: 'Vrije dag', onbeschikbaar: 'Niet beschikbaar', ziek: 'Ziekmelding' };
 const STATUS = { pending: 'Openstaand', approved: 'Goedgekeurd', rejected: 'Afgewezen' };
+const AVAIL = { hele_dag: 'Hele dag', ochtend: 'Ochtend', middag: 'Middag', avond: 'Avond', niet: 'Niet beschikbaar' };
+const AVAIL_SHORT = { hele_dag: '✓ hele dag', ochtend: '✓ ochtend', middag: '✓ middag', avond: '✓ avond', niet: '✕ niet' };
+const SWAPST = { open: 'Wacht op collega', accepted: 'Wacht op directie', approved: 'Geregeld', rejected: 'Afgewezen', cancelled: 'Ingetrokken' };
 const COLORS = ['#9a5b3f', '#3f7d58', '#3f6a9a', '#8a4f8f', '#b8862b', '#2f8a8a', '#b3485f', '#5b6b2f'];
 
 function toast(msg, type) {
@@ -57,6 +60,9 @@ function errMsg(e) {
 
 const ICON = {
   planning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 14h3M13.5 14h3M7.5 17.5h3"/></svg>',
+  diensten: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5"/></svg>',
+  beschikbaar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M8.5 15l2.2 2.2 4.8-4.7"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>',
   klokken: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><path d="M12 7v3.5l2 1.3"/></svg>',
   mijn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
   team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9.5" r="2.5"/><path d="M16.5 14.6c2.3.2 4 1.7 4.5 4.4"/></svg>',
@@ -114,12 +120,28 @@ function demoSeed() {
   const flagged = T.filter(t => t.status === 'pending')[0];
   if (flagged) Object.assign(flagged, { flags: ['uit_buiten_locatie'], out_distance_m: 1840, reason: 'Na sluiting nog boodschappen weggebracht bij de groothandel' });
   T.push({ id: uid(), employee_id: mariska.id, clock_in: new Date(nowD.getTime() - 95 * 60000).toISOString(), clock_out: null, break_minutes: 0, break_started_at: null, in_distance_m: 18, out_distance_m: null, flags: [], reason: null, status: 'open', manager_note: null, edited: false });
-  const settings = { lat: 52.3702, lng: 4.8952, radius_m: 150, allow_override: true, demo: true };
-  return { employees: E, shifts: S, requests: R, entries: T, settings };
+  const settings = { lat: 52.3702, lng: 4.8952, radius_m: 150, allow_override: true, swap_needs_approval: true, demo: true };
+  // Open diensten, ruilen, beschikbaarheid, meldingen
+  const open1 = { id: uid(), employee_id: null, date: D(6), start_time: '17:00', end_time: '23:00', break_minutes: 30, position: 'Bediening', note: 'Extra drukte verwacht', published: true };
+  const open2 = { id: uid(), employee_id: null, date: D(12), start_time: '12:00', end_time: '18:00', break_minutes: 30, position: 'Keuken', note: '', published: false };
+  S.push(open1, open2);
+  const A = [{ id: uid(), shift_id: open1.id, employee_id: eva.id, status: 'pending', created_at: now }];
+  const daanSat = S.find(s => s.employee_id === daan.id && s.date === D(5) && s.published);
+  const W = daanSat ? [{ id: uid(), shift_id: daanSat.id, from_employee: daan.id, to_employee: null, swap_shift_id: null, taken_by: null, note: 'Verjaardag van mijn broer', manager_note: null, status: 'open', created_at: now }] : [];
+  const V = [];
+  const pat = { [sanne.id]: ['hele_dag', 'niet', 'middag', 'hele_dag', 'avond', 'hele_dag', 'niet'], [noor.id]: ['niet', 'hele_dag', 'hele_dag', 'hele_dag', 'hele_dag', 'hele_dag', 'niet'], [eva.id]: ['niet', 'niet', 'niet', 'niet', 'avond', 'hele_dag', 'hele_dag'], [daan.id]: ['avond', 'avond', 'niet', 'avond', 'avond', 'hele_dag', 'niet'] };
+  Object.entries(pat).forEach(([emp, ks]) => ks.forEach((k, i) => V.push({ employee_id: emp, date: D(7 + i), kind: k, note: k === 'niet' && i === 1 ? 'Tentamen' : null })));
+  const N = [];
+  const n = (emp, title, body, view, read) => N.push({ id: uid(), employee_id: emp, title, body, view, read_at: read ? now : null, created_at: new Date(Date.now() - N.length * 3600000).toISOString() });
+  [sanne, daan, noor, mehmet, eva].forEach(e => n(e.id, 'Open dienst beschikbaar', `${fmtShort(open1.date)} 17:00–23:00 · Bediening. Meld je aan!`, 'diensten'));
+  if (daanSat) [sanne, noor, mehmet, eva, mark, mariska].forEach(e => n(e.id, 'Dienst aangeboden', `Daan biedt ${fmtShort(daanSat.date)} 17:00–01:00 aan. Wil jij hem overnemen?`, 'diensten'));
+  [mark, mariska].forEach(e => { n(e.id, 'Aanmelding open dienst', `Eva wil ${fmtShort(open1.date)} 17:00–23:00 werken`, 'aanvragen:open'); n(e.id, 'Nieuwe aanvraag', `Sanne: Vakantie ${fmtShort(D(21))} t/m ${fmtShort(D(27))}`, 'aanvragen:verlof'); });
+  [sanne, daan, noor, mehmet, eva, mariska, mark].forEach(e => n(e.id, 'Nieuw rooster', `Het rooster van week ${weekNr(mon)} staat klaar`, 'mijn', true));
+  return { employees: E, shifts: S, requests: R, entries: T, settings, applications: A, swaps: W, availability: V, notifications: N };
 }
 
 function demoStore() {
-  const KEY = 'lilou-rooster-demo-v3';
+  const KEY = 'lilou-rooster-demo-v4';
   let mem = null;
   let db;
   try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* ignore */ }
@@ -129,6 +151,22 @@ function demoStore() {
   try { mem = sessionStorage.getItem(KEY + '-me'); } catch (e) { /* ignore */ }
   const me = () => db.employees.find(e => e.id === mem) || null;
   const isMgr = () => me()?.role === 'manager';
+  ['applications', 'swaps', 'availability', 'notifications'].forEach(k => (db[k] ||= []));
+  const fname = id => (db.employees.find(e => e.id === id)?.name || '').split(' ')[0];
+  const lbl = s => `${fmtShort(s.date)} ${hm(s.start_time)}–${hm(s.end_time)}`;
+  const notify = (emp, title, body, view) => { if (emp) db.notifications.push({ id: uid(), employee_id: emp, title, body, view, read_at: null, created_at: new Date().toISOString() }); };
+  const notifyMgrs = (t, b, v, except) => db.employees.filter(e => e.role === 'manager' && e.active !== false && e.id !== except).forEach(e => notify(e.id, t, b, v));
+  const notifyTeam = (t, b, v, except) => db.employees.filter(e => e.active !== false && e.id !== except).forEach(e => notify(e.id, t, b, v));
+  const shiftById = id => db.shifts.find(s => s.id === id);
+  const swapExec = w => {
+    const a = shiftById(w.shift_id);
+    if (!a || a.employee_id !== w.from_employee) throw new Error('De dienst is intussen gewijzigd; de ruil kan niet doorgaan.');
+    const b = w.swap_shift_id ? shiftById(w.swap_shift_id) : null;
+    if (w.swap_shift_id && (!b || b.employee_id !== w.taken_by)) throw new Error('De dienst van de collega is intussen gewijzigd; de ruil kan niet doorgaan.');
+    a.employee_id = w.taken_by; if (b) b.employee_id = w.from_employee;
+    w.status = 'approved'; w.decided_at = new Date().toISOString();
+    db.swaps.forEach(o => { if (o !== w && ['open', 'accepted'].includes(o.status) && [w.shift_id, w.swap_shift_id].filter(Boolean).some(id => o.shift_id === id || o.swap_shift_id === id)) o.status = 'cancelled'; });
+  };
   return {
     demo: true,
     async init() { return me() ? { employee: clone(me()) } : null; },
@@ -156,18 +194,125 @@ function demoStore() {
     },
     async saveShifts(list) {
       for (const s of list) {
-        if (s.id) Object.assign(db.shifts.find(x => x.id === s.id), s);
-        else db.shifts.push({ ...s, id: uid() });
+        if (s.id) {
+          const cur = db.shifts.find(x => x.id === s.id), old = { ...cur };
+          Object.assign(cur, s);
+          if (old.published && cur.published && cur.date >= todayIso() && ['date', 'start_time', 'end_time', 'employee_id'].some(k => old[k] !== cur[k])) {
+            if (cur.employee_id) notify(cur.employee_id, old.employee_id !== cur.employee_id ? 'Dienst toegevoegd' : 'Dienst gewijzigd', lbl(cur), 'mijn');
+            if (old.employee_id && old.employee_id !== cur.employee_id) notify(old.employee_id, 'Dienst vervallen', lbl(old), 'mijn');
+          }
+        } else db.shifts.push({ ...s, id: uid() });
       }
       save();
     },
-    async deleteShift(id) { db.shifts = db.shifts.filter(s => s.id !== id); save(); },
-    async publish(from, to) { db.shifts.forEach(s => { if (s.date >= from && s.date <= to) s.published = true; }); save(); },
+    async deleteShift(id) {
+      const s = shiftById(id);
+      if (s && s.published && s.employee_id && s.date >= todayIso()) notify(s.employee_id, 'Dienst vervallen', lbl(s), 'mijn');
+      db.shifts = db.shifts.filter(x => x.id !== id);
+      db.applications = db.applications.filter(a => a.shift_id !== id);
+      db.swaps = db.swaps.filter(w => w.shift_id !== id && w.swap_shift_id !== id);
+      save();
+    },
+    async publish(from, to) {
+      const upd = db.shifts.filter(s => s.date >= from && s.date <= to && !s.published);
+      upd.forEach(s => (s.published = true));
+      const per = {}; upd.filter(s => s.employee_id).forEach(s => (per[s.employee_id] = (per[s.employee_id] || 0) + 1));
+      Object.entries(per).forEach(([emp, n]) => notify(emp, 'Nieuw rooster', `${n} nieuwe dienst${n > 1 ? 'en' : ''} in je rooster (week ${weekNr(parse(from))})`, 'mijn'));
+      const o = upd.filter(s => !s.employee_id).length;
+      if (o) notifyTeam(`Open dienst${o > 1 ? 'en' : ''} beschikbaar`, `${o} open dienst${o > 1 ? 'en' : ''} in week ${weekNr(parse(from))}. Meld je aan!`, 'diensten');
+      save();
+    },
     async requests() {
       return clone(db.requests.filter(r => isMgr() || r.employee_id === mem)).sort((a, b) => b.created_at.localeCompare(a.created_at));
     },
-    async saveRequest(r) { db.requests.push({ ...r, id: uid(), status: 'pending', manager_note: null, created_at: new Date().toISOString() }); save(); },
-    async decideRequest(id, status, note) { Object.assign(db.requests.find(r => r.id === id), { status, manager_note: note || null, decided_at: new Date().toISOString() }); save(); },
+    async saveRequest(r) {
+      db.requests.push({ ...r, id: uid(), status: 'pending', manager_note: null, created_at: new Date().toISOString() });
+      notifyMgrs('Nieuwe aanvraag', `${fname(r.employee_id)}: ${REQ[r.type]} ${fmtShort(r.start_date)}${r.end_date !== r.start_date ? ' t/m ' + fmtShort(r.end_date) : ''}`, 'aanvragen:verlof');
+      save();
+    },
+    async decideRequest(id, status, note) {
+      const r = db.requests.find(x => x.id === id);
+      Object.assign(r, { status, manager_note: note || null, decided_at: new Date().toISOString() });
+      if (status !== 'pending') notify(r.employee_id, `Aanvraag ${status === 'approved' ? 'goedgekeurd' : 'afgewezen'}`, `${REQ[r.type]} ${fmtShort(r.start_date)}${note ? ' — ' + note : ''}`, 'aanvragen');
+      save();
+    },
+    // --- open diensten
+    async applications() { return clone(db.applications.filter(a => isMgr() || a.employee_id === mem)); },
+    async openApply(shiftId) {
+      const s = shiftById(shiftId);
+      if (!s || s.employee_id || !s.published || s.date < todayIso()) throw new Error('Deze dienst is niet (meer) open.');
+      const a = db.applications.find(x => x.shift_id === shiftId && x.employee_id === mem);
+      if (a) a.status = 'pending'; else db.applications.push({ id: uid(), shift_id: shiftId, employee_id: mem, status: 'pending', created_at: new Date().toISOString() });
+      notifyMgrs('Aanmelding open dienst', `${fname(mem)} wil ${lbl(s)} werken`, 'aanvragen:open');
+      save();
+    },
+    async openWithdraw(shiftId) { db.applications = db.applications.filter(a => !(a.shift_id === shiftId && a.employee_id === mem && a.status === 'pending')); save(); },
+    async openAssign(shiftId, emp) {
+      if (!isMgr()) throw new Error('Alleen de directie kan toewijzen.');
+      const s = shiftById(shiftId);
+      if (!s || s.employee_id) throw new Error('Deze dienst is al toegewezen.');
+      s.employee_id = emp;
+      db.applications.filter(a => a.shift_id === shiftId).forEach(a => { a.status = a.employee_id === emp ? 'accepted' : 'rejected'; if (a.employee_id !== emp) notify(a.employee_id, 'Open dienst vergeven', `${lbl(s)} is aan een collega gegeven.`, 'diensten'); });
+      notify(emp, 'Open dienst is van jou', lbl(s), 'mijn');
+      save();
+    },
+    // --- ruilen
+    async swaps() { return clone(db.swaps.filter(w => isMgr() || w.from_employee === mem || w.to_employee === mem || w.taken_by === mem || (!w.to_employee && w.status === 'open'))); },
+    async swapOffer({ shift_id, to_employee, swap_shift_id, note }) {
+      const s = shiftById(shift_id);
+      if (!s || s.employee_id !== mem || !s.published || s.date < todayIso()) throw new Error('Je kunt alleen je eigen, komende diensten aanbieden.');
+      if (swap_shift_id) { const b = shiftById(swap_shift_id); if (!to_employee || !b || b.employee_id !== to_employee || !b.published || b.date < todayIso()) throw new Error('Je kunt alleen ruilen tegen een komende dienst van de gekozen collega.'); }
+      if (db.swaps.some(w => w.shift_id === shift_id && ['open', 'accepted'].includes(w.status))) throw new Error('Voor deze dienst loopt al een verzoek.');
+      db.swaps.push({ id: uid(), shift_id, from_employee: mem, to_employee: to_employee || null, swap_shift_id: swap_shift_id || null, taken_by: null, note: (note || '').trim() || null, manager_note: null, status: 'open', created_at: new Date().toISOString() });
+      if (!to_employee) notifyTeam('Dienst aangeboden', `${fname(mem)} biedt ${lbl(s)} aan. Wil jij hem overnemen?`, 'diensten', mem);
+      else if (swap_shift_id) notify(to_employee, 'Ruilverzoek', `${fname(mem)} wil ${lbl(s)} ruilen tegen jouw ${lbl(shiftById(swap_shift_id))}`, 'diensten');
+      else notify(to_employee, 'Dienst aangeboden', `${fname(mem)} vraagt of jij ${lbl(s)} wilt overnemen`, 'diensten');
+      save();
+    },
+    async swapRespond(id, accept) {
+      const w = db.swaps.find(x => x.id === id);
+      if (!w || w.status !== 'open') throw new Error('Dit verzoek is niet meer open.');
+      if (w.from_employee === mem || (w.to_employee && w.to_employee !== mem)) throw new Error('Dit verzoek is niet voor jou.');
+      const s = shiftById(w.shift_id);
+      if (!accept) { if (!w.to_employee) return; w.status = 'rejected'; notify(w.from_employee, 'Verzoek geweigerd', `${fname(mem)} kan ${lbl(s)} niet overnemen`, 'diensten'); return save(); }
+      w.status = 'accepted'; w.taken_by = mem;
+      if (db.settings.swap_needs_approval !== false) {
+        notify(w.from_employee, 'Collega gevonden', `${fname(mem)} neemt ${lbl(s)} over. Wacht op goedkeuring directie.`, 'diensten');
+        notifyMgrs('Ruil ter goedkeuring', `${fname(w.from_employee)} → ${fname(mem)}: ${lbl(s)}`, 'aanvragen:ruilen');
+      } else {
+        swapExec(w);
+        notify(w.from_employee, 'Ruil geregeld', `${fname(mem)} neemt ${lbl(s)} over.`, 'mijn');
+        notifyMgrs('Dienst geruild', `${fname(w.from_employee)} → ${fname(mem)}: ${lbl(s)}`, 'planning');
+      }
+      save();
+    },
+    async swapDecide(id, approve, note) {
+      if (!isMgr()) throw new Error('Alleen de directie kan ruilen goedkeuren.');
+      const w = db.swaps.find(x => x.id === id);
+      if (!w || w.status !== 'accepted') throw new Error('Dit verzoek wacht niet op goedkeuring.');
+      const s = shiftById(w.shift_id), L = lbl(s);
+      if (approve) { swapExec(w); w.manager_note = note || null; notify(w.from_employee, 'Ruil goedgekeurd', `${L} is overgenomen door ${fname(w.taken_by)}`, 'mijn'); notify(w.taken_by, 'Ruil goedgekeurd', `${L} staat nu in jouw rooster`, 'mijn'); }
+      else { w.status = 'rejected'; w.manager_note = note || null; [w.from_employee, w.taken_by].forEach(e => notify(e, 'Ruil afgewezen', L + (note ? ' — ' + note : ''), 'diensten')); }
+      save();
+    },
+    async swapCancel(id) {
+      const w = db.swaps.find(x => x.id === id);
+      if (!w || w.from_employee !== mem || !['open', 'accepted'].includes(w.status)) throw new Error('Dit verzoek kun je niet (meer) intrekken.');
+      w.status = 'cancelled'; notify(w.taken_by || w.to_employee, 'Verzoek ingetrokken', `${fname(mem)} heeft het verzoek ingetrokken.`, 'diensten');
+      save();
+    },
+    // --- beschikbaarheid
+    async availability(from, to) { return clone(db.availability.filter(a => a.date >= from && a.date <= to && (isMgr() || a.employee_id === mem))); },
+    async saveAvailability(rows) {
+      const dates = rows.map(r => r.date);
+      db.availability = db.availability.filter(a => !(a.employee_id === mem && dates.includes(a.date)));
+      rows.filter(r => r.kind).forEach(r => db.availability.push({ employee_id: mem, date: r.date, kind: r.kind, note: r.note || null }));
+      save();
+    },
+    // --- meldingen
+    async notifications() { return clone(db.notifications.filter(n => n.employee_id === mem)).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 60); },
+    async markRead(ids) { const t = new Date().toISOString(); db.notifications.forEach(n => { if (n.employee_id === mem && !n.read_at && (!ids || ids.includes(n.id))) n.read_at = t; }); save(); },
+    async savePushSub() { /* demo: niets */ },
     async deleteRequest(id) { db.requests = db.requests.filter(r => r.id !== id); save(); },
     // --- klokken
     async settings() { return clone(db.settings); },
@@ -250,14 +395,42 @@ async function supabaseStore() {
       for (const s of list.filter(s => s.id)) { const { id, ...rest } = s; ok(await sb.from('shifts').update(rest).eq('id', id)); }
     },
     async deleteShift(id) { ok(await sb.from('shifts').delete().eq('id', id)); },
-    async publish(from, to) { ok(await sb.from('shifts').update({ published: true }).gte('date', from).lte('date', to).eq('published', false)); },
+    async publish(from, to) { ok(await sb.rpc('publish_week', { p_from: from, p_to: to })); },
     async requests() { return ok(await sb.from('requests').select('*').order('created_at', { ascending: false })); },
     async saveRequest(r) { ok(await sb.from('requests').insert(r)); },
     async decideRequest(id, status, note) { ok(await sb.from('requests').update({ status, manager_note: note || null, decided_at: new Date().toISOString() }).eq('id', id)); },
     async deleteRequest(id) { ok(await sb.from('requests').delete().eq('id', id)); },
     // --- klokken
     async settings() { return ok(await sb.from('settings').select('*').eq('id', 1).maybeSingle()) || {}; },
-    async saveSettings(st) { ok(await sb.from('settings').update({ lat: st.lat, lng: st.lng, radius_m: st.radius_m, allow_override: st.allow_override, updated_at: new Date().toISOString() }).eq('id', 1)); },
+    async saveSettings(st) { ok(await sb.from('settings').update({ ...st, updated_at: new Date().toISOString() }).eq('id', 1)); },
+    // --- open diensten
+    async applications() { return ok(await sb.from('shift_applications').select('*')); },
+    async openApply(shiftId) { ok(await sb.rpc('open_apply', { p_shift: shiftId })); },
+    async openWithdraw(shiftId) { ok(await sb.rpc('open_withdraw', { p_shift: shiftId })); },
+    async openAssign(shiftId, emp) { ok(await sb.rpc('open_assign', { p_shift: shiftId, p_emp: emp })); },
+    // --- ruilen
+    async swaps() { return ok(await sb.from('swaps').select('*').order('created_at', { ascending: false })); },
+    async swapOffer(o) { ok(await sb.rpc('swap_offer', { p_shift: o.shift_id, p_to: o.to_employee || null, p_swap_shift: o.swap_shift_id || null, p_note: o.note || null })); },
+    async swapRespond(id, accept) { ok(await sb.rpc('swap_respond', { p_id: id, p_accept: accept })); },
+    async swapDecide(id, approve, note) { ok(await sb.rpc('swap_decide', { p_id: id, p_approve: approve, p_note: note || null })); },
+    async swapCancel(id) { ok(await sb.rpc('swap_cancel', { p_id: id })); },
+    // --- beschikbaarheid
+    async availability(from, to) { return ok(await sb.from('availability').select('*').gte('date', from).lte('date', to)); },
+    async saveAvailability(rows) {
+      const me = S.me.id;
+      const del = rows.filter(r => !r.kind).map(r => r.date);
+      if (del.length) ok(await sb.from('availability').delete().eq('employee_id', me).in('date', del));
+      const up = rows.filter(r => r.kind).map(r => ({ employee_id: me, date: r.date, kind: r.kind, note: r.note || null, updated_at: new Date().toISOString() }));
+      if (up.length) ok(await sb.from('availability').upsert(up));
+    },
+    // --- meldingen
+    async notifications() { return ok(await sb.from('notifications').select('*').order('created_at', { ascending: false }).limit(60)); },
+    async markRead(ids) {
+      let q = sb.from('notifications').update({ read_at: new Date().toISOString() }).is('read_at', null);
+      if (ids) q = q.in('id', ids);
+      ok(await q);
+    },
+    async savePushSub(sub) { ok(await sb.from('push_subscriptions').upsert({ ...sub, employee_id: S.me.id })); },
     async entries(from, to) {
       return ok(await sb.from('time_entries').select('*').gte('clock_in', parse(from).toISOString()).lt('clock_in', addDays(parse(to), 1).toISOString()).order('clock_in'));
     },
@@ -407,13 +580,15 @@ function renderUnlinked(email) {
   $('[data-out]').onclick = signOut;
 }
 
-async function signOut() { await store.signOut(); S.me = null; renderAuth(); }
+async function signOut() { clearInterval(S.poll); await store.signOut(); S.me = null; renderAuth(); }
 
 function handleSession(r) {
   if (!r) return renderAuth();
   if (r.unlinked) return renderUnlinked(r.email);
   S.me = r.employee;
   S.view = isMgr() ? 'planning' : 'mijn';
+  const hv = location.hash.slice(1).split(':');
+  if (tabsFor().some(([k]) => k === hv[0])) { S.view = hv[0]; if (hv[1]) S.reqTab = hv[1]; }
   renderShell();
 }
 
@@ -421,7 +596,7 @@ function handleSession(r) {
 function tabsFor() {
   return isMgr()
     ? [['planning', 'Planning'], ['klokken', 'Klokken'], ['aanvragen', 'Aanvragen'], ['team', 'Team'], ['uren', 'Uren & export']]
-    : [['mijn', 'Mijn rooster'], ['planning', 'Teamrooster'], ['aanvragen', 'Aanvragen']];
+    : [['mijn', 'Mijn rooster'], ['planning', 'Team'], ['diensten', 'Diensten'], ['beschikbaar', 'Beschikbaar'], ['aanvragen', 'Verlof']];
 }
 
 function renderShell() {
@@ -431,22 +606,36 @@ function renderShell() {
     ${store.demo ? '<div class="demo-banner">Demo-modus<span class="hide-sm"> · gegevens worden alleen in deze browser bewaard</span></div>' : ''}
     <header class="topbar"><div class="topbar-inner">
       <div class="brand">${CFG.logo ? `<div class="stack-brand"><img class="wordmark light" src="${esc(CFG.logo)}" alt="${esc(CFG.bedrijf)}"><img class="wordmark dark" src="${esc(CFG.logoDark || CFG.logo)}" alt="${esc(CFG.bedrijf)}"><div class="sub">Rooster · ${isMgr() ? 'Leiding' : esc(S.me.position || 'Team')}</div></div>` : `<div class="logo">${letter}</div><div><strong>${esc(CFG.appName)}</strong><small>${isMgr() ? 'Leidinggevende' : esc(S.me.position || 'Medewerker')}</small></div>`}</div>
-      <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !isMgr() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l}</span>${k === 'aanvragen' ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}</nav>
-      <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
+      <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !isMgr() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l === 'Mijn rooster' ? 'Rooster' : l}</span>${(isMgr() ? k === 'aanvragen' : k === 'diensten') ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}</nav>
+      <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon bell" data-bell title="Meldingen" aria-label="Meldingen">${ICON.bell}<span class="ncount hidden" data-ncount></span></button><button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
     </div></header>
     <main id="view"></main>`;
   $$('[data-tab]').forEach(b => (b.onclick = () => go(b.dataset.tab)));
   $('[data-logout]').onclick = signOut;
+  $('[data-bell]').onclick = notifPanel;
+  clearInterval(S.poll); S.poll = setInterval(refreshBadge, 60000);
   go(S.view);
 }
 
 async function refreshBadge() {
-  if (!isMgr()) return;
+  if (!S.me) return;
   try {
-    const reqs = await store.requests();
-    S.pending = reqs.filter(r => r.status === 'pending').length;
+    const notes = await store.notifications();
+    const unread = notes.filter(n => !n.read_at).length;
+    const nc = $('[data-ncount]');
+    if (nc) { nc.textContent = unread > 9 ? '9+' : unread; nc.classList.toggle('hidden', !unread); }
+    let n;
+    if (isMgr()) { const c = await mgrCounts(); n = c.verlof + c.ruilen + c.open; }
+    else {
+      const today = todayIso();
+      const [sw, sh, apps] = await Promise.all([store.swaps(), store.shifts(today, iso(addDays(new Date(), 90))), store.applications()]);
+      const mineDates = new Set(sh.filter(s => s.employee_id === S.me.id).map(s => s.date));
+      n = sw.filter(w => w.status === 'open' && w.from_employee !== S.me.id && (!w.to_employee || w.to_employee === S.me.id)).length
+        + sh.filter(s => !s.employee_id && s.published && !apps.some(a => a.shift_id === s.id) && !mineDates.has(s.date)).length;
+    }
+    S.pending = n;
     const c = $('[data-count]');
-    if (c) { c.textContent = S.pending; c.classList.toggle('hidden', !S.pending); }
+    if (c) { c.textContent = n; c.classList.toggle('hidden', !n); }
   } catch (e) { /* ignore */ }
 }
 
@@ -464,6 +653,8 @@ async function go(view) {
     else if (view === 'team') await viewTeam(el);
     else if (view === 'uren') await viewHours(el);
     else if (view === 'klokken') await viewClockMgr(el);
+    else if (view === 'diensten') await viewDiensten(el);
+    else if (view === 'beschikbaar') await viewBeschikbaar(el);
   } catch (e) {
     console.error(e);
     el.innerHTML = `<div class="card pad"><p class="msg err">Er ging iets mis bij het laden: ${esc(errMsg(e))}</p><button class="btn" onclick="location.reload()">Opnieuw laden</button></div>`;
@@ -487,8 +678,11 @@ function weekLabel(mon) {
 
 async function viewWeek(el, editable) {
   const from = iso(S.week), to = iso(addDays(S.week, 6));
-  const [emps0, shifts, reqs] = await Promise.all([store.employees(), store.shifts(from, to), store.requests()]);
+  const [emps0, shifts, reqs, avail, apps] = await Promise.all([store.employees(), store.shifts(from, to), store.requests(), isMgr() ? store.availability(from, to) : Promise.resolve([]), store.applications()]);
   const emps = sortEmps(emps0);
+  const avMap = {}; avail.forEach(a => (avMap[a.employee_id + a.date] = a));
+  const avHTML = (emp, ds) => { const a = avMap[emp + ds]; return a ? `<span class="av av-${a.kind}" title="${esc(AVAIL[a.kind])}${a.note ? ': ' + esc(a.note) : ''}">${AVAIL_SHORT[a.kind]}</span>` : ''; };
+  const openShifts = shifts.filter(s => !s.employee_id);
   const people = emps.filter(e => e.active !== false || shifts.some(s => s.employee_id === e.id));
   const days = [...Array(7)].map((_, i) => addDays(S.week, i));
   const today = todayIso();
@@ -510,16 +704,28 @@ async function viewWeek(el, editable) {
         const tag = editable ? 'button' : 'div';
         return `<${tag} class="chip ${s.published ? '' : 'concept'}" style="--c:${esc(e.color || COLORS[0])}" ${editable ? `data-shift="${s.id}"` : ''} title="${s.note ? esc(s.note) : ''}"><b>${hm(s.start_time)}–${hm(s.end_time)}</b><small>${esc(s.position || '')}${s.published ? '' : ' · concept'}</small></${tag}>`;
       }).join('');
-      return `<td class="cell ${editable ? 'editable' : ''} ${ds === today ? 'today' : ''}" data-emp="${e.id}" data-date="${ds}">${lv}${chips}${editable ? '<button class="add" data-add aria-label="Dienst toevoegen">+</button>' : ''}</td>`;
+      return `<td class="cell ${editable ? 'editable' : ''} ${ds === today ? 'today' : ''}" data-emp="${e.id}" data-date="${ds}">${editable ? avHTML(e.id, ds) : ''}${lv}${chips}${editable ? '<button class="add" data-add aria-label="Dienst toevoegen">+</button>' : ''}</td>`;
     }).join('');
     return `<tr class="${e.id === S.me.id ? 'me' : ''}"><th class="who"><div class="who-inner"><span class="dot" style="background:${esc(e.color || COLORS[0])}"></span><div><strong>${esc(e.name)}</strong><small class="${over ? 'over' : ''}">${fmtH(hours)} u${e.contract_hours && editable ? ` / ${fmtH(Number(e.contract_hours))} u` : ''}${over ? ' · boven contract' : ''}</small></div></div></th>${cells}</tr>`;
   }).join('');
+
+  const openRow = openShifts.length || editable ? `<tr class="openrow"><th class="who"><div class="who-inner"><span class="dot" style="background:#a8988f"></span><div><strong>Open diensten</strong><small>${openShifts.length ? openShifts.length + ' open' : 'team kan zich aanmelden'}</small></div></div></th>${days.map(d => {
+    const ds = iso(d);
+    const chips = openShifts.filter(s => s.date === ds).map(s => {
+      const n = apps.filter(a => a.shift_id === s.id && a.status === 'pending').length;
+      const mineApp = apps.find(a => a.shift_id === s.id && a.employee_id === S.me.id);
+      return editable
+        ? `<button class="chip open ${s.published ? '' : 'concept'}" data-shift="${s.id}"><b>${hm(s.start_time)}–${hm(s.end_time)}</b><small>${esc(s.position || 'Open')} · ${n} aanmelding${n === 1 ? '' : 'en'}</small></button>`
+        : `<button class="chip open" data-goopen><b>${hm(s.start_time)}–${hm(s.end_time)}</b><small>${esc(s.position || 'Open')} · ${mineApp ? 'aangemeld' : 'meld je aan'}</small></button>`;
+    }).join('');
+    return `<td class="cell ${editable ? 'editable' : ''} ${ds === today ? 'today' : ''}" data-emp="" data-date="${ds}">${chips}${editable ? '<button class="add" data-add aria-label="Open dienst toevoegen">+</button>' : ''}</td>`;
+  }).join('')}</tr>` : '';
 
   const foot = days.map(d => {
     const ds = iso(d);
     const list = shifts.filter(s => s.date === ds);
     const h = list.reduce((t, s) => t + shiftHours(s), 0);
-    return `<td>${list.length ? `${new Set(list.map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : '—'}</td>`;
+    return `<td>${list.length ? `${new Set(list.filter(s => s.employee_id).map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : '—'}</td>`;
   }).join('');
   const totalH = shifts.reduce((t, s) => t + shiftHours(s), 0);
   const mobile = isMobile();
@@ -534,16 +740,19 @@ async function viewWeek(el, editable) {
     const fd = feestdag(ds);
     const strip = days.map((d, i) => { const n = new Set(shifts.filter(s => s.date === iso(d)).map(s => s.employee_id)).size; const mineThere = shifts.some(s => s.date === iso(d) && s.employee_id === S.me.id);
       return `<button class="ds ${i === di ? 'on' : ''} ${iso(d) === today ? 'today' : ''}" data-day="${i}" aria-label="${fmtLong(iso(d))}"><span>${DAG[i]}</span><b>${d.getDate()}</b><i class="${mineThere && !editable ? 'mine' : ''}">${n || ''}</i></button>`; }).join('');
-    const items = list.map(s => { const e = byId[s.employee_id] || {}; const me = e.id === S.me.id; const tag = editable ? 'button' : 'div';
-      return `<${tag} class="mshift ${s.published ? '' : 'concept'} ${me ? 'me' : ''}" style="--c:${esc(e.color || COLORS[0])}" ${editable ? `data-shift="${s.id}"` : ''}>
+    const items = list.map(s => { const isOpen = !s.employee_id; const e = byId[s.employee_id] || (isOpen ? { name: 'Open dienst', color: '#a8988f' } : {}); const me = !isOpen && e.id === S.me.id; const tag = editable || isOpen ? 'button' : 'div';
+      const nApps = isOpen ? apps.filter(a => a.shift_id === s.id && a.status === 'pending').length : 0;
+      return `<${tag} class="mshift ${s.published ? '' : 'concept'} ${me ? 'me' : ''} ${isOpen ? 'open' : ''}" style="--c:${esc(e.color || COLORS[0])}" ${editable ? `data-shift="${s.id}"` : isOpen ? 'data-goopen' : ''}>
         <span class="mtime"><b>${hm(s.start_time)}</b><small>${hm(s.end_time)}</small></span>
-        <span class="mwho"><strong>${esc(e.name || '?')}${me ? ' <em>jij</em>' : ''}</strong><small>${esc(s.position || '')}${s.position ? ' · ' : ''}${fmtH(shiftHours(s))} u${s.published ? '' : ' · concept'}${s.note ? ' · ' + esc(s.note) : ''}</small></span>
-        ${editable ? '<span class="chev" aria-hidden="true">›</span>' : ''}</${tag}>`; }).join('');
+        <span class="mwho"><strong>${esc(e.name || '?')}${me ? ' <em>jij</em>' : ''}</strong><small>${esc(s.position || '')}${s.position ? ' · ' : ''}${fmtH(shiftHours(s))} u${s.published ? '' : ' · concept'}${isOpen ? (editable ? ` · ${nApps} aanmelding${nApps === 1 ? '' : 'en'}` : ' · tik om je aan te melden') : ''}${s.note ? ' · ' + esc(s.note) : ''}</small></span>
+        ${editable || isOpen ? '<span class="chev" aria-hidden="true">›</span>' : ''}</${tag}>`; }).join('');
+    const availFree = editable ? avail.filter(a => a.date === ds && a.kind !== 'niet' && !list.some(s => s.employee_id === a.employee_id)) : [];
     const leaveHTML = lv.length ? `<div class="mleaves">${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}</div>` : '';
     return `<div class="daystrip">${strip}</div>
-      <div class="dayhead"><div><h2>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}</h2>${fd ? `<span class="fdtag">${esc(fd)}</span>` : ''}</div><span>${list.length ? `${new Set(list.map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
+      <div class="dayhead"><div><h2>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}</h2>${fd ? `<span class="fdtag">${esc(fd)}</span>` : ''}</div><span>${list.length ? `${new Set(list.filter(s => s.employee_id).map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
       ${leaveHTML}
       <div class="mlist">${items || `<div class="card empty">${editable ? 'Nog niemand ingepland.' : 'Geen diensten op deze dag.'}</div>`}</div>
+      ${availFree.length ? `<p class="hint mavail">Beschikbaar, nog niet ingepland: ${availFree.map(a => `<strong>${esc((byId[a.employee_id]?.name || '').split(' ')[0])}</strong> (${AVAIL[a.kind].toLowerCase()})`).join(', ')}</p>` : ''}
       ${editable ? '<button class="btn primary block madd" data-addday>+ Dienst toevoegen</button>' : ''}
       <p class="hint swipehint">Veeg naar links of rechts voor een andere dag · week totaal ${fmtH(totalH)} u</p>`;
   };
@@ -564,11 +773,11 @@ async function viewWeek(el, editable) {
         <button class="btn primary" data-act="publish" ${concept ? '' : 'disabled'}>${concept ? `Publiceer ${concept} dienst${concept > 1 ? 'en' : ''}` : 'Alles gepubliceerd ✓'}</button>
       </div>` : ''}
     </div>
-    ${editable && !mobile ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof / niet beschikbaar</span></div>` : ''}
+    ${editable && !mobile ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span><span class="av av-avond">✓ avond</span> <span class="av av-niet">✕ niet</span> doorgegeven beschikbaarheid</span></div>` : ''}
     ${people.length && mobile ? mobileHTML() : ''}
     ${people.length && !mobile ? `<div class="grid-wrap"><table class="grid">
       <thead><tr><th class="who">Medewerker</th>${days.map(d => `<th class="${iso(d) === today ? 'today' : ''}" ${feestdag(iso(d)) ? `title="${esc(feestdag(iso(d)))}"` : ''}>${DAG[dayIdx(d)]}<b>${d.getDate()}</b>${feestdag(iso(d)) ? `<em class="fd">${esc(feestdag(iso(d)))}</em>` : ''}</th>`).join('')}</tr></thead>
-      <tbody>${rows}</tbody>
+      <tbody>${openRow}${rows}</tbody>
       <tfoot><tr><th class="who">${fmtH(totalH)} u totaal</th>${foot}</tr></tfoot>
     </table></div>` : people.length ? '' : `<div class="card empty">Nog geen medewerkers. ${editable ? 'Voeg ze toe via <strong>Team</strong>.' : ''}</div>`}
     ${!editable && !shifts.length && people.length ? '<p class="hint" style="margin-top:12px">Voor deze week is nog geen rooster gepubliceerd.</p>' : ''}
@@ -580,11 +789,12 @@ async function viewWeek(el, editable) {
     if (act === 'next') { S.week = addDays(S.week, 7); return rerender(); }
     if (act === 'today') { S.week = mondayOf(new Date()); S.dayWeek = null; return rerender(); }
     const dayB = ev.target.closest('[data-day]'); if (dayB) { S.dayI = Number(dayB.dataset.day); return rerender(); }
+    if (ev.target.closest('[data-goopen]')) return go('diensten');
     if (ev.target.closest('[data-addday]')) {
       const ds = iso(days[S.dayI]);
       const free = people.find(e => e.active !== false && !shifts.some(s => s.employee_id === e.id && s.date === ds)) || people[0];
       const t = CFG.diensten[0] || { start: '09:00', end: '17:00', pauze: 30 };
-      return shiftDialog({ employee_id: free.id, date: ds, start_time: t.start, end_time: t.end, break_minutes: t.pauze || 0, position: free.position || '', note: '' }, emps, shifts, leaves);
+      return shiftDialog({ employee_id: free.id, date: ds, start_time: t.start, end_time: t.end, break_minutes: t.pauze || 0, position: free.position || '', note: '' }, emps, shifts, leaves, avail, apps);
     }
     if (act === 'publish') {
       if (!await ask(`${concept} dienst(en) publiceren? Het team ziet ze daarna direct in hun rooster.`)) return;
@@ -593,12 +803,12 @@ async function viewWeek(el, editable) {
     if (act === 'copy') return copyWeek(shifts);
     if (act === 'print') { try { window.print(); } catch (e) { toast('Afdrukken is hier niet beschikbaar', 'error'); } return; }
     const chip = ev.target.closest('[data-shift]');
-    if (chip) return shiftDialog(shifts.find(s => s.id === chip.dataset.shift), emps, shifts, leaves);
+    if (chip) return shiftDialog(shifts.find(s => s.id === chip.dataset.shift), emps, shifts, leaves, avail, apps);
     const cell = ev.target.closest('td.cell.editable');
     if (cell && (ev.target.closest('[data-add]') || ev.target === cell)) {
       const e = emps.find(x => x.id === cell.dataset.emp);
       const t = CFG.diensten[0] || { start: '09:00', end: '17:00', pauze: 30 };
-      return shiftDialog({ employee_id: e.id, date: cell.dataset.date, start_time: t.start, end_time: t.end, break_minutes: t.pauze || 0, position: e.position || '', note: '' }, emps, shifts, leaves);
+      return shiftDialog({ employee_id: e?.id || null, date: cell.dataset.date, start_time: t.start, end_time: t.end, break_minutes: t.pauze || 0, position: e?.position || '', note: '' }, emps, shifts, leaves, avail, apps);
     }
   };
   if (mobile) {
@@ -634,13 +844,18 @@ async function copyWeek(current) {
   rerender();
 }
 
-function shiftDialog(s, emps, weekShifts, leaves) {
+function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = []) {
   const isNew = !s.id;
   const day = parse(s.date);
   const opts = (list, val) => list.map(v => `<option ${v === val ? 'selected' : ''}>${esc(v)}</option>`).join('');
   const posList = [...new Set([...(CFG.posities || []), s.position].filter(Boolean))];
   const body = `
-    <label class="field">Medewerker<select name="employee_id" required>${emps.filter(e => e.active !== false || e.id === s.employee_id).map(e => `<option value="${e.id}" ${e.id === s.employee_id ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></label>
+    <label class="field">Medewerker<select name="employee_id"><option value="" ${!s.employee_id ? 'selected' : ''}>— Open dienst (team kan zich aanmelden) —</option>${emps.filter(e => e.active !== false || e.id === s.employee_id).map(e => `<option value="${e.id}" ${e.id === s.employee_id ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></label>
+    ${!isNew && !s.employee_id ? (() => {
+      const l = apps.filter(a => a.shift_id === s.id && a.status === 'pending');
+      return `<div class="applist-wrap"><div class="hint" style="margin-bottom:6px">Aanmeldingen</div>${l.length ? `<ul class="applist">${l.map(a => { const e = emps.find(x => x.id === a.employee_id) || {}; const v = avail.find(x => x.employee_id === a.employee_id && x.date === s.date);
+        return `<li><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name || '?')}</strong>${v ? `<span class="muted small">${AVAIL_SHORT[v.kind]}</span>` : ''}<button type="button" class="btn sm ok" data-assign="${a.employee_id}">Toewijzen</button></li>`; }).join('')}</ul>` : `<p class="hint">${s.published ? 'Nog niemand aangemeld.' : 'Publiceer de week om deze open dienst zichtbaar te maken.'}</p>`}</div>`;
+    })() : ''}
     ${CFG.diensten.length ? `<div><div class="hint" style="margin-bottom:6px">Snelkeuze</div><div class="tpls">${CFG.diensten.map(d => `<button type="button" class="tpl" data-s="${d.start}" data-e="${d.end}" data-p="${d.pauze || 0}">${esc(d.label)} <span class="muted">${d.start}–${d.end}</span></button>`).join('')}</div></div>` : ''}
     <div class="row three keep">
       <label class="field">Begin<input type="time" name="start_time" value="${hm(s.start_time)}" required></label>
@@ -666,15 +881,22 @@ function shiftDialog(s, emps, weekShifts, leaves) {
     onReady(dlg) {
       const f = $('form', dlg);
       const warn = $('[data-warn]', dlg);
+      $$('[data-assign]', dlg).forEach(b => (b.onclick = async () => {
+        try { await store.openAssign(s.id, b.dataset.assign); toast('Dienst toegewezen'); dlg.close(); rerender(); } catch (e) { toast(errMsg(e), 'error'); }
+      }));
       const check = () => {
         const emp = f.employee_id.value, date = f.date.value;
         const msgs = [];
+        if (!emp) { warn.classList.add('hidden'); return; }
         const dates = isNew ? $$('input[name=days]:checked', f).map(c => iso(addDays(mondayOf(parse(date)), Number(c.value)))) : [date];
         dates.forEach(ds => {
           const lv = leaves.find(r => r.employee_id === emp && r.start_date <= ds && r.end_date >= ds);
           if (lv) msgs.push(`${fmtShort(ds)}: ${REQ[lv.type].toLowerCase()} ${lv.status === 'pending' ? 'aangevraagd' : 'goedgekeurd'}`);
           const other = weekShifts.find(x => x.employee_id === emp && x.date === ds && x.id !== s.id);
           if (other) msgs.push(`${fmtShort(ds)}: heeft al een dienst ${hm(other.start_time)}–${hm(other.end_time)}`);
+          const v = avail.find(a => a.employee_id === emp && a.date === ds);
+          if (v && v.kind === 'niet') msgs.push(`${fmtShort(ds)}: heeft “niet beschikbaar” doorgegeven${v.note ? ' (' + v.note + ')' : ''}`);
+          else if (v && v.kind !== 'hele_dag') msgs.push(`${fmtShort(ds)}: alleen ${AVAIL[v.kind].toLowerCase()} beschikbaar`);
         });
         warn.innerHTML = msgs.length ? '⚠︎ ' + msgs.map(esc).join('<br>') : '';
         warn.classList.toggle('hidden', !msgs.length);
@@ -691,7 +913,7 @@ function shiftDialog(s, emps, weekShifts, leaves) {
       }
       if (fd.get('start_time') === fd.get('end_time')) throw new Error('Begin- en eindtijd zijn gelijk.');
       const base = {
-        employee_id: fd.get('employee_id'), start_time: fd.get('start_time'), end_time: fd.get('end_time'),
+        employee_id: fd.get('employee_id') || null, start_time: fd.get('start_time'), end_time: fd.get('end_time'),
         break_minutes: Number(fd.get('break_minutes')) || 0, position: fd.get('position') || null, note: fd.get('note').trim() || null,
       };
       if (isNew) {
@@ -716,7 +938,8 @@ async function viewMine(el) {
   const fromD = sel && sel < start ? sel : start;
   const toD = sel && addDays(sel, 6) > addDays(start, 41) ? addDays(sel, 6) : addDays(start, 41);
   const from = iso(fromD), to = iso(toD);
-  const [all, reqs, emps] = await Promise.all([store.shifts(from, to), store.requests(), store.employees()]);
+  const [all, reqs, emps, swaps] = await Promise.all([store.shifts(from, to), store.requests(), store.employees(), store.swaps()]);
+  const swapOf = id => swaps.find(w => w.shift_id === id && w.from_employee === S.me.id && ['open', 'accepted'].includes(w.status));
   const nameOf = Object.fromEntries(emps.map(e => [e.id, e.name.split(' ')[0]]));
   const withWho = s => { const o = all.filter(x => x.date === s.date && x.employee_id !== S.me.id && x.published).map(x => nameOf[x.employee_id]).filter(Boolean); return [...new Set(o)]; };
   const mine = all.filter(s => s.employee_id === S.me.id && s.published);
@@ -746,7 +969,7 @@ async function viewMine(el) {
       const d = parse(ds);
       const dayHead = `<div class="d"><span>${DAG[i]}</span><b>${d.getDate()}</b></div>`;
       const fd = feestdag(ds);
-      ws.filter(s => s.date === ds).forEach(s => items.push(`<li class="${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${hm(s.start_time)} – ${hm(s.end_time)}</strong><small>${esc(s.position || '')}${s.break_minutes ? ` · ${s.break_minutes} min pauze` : ''}${s.note ? ` · ${esc(s.note)}` : ''}${fd ? ` · ${esc(fd)}` : ''}</small>${withWho(s).length ? `<small class="with">Met ${esc(withWho(s).join(', '))}</small>` : ''}</div><div class="h">${fmtH(shiftHours(s))} u</div></li>`));
+      ws.filter(s => s.date === ds).forEach(s => items.push(`<li class="${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${hm(s.start_time)} – ${hm(s.end_time)}</strong><small>${esc(s.position || '')}${s.break_minutes ? ` · ${s.break_minutes} min pauze` : ''}${s.note ? ` · ${esc(s.note)}` : ''}${fd ? ` · ${esc(fd)}` : ''}</small>${withWho(s).length ? `<small class="with">Met ${esc(withWho(s).join(', '))}</small>` : ''}${s.date >= today ? (swapOf(s.id) ? `<small class="swapst">⇄ ${SWAPST[swapOf(s.id).status].toLowerCase()}</small>` : `<button class="linkbtn small swapbtn" data-swap="${s.id}">⇄ Ruilen of overdragen</button>`) : ''}</div><div class="h">${fmtH(shiftHours(s))} u</div></li>`));
       if (ws.some(s => s.date === ds)) continue;
       const lv = wl.find(r => r.start_date <= ds && r.end_date >= ds);
       if (lv) items.push(`<li class="off ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${esc(REQ[lv.type])}</strong></div><div class="h"><span class="pill ok">vrij</span></div></li>`);
@@ -785,6 +1008,7 @@ async function viewMine(el) {
   bindClock(el);
   el.onclick = ev => {
     if (clockClicks(ev)) return;
+    const sw = ev.target.closest('[data-swap]'); if (sw) return swapDialog(mine, emps, all, sw.dataset.swap);
     if (ev.target.closest('[data-ics]')) downloadIcs(mine);
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
     const mf = ev.target.closest('[data-mf]'); if (mf) { S.mineWeek = mf.dataset.mf === 'week' ? start : null; return rerender(); }
@@ -830,7 +1054,7 @@ async function viewRequestsStaff(el) {
   const reqs = (await store.requests()).filter(r => r.employee_id === S.me.id);
   const t = todayIso();
   el.innerHTML = `
-    <div class="page-head"><div><h1>Aanvragen</h1><p>Vraag vakantie of een vrije dag aan, of geef door wanneer je niet kunt.</p></div></div>
+    <div class="page-head"><div><h1>Verlof</h1><p>Vraag vakantie of een vrije dag aan, of meld je ziek. Beschikbaarheid per week geef je door onder <button class="linkbtn" data-goto="beschikbaar">Beschikbaar</button>.</p></div></div>
     <div class="split">
       <form class="card pad stack" id="reqform">
         <h3 style="font-size:18px">Nieuwe aanvraag</h3>
@@ -863,12 +1087,21 @@ async function viewRequestsStaff(el) {
     } catch (e) { toast(errMsg(e), 'error'); }
   };
   el.onclick = async ev => {
+    const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
     const d = ev.target.closest('[data-del]');
     if (d && await ask('Deze aanvraag intrekken?')) { await store.deleteRequest(d.dataset.del); toast('Aanvraag ingetrokken'); rerender(); }
   };
 }
 
 async function viewRequestsMgr(el) {
+  S.reqTab ||= 'verlof';
+  if (S.reqTab === 'ruilen') return viewSwapsMgr(el);
+  if (S.reqTab === 'open') return viewOpenMgr(el);
+  if (S.reqTab === 'beschikbaar') return viewAvailMgr(el);
+  return viewLeaveMgr(el);
+}
+
+async function viewLeaveMgr(el) {
   const [reqs, emps] = await Promise.all([store.requests(), store.employees()]);
   const byId = Object.fromEntries(emps.map(e => [e.id, e]));
   const list = S.reqFilter === 'pending' ? reqs.filter(r => r.status === 'pending') : reqs;
@@ -881,8 +1114,9 @@ async function viewRequestsMgr(el) {
     pend.forEach(r => { conflicts[r.id] = sh.filter(s => s.employee_id === r.employee_id && s.date >= r.start_date && s.date <= r.end_date); });
   }
   el.innerHTML = `
-    <div class="page-head"><div><h1>Aanvragen</h1><p>Verlof, vrije dagen en beschikbaarheid van het team.</p></div>
-      <div class="filters"><button data-f="pending" class="${S.reqFilter === 'pending' ? 'active' : ''}">Openstaand (${pend.length})</button><button data-f="all" class="${S.reqFilter === 'all' ? 'active' : ''}">Alle</button></div></div>
+    <div class="page-head"><div><h1>Aanvragen</h1><p>Verlof, ruilen, open diensten en beschikbaarheid van het team.</p></div></div>
+    ${await reqTabsHTML()}
+    <div class="toolbar"><div class="filters"><button data-f="pending" class="${S.reqFilter === 'pending' ? 'active' : ''}">Openstaand (${pend.length})</button><button data-f="all" class="${S.reqFilter === 'all' ? 'active' : ''}">Alle</button></div></div>
     ${list.length ? `<div class="reqs">${list.map(r => {
       const e = byId[r.employee_id] || { name: 'Onbekend' };
       const c = conflicts[r.id] || [];
@@ -896,6 +1130,7 @@ async function viewRequestsMgr(el) {
     }).join('')}</div>` : `<div class="card empty">${S.reqFilter === 'pending' ? 'Geen openstaande aanvragen. 🎉' : 'Nog geen aanvragen.'}</div>`}`;
 
   el.onclick = async ev => {
+    if (rtClick(ev)) return;
     const f = ev.target.closest('[data-f]'); if (f) { S.reqFilter = f.dataset.f; return rerender(); }
     const okB = ev.target.closest('[data-ok]');
     if (okB) {
@@ -983,6 +1218,312 @@ function employeeDialog(e) {
       rerender();
     },
   });
+}
+
+/* ================= Meldingen & push ================= */
+function timeAgo(ts) {
+  const m = Math.round((Date.now() - new Date(ts)) / 60000);
+  if (m < 1) return 'zojuist';
+  if (m < 60) return `${m} min geleden`;
+  if (m < 60 * 24) return `${Math.round(m / 60)} uur geleden`;
+  return fmtShort(iso(new Date(ts)));
+}
+function urlB64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+async function pushState() {
+  if (store.demo) return { state: 'demo' };
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return { state: isIOS() && !isStandalone() ? 'ios-install' : 'unsupported' };
+  if (!CFG.vapidPublicKey) return { state: 'not-configured' };
+  if (Notification.permission === 'denied') return { state: 'denied' };
+  try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); return { state: sub ? 'on' : 'off' }; }
+  catch (e) { return { state: 'off' }; }
+}
+async function enablePush() {
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') throw new Error('Meldingen zijn niet toegestaan. Zet ze aan in de instellingen van je telefoon of browser.');
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(CFG.vapidPublicKey) });
+  const j = sub.toJSON();
+  await store.savePushSub({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, user_agent: navigator.userAgent.slice(0, 200) });
+}
+const PUSHTXT = {
+  demo: 'In de demo worden geen echte pushmeldingen verstuurd; je ziet ze hier in de lijst.',
+  'ios-install': 'Op iPhone werken pushmeldingen alleen als de app op je beginscherm staat. Tik op de deelknop → “Zet op beginscherm”, open de app daar en zet dan meldingen aan.',
+  unsupported: 'Deze browser ondersteunt geen pushmeldingen. Je meldingen verschijnen wel hier.',
+  'not-configured': 'Pushmeldingen zijn nog niet ingesteld (zie README).',
+  denied: 'Meldingen zijn geblokkeerd. Zet ze aan via de instellingen van je telefoon of browser.',
+  on: 'Pushmeldingen staan aan op dit toestel ✓',
+};
+
+async function notifPanel() {
+  const [list, ps] = await Promise.all([store.notifications(), pushState()]);
+  const unread = list.filter(n => !n.read_at).length;
+  openDialog('Meldingen', `
+    <div class="pushbox ${ps.state === 'on' ? 'on' : ''}">${ps.state === 'off' ? '<span>Krijg een melding op je telefoon bij een nieuw rooster, wijziging of ruilverzoek.</span><button type="button" class="btn primary sm" data-push>Pushmeldingen aanzetten</button>' : `<span>${esc(PUSHTXT[ps.state])}</span>`}</div>
+    ${list.length ? `<ul class="notifs">${list.map(n => `<li class="${n.read_at ? '' : 'unread'}"><button type="button" data-nid="${n.id}" data-nview="${esc(n.view || '')}"><strong>${esc(n.title)}</strong>${n.body ? `<span>${esc(n.body)}</span>` : ''}<small>${timeAgo(n.created_at)}</small></button></li>`).join('')}</ul>` : '<div class="empty">Nog geen meldingen.</div>'}
+    <div class="dlg-foot">${unread ? '<button type="button" class="btn" data-readall>Alles gelezen</button>' : ''}<span class="spacer"></span><button type="button" class="btn" data-close>Sluiten</button></div>`, {
+    onReady(dlg) {
+      dlg.addEventListener('click', async ev => {
+        const p = ev.target.closest('[data-push]');
+        if (p) { p.disabled = true; try { await enablePush(); toast('Pushmeldingen staan aan'); dlg.close(); } catch (e) { toast(errMsg(e), 'error'); p.disabled = false; } return; }
+        if (ev.target.closest('[data-readall]')) { await store.markRead(null); dlg.close(); refreshBadge(); return; }
+        const n = ev.target.closest('[data-nid]');
+        if (n) { await store.markRead([n.dataset.nid]); dlg.close(); if (n.dataset.nview) openView(n.dataset.nview); else refreshBadge(); }
+      });
+    },
+    onSubmit() {},
+  });
+}
+
+// "aanvragen:ruilen" → tabblad + subtabblad
+function openView(v) {
+  const [view, sub] = String(v).split(':');
+  if (!tabsFor().some(([k]) => k === view)) return refreshBadge();
+  if (sub) S.reqTab = sub;
+  go(view);
+}
+
+/* ================= Ruilen (medewerker) ================= */
+function swapDialog(myShifts, emps, allShifts, preselect) {
+  const today = todayIso();
+  const mine = myShifts.filter(s => s.date >= today);
+  if (!mine.length) return toast('Je hebt geen komende diensten om te ruilen');
+  const colleagues = emps.filter(e => e.id !== S.me.id && e.active !== false);
+  const theirs = id => allShifts.filter(s => s.employee_id === id && s.published && s.date >= today);
+  const opt = s => `${fmtShort(s.date)} ${hm(s.start_time)}–${hm(s.end_time)}${s.position ? ' · ' + s.position : ''}`;
+  openDialog('Dienst ruilen of overdragen', `
+    <label class="field">Welke dienst?<select name="shift_id">${mine.map(s => `<option value="${s.id}" ${s.id === preselect ? 'selected' : ''}>${esc(opt(s))}</option>`).join('')}</select></label>
+    <label class="field">Aan wie?<select name="to"><option value="">Iedereen — wie het eerst reageert</option>${colleagues.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></label>
+    <label class="field" data-swapwrap hidden>In ruil voor (optioneel)<select name="swap_shift_id"><option value="">Niets — alleen overdragen</option></select></label>
+    <label class="field">Toelichting<input name="note" placeholder="Bijv. verjaardag, tentamen"></label>
+    <p class="hint">Je collega moet accepteren; daarna keurt de directie het goed. Pas dan verandert het rooster.</p>
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Versturen</button></div>`, {
+    onReady(dlg) {
+      const f = $('form', dlg), wrap = $('[data-swapwrap]', dlg);
+      f.to.onchange = () => {
+        const list = f.to.value ? theirs(f.to.value) : [];
+        wrap.hidden = !f.to.value;
+        f.swap_shift_id.innerHTML = '<option value="">Niets — alleen overdragen</option>' + list.map(s => `<option value="${s.id}">${esc(opt(s))}</option>`).join('');
+      };
+    },
+    async onSubmit(fd) {
+      await store.swapOffer({ shift_id: fd.get('shift_id'), to_employee: fd.get('to') || null, swap_shift_id: fd.get('swap_shift_id') || null, note: fd.get('note') });
+      toast(fd.get('to') ? 'Verzoek verstuurd naar je collega' : 'Dienst aangeboden aan het team'); rerender();
+    },
+  });
+}
+
+async function viewDiensten(el) {
+  const today = todayIso();
+  const [shifts, apps, swaps, emps0] = await Promise.all([store.shifts(iso(addDays(new Date(), -14)), iso(addDays(new Date(), 90))), store.applications(), store.swaps(), store.employees()]);
+  const emps = sortEmps(emps0);
+  const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+  const sh = id => shifts.find(s => s.id === id);
+  const fn = id => (byId[id]?.name || '').split(' ')[0] || 'Collega';
+  const L = s => (s ? `${fmtShort(s.date)} · ${hm(s.start_time)}–${hm(s.end_time)}${s.position ? ' · ' + esc(s.position) : ''}` : 'Dienst');
+  const workDay = ds => shifts.find(s => s.employee_id === S.me.id && s.date === ds && s.published);
+  const open = shifts.filter(s => !s.employee_id && s.published && s.date >= today);
+  const myApp = id => apps.find(a => a.shift_id === id && a.employee_id === S.me.id);
+  const incoming = swaps.filter(w => w.status === 'open' && w.from_employee !== S.me.id && (!w.to_employee || w.to_employee === S.me.id) && sh(w.shift_id)?.date >= today);
+  const mine = swaps.filter(w => (w.from_employee === S.me.id || w.taken_by === S.me.id) && w.status !== 'cancelled').slice(0, 12);
+  const myShifts = shifts.filter(s => s.employee_id === S.me.id && s.published);
+
+  const openCard = s => {
+    const a = myApp(s.id), clash = workDay(s.date);
+    return `<article class="card req"><div class="req-head"><strong>${L(s)}</strong>${a ? `<span class="status ${a.status === 'pending' ? 'pending' : a.status === 'accepted' ? 'approved' : 'rejected'}">${{ pending: 'Aangemeld', accepted: 'Van jou', rejected: 'Niet gekregen' }[a.status]}</span>` : ''}</div>
+      ${s.note ? `<p class="note">${esc(s.note)}</p>` : ''}${clash ? `<p class="conflict">Je werkt die dag al ${hm(clash.start_time)}–${hm(clash.end_time)}.</p>` : ''}
+      <div class="req-actions">${!a || a.status === 'rejected' ? `<button class="btn sm primary" data-apply="${s.id}">Aanmelden</button>` : a.status === 'pending' ? `<button class="btn sm" data-withdraw="${s.id}">Afmelden</button><span class="hint">De directie kiest wie de dienst krijgt.</span>` : ''}</div></article>`;
+  };
+  const inCard = w => {
+    const s = sh(w.shift_id), s2 = w.swap_shift_id ? sh(w.swap_shift_id) : null, clash = s && workDay(s.date);
+    return `<article class="card req"><div class="req-head"><span class="dot" style="background:${esc(byId[w.from_employee]?.color || COLORS[0])};margin:0"></span><strong>${esc(fn(w.from_employee))} ${s2 ? 'wil ruilen' : w.to_employee ? 'vraagt jou' : 'biedt aan'}</strong></div>
+      <p class="dates">${L(s)}</p>${s2 ? `<p class="note">In ruil voor jouw dienst: <strong>${L(s2)}</strong></p>` : ''}${w.note ? `<p class="note">“${esc(w.note)}”</p>` : ''}
+      ${clash && !s2 ? `<p class="conflict">Je werkt die dag al ${hm(clash.start_time)}–${hm(clash.end_time)}.</p>` : ''}
+      <div class="req-actions"><button class="btn sm ok" data-accept="${w.id}">${s2 ? 'Ruil accepteren' : 'Overnemen'}</button>${w.to_employee ? `<button class="btn sm danger" data-decline="${w.id}">Weigeren</button>` : ''}</div></article>`;
+  };
+  const myCard = w => {
+    const s = sh(w.shift_id), s2 = w.swap_shift_id ? sh(w.swap_shift_id) : null, own = w.from_employee === S.me.id;
+    const who = own ? (w.taken_by ? fn(w.taken_by) : w.to_employee ? fn(w.to_employee) : 'iedereen') : fn(w.from_employee);
+    const st = w.status === 'accepted' && !own ? 'Je neemt over · wacht op directie' : SWAPST[w.status];
+    return `<article class="card req"><div class="req-head"><strong>${own ? (s2 ? 'Ruilen met ' : 'Aangeboden aan ') + esc(who) : 'Overnemen van ' + esc(who)}</strong><span class="status ${w.status === 'approved' ? 'approved' : ['rejected', 'cancelled'].includes(w.status) ? 'rejected' : 'pending'}">${esc(st)}</span></div>
+      <p class="dates">${L(s)}</p>${s2 ? `<p class="note">Tegen: ${L(s2)}</p>` : ''}${w.manager_note ? `<p class="reply"><strong>Directie:</strong> ${esc(w.manager_note)}</p>` : ''}
+      ${own && ['open', 'accepted'].includes(w.status) ? `<div class="req-actions"><button class="btn sm danger" data-cancel="${w.id}">Intrekken</button></div>` : ''}</article>`;
+  };
+
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Diensten</h1><p>Open diensten, ruilen en overnemen.</p></div>
+      <button class="btn primary" data-newswap ${myShifts.some(s => s.date >= today) ? '' : 'disabled'}>⇄ Dienst ruilen of overdragen</button></div>
+    <section class="sect"><h2>Open diensten <span class="muted">(${open.length})</span></h2>
+      ${open.length ? `<div class="reqs">${open.map(openCard).join('')}</div>` : '<div class="card empty">Er zijn nu geen open diensten.</div>'}</section>
+    <section class="sect"><h2>Aangeboden door collega's <span class="muted">(${incoming.length})</span></h2>
+      ${incoming.length ? `<div class="reqs">${incoming.map(inCard).join('')}</div>` : '<div class="card empty">Geen verzoeken op dit moment.</div>'}</section>
+    ${mine.length ? `<section class="sect"><h2>Mijn ruilverzoeken</h2><div class="reqs">${mine.map(myCard).join('')}</div></section>` : ''}`;
+
+  el.onclick = async ev => {
+    const t = ev.target.closest('button'); if (!t) return;
+    try {
+      if (t.matches('[data-newswap]')) return swapDialog(myShifts, emps, shifts);
+      if (t.dataset.apply) { await store.openApply(t.dataset.apply); toast('Aangemeld — de directie laat het weten'); return rerender(); }
+      if (t.dataset.withdraw) { await store.openWithdraw(t.dataset.withdraw); toast('Afgemeld'); return rerender(); }
+      if (t.dataset.accept) {
+        if (!await ask('Weet je zeker dat je deze dienst wilt overnemen?', 'Ja, overnemen')) return;
+        await store.swapRespond(t.dataset.accept, true); toast('Geaccepteerd'); return rerender();
+      }
+      if (t.dataset.decline) { await store.swapRespond(t.dataset.decline, false); toast('Geweigerd'); return rerender(); }
+      if (t.dataset.cancel) { if (!await ask('Dit verzoek intrekken?')) return; await store.swapCancel(t.dataset.cancel); toast('Ingetrokken'); return rerender(); }
+    } catch (e) { toast(errMsg(e), 'error'); }
+  };
+}
+
+/* ================= Beschikbaarheid (medewerker) ================= */
+async function viewBeschikbaar(el) {
+  S.avWeek ||= addDays(mondayOf(new Date()), 7);
+  const mon = S.avWeek, from = iso(mon), to = iso(addDays(mon, 6));
+  const [av, prevAv, shifts] = await Promise.all([store.availability(from, to), store.availability(iso(addDays(mon, -7)), iso(addDays(mon, -1))), store.shifts(from, to)]);
+  const mineAv = av.filter(a => a.employee_id === S.me.id);
+  const get = ds => mineAv.find(a => a.date === ds);
+  const wl = weekLabel(mon);
+  const filled = mineAv.length;
+  const rows = [...Array(7)].map((_, i) => {
+    const ds = iso(addDays(mon, i)), a = get(ds), work = shifts.find(s => s.employee_id === S.me.id && s.date === ds);
+    return `<div class="avrow"><div class="d"><span>${DAG[i]}</span><b>${addDays(mon, i).getDate()}</b></div>
+      <div class="avopts"><label class="avopt av-leeg"><input type="radio" name="k-${i}" value="" ${a ? '' : 'checked'}><span>?</span></label>${Object.keys(AVAIL).map(k => `<label class="avopt av-${k}"><input type="radio" name="k-${i}" value="${k}" ${a?.kind === k ? 'checked' : ''}><span>${k === 'niet' ? 'Niet' : AVAIL[k]}</span></label>`).join('')}</div>
+      <input class="input avnote" name="n-${i}" placeholder="Opmerking (optioneel)" value="${esc(a?.note || '')}">
+      ${work ? `<small class="hint">Ingepland: ${hm(work.start_time)}–${hm(work.end_time)}</small>` : ''}</div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Beschikbaarheid</h1><p>Geef per week door wanneer je kunt werken. De directie ziet dit bij het plannen.</p></div></div>
+    <div class="toolbar"><div class="weeknav">
+      <button class="btn icon" data-w="-1" aria-label="Vorige week">‹</button>
+      <div class="label"><strong>${wl.title}</strong><span>${wl.sub}</span></div>
+      <button class="btn icon" data-w="1" aria-label="Volgende week">›</button></div>
+      <div class="actions"><button class="btn sm" data-fill="hele_dag">Hele week beschikbaar</button>${prevAv.some(a => a.employee_id === S.me.id) ? '<button class="btn sm" data-copyprev>Zelfde als vorige week</button>' : ''}</div></div>
+    <form class="card avform" id="avform">${rows}
+      <div class="avfoot"><span class="hint">${filled ? `✓ ${filled} van 7 dagen doorgegeven` : 'Nog niet doorgegeven'}</span><button class="btn primary">Opslaan</button></div></form>`;
+  const f = $('#avform');
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const fd = new FormData(f);
+    const out = [...Array(7)].map((_, i) => ({ date: iso(addDays(mon, i)), kind: fd.get(`k-${i}`) || null, note: (fd.get(`n-${i}`) || '').trim() || null }));
+    try { await store.saveAvailability(out); toast('Beschikbaarheid opgeslagen'); rerender(); } catch (e) { toast(errMsg(e), 'error'); }
+  };
+  el.onclick = ev => {
+    const w = ev.target.closest('[data-w]'); if (w) { S.avWeek = addDays(S.avWeek, 7 * Number(w.dataset.w)); return rerender(); }
+    const fill = ev.target.closest('[data-fill]'); if (fill) { $$(`input[value="${fill.dataset.fill}"]`, f).forEach(r => (r.checked = true)); return toast('Ingevuld — vergeet niet op te slaan'); }
+    if (ev.target.closest('[data-copyprev]')) {
+      prevAv.filter(a => a.employee_id === S.me.id).forEach(a => { const i = dayIdx(parse(a.date)); const r = $(`input[name="k-${i}"][value="${a.kind}"]`, f); if (r) r.checked = true; if (a.note) f[`n-${i}`].value = a.note; });
+      return toast('Overgenomen van vorige week — vergeet niet op te slaan');
+    }
+  };
+}
+
+/* ================= Directie: aanvragen-subtabs ================= */
+async function mgrCounts() {
+  const [reqs, swaps, apps, open] = await Promise.all([store.requests(), store.swaps(), store.applications(), store.shifts(todayIso(), iso(addDays(new Date(), 120)))]);
+  const openIds = new Set(open.filter(s => !s.employee_id).map(s => s.id));
+  return {
+    verlof: reqs.filter(r => r.status === 'pending').length,
+    ruilen: swaps.filter(w => w.status === 'accepted').length,
+    open: new Set(apps.filter(a => a.status === 'pending' && openIds.has(a.shift_id)).map(a => a.shift_id)).size,
+  };
+}
+async function reqTabsHTML() {
+  const c = await mgrCounts();
+  return `<div class="subtabs">${[['verlof', 'Verlof', c.verlof], ['ruilen', 'Ruilen', c.ruilen], ['open', 'Open diensten', c.open], ['beschikbaar', 'Beschikbaarheid', 0]].map(([k, l, n]) => `<button data-rt="${k}" class="${S.reqTab === k ? 'active' : ''}">${l}${n ? ` <span class="count">${n}</span>` : ''}</button>`).join('')}</div>`;
+}
+function rtClick(ev) { const b = ev.target.closest('[data-rt]'); if (b) { S.reqTab = b.dataset.rt; rerender(); return true; } return false; }
+
+async function viewSwapsMgr(el) {
+  const [swaps, emps, st] = await Promise.all([store.swaps(), store.employees(), store.settings()]);
+  const ids = [...new Set(swaps.flatMap(w => [w.shift_id, w.swap_shift_id]).filter(Boolean))];
+  const shifts = ids.length ? await store.shifts(iso(addDays(new Date(), -60)), iso(addDays(new Date(), 120))) : [];
+  const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+  const sh = id => shifts.find(s => s.id === id);
+  const fn = id => byId[id]?.name || '—';
+  const L = s => (s ? `${fmtShort(s.date)} · ${hm(s.start_time)}–${hm(s.end_time)}${s.position ? ' · ' + esc(s.position) : ''}` : 'Dienst');
+  S.swFilter ||= 'todo';
+  const list = S.swFilter === 'todo' ? swaps.filter(w => ['open', 'accepted'].includes(w.status)) : swaps;
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Aanvragen</h1><p>Diensten die medewerkers onderling ruilen of overdragen.</p></div></div>
+    ${await reqTabsHTML()}
+    <div class="toolbar"><div class="filters"><button data-swf="todo" class="${S.swFilter === 'todo' ? 'active' : ''}">Lopend</button><button data-swf="all" class="${S.swFilter === 'all' ? 'active' : ''}">Alles</button></div>
+      <label class="check small"><input type="checkbox" data-needapp ${st.swap_needs_approval !== false ? 'checked' : ''}> Ruilen moet door directie worden goedgekeurd</label></div>
+    ${list.length ? `<div class="reqs">${list.map(w => {
+      const s = sh(w.shift_id), s2 = w.swap_shift_id ? sh(w.swap_shift_id) : null, taker = w.taken_by || w.to_employee;
+      const clash = taker && s && shifts.find(x => x.employee_id === taker && x.date === s.date && x.id !== w.swap_shift_id);
+      return `<article class="card req"><div class="req-head"><strong>${esc(fn(w.from_employee))} → ${taker ? esc(fn(taker)) : '<span class="muted">iedereen</span>'}</strong><span class="badge">${s2 ? 'Ruil' : 'Overdragen'}</span><span class="status ${w.status === 'approved' ? 'approved' : ['rejected', 'cancelled'].includes(w.status) ? 'rejected' : 'pending'}">${SWAPST[w.status]}</span></div>
+        <p class="dates">${L(s)}</p>${s2 ? `<p class="note">Tegen: ${L(s2)}</p>` : ''}${w.note ? `<p class="note">“${esc(w.note)}”</p>` : ''}
+        ${clash ? `<p class="conflict">⚠︎ ${esc(fn(taker))} werkt die dag al ${hm(clash.start_time)}–${hm(clash.end_time)}.</p>` : ''}
+        ${w.manager_note ? `<p class="reply"><strong>Notitie:</strong> ${esc(w.manager_note)}</p>` : ''}
+        ${w.status === 'accepted' ? `<div class="req-actions"><button class="btn sm ok" data-swok="${w.id}">Goedkeuren</button><button class="btn sm danger" data-swno="${w.id}">Afwijzen</button></div>` : ''}</article>`;
+    }).join('')}</div>` : `<div class="card empty">${S.swFilter === 'todo' ? 'Geen lopende ruilverzoeken.' : 'Nog geen ruilverzoeken.'}</div>`}`;
+  el.onclick = async ev => {
+    if (rtClick(ev)) return;
+    const f = ev.target.closest('[data-swf]'); if (f) { S.swFilter = f.dataset.swf; return rerender(); }
+    try {
+      const ok = ev.target.closest('[data-swok]'); if (ok) { await store.swapDecide(ok.dataset.swok, true, null); toast('Ruil goedgekeurd — rooster aangepast'); return rerender(); }
+    } catch (e) { return toast(errMsg(e), 'error'); }
+    const no = ev.target.closest('[data-swno]');
+    if (no) openDialog('Ruil afwijzen', `<label class="field">Reden (beide medewerkers zien dit)<input name="note" placeholder="Bijv. onvoldoende ervaring achter de bar"></label><div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn danger" value="save">Afwijzen</button></div>`, {
+      async onSubmit(fd) { await store.swapDecide(no.dataset.swno, false, fd.get('note').trim()); toast('Ruil afgewezen'); rerender(); } });
+  };
+  el.onchange = async ev => { if (ev.target.matches('[data-needapp]')) { await store.saveSettings({ swap_needs_approval: ev.target.checked }); toast(ev.target.checked ? 'Ruilen vraagt nu goedkeuring' : 'Ruilen gaat nu direct door na akkoord collega'); } };
+}
+
+async function viewOpenMgr(el) {
+  const today = todayIso(), to = iso(addDays(new Date(), 120));
+  const [shifts, apps, emps0, av] = await Promise.all([store.shifts(today, to), store.applications(), store.employees(), store.availability(today, to)]);
+  const emps = sortEmps(emps0);
+  const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+  const open = shifts.filter(s => !s.employee_id);
+  const weekHours = (emp, ds) => { const m = iso(mondayOf(parse(ds))), e = iso(addDays(parse(m), 6)); return shifts.filter(s => s.employee_id === emp && s.date >= m && s.date <= e).reduce((t, s) => t + shiftHours(s), 0); };
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Aanvragen</h1><p>Open diensten en wie zich heeft aangemeld.</p></div><button class="btn primary" data-newopen>+ Open dienst</button></div>
+    ${await reqTabsHTML()}
+    ${open.length ? `<div class="reqs">${open.map(s => {
+      const list = apps.filter(a => a.shift_id === s.id && a.status === 'pending');
+      return `<article class="card req"><div class="req-head"><strong>${fmtShort(s.date)} · ${hm(s.start_time)}–${hm(s.end_time)}</strong>${s.position ? `<span class="badge">${esc(s.position)}</span>` : ''}<span class="status ${s.published ? 'pending' : 'rejected'}">${s.published ? `${list.length} aanmelding${list.length === 1 ? '' : 'en'}` : 'Concept – nog niet zichtbaar'}</span></div>
+        ${s.note ? `<p class="note">${esc(s.note)}</p>` : ''}
+        ${list.length ? `<ul class="applist">${list.map(a => { const e = byId[a.employee_id] || {}; const v = av.find(x => x.employee_id === a.employee_id && x.date === s.date); const h = weekHours(a.employee_id, s.date);
+          return `<li><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name || '?')}</strong><span class="muted small">${fmtH(h)} u die week${e.contract_hours ? ` / ${fmtH(Number(e.contract_hours))}` : ''}${v ? ' · ' + AVAIL_SHORT[v.kind] : ''}</span><button class="btn sm ok" data-assign="${s.id}|${a.employee_id}">Toewijzen</button></li>`; }).join('')}</ul>` : s.published ? '<p class="hint">Nog niemand aangemeld.</p>' : '<p class="hint">Publiceer de week in Planning om deze dienst zichtbaar te maken.</p>'}
+        <div class="req-actions"><button class="btn sm" data-editopen="${s.id}">Bewerken</button></div></article>`;
+    }).join('')}</div>` : '<div class="card empty">Geen open diensten. Maak er een via <strong>+ Open dienst</strong> of in de planning (kies “Open dienst” als medewerker).</div>'}`;
+  el.onclick = async ev => {
+    if (rtClick(ev)) return;
+    const a = ev.target.closest('[data-assign]');
+    if (a) { const [sid, emp] = a.dataset.assign.split('|'); try { await store.openAssign(sid, emp); toast(`Toegewezen aan ${byId[emp]?.name.split(' ')[0]}`); rerender(); } catch (e) { toast(errMsg(e), 'error'); } return; }
+    const t = CFG.diensten[0] || { start: '17:00', end: '23:00', pauze: 30 };
+    if (ev.target.closest('[data-newopen]')) return shiftDialog({ employee_id: null, date: today, start_time: t.start, end_time: t.end, break_minutes: t.pauze || 0, position: '', note: '' }, emps, shifts, [], av, apps);
+    const ed = ev.target.closest('[data-editopen]'); if (ed) return shiftDialog(open.find(s => s.id === ed.dataset.editopen), emps, shifts, [], av, apps);
+  };
+}
+
+async function viewAvailMgr(el) {
+  S.avWeek ||= addDays(mondayOf(new Date()), 7);
+  const mon = S.avWeek, from = iso(mon), to = iso(addDays(mon, 6));
+  const [emps0, av] = await Promise.all([store.employees(), store.availability(from, to)]);
+  const emps = sortEmps(emps0).filter(e => e.active !== false);
+  const wl = weekLabel(mon);
+  const missing = emps.filter(e => e.role !== 'manager' && !av.some(a => a.employee_id === e.id));
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Aanvragen</h1><p>Doorgegeven beschikbaarheid per week.</p></div></div>
+    ${await reqTabsHTML()}
+    <div class="toolbar"><div class="weeknav">
+      <button class="btn icon" data-w="-1" aria-label="Vorige week">‹</button>
+      <div class="label"><strong>${wl.title}</strong><span>${wl.sub}</span></div>
+      <button class="btn icon" data-w="1" aria-label="Volgende week">›</button></div></div>
+    ${missing.length ? `<p class="warnbox" style="margin:0 0 12px">Nog niet doorgegeven: ${missing.map(e => esc(e.name.split(' ')[0])).join(', ')}</p>` : '<p class="msg ok">Iedereen heeft zijn beschikbaarheid doorgegeven ✓</p>'}
+    <div class="card table-wrap"><table class="list avtable">
+      <thead><tr><th>Medewerker</th>${[...Array(7)].map((_, i) => `<th>${DAG[i]} ${addDays(mon, i).getDate()}</th>`).join('')}</tr></thead>
+      <tbody>${emps.map(e => `<tr><td><div class="namecell"><span class="dot" style="background:${esc(e.color || COLORS[0])}"></span>${esc(e.name)}</div></td>${[...Array(7)].map((_, i) => { const a = av.find(x => x.employee_id === e.id && x.date === iso(addDays(mon, i))); return `<td>${a ? `<span class="av av-${a.kind}" title="${esc(a.note || '')}">${AVAIL_SHORT[a.kind]}</span>${a.note ? `<small class="muted avn">${esc(a.note)}</small>` : ''}` : '<span class="muted">—</span>'}</td>`; }).join('')}</tr>`).join('')}</tbody>
+    </table></div>`;
+  el.onclick = ev => { if (rtClick(ev)) return; const w = ev.target.closest('[data-w]'); if (w) { S.avWeek = addDays(S.avWeek, 7 * Number(w.dataset.w)); rerender(); } };
 }
 
 /* ================= Feestdagen & toeslag-uren ================= */
@@ -1110,7 +1651,7 @@ async function viewHours(el) {
   const detail = () => {
     const byId = Object.fromEntries(emps.map(e => [e.id, e]));
     return [['Datum', 'Dag', 'Medewerker', 'E-mail', 'Functie', 'Begin', 'Eind', 'Pauze (min)', 'Uren (netto)', 'Avond', 'Nacht', 'Zondag', 'Feestdag', 'Status', 'Notitie'],
-      ...shifts.map(s => { const e = byId[s.employee_id] || {}; const sp = splitShift(s); return [s.date, DAG[dayIdx(parse(s.date))], e.name, e.email, s.position || '', hm(s.start_time), hm(s.end_time), s.break_minutes || 0, r2(shiftHours(s)), r2(sp.avond), r2(sp.nacht), r2(sp.zondag), r2(sp.feestdag), s.published ? 'gepubliceerd' : 'concept', s.note || '']; })];
+      ...shifts.map(s => { const e = byId[s.employee_id] || { name: '(open dienst)' }; const sp = splitShift(s); return [s.date, DAG[dayIdx(parse(s.date))], e.name, e.email, s.position || '', hm(s.start_time), hm(s.end_time), s.break_minutes || 0, r2(shiftHours(s)), r2(sp.avond), r2(sp.nacht), r2(sp.zondag), r2(sp.feestdag), s.published ? 'gepubliceerd' : 'concept', s.note || '']; })];
   };
   const leave = () => {
     const byId = Object.fromEntries(emps.map(e => [e.id, e]));

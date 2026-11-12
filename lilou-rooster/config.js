@@ -18,6 +18,9 @@ window.ROOSTER_CONFIG = {
   supabaseUrl: '',
   supabaseAnonKey: '',
 
+  // Pushmeldingen: publieke VAPID-sleutel (zie README → Pushmeldingen)
+  vapidPublicKey: '',
+
   // Functies / posities waarvoor je inplant
   posities: ['Bediening', 'Bar', 'Keuken', 'Afwas', 'Shiftleader'],
 

@@ -33,6 +33,17 @@ op hun telefoon of computer om hun rooster te zien en vragen zelf vakantie of vr
 - *Uren & export* rekent op **gepland** of op **goedgekeurde gewerkte** uren, plus een
   export van de volledige klokregistratie.
 
+**Open diensten, ruilen, beschikbaarheid en meldingen**
+- **Open diensten**: plan een dienst zonder naam (kies “Open dienst”). Na publiceren krijgt
+  het team een melding en kan iedereen zich aanmelden; de directie wijst toe.
+- **Ruilen / overdragen**: een medewerker biedt een dienst aan iedereen of aan één collega
+  aan, eventueel in ruil voor een dienst van die collega. De collega accepteert, de directie
+  keurt goed (uit te zetten) en pas dan verandert het rooster.
+- **Beschikbaarheid per week**: per dag hele dag / ochtend / middag / avond / niet, met
+  opmerking. Zichtbaar in de planning en bij inplannen (waarschuwing bij “niet”).
+- **Meldingen**: belletje in de app (nieuw rooster, dienst gewijzigd of vervallen, open
+  dienst, ruilverzoek, aanvraag beoordeeld) en **pushmeldingen** op de telefoon.
+
 **Voor medewerkers**
 - **Mijn rooster**: eerstvolgende dienst en de komende 6 weken, met uren per week.
 - **Zet in mijn agenda**: download alle diensten als agendabestand (iPhone, Google, Outlook).
@@ -81,6 +92,20 @@ Medewerkers moeten bij de eerste keer klokken locatietoegang toestaan in hun bro
 > Eerlijk is eerlijk: locatie op een telefoon is met speciale apps te vervalsen. De
 > controle houdt het overgrote deel van de fouten en gemakzucht tegen; de directie ziet
 > afstand en meldingen bij elke registratie terug.
+
+### Pushmeldingen (± 15 minuten, eenmalig)
+1. Maak sleutels aan: `npx web-push generate-vapid-keys` (op je eigen computer).
+2. Zet de **publieke** sleutel in `config.js` bij `vapidPublicKey`.
+3. Installeer de Supabase CLI en zet de functie online:
+   `supabase functions deploy send-push` (code staat in `supabase/functions/send-push`).
+4. Zet bij Supabase → *Edge Functions → Secrets*: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
+   (de geheime sleutel, nooit in de app zetten) en `VAPID_SUBJECT` (bijv. `mailto:info@lilou.nl`).
+5. Supabase → *Database → Webhooks* → nieuwe hook: tabel `notifications`, event *Insert*,
+   type *Supabase Edge Functions*, functie `send-push`.
+6. Medewerkers tikken in de app op het belletje → *Pushmeldingen aanzetten*.
+   **iPhone:** werkt alleen als de app op het beginscherm staat (iOS 16.4 of nieuwer).
+
+Zonder deze stappen werken de meldingen gewoon in de app (belletje), alleen niet als push.
 
 ### Medewerkers toevoegen
 Voeg ze toe onder **Team** met hun e-mailadres. Daarna kiezen ze zelf *Eerste keer inloggen*
