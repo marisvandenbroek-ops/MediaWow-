@@ -88,8 +88,9 @@ die alleen in de browser wordt bewaard. Handig om te laten zien; niet om echt me
 
 ## Live zetten (± 20 minuten)
 
-De gegevens en logins worden opgeslagen in **Supabase** (gratis tot ruim 50.000 gebruikers,
-servers in de EU mogelijk).
+De gegevens en logins worden opgeslagen in **Supabase** (servers in de EU). Het gratis
+abonnement is genoeg om te testen; voor echt gebruik raden we **Pro** aan (± $25 p/m) vanwege
+dagelijkse back-ups en omdat een gratis project na een week zonder gebruik wordt gepauzeerd.
 
 1. **Supabase-project aanmaken** — ga naar supabase.com → *New project*. Kies regio
    **Central EU (Frankfurt)** i.v.m. AVG.
@@ -104,9 +105,16 @@ servers in de EU mogelijk).
 4. **Sleutels invullen** — *Project Settings → API*: kopieer de *Project URL* en de
    *anon public* key naar `supabaseUrl` en `supabaseAnonKey` in `config.js`.
    (De anon key mag openbaar zijn; de beveiliging zit in de database-regels.)
-5. **Online zetten** — upload de map `lilou-rooster` naar een host met https, bijvoorbeeld
-   Netlify (map slepen op app.netlify.com/drop), Vercel of een subdomein als
-   `rooster.lilou.nl` op de eigen hosting.
+5. **Online zetten (SiteGround)**
+   1. *Site Tools → Domain → Subdomains*: maak `rooster` aan (bijv. `rooster.lilou.nl`).
+      Staat het domein van Lilou elders, laat daar dan een A-record voor `rooster` naar het
+      IP-adres van je SiteGround-site wijzen (staat in *Site Tools → Dashboard*).
+   2. *Security → SSL Manager*: installeer **Let's Encrypt** voor het subdomein en zet
+      *HTTPS Enforce* aan. Zonder https werken inloggen, locatie en pushmeldingen niet.
+   3. *Site → File Manager*: open de map van het subdomein (`rooster.lilou.nl/public_html`),
+      upload `lilou-rooster.zip` en kies *Extract*. Het bestand `.htaccess` zit erbij.
+   4. Na een update: upload de nieuwe bestanden en kies *Speed → Caching → Flush Cache*.
+   (Netlify, Vercel of andere hosting met https werkt ook.)
 6. **Auth-instellingen** — in Supabase onder *Authentication → URL Configuration*:
    zet *Site URL* op het adres uit stap 5 en voeg datzelfde adres toe aan *Redirect URLs*.
    Optioneel: pas onder *Email Templates* de teksten aan naar het Nederlands.

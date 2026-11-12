@@ -1,0 +1,34 @@
+# Instellingen voor Apache-hosting (bijv. SiteGround)
+
+# Altijd via een beveiligde verbinding (nodig voor inloggen, locatie en pushmeldingen)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} off
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Juiste bestandstypes
+AddType application/manifest+json .webmanifest
+AddType text/javascript .js
+
+# Geen mappenoverzicht tonen
+Options -Indexes
+
+<IfModule mod_headers.c>
+  # App-bestanden altijd controleren op een nieuwe versie (na een update ziet iedereen meteen de nieuwe app)
+  <FilesMatch "\.(html|js|css|webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  <Files "sw.js">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </Files>
+  # Afbeeldingen mogen lang bewaard worden
+  <FilesMatch "\.(png|svg|jpg)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+  # Beveiliging
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Permissions-Policy "geolocation=(self), camera=(), microphone=()"
+</IfModule>
