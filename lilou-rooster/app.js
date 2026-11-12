@@ -253,7 +253,7 @@ function ask(msg, okLabel = 'Doorgaan') {
 
 /* ================= Auth screens ================= */
 function authPage(card) {
-  const top = CFG.logoAuth ? `<div class="auth-brand"><img src="${esc(CFG.logoAuth)}" alt="${esc(CFG.bedrijf)}"><span>Rooster</span></div>` : '';
+  const top = CFG.logoAuth ? `<div class="auth-brand"><img src="${esc(CFG.logoAuth)}" alt="${esc(CFG.bedrijf)}"><span>Rooster${location.hash === '#directie' ? ' · Directie' : location.hash === '#personeel' ? ' · Personeel' : ''}</span></div>` : '';
   return `<div class="auth"><div class="auth-wrap">${top}<div class="auth-card">${card}</div></div></div>`;
 }
 const authLogo = () => (CFG.logoAuth ? '' : `<div class="logo big">${esc((CFG.bedrijf || CFG.appName).charAt(0))}</div>`);
@@ -262,7 +262,8 @@ async function renderAuth(mode = 'login', msg = '') {
   const letter = esc((CFG.bedrijf || CFG.appName).charAt(0));
   let inner = '';
   if (store.demo) {
-    const users = await store.demoUsers();
+    const h = (location.hash || '').slice(1);
+    const users = (await store.demoUsers()).filter(u => h === 'directie' ? u.role === 'manager' : h === 'personeel' ? u.role !== 'manager' : true);
     inner = `<div class="demo-box">
       <p><strong>Demo-modus.</strong> Er is nog geen database gekoppeld; alles blijft in deze browser. Kies als wie je wilt inloggen:</p>
       <div class="demo-list">${users.map(u => `<button class="btn" data-demo="${u.id}"><span class="dot" style="background:${esc(u.color)};margin:0"></span>${esc(u.name)} <span class="muted small">· ${u.role === 'manager' ? 'leidinggevende' : esc(u.position || 'medewerker')}</span></button>`).join('')}</div>
@@ -636,7 +637,10 @@ function shiftDialog(s, emps, weekShifts, leaves) {
 /* ================= My schedule ================= */
 async function viewMine(el) {
   const start = mondayOf(new Date());
-  const from = iso(start), to = iso(addDays(start, 6 * 7 - 1));
+  const sel = S.mineWeek || null; // null = komende weken, anders maandag van gekozen week
+  const fromD = sel && sel < start ? sel : start;
+  const toD = sel && addDays(sel, 6) > addDays(start, 41) ? addDays(sel, 6) : addDays(start, 41);
+  const from = iso(fromD), to = iso(toD);
   const [all, reqs, emps] = await Promise.all([store.shifts(from, to), store.requests(), store.employees()]);
   const nameOf = Object.fromEntries(emps.map(e => [e.id, e.name.split(' ')[0]]));
   const withWho = s => { const o = all.filter(x => x.date === s.date && x.employee_id !== S.me.id && x.published).map(x => nameOf[x.employee_id]).filter(Boolean); return [...new Set(o)]; };
@@ -646,36 +650,69 @@ async function viewMine(el) {
   const nowHM = `${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
   const next = mine.find(s => s.date > today || (s.date === today && hm(s.end_time) > nowHM) || (s.date === today && mins(s.end_time) <= mins(s.start_time)));
 
-  let weeks = '';
-  for (let w = 0; w < 6; w++) {
-    const mon = addDays(start, w * 7);
+  const weekBlock = (mon, showOff, compact) => {
     const wFrom = iso(mon), wTo = iso(addDays(mon, 6));
     const ws = mine.filter(s => s.date >= wFrom && s.date <= wTo);
     const wl = myLeaves.filter(r => overlaps(r.start_date, r.end_date, wFrom, wTo));
-    if (!ws.length && !wl.length) continue;
+    if (!showOff && !ws.length && !wl.length) return '';
     const h = ws.reduce((t, s) => t + shiftHours(s), 0);
     const items = [];
     for (let i = 0; i < 7; i++) {
       const ds = iso(addDays(mon, i));
       const d = parse(ds);
       const dayHead = `<div class="d"><span>${DAG[i]}</span><b>${d.getDate()}</b></div>`;
-      ws.filter(s => s.date === ds).forEach(s => items.push(`<li class="${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${hm(s.start_time)} – ${hm(s.end_time)}</strong><small>${esc(s.position || '')}${s.break_minutes ? ` · ${s.break_minutes} min pauze` : ''}${s.note ? ` · ${esc(s.note)}` : ''}</small>${withWho(s).length ? `<small class="with">Met ${esc(withWho(s).join(', '))}</small>` : ''}</div><div class="h">${fmtH(shiftHours(s))} u</div></li>`));
+      const fd = feestdag(ds);
+      ws.filter(s => s.date === ds).forEach(s => items.push(`<li class="${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${hm(s.start_time)} – ${hm(s.end_time)}</strong><small>${esc(s.position || '')}${s.break_minutes ? ` · ${s.break_minutes} min pauze` : ''}${s.note ? ` · ${esc(s.note)}` : ''}${fd ? ` · ${esc(fd)}` : ''}</small>${withWho(s).length ? `<small class="with">Met ${esc(withWho(s).join(', '))}</small>` : ''}</div><div class="h">${fmtH(shiftHours(s))} u</div></li>`));
+      if (ws.some(s => s.date === ds)) continue;
       const lv = wl.find(r => r.start_date <= ds && r.end_date >= ds);
-      if (lv && !ws.some(s => s.date === ds)) items.push(`<li class="off ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${esc(REQ[lv.type])}</strong></div><div class="h"><span class="pill ok">vrij</span></div></li>`);
+      if (lv) items.push(`<li class="off ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${esc(REQ[lv.type])}</strong></div><div class="h"><span class="pill ok">vrij</span></div></li>`);
+      else if (showOff) items.push(`<li class="off free ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>Vrij</strong>${fd ? `<small>${esc(fd)}</small>` : ''}</div><div class="h"></div></li>`);
     }
-    weeks += `<section class="weekblock"><div class="weekblock-head"><h3>Week ${weekNr(mon)} <span class="muted" style="font-family:var(--font);font-weight:400;font-size:13px">· ${fmt(mon, { day: 'numeric', month: 'short' })} – ${fmt(addDays(mon, 6), { day: 'numeric', month: 'short' })}</span></h3><span>${fmtH(h)} uur</span></div><div class="card"><ul class="daylist">${items.join('')}</ul></div></section>`;
+    if (compact) return `<section class="weekblock"><div class="weekblock-head"><span>${ws.length} dienst${ws.length === 1 ? '' : 'en'}</span><span><strong style="color:var(--text)">${fmtH(h)} uur</strong></span></div><div class="card"><ul class="daylist">${items.join('')}</ul></div></section>`;
+    return `<section class="weekblock"><div class="weekblock-head"><h3>Week ${weekNr(mon)} <span class="muted" style="font-family:var(--font);font-weight:400;font-size:13px">· ${fmt(mon, { day: 'numeric', month: 'short' })} – ${fmt(addDays(mon, 6), { day: 'numeric', month: 'short' })}</span></h3><span>${ws.length} dienst${ws.length === 1 ? '' : 'en'} · ${fmtH(h)} uur</span></div><div class="card"><ul class="daylist">${items.join('')}</ul></div></section>`;
+  };
+
+  let body;
+  if (sel) {
+    const wl = weekLabel(sel);
+    body = `<div class="toolbar mine-nav"><div class="weeknav">
+        <button class="btn icon" data-w="-1" aria-label="Vorige week">‹</button>
+        <div class="label"><strong>${wl.title}</strong><span>${wl.sub}</span></div>
+        <button class="btn icon" data-w="1" aria-label="Volgende week">›</button>
+        ${iso(sel) !== iso(start) ? '<button class="btn ghost sm" data-w="0">Deze week</button>' : ''}
+      </div></div>
+      ${weekBlock(sel, true, true)}
+      ${sel > addDays(start, 7 * 5) || !mine.some(s => s.date >= iso(sel) && s.date <= iso(addDays(sel, 6))) ? '<p class="hint" style="text-align:center">Diensten verschijnen hier zodra de week is gepubliceerd.</p>' : ''}`;
+  } else {
+    let weeks = '';
+    for (let w = 0; w < 6; w++) weeks += weekBlock(addDays(start, w * 7), false);
+    body = weeks || '<div class="card empty">Er staan nog geen gepubliceerde diensten voor je ingepland.</div>';
   }
 
   el.innerHTML = `
-    <div class="page-head"><div><h1>Hoi ${esc(S.me.name.split(' ')[0])}</h1><p>Je rooster voor de komende weken.</p></div>
+    <div class="page-head"><div><h1>Hoi ${esc(S.me.name.split(' ')[0])}</h1><p>Je rooster${sel ? ' per week' : ' voor de komende weken'}.</p></div>
       ${mine.length ? '<button class="btn" data-ics>📅 Zet in mijn agenda</button>' : ''}</div>
-    ${next ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
-    ${weeks || '<div class="card empty">Er staan nog geen gepubliceerde diensten voor je ingepland.</div>'}
+    ${next && !sel ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
+    <div class="filters mine-filter"><button data-mf="all" class="${sel ? '' : 'active'}">Komende weken</button><button data-mf="week" class="${sel ? 'active' : ''}">Per week</button></div>
+    ${body}
   `;
   el.onclick = ev => {
     if (ev.target.closest('[data-ics]')) downloadIcs(mine);
-    const g = ev.target.closest('[data-goto]'); if (g) go(g.dataset.goto);
+    const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
+    const mf = ev.target.closest('[data-mf]'); if (mf) { S.mineWeek = mf.dataset.mf === 'week' ? start : null; return rerender(); }
+    const w = ev.target.closest('[data-w]');
+    if (w) { const n = Number(w.dataset.w); S.mineWeek = n === 0 ? start : addDays(S.mineWeek, 7 * n); return rerender(); }
   };
+  if (sel) {
+    let x0 = null, y0 = null;
+    el.ontouchstart = ev => { x0 = ev.touches[0].clientX; y0 = ev.touches[0].clientY; };
+    el.ontouchend = ev => {
+      if (x0 == null) return;
+      const dx = ev.changedTouches[0].clientX - x0, dy = ev.changedTouches[0].clientY - y0; x0 = null;
+      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      S.mineWeek = addDays(S.mineWeek, dx < 0 ? 7 : -7); rerender();
+    };
+  }
 }
 
 function downloadIcs(shifts) {
@@ -1049,6 +1086,7 @@ async function boot() {
   try { handleSession(await store.init()); } catch (e) { console.error(e); renderAuth('login', `<div class="msg err">${esc(errMsg(e))}</div>`); }
 }
 
+window.addEventListener('hashchange', () => { if (store && !S.me && store.demo) renderAuth(); });
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) { /* ignore */ }
 }

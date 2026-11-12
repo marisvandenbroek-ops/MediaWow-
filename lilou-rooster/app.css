@@ -299,6 +299,12 @@ button.chip:hover { filter: brightness(.97); }
 .daylist small.with, .hero-next .with { color: var(--accent); font-size: 12.5px; }
 .hero-next .with { color: inherit; opacity: .85; margin-top: 6px; font-size: 13.5px; }
 
+.mine-filter { margin: 0 0 14px; }
+.mine-nav { margin-bottom: 12px; }
+.daylist li.free .t strong { color: var(--muted); font-weight: 400; }
+.daylist li.free { padding-top: 9px; padding-bottom: 9px; }
+.daylist li.free .d b { color: var(--muted); }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }
