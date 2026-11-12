@@ -13,8 +13,12 @@ op hun telefoon of computer om hun rooster te zien en vragen zelf vakantie of vr
 - **Aanvragen**: verlof/vrije dagen goedkeuren of afwijzen (met reden), inclusief melding
   als iemand in die periode al is ingepland.
 - **Team**: medewerkers, functie, contracturen, kleur, rol (medewerker/leidinggevende), actief/inactief.
-- **Uren**: geplande uren per maand t.o.v. contracturen + **CSV-export** (opent in Excel)
-  voor de salarisadministratie.
+- **Uren & export**: per maand, 4-wekenperiode of week de uren per medewerker, inclusief
+  avond-, nacht-, zondag- en feestdaguren (NL-feestdagen automatisch), verlof- en ziektedagen
+  en het verschil met het contract.
+- **Exports** (Excel/CSV of kopiëren naar Excel): urenoverzicht voor de salarisadministratie,
+  alle diensten in detail, verlof & ziekte, medewerkerslijst.
+- **Afdrukken / PDF** van het weekrooster (A4 liggend), om op te hangen in de keuken.
 
 **Voor medewerkers**
 - **Mijn rooster**: eerstvolgende dienst en de komende 6 weken, met uren per week.
@@ -64,6 +68,21 @@ Bij een medewerker vind je de knop **Kopieer uitnodigingsbericht** om via WhatsA
 ### Aanpassen
 In `config.js`: naam van de app, functies/posities en de snelkeuze-diensten.
 Kleuren staan bovenaan `app.css` (`--accent`, `--text`, …).
+
+## Van rooster naar boekhouding
+
+1. **Plannen en publiceren** in de app.
+2. **Einde periode** (maand of 4 weken, net hoe jullie verlonen): *Uren & export* →
+   **Urenoverzicht voor salarisadministratie** downloaden.
+3. **Salarisverwerking**: dat bestand gaat naar het salarispakket of het salarisbureau
+   (bijv. Nmbrs, Loket, Horecalonen of de accountant). Die maken de loonstroken en de
+   loonaangifte.
+4. **Boekhouding**: het salarispakket levert per periode een *journaalpost* (brutoloon,
+   loonheffing, pensioen, netto te betalen). Die boek je in het boekhoudpakket.
+
+De rooster-app levert dus de **uren**; lonen, loonheffing en loonstroken horen in het
+salarispakket, niet in de rooster-app. Let op: de export bevat *geplande* uren. Zodra de
+Lightspeed-koppeling er is, kunnen dat *gewerkte* (geklokte) uren worden.
 
 ## Beveiliging
 - Medewerkers zien alleen **gepubliceerde** diensten en alleen hun **eigen** aanvragen.

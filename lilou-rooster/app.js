@@ -337,7 +337,7 @@ function handleSession(r) {
 /* ================= Shell ================= */
 function tabsFor() {
   return isMgr()
-    ? [['planning', 'Planning'], ['aanvragen', 'Aanvragen'], ['team', 'Team'], ['uren', 'Uren'], ['mijn', 'Mijn rooster']]
+    ? [['planning', 'Planning'], ['aanvragen', 'Aanvragen'], ['team', 'Team'], ['uren', 'Uren & export'], ['mijn', 'Mijn rooster']]
     : [['mijn', 'Mijn rooster'], ['planning', 'Teamrooster'], ['aanvragen', 'Aanvragen']];
 }
 
@@ -433,6 +433,7 @@ async function viewWeek(el, editable) {
   const totalH = shifts.reduce((t, s) => t + shiftHours(s), 0);
 
   el.innerHTML = `
+    <div class="print-title">${esc(CFG.appName)} · ${wl.title} · ${wl.sub}</div>
     <div class="page-head"><div><h1>${editable ? 'Planning' : 'Teamrooster'}</h1><p>${editable ? 'Plan diensten in en publiceer de week zodra hij klaar is.' : 'Het gepubliceerde rooster van het hele team.'}</p></div></div>
     <div class="toolbar">
       <div class="weeknav">
@@ -442,13 +443,14 @@ async function viewWeek(el, editable) {
         <button class="btn ghost sm" data-act="today">Vandaag</button>
       </div>
       ${editable ? `<div class="actions">
+        <button class="btn" data-act="print">Afdrukken / PDF</button>
         <button class="btn" data-act="copy">Kopieer vorige week</button>
         <button class="btn primary" data-act="publish" ${concept ? '' : 'disabled'}>${concept ? `Publiceer ${concept} dienst${concept > 1 ? 'en' : ''}` : 'Alles gepubliceerd ✓'}</button>
       </div>` : ''}
     </div>
     ${editable ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof / niet beschikbaar</span></div>` : ''}
     ${people.length ? `<div class="grid-wrap"><table class="grid">
-      <thead><tr><th class="who">Medewerker</th>${days.map(d => `<th class="${iso(d) === today ? 'today' : ''}">${DAG[dayIdx(d)]}<b>${d.getDate()}</b></th>`).join('')}</tr></thead>
+      <thead><tr><th class="who">Medewerker</th>${days.map(d => `<th class="${iso(d) === today ? 'today' : ''}" ${feestdag(iso(d)) ? `title="${esc(feestdag(iso(d)))}"` : ''}>${DAG[dayIdx(d)]}<b>${d.getDate()}</b>${feestdag(iso(d)) ? `<em class="fd">${esc(feestdag(iso(d)))}</em>` : ''}</th>`).join('')}</tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr><th class="who">${fmtH(totalH)} u totaal</th>${foot}</tr></tfoot>
     </table></div>` : `<div class="card empty">Nog geen medewerkers. ${editable ? 'Voeg ze toe via <strong>Team</strong>.' : ''}</div>`}
@@ -465,6 +467,7 @@ async function viewWeek(el, editable) {
       await store.publish(from, to); toast('Week gepubliceerd'); return rerender();
     }
     if (act === 'copy') return copyWeek(shifts);
+    if (act === 'print') { try { window.print(); } catch (e) { toast('Afdrukken is hier niet beschikbaar', 'error'); } return; }
     const chip = ev.target.closest('[data-shift]');
     if (chip) return shiftDialog(shifts.find(s => s.id === chip.dataset.shift), emps, shifts, leaves);
     const cell = ev.target.closest('td.cell.editable');
@@ -793,55 +796,175 @@ function employeeDialog(e) {
   });
 }
 
-/* ================= Hours ================= */
+/* ================= Feestdagen & toeslag-uren ================= */
+function easter(y) {
+  const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25),
+    g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4,
+    l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451), n = h + l - 7 * m + 114;
+  return new Date(y, Math.floor(n / 31) - 1, (n % 31) + 1);
+}
+const _fd = {};
+function feestdag(ds) {
+  const y = Number(ds.slice(0, 4));
+  if (!_fd[y]) {
+    const e = easter(y);
+    const kd = new Date(y, 3, 27); if (kd.getDay() === 0) kd.setDate(26);
+    _fd[y] = {
+      [`${y}-01-01`]: 'Nieuwjaarsdag', [iso(e)]: '1e Paasdag', [iso(addDays(e, 1))]: '2e Paasdag', [iso(kd)]: 'Koningsdag',
+      [`${y}-05-05`]: 'Bevrijdingsdag', [iso(addDays(e, 39))]: 'Hemelvaartsdag', [iso(addDays(e, 49))]: '1e Pinksterdag',
+      [iso(addDays(e, 50))]: '2e Pinksterdag', [`${y}-12-25`]: '1e Kerstdag', [`${y}-12-26`]: '2e Kerstdag',
+      ...(CFG.extraFeestdagen || {}),
+    };
+  }
+  return _fd[y][ds] || null;
+}
+// Splitst een dienst in uren per toeslagcategorie (bruto, pauze niet afgetrokken)
+function splitShift(s) {
+  const T = Object.assign({ avondVan: '20:00', avondTot: '24:00', nachtVan: '00:00', nachtTot: '06:00' }, CFG.toeslagen || {});
+  const toM = t => (t === '24:00' ? 1440 : mins(t));
+  const inWin = (m, a, b) => (a <= b ? m >= a && m < b : m >= a || m < b);
+  const aV = toM(T.avondVan), aT = toM(T.avondTot), nV = toM(T.nachtVan), nT = toM(T.nachtTot);
+  let len = mins(s.end_time) - mins(s.start_time); if (len <= 0) len += 1440;
+  const out = { avond: 0, nacht: 0, zondag: 0, feestdag: 0 };
+  const start = mins(s.start_time);
+  const d0 = parse(s.date), d1 = addDays(d0, 1);
+  const info = [d0, d1].map(d => ({ sun: d.getDay() === 0, fd: !!feestdag(iso(d)) }));
+  for (let i = 0; i < len; i++) {
+    const abs = start + i, day = abs >= 1440 ? 1 : 0, m = abs % 1440;
+    if (inWin(m, aV, aT)) out.avond++;
+    if (inWin(m, nV, nT)) out.nacht++;
+    if (info[day].sun) out.zondag++;
+    if (info[day].fd) out.feestdag++;
+  }
+  for (const k in out) out[k] /= 60;
+  return out;
+}
+
+/* ================= Periodes ================= */
+function isoWeek1Monday(y) { return mondayOf(new Date(y, 0, 4)); }
+function periodRange(mode, anchor) {
+  if (mode === 'week') { const m = mondayOf(anchor); return { from: m, to: addDays(m, 6), label: `Week ${weekNr(m)}` }; }
+  if (mode === '4weken') {
+    const mon = mondayOf(anchor), thu = addDays(mon, 3), y = thu.getFullYear();
+    const w1 = isoWeek1Monday(y), wk = Math.round((mon - w1) / 604800000) + 1;
+    const p = Math.min(13, Math.ceil(wk / 4));
+    const from = addDays(w1, (p - 1) * 28);
+    const nextY = isoWeek1Monday(y + 1);
+    const to = p === 13 ? addDays(nextY, -1) : addDays(from, 27);
+    return { from, to, label: `Periode ${p} · ${y}` };
+  }
+  const f = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+  return { from: f, to: new Date(f.getFullYear(), f.getMonth() + 1, 0), label: fmt(f, { month: 'long', year: 'numeric' }) };
+}
+function shiftPeriod(mode, anchor, dir) {
+  if (mode === 'week') return addDays(anchor, 7 * dir);
+  if (mode === '4weken') { const r = periodRange(mode, anchor); return dir > 0 ? addDays(r.to, 1) : addDays(r.from, -1); }
+  return new Date(anchor.getFullYear(), anchor.getMonth() + dir, 1);
+}
+
+/* ================= Export helpers ================= */
+function saveFile(name, text, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function exportCsv(name, rows) {
+  const q = v => { const s = typeof v === 'number' ? String(v).replace('.', ',') : String(v ?? ''); return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  saveFile(name + '.csv', '﻿' + rows.map(r => r.map(q).join(';')).join('\r\n'), 'text/csv;charset=utf-8');
+}
+async function copyRows(rows) {
+  const tsv = rows.map(r => r.map(v => (typeof v === 'number' ? String(v).replace('.', ',') : String(v ?? '').replace(/[\t\n\r]+/g, ' '))).join('\t')).join('\n');
+  try { await navigator.clipboard.writeText(tsv); toast('Gekopieerd — plak het in Excel of Google Sheets'); }
+  catch (e) { toast('Kopiëren is hier niet toegestaan', 'error'); }
+}
+const r2 = n => Math.round(n * 100) / 100;
+const overlapDays = (r, from, to) => { const a = r.start_date > from ? r.start_date : from, b = r.end_date < to ? r.end_date : to; return a > b ? 0 : daysBetween(a, b); };
+
+/* ================= Uren & export ================= */
 async function viewHours(el) {
-  const [y, m] = S.month.split('-').map(Number);
-  const first = new Date(y, m - 1, 1), last = new Date(y, m, 0);
-  const from = iso(first), to = iso(last);
-  const [emps, shifts] = await Promise.all([store.employees(), store.shifts(from, to)]);
-  const weeks = last.getDate() / 7;
+  S.pmode ||= 'maand'; S.panchor ||= new Date(); if (S.onlyPub === undefined) S.onlyPub = true;
+  const P = periodRange(S.pmode, S.panchor);
+  const from = iso(P.from), to = iso(P.to);
+  const [emps, allShifts, reqs] = await Promise.all([store.employees(), store.shifts(from, to), store.requests()]);
+  const shifts = S.onlyPub ? allShifts.filter(s => s.published) : allShifts;
+  const weeks = daysBetween(from, to) / 7;
+  const approved = reqs.filter(r => r.status === 'approved');
+
   const rows = emps.map(e => {
     const mine = shifts.filter(s => s.employee_id === e.id);
     const h = mine.reduce((t, s) => t + shiftHours(s), 0);
+    const pauze = mine.reduce((t, s) => t + (Number(s.break_minutes) || 0) / 60, 0);
+    const sp = mine.map(splitShift).reduce((a, b) => ({ avond: a.avond + b.avond, nacht: a.nacht + b.nacht, zondag: a.zondag + b.zondag, feestdag: a.feestdag + b.feestdag }), { avond: 0, nacht: 0, zondag: 0, feestdag: 0 });
+    const lv = approved.filter(r => r.employee_id === e.id);
+    const verlof = lv.filter(r => r.type === 'vakantie' || r.type === 'vrij').reduce((t, r) => t + overlapDays(r, from, to), 0);
+    const ziek = lv.filter(r => r.type === 'ziek').reduce((t, r) => t + overlapDays(r, from, to), 0);
     const contract = e.contract_hours ? Number(e.contract_hours) * weeks : null;
-    return { e, n: mine.length, h, contract, diff: contract != null ? h - contract : null, concept: mine.filter(s => !s.published).length };
-  }).filter(r => r.n || r.e.active !== false);
-  const tot = rows.reduce((t, r) => t + r.h, 0);
-  const title = fmt(first, { month: 'long', year: 'numeric' });
+    return { e, n: mine.length, h, pauze, ...sp, verlof, ziek, contract, diff: contract != null ? h - contract : null };
+  }).filter(r => r.n || r.verlof || r.ziek || r.e.active !== false);
+  const T = rows.reduce((t, r) => ({ n: t.n + r.n, h: t.h + r.h, avond: t.avond + r.avond, nacht: t.nacht + r.nacht, zondag: t.zondag + r.zondag, feestdag: t.feestdag + r.feestdag }), { n: 0, h: 0, avond: 0, nacht: 0, zondag: 0, feestdag: 0 });
+  const conceptCount = allShifts.filter(s => !s.published).length;
+  const fdIn = []; for (let d = new Date(P.from); d <= P.to; d = addDays(d, 1)) { const f = feestdag(iso(d)); if (f) fdIn.push(`${f} (${fmtShort(iso(d))})`); }
+  const slug = `${S.pmode}-${from}_${to}`;
+
+  const payroll = () => [
+    ['Periode van', 'Periode tot', 'Medewerker', 'E-mail', 'Functie', 'Contract u/week', 'Diensten', 'Gewerkte uren (netto)', 'Pauze (u)', 'Avonduren', 'Nachturen', 'Zondaguren', 'Feestdaguren', 'Vakantie/vrij (dagen)', 'Ziek (dagen)', 'Contracturen periode', 'Verschil t.o.v. contract'],
+    ...rows.map(r => [from, to, r.e.name, r.e.email, r.e.position || '', r.e.contract_hours ?? '', r.n, r2(r.h), r2(r.pauze), r2(r.avond), r2(r.nacht), r2(r.zondag), r2(r.feestdag), r.verlof, r.ziek, r.contract != null ? r2(r.contract) : '', r.diff != null ? r2(r.diff) : '']),
+  ];
+  const detail = () => {
+    const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+    return [['Datum', 'Dag', 'Medewerker', 'E-mail', 'Functie', 'Begin', 'Eind', 'Pauze (min)', 'Uren (netto)', 'Avond', 'Nacht', 'Zondag', 'Feestdag', 'Status', 'Notitie'],
+      ...shifts.map(s => { const e = byId[s.employee_id] || {}; const sp = splitShift(s); return [s.date, DAG[dayIdx(parse(s.date))], e.name, e.email, s.position || '', hm(s.start_time), hm(s.end_time), s.break_minutes || 0, r2(shiftHours(s)), r2(sp.avond), r2(sp.nacht), r2(sp.zondag), r2(sp.feestdag), s.published ? 'gepubliceerd' : 'concept', s.note || '']; })];
+  };
+  const leave = () => {
+    const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+    return [['Medewerker', 'Soort', 'Van', 'Tot en met', 'Dagen totaal', 'Dagen in periode', 'Status', 'Toelichting', 'Reactie leidinggevende', 'Aangevraagd op'],
+      ...reqs.filter(r => overlaps(r.start_date, r.end_date, from, to)).map(r => [byId[r.employee_id]?.name || '', REQ[r.type], r.start_date, r.end_date, daysBetween(r.start_date, r.end_date), overlapDays(r, from, to), STATUS[r.status], r.note || '', r.manager_note || '', (r.created_at || '').slice(0, 10)])];
+  };
+  const team = () => [['Naam', 'E-mail', 'Telefoon', 'Functie', 'Rol', 'Contract u/week', 'Actief', 'Account geactiveerd'],
+    ...emps.map(e => [e.name, e.email, e.phone || '', e.position || '', e.role === 'manager' ? 'Leidinggevende' : 'Medewerker', e.contract_hours ?? '', e.active === false ? 'nee' : 'ja', e.user_id ? 'ja' : 'nee'])];
+  const EXPORTS = {
+    payroll: ['Urenoverzicht voor salarisadministratie', 'Per medewerker: gewerkte uren, avond-/nacht-/zondag-/feestdaguren, verlof- en ziektedagen. Dit bestand stuur je naar je salarisverwerker.', payroll, `salaris-${slug}`],
+    detail: ['Alle diensten (detail)', 'Elke dienst als losse regel met tijden, pauze en toeslaguren. Handig voor controle of voor je accountant.', detail, `diensten-${slug}`],
+    leave: ['Verlof & ziekte', 'Alle aanvragen die in deze periode vallen, met status en reactie.', leave, `verlof-${slug}`],
+    team: ['Medewerkerslijst', 'Contactgegevens, functies en contracturen van het hele team.', team, 'medewerkers'],
+  };
 
   el.innerHTML = `
-    <div class="page-head"><div><h1>Uren</h1><p>Geplande uren per medewerker, handig voor de salarisadministratie.</p></div>
-      <button class="btn" data-csv ${shifts.length ? '' : 'disabled'}>⬇︎ Exporteer CSV</button></div>
-    <div class="toolbar"><div class="weeknav">
-      <button class="btn icon" data-m="-1" aria-label="Vorige maand">‹</button>
-      <div class="label"><strong style="text-transform:capitalize">${esc(title)}</strong><span>${shifts.length} diensten</span></div>
-      <button class="btn icon" data-m="1" aria-label="Volgende maand">›</button></div></div>
+    <div class="page-head"><div><h1>Uren & export</h1><p>Overzicht per periode en exportbestanden voor salaris en boekhouding.</p></div></div>
+    <div class="toolbar">
+      <div class="weeknav">
+        <button class="btn icon" data-p="-1" aria-label="Vorige periode">‹</button>
+        <div class="label"><strong style="text-transform:capitalize">${esc(P.label)}</strong><span>${fmtShort(from)} – ${fmtShort(to)}</span></div>
+        <button class="btn icon" data-p="1" aria-label="Volgende periode">›</button>
+      </div>
+      <div class="actions">
+        <div class="filters">${[['maand', 'Maand'], ['4weken', '4 weken'], ['week', 'Week']].map(([k, l]) => `<button data-mode="${k}" class="${S.pmode === k ? 'active' : ''}">${l}</button>`).join('')}</div>
+        <label class="check small"><input type="checkbox" data-onlypub ${S.onlyPub ? 'checked' : ''}> Alleen gepubliceerd</label>
+      </div>
+    </div>
+    ${conceptCount && S.onlyPub ? `<p class="warnbox" style="margin:0 0 12px">Let op: ${conceptCount} dienst(en) in deze periode zijn nog concept en tellen niet mee.</p>` : ''}
+    ${fdIn.length ? `<p class="hint" style="margin:0 0 12px">Feestdagen in deze periode: ${esc(fdIn.join(', '))}</p>` : ''}
     <div class="card table-wrap"><table class="list">
-      <thead><tr><th>Medewerker</th><th class="num">Diensten</th><th class="num">Gepland</th><th class="num hide-sm">Contract (maand)</th><th class="num">Verschil</th></tr></thead>
-      <tbody>${rows.map(r => `<tr><td><div class="namecell"><span class="dot" style="background:${esc(r.e.color || COLORS[0])}"></span>${esc(r.e.name)}</div>${r.concept ? `<span class="muted small">${r.concept} concept</span>` : ''}</td>
-        <td class="num">${r.n}</td><td class="num">${fmtH(r.h)} u</td><td class="num hide-sm">${r.contract != null ? fmtH(r.contract) + ' u' : '—'}</td>
+      <thead><tr><th>Medewerker</th><th class="num">Diensten</th><th class="num">Uren</th><th class="num hide-sm">Avond</th><th class="num hide-sm">Nacht</th><th class="num hide-sm">Zondag</th><th class="num hide-sm">Feestdag</th><th class="num hide-sm">Verlof</th><th class="num hide-sm">Ziek</th><th class="num">t.o.v. contract</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td><div class="namecell"><span class="dot" style="background:${esc(r.e.color || COLORS[0])}"></span>${esc(r.e.name)}</div></td>
+        <td class="num">${r.n}</td><td class="num"><strong>${fmtH(r.h)}</strong></td>
+        <td class="num hide-sm">${fmtH(r.avond)}</td><td class="num hide-sm">${fmtH(r.nacht)}</td><td class="num hide-sm">${fmtH(r.zondag)}</td><td class="num hide-sm">${fmtH(r.feestdag)}</td>
+        <td class="num hide-sm">${r.verlof ? r.verlof + ' d' : '—'}</td><td class="num hide-sm">${r.ziek ? r.ziek + ' d' : '—'}</td>
         <td class="num ${r.diff == null ? '' : r.diff >= 0 ? 'pos' : 'neg'}">${r.diff == null ? '—' : (r.diff > 0 ? '+' : '') + fmtH(r.diff) + ' u'}</td></tr>`).join('')}</tbody>
-      <tfoot><tr><td>Totaal</td><td class="num">${shifts.length}</td><td class="num">${fmtH(tot)} u</td><td class="hide-sm"></td><td></td></tr></tfoot>
+      <tfoot><tr><td>Totaal</td><td class="num">${T.n}</td><td class="num">${fmtH(T.h)}</td><td class="num hide-sm">${fmtH(T.avond)}</td><td class="num hide-sm">${fmtH(T.nacht)}</td><td class="num hide-sm">${fmtH(T.zondag)}</td><td class="num hide-sm">${fmtH(T.feestdag)}</td><td class="hide-sm"></td><td class="hide-sm"></td><td></td></tr></tfoot>
     </table></div>
-    <p class="hint" style="margin-top:12px">Contracturen per maand = contracturen per week × ${fmtH(weeks)} weken. De CSV bevat elke dienst los (datum, tijden, pauze, uren) en opent direct in Excel.</p>`;
+    <h2 style="font-size:21px;margin:28px 0 12px">Exporteren</h2>
+    <div class="exports">${Object.entries(EXPORTS).map(([k, [t, d]]) => `<div class="card pad export"><h3>${t}</h3><p class="hint">${d}</p><div class="req-actions"><button class="btn primary sm" data-csv="${k}">⬇︎ Download (Excel/CSV)</button><button class="btn sm" data-copy="${k}">Kopieer tabel</button></div></div>`).join('')}</div>
+    <p class="hint" style="margin-top:14px">Uren zijn <strong>geplande</strong> uren (netto, na pauze). Toeslaguren zijn bruto (pauze niet afgetrokken), venster instelbaar in <code>config.js</code>: avond ${esc((CFG.toeslagen || {}).avondVan || '20:00')}–${esc((CFG.toeslagen || {}).avondTot || '24:00')}, nacht ${esc((CFG.toeslagen || {}).nachtVan || '00:00')}–${esc((CFG.toeslagen || {}).nachtTot || '06:00')}. CSV-bestanden openen direct in Excel (puntkomma, komma als decimaalteken).</p>`;
 
   el.onclick = ev => {
-    const mb = ev.target.closest('[data-m]');
-    if (mb) { const d = new Date(y, m - 1 + Number(mb.dataset.m), 1); S.month = iso(d).slice(0, 7); return rerender(); }
-    if (ev.target.closest('[data-csv]')) {
-      const byId = Object.fromEntries(emps.map(e => [e.id, e]));
-      const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-      const lines = [['Datum', 'Medewerker', 'E-mail', 'Functie', 'Begin', 'Eind', 'Pauze (min)', 'Uren', 'Status', 'Notitie'].map(q).join(';')];
-      shifts.forEach(s => {
-        const e = byId[s.employee_id] || {};
-        lines.push([s.date, e.name, e.email, s.position, hm(s.start_time), hm(s.end_time), s.break_minutes || 0, fmtH(shiftHours(s)), s.published ? 'gepubliceerd' : 'concept', s.note].map(q).join(';'));
-      });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
-      a.download = `uren-${S.month}.csv`; a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    }
+    const p = ev.target.closest('[data-p]'); if (p) { S.panchor = shiftPeriod(S.pmode, S.panchor, Number(p.dataset.p)); return rerender(); }
+    const m = ev.target.closest('[data-mode]'); if (m) { S.pmode = m.dataset.mode; return rerender(); }
+    const c = ev.target.closest('[data-csv]'); if (c) { const x = EXPORTS[c.dataset.csv]; exportCsv(x[3], x[2]()); return toast('Bestand gedownload'); }
+    const cp = ev.target.closest('[data-copy]'); if (cp) return copyRows(EXPORTS[cp.dataset.copy][2]());
   };
+  el.onchange = ev => { if (ev.target.matches('[data-onlypub]')) { S.onlyPub = ev.target.checked; rerender(); } };
 }
 
 /* ================= Boot ================= */

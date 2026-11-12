@@ -320,6 +320,31 @@ dialog.dlg::backdrop { background: rgba(23, 18, 15, .45); backdrop-filter: blur(
 .toast.error { background: var(--bad); color: #fff; }
 @keyframes tin { from { opacity: 0; transform: translateY(8px); } }
 
+/* ===== Exports ===== */
+.exports { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.export { display: flex; flex-direction: column; }
+.export h3 { font-size: 17px; margin-bottom: 6px; }
+.export .req-actions { margin-top: auto; padding-top: 12px; }
+.grid thead th em.fd { display: block; font-style: normal; font-size: 10px; color: var(--accent); text-transform: none; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+code { font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+.print-title { display: none; }
+
+/* ===== Print ===== */
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  :root { --bg: #fff; --surface: #fff; --surface-2: #f6f6f6; --line: #ccc; --shadow: none; }
+  body { background: #fff; font-size: 11px; }
+  .demo-banner, .topbar, .tabs, .toolbar, .legend, .add, .page-head, #toasts { display: none !important; }
+  main#view { padding: 0; max-width: none; }
+  .print-title { display: block; font: 600 16px var(--serif); margin-bottom: 8px; }
+  .grid-wrap { overflow: visible; box-shadow: none; }
+  table.grid { min-width: 0; }
+  .grid .who { position: static; width: 130px; }
+  .grid td.cell { height: auto; }
+  .chip, .leave { -webkit-print-color-adjust: exact; print-color-adjust: exact; break-inside: avoid; }
+  tr { break-inside: avoid; }
+}
+
 /* ===== Mobile ===== */
 @media (max-width: 860px) {
   .split { grid-template-columns: 1fr; }

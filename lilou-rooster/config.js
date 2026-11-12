@@ -16,6 +16,12 @@ window.ROOSTER_CONFIG = {
   // Functies / posities waarvoor je inplant
   posities: ['Bediening', 'Bar', 'Keuken', 'Afwas', 'Shiftleader'],
 
+  // Vensters voor toeslaguren in de urenexport (pas aan aan jullie arbeidsvoorwaarden)
+  toeslagen: { avondVan: '20:00', avondTot: '24:00', nachtVan: '00:00', nachtTot: '06:00' },
+
+  // Extra vrije dagen naast de wettelijke feestdagen, bv. { '2026-12-31': 'Oudejaarsdag' }
+  extraFeestdagen: {},
+
   // Snelkeuze-diensten in het inplanvenster
   diensten: [
     { label: 'Ochtend', start: '09:00', end: '15:00', pauze: 30 },
