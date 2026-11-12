@@ -1,53 +1,46 @@
-/* ===== Tokens ===== */
+/* ===== Tokens — huisstijl Lilou ===== */
 :root {
-  --bg: #f6f2ec;
+  --brand: #912508;
+  --brand-ink: #f9efe6;
+  --bg: #f9f3ec;
   --surface: #ffffff;
-  --surface-2: #faf7f3;
-  --line: #e7dfd5;
-  --line-strong: #d6cabc;
-  --text: #2b2420;
-  --muted: #7a6e64;
-  --accent: #9a5b3f;
-  --accent-ink: #ffffff;
-  --accent-soft: #f3e6de;
+  --surface-2: #fbf6f1;
+  --line: #ecdfd4;
+  --line-strong: #dccabb;
+  --text: #2b1611;
+  --muted: #7d6359;
+  --accent: #912508;
+  --accent-ink: #f9efe6;
+  --accent-soft: #f5e2d9;
   --ok: #3f7d58;
   --ok-soft: #e3f0e7;
-  --warn: #a66a12;
-  --warn-soft: #fbf0dc;
-  --bad: #b23b3b;
-  --bad-soft: #f8e3e3;
-  --shadow: 0 1px 2px rgba(43, 36, 32, .06), 0 8px 24px rgba(43, 36, 32, .06);
+  --warn: #a6650f;
+  --warn-soft: #fbefd9;
+  --bad: #b3261e;
+  --bad-soft: #f9e1df;
+  --shadow: 0 1px 2px rgba(43, 22, 17, .05), 0 8px 24px rgba(43, 22, 17, .06);
   --radius: 14px;
   --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --serif: 'Fraunces', Georgia, serif;
+  --serif: 'Bodoni Moda', 'Didot', Georgia, serif;
+  --caps: 'Josefin Sans', 'Inter', sans-serif;
+  --logo-light: block; --logo-dark: none;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #171412;
-    --surface: #211d1a;
-    --surface-2: #1c1916;
-    --line: #342d28;
-    --line-strong: #463d36;
-    --text: #f1ebe5;
-    --muted: #a99c90;
-    --accent: #d08a66;
-    --accent-ink: #1b1512;
-    --accent-soft: #3a2a21;
-    --ok: #7cc297;
-    --ok-soft: #1f3327;
-    --warn: #e3ac55;
-    --warn-soft: #3a2d17;
-    --bad: #ec8a8a;
-    --bad-soft: #3d2222;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    --bg: #1a1210; --surface: #241917; --surface-2: #1f1613; --line: #3a2a25; --line-strong: #4c3832;
+    --text: #f6ebe3; --muted: #b39a8f; --accent: #e08a6c; --accent-ink: #1a1210; --accent-soft: #42221a;
+    --ok: #7cc297; --ok-soft: #1f3327; --warn: #e3ac55; --warn-soft: #3a2d17; --bad: #f08c84; --bad-soft: #3f201d;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    --logo-light: none; --logo-dark: block;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #171412; --surface: #211d1a; --surface-2: #1c1916; --line: #342d28; --line-strong: #463d36;
-  --text: #f1ebe5; --muted: #a99c90; --accent: #d08a66; --accent-ink: #1b1512; --accent-soft: #3a2a21;
-  --ok: #7cc297; --ok-soft: #1f3327; --warn: #e3ac55; --warn-soft: #3a2d17; --bad: #ec8a8a; --bad-soft: #3d2222;
+  --bg: #1a1210; --surface: #241917; --surface-2: #1f1613; --line: #3a2a25; --line-strong: #4c3832;
+  --text: #f6ebe3; --muted: #b39a8f; --accent: #e08a6c; --accent-ink: #1a1210; --accent-soft: #42221a;
+  --ok: #7cc297; --ok-soft: #1f3327; --warn: #e3ac55; --warn-soft: #3a2d17; --bad: #f08c84; --bad-soft: #3f201d;
+  --logo-light: none; --logo-dark: block;
   color-scheme: dark;
 }
 
@@ -59,7 +52,7 @@ body {
   font: 15px/1.5 var(--font); -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
-h1, h2, h3 { font-family: var(--serif); font-weight: 600; margin: 0; line-height: 1.2; letter-spacing: -.01em; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 500; margin: 0; line-height: 1.2; letter-spacing: -.01em; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 a { color: var(--accent); }
@@ -121,13 +114,27 @@ label.field { display: grid; gap: 5px; font-size: 13px; font-weight: 500; color:
 
 .logo {
   width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none;
-  background: var(--text); color: var(--bg); font-family: var(--serif); font-size: 22px; font-weight: 600;
+  background: var(--brand); color: var(--brand-ink); font-family: var(--serif); font-size: 22px; font-weight: 500;
 }
 .logo.big { width: 56px; height: 56px; border-radius: 16px; font-size: 30px; }
 
+/* ===== Brand ===== */
+.wordmark { display: block; height: 30px; width: auto; }
+.wordmark.light { display: var(--logo-light); }
+.wordmark.dark { display: var(--logo-dark); }
+.brand .sub { font-family: var(--caps); font-size: 10.5px; letter-spacing: .28em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+.brand .stack-brand { display: grid; justify-items: start; }
+.auth { background: var(--brand); }
+.auth-brand { display: grid; justify-items: center; gap: 10px; margin-bottom: 26px; }
+.auth-brand img { width: min(240px, 62vw); height: auto; }
+.auth-brand span { font-family: var(--caps); color: var(--brand-ink); font-size: 12px; letter-spacing: .34em; text-transform: uppercase; opacity: .85; }
+.auth-wrap { width: 100%; max-width: 400px; }
+.auth-card { background: var(--surface); }
+.auth-card h1 { margin-top: 0; }
+
 /* ===== Shell ===== */
 .demo-banner {
-  background: var(--warn-soft); color: var(--warn); text-align: center; font-size: 13px; padding: 6px 16px;
+  background: var(--brand); color: var(--brand-ink); text-align: center; font-size: 13px; padding: 6px 16px;
 }
 .topbar {
   position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent);
@@ -229,14 +236,15 @@ button.chip:hover { filter: brightness(.97); }
 
 /* ===== My schedule ===== */
 .hero-next {
-  background: var(--text); color: var(--bg); border-radius: 18px; padding: 22px 24px; margin-bottom: 22px;
+  background: var(--brand); color: var(--brand-ink); border-radius: 18px; padding: 22px 24px; margin-bottom: 22px;
   display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
 }
 .hero-next small { text-transform: uppercase; letter-spacing: .08em; font-size: 11px; opacity: .7; }
 .hero-next h2 { font-size: 26px; margin-top: 4px; }
 .hero-next p { margin: 4px 0 0; opacity: .8; }
-.hero-next .btn { background: transparent; color: var(--bg); border-color: color-mix(in srgb, var(--bg) 40%, transparent); }
-.hero-next .btn:hover { background: color-mix(in srgb, var(--bg) 12%, transparent); }
+.hero-next .btn { background: transparent; color: var(--brand-ink); border-color: color-mix(in srgb, var(--brand-ink) 45%, transparent); }
+.hero-next .btn:hover { background: color-mix(in srgb, var(--brand-ink) 14%, transparent); }
+.hero-next small { font-family: var(--caps); letter-spacing: .24em; }
 .weekblock { margin-bottom: 18px; }
 .weekblock-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0 4px 8px; }
 .weekblock-head h3 { font-size: 17px; }
@@ -354,6 +362,7 @@ code { font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-r
   .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg); }
   .topbar-inner { padding: 10px 16px; gap: 10px; }
   .userbox .who { display: none; }
+  .wordmark { height: 26px; }
   .tabs {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; margin: 0;
     background: var(--surface); border-top: 1px solid var(--line);

@@ -1,6 +1,6 @@
 // Eenvoudige service worker: app-bestanden offline beschikbaar, data altijd live.
-const CACHE = 'rooster-v1';
-const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'config.js', 'icon.svg', 'manifest.webmanifest'];
+const CACHE = 'rooster-v2';
+const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'config.js', 'icon-192.png', 'brand/lilou-wordmark-rood.png', 'brand/lilou-wordmark-creme.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

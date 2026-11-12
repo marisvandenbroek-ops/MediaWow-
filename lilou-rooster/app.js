@@ -249,6 +249,11 @@ function ask(msg, okLabel = 'Doorgaan') {
 }
 
 /* ================= Auth screens ================= */
+function authPage(card) {
+  const top = CFG.logoAuth ? `<div class="auth-brand"><img src="${esc(CFG.logoAuth)}" alt="${esc(CFG.bedrijf)}"><span>Rooster</span></div>` : '';
+  return `<div class="auth"><div class="auth-wrap">${top}<div class="auth-card">${card}</div></div></div>`;
+}
+const authLogo = () => (CFG.logoAuth ? '' : `<div class="logo big">${esc((CFG.bedrijf || CFG.appName).charAt(0))}</div>`);
 async function renderAuth(mode = 'login', msg = '') {
   const name = esc(CFG.appName);
   const letter = esc((CFG.bedrijf || CFG.appName).charAt(0));
@@ -273,7 +278,8 @@ async function renderAuth(mode = 'login', msg = '') {
         ${mode === 'login' ? '<button class="linkbtn" data-mode="signup">Eerste keer inloggen</button><button class="linkbtn" data-mode="forgot">Wachtwoord vergeten?</button>' : '<button class="linkbtn" data-mode="login">← Terug naar inloggen</button>'}
       </div>`;
   }
-  app.innerHTML = `<div class="auth"><div class="auth-card"><div class="logo big">${letter}</div><h1>${name}</h1>${store.demo ? '<p>Roosters, verlof en beschikbaarheid op één plek.</p>' : '<p></p>'}${inner}</div></div>`;
+  app.innerHTML = authPage(`${authLogo()}<h1>${CFG.logoAuth ? (mode === 'signup' ? 'Account activeren' : mode === 'forgot' ? 'Wachtwoord vergeten' : 'Welkom') : name}</h1>${store.demo ? '<p>Roosters, verlof en beschikbaarheid op één plek.</p>' : '<p></p>'}${inner}`);
+  void letter;
 
   $$('[data-demo]', app).forEach(b => (b.onclick = async () => handleSession(await store.demoLogin(b.dataset.demo))));
   const reset = $('[data-reset]', app);
@@ -301,9 +307,9 @@ async function renderAuth(mode = 'login', msg = '') {
 }
 
 function renderNewPassword() {
-  app.innerHTML = `<div class="auth"><div class="auth-card"><div class="logo big">${esc(CFG.appName.charAt(0))}</div><h1>Nieuw wachtwoord</h1><p>Kies een nieuw wachtwoord van minimaal 8 tekens.</p>
+  app.innerHTML = authPage(`${authLogo()}<h1>Nieuw wachtwoord</h1><p>Kies een nieuw wachtwoord van minimaal 8 tekens.</p>
     <form class="stack" id="pwform"><label class="field">Nieuw wachtwoord<input name="password" type="password" minlength="8" autocomplete="new-password" required></label>
-    <button class="btn primary block">Opslaan</button></form></div></div>`;
+    <button class="btn primary block">Opslaan</button></form>`);
   $('#pwform').onsubmit = async ev => {
     ev.preventDefault();
     try {
@@ -316,10 +322,10 @@ function renderNewPassword() {
 }
 
 function renderUnlinked(email) {
-  app.innerHTML = `<div class="auth"><div class="auth-card"><div class="logo big">${esc(CFG.appName.charAt(0))}</div><h1>Bijna zover</h1>
+  app.innerHTML = authPage(`${authLogo()}<h1>Bijna zover</h1>
     <p>Je bent ingelogd als <strong>${esc(email)}</strong>, maar dit e-mailadres staat nog niet in het team van ${esc(CFG.bedrijf || 'het bedrijf')}.</p>
     <p class="hint">Vraag je leidinggevende om je toe te voegen met precies dit e-mailadres. Daarna kun je opnieuw inloggen.</p>
-    <div class="stack" style="margin-top:18px"><button class="btn primary" data-retry>Opnieuw proberen</button><button class="btn" data-out>Uitloggen</button></div></div></div>`;
+    <div class="stack" style="margin-top:18px"><button class="btn primary" data-retry>Opnieuw proberen</button><button class="btn" data-out>Uitloggen</button></div>`);
   $('[data-retry]').onclick = async () => handleSession(await store.init());
   $('[data-out]').onclick = signOut;
 }
@@ -346,7 +352,7 @@ function renderShell() {
   app.innerHTML = `
     ${store.demo ? '<div class="demo-banner">Demo-modus · gegevens worden alleen in deze browser bewaard</div>' : ''}
     <header class="topbar"><div class="topbar-inner">
-      <div class="brand"><div class="logo">${letter}</div><div><strong>${esc(CFG.appName)}</strong><small>${isMgr() ? 'Leidinggevende' : esc(S.me.position || 'Medewerker')}</small></div></div>
+      <div class="brand">${CFG.logo ? `<div class="stack-brand"><img class="wordmark light" src="${esc(CFG.logo)}" alt="${esc(CFG.bedrijf)}"><img class="wordmark dark" src="${esc(CFG.logoDark || CFG.logo)}" alt="${esc(CFG.bedrijf)}"><div class="sub">Rooster · ${isMgr() ? 'Leiding' : esc(S.me.position || 'Team')}</div></div>` : `<div class="logo">${letter}</div><div><strong>${esc(CFG.appName)}</strong><small>${isMgr() ? 'Leidinggevende' : esc(S.me.position || 'Medewerker')}</small></div>`}</div>
       <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !isMgr() ? 'team' : k] || ''}<span>${l}</span>${k === 'aanvragen' ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}</nav>
       <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
     </div></header>

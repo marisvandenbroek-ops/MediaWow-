@@ -9,6 +9,11 @@ window.ROOSTER_CONFIG = {
   appName: 'Lilou Rooster',
   bedrijf: 'Lilou',
 
+  // Logo's (laat leeg voor een letter-logo)
+  logo: 'brand/lilou-wordmark-rood.png',       // in de menubalk (lichte modus)
+  logoDark: 'brand/lilou-wordmark-creme.png',  // in de menubalk (donkere modus)
+  logoAuth: 'brand/lilou-logo-creme.png',      // op het inlogscherm (op rood)
+
   // Supabase (Project Settings → API)
   supabaseUrl: '',
   supabaseAnonKey: '',
