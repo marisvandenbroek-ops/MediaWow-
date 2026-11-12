@@ -424,6 +424,17 @@ dialog #toasts { position: fixed; }
 .auditlist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; font-size: 13px; }
 .auditlist small { color: var(--muted); }
 
+.chip.atw { box-shadow: inset 0 0 0 1.5px var(--bad); }
+.chip.atw b { color: var(--bad); }
+.cost { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.privbox { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px 12px; display: grid; gap: 10px; background: var(--surface-2); margin: 0; }
+.privbox legend { font-size: 12.5px; color: var(--muted); padding: 0 6px; }
+.privbox .hint { margin: 0; }
+.balance { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 18px; }
+.balance small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.balance b { font-family: var(--serif); font-size: 26px; font-weight: 500; }
+.balance .hint { margin: 0; }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }
