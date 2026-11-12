@@ -44,6 +44,14 @@ op hun telefoon of computer om hun rooster te zien en vragen zelf vakantie of vr
 - **Meldingen**: belletje in de app (nieuw rooster, dienst gewijzigd of vervallen, open
   dienst, ruilverzoek, aanvraag beoordeeld) en **pushmeldingen** op de telefoon.
 
+**Planning is leidend (instelbaar)**
+- Te vroeg inklokken en na het einde van de dienst uitklokken tellen niet mee
+  (koffie, telefoon). Klokt iemand ≥ 5 minuten (instelbaar) na het einde uit, dan vraagt de app:
+  *“Heb je langer gewerkt?”* — Nee → telt tot de geplande eindtijd; Ja + toelichting →
+  overuren ter goedkeuring bij de directie.
+- De echte kloktijden blijven altijd bewaard (Arbeidstijdenwet); de export toont zowel
+  *geklokt* als *telt mee*. Leg de regel vast in het personeelshandboek.
+
 **Voor medewerkers**
 - **Mijn rooster**: eerstvolgende dienst en de komende 6 weken, met uren per week.
 - **Zet in mijn agenda**: download alle diensten als agendabestand (iPhone, Google, Outlook).

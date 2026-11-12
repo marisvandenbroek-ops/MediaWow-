@@ -115,12 +115,14 @@ function demoSeed() {
     if (outD > nowD) return;
     const old = (nowD - outD) / 86400000 > 2;
     T.push({ id: uid(), employee_id: s.employee_id, clock_in: inD.toISOString(), clock_out: outD.toISOString(), break_minutes: s.break_minutes, break_started_at: null,
-      in_method: i % 3 ? 'wifi' : 'gps', out_method: i % 4 ? 'wifi' : 'gps', in_distance_m: i % 3 ? null : 12 + (i * 7) % 40, out_distance_m: i % 4 ? null : 9 + (i * 11) % 50, flags: [], reason: null, status: old ? 'approved' : 'pending', manager_note: null, edited: false });
+      in_method: i % 3 ? 'wifi' : 'gps', out_method: i % 4 ? 'wifi' : 'gps', in_distance_m: i % 3 ? null : 12 + (i * 7) % 40, out_distance_m: i % 4 ? null : 9 + (i * 11) % 50, flags: [], reason: null, status: old ? 'approved' : 'pending', manager_note: null, edited: false,
+      overtime_status: [6, -2, 12, 0, 3, 25][i % 6] >= 20 ? (old ? 'approved' : 'requested') : null,
+      overtime_reason: [6, -2, 12, 0, 3, 25][i % 6] >= 20 ? 'Laatste tafel bleef lang zitten, keuken nog schoongemaakt' : null });
   });
   const flagged = T.filter(t => t.status === 'pending')[0];
   if (flagged) Object.assign(flagged, { flags: ['uit_buiten_locatie'], out_distance_m: 1840, reason: 'Na sluiting nog boodschappen weggebracht bij de groothandel' });
   T.push({ id: uid(), employee_id: mariska.id, clock_in: new Date(nowD.getTime() - 95 * 60000).toISOString(), clock_out: null, break_minutes: 0, break_started_at: null, in_distance_m: 18, out_distance_m: null, flags: [], reason: null, status: 'open', manager_note: null, edited: false });
-  const settings = { lat: 52.3702, lng: 4.8952, radius_m: 150, allow_override: true, swap_needs_approval: true, wifi_ips: ['84.12.34.56'], demo: true };
+  const settings = { lat: 52.3702, lng: 4.8952, radius_m: 150, allow_override: true, swap_needs_approval: true, wifi_ips: ['84.12.34.56'], plan_leading: true, plan_margin_min: 5, demo: true };
   // Open diensten, ruilen, beschikbaarheid, meldingen
   const open1 = { id: uid(), employee_id: null, date: D(6), start_time: '17:00', end_time: '23:00', break_minutes: 30, position: 'Bediening', note: 'Extra drukte verwacht', published: true };
   const open2 = { id: uid(), employee_id: null, date: D(12), start_time: '12:00', end_time: '18:00', break_minutes: 30, position: 'Keuken', note: '', published: false };
@@ -141,7 +143,7 @@ function demoSeed() {
 }
 
 function demoStore() {
-  const KEY = 'lilou-rooster-demo-v5';
+  const KEY = 'lilou-rooster-demo-v6';
   let mem = null;
   let db;
   try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* ignore */ }
@@ -323,7 +325,7 @@ function demoStore() {
       return clone(db.entries.filter(e => e.clock_in >= a && e.clock_in < b && (isMgr() || e.employee_id === mem))).sort((x, y) => x.clock_in.localeCompare(y.clock_in));
     },
     async openEntries() { return clone(db.entries.filter(e => !e.clock_out && (isMgr() || e.employee_id === mem))); },
-    async clock(action, pos, reason) {
+    async clock(action, pos, reason, overtime) {
       const st = db.settings;
       const open = db.entries.find(e => e.employee_id === mem && !e.clock_out);
       const now = new Date().toISOString();
@@ -346,7 +348,7 @@ function demoStore() {
         const brk = () => (open.break_started_at ? Math.round((Date.now() - new Date(open.break_started_at)) / 60000) : 0);
         if (action === 'pauze_start') { if (open.break_started_at) throw new Error('Pauze loopt al.'); open.break_started_at = now; }
         else if (action === 'pauze_eind') { if (!open.break_started_at) throw new Error('Er loopt geen pauze.'); open.break_minutes += brk(); open.break_started_at = null; }
-        else { open.break_minutes += brk(); open.break_started_at = null; open.clock_out = now; open.out_distance_m = dist; open.out_method = method; if (flag) open.flags.push('uit_' + flag); if (r) open.reason = [open.reason, r].filter(Boolean).join(' / '); open.status = 'pending'; }
+        else { open.break_minutes += brk(); open.break_started_at = null; open.clock_out = now; open.out_distance_m = dist; open.out_method = method; if (flag) open.flags.push('uit_' + flag); if (r) open.reason = [open.reason, r].filter(Boolean).join(' / '); open.status = 'pending'; const ot = (overtime || '').trim(); open.overtime_status = ot ? 'requested' : null; open.overtime_reason = ot || null; }
       }
       save();
     },
@@ -356,7 +358,7 @@ function demoStore() {
       save();
     },
     async deleteEntry(id) { db.entries = db.entries.filter(e => e.id !== id); save(); },
-    async setEntryStatus(id, status, note) { const e = db.entries.find(x => x.id === id); e.status = status; if (note !== undefined) e.manager_note = note; save(); },
+    async setEntryStatus(id, status, note, ot) { const e = db.entries.find(x => x.id === id); e.status = status; if (note !== undefined && note !== null) e.manager_note = note; if (ot) e.overtime_status = ot; save(); },
   };
 }
 
@@ -441,8 +443,8 @@ async function supabaseStore() {
       return ok(await sb.from('time_entries').select('*').gte('clock_in', parse(from).toISOString()).lt('clock_in', addDays(parse(to), 1).toISOString()).order('clock_in'));
     },
     async openEntries() { return ok(await sb.from('time_entries').select('*').is('clock_out', null)); },
-    async clock(action, pos, reason) {
-      ok(await sb.rpc('clock', { p_action: action, p_lat: pos?.lat ?? null, p_lng: pos?.lng ?? null, p_accuracy: pos?.accuracy ?? null, p_reason: reason || null }));
+    async clock(action, pos, reason, overtime) {
+      ok(await sb.rpc('clock', { p_action: action, p_lat: pos?.lat ?? null, p_lng: pos?.lng ?? null, p_accuracy: pos?.accuracy ?? null, p_reason: reason || null, p_overtime: overtime || null }));
     },
     async saveEntry(e) {
       const { id, ...rest } = e;
@@ -450,7 +452,10 @@ async function supabaseStore() {
       else ok(await sb.from('time_entries').insert({ ...rest, flags: ['handmatig'], edited: true }));
     },
     async deleteEntry(id) { ok(await sb.from('time_entries').delete().eq('id', id)); },
-    async setEntryStatus(id, status, note) { ok(await sb.from('time_entries').update(note === undefined ? { status } : { status, manager_note: note }).eq('id', id)); },
+    async setEntryStatus(id, status, note, ot) {
+      const u = { status }; if (note !== undefined && note !== null) u.manager_note = note; if (ot) u.overtime_status = ot;
+      ok(await sb.from('time_entries').update(u).eq('id', id));
+    },
   };
 }
 
@@ -956,10 +961,12 @@ async function viewMine(el) {
   const clockHTML = await clockCard(mine.find(s => s.date === today));
   let workedHTML = '';
   if (sel) {
-    const ents = (await store.entries(iso(sel), iso(addDays(sel, 6)))).filter(x => x.employee_id === S.me.id && x.clock_out);
+    const [ents0, stM] = await Promise.all([store.entries(iso(sel), iso(addDays(sel, 6))), store.settings()]);
+    const ents = ents0.filter(x => x.employee_id === S.me.id && x.clock_out);
     if (ents.length) {
-      const tot = ents.reduce((t, x) => t + entryHours(x), 0), ok = ents.filter(x => x.status === 'approved').reduce((t, x) => t + entryHours(x), 0);
-      workedHTML = `<div class="card pad worked"><div><small>Gewerkt deze week</small><b>${fmtH(tot)} uur</b></div><div><small>Goedgekeurd</small><b>${fmtH(ok)} uur</b></div><div><small>Registraties</small><b>${ents.length}</b></div></div>`;
+      const P = x => paidOf(x, matchShift(x, mine), stM).hours;
+      const tot = ents.reduce((t, x) => t + P(x), 0), ok = ents.filter(x => x.status === 'approved').reduce((t, x) => t + P(x), 0);
+      workedHTML = `<div class="card pad worked"><div><small>Telt mee deze week</small><b>${fmtH(tot)} uur</b></div><div><small>Goedgekeurd</small><b>${fmtH(ok)} uur</b></div><div><small>Registraties</small><b>${ents.length}</b></div></div>`;
     }
   }
 
@@ -1625,10 +1632,10 @@ async function viewHours(el) {
   const [emps0, allShifts, reqs] = await Promise.all([store.employees(), store.shifts(from, to), store.requests()]);
   const emps = sortEmps(emps0);
   S.hsrc ||= 'gepland';
-  const ents = await store.entries(from, to);
+  const [ents, stH] = await Promise.all([store.entries(from, to), store.settings()]);
   const done = ents.filter(x => x.clock_out);
   const shifts = S.hsrc === 'gewerkt'
-    ? done.filter(x => x.status === 'approved').map(x => entryAsShift(x, matchShift(x, allShifts)))
+    ? done.filter(x => x.status === 'approved').map(x => entryAsShift(x, matchShift(x, allShifts), stH))
     : S.onlyPub ? allShifts.filter(s => s.published) : allShifts;
   const entPending = done.filter(x => x.status === 'pending').length;
   const weeks = daysBetween(from, to) / 7;
@@ -1672,8 +1679,8 @@ async function viewHours(el) {
     leave: ['Verlof & ziekte', 'Alle aanvragen die in deze periode vallen, met status en reactie.', leave, `verlof-${slug}`],
     klok: ['Klokregistratie', 'Alle in- en uitkloktijden met pauze, afstand tot de zaak, meldingen en status. Bewijs bij vragen over gewerkte uren.', () => {
       const byId = Object.fromEntries(emps.map(e => [e.id, e]));
-      return [['Datum', 'Medewerker', 'Gepland', 'In', 'Uit', 'Pauze (min)', 'Gewerkt (u)', 'Controle in', 'Controle uit', 'Afstand in (m)', 'Afstand uit (m)', 'Meldingen', 'Reden medewerker', 'Status', 'Aangepast', 'Notitie directie'],
-        ...ents.map(x => { const sh = matchShift(x, allShifts); return [tDate(x.clock_in), byId[x.employee_id]?.name || '', sh ? `${hm(sh.start_time)}-${hm(sh.end_time)}` : '', tHM(x.clock_in), x.clock_out ? tHM(x.clock_out) : '', x.break_minutes || 0, x.clock_out ? r2(entryHours(x)) : '', x.in_method || '', x.out_method || '', x.in_distance_m ?? '', x.out_distance_m ?? '', (x.flags || []).map(f => FLAG[f] || f).join(', '), x.reason || '', ESTATUS[x.status], x.edited ? 'ja' : 'nee', x.manager_note || '']; })];
+      return [['Datum', 'Medewerker', 'Gepland', 'Ingeklokt', 'Uitgeklokt', 'Pauze (min)', 'Geklokt (u)', 'Telt mee van', 'Telt mee tot', 'Telt mee (u)', 'Overuren', 'Toelichting overuren', 'Controle in', 'Controle uit', 'Afstand in (m)', 'Afstand uit (m)', 'Meldingen', 'Reden medewerker', 'Status', 'Aangepast', 'Notitie directie'],
+        ...ents.map(x => { const sh = matchShift(x, allShifts); return [tDate(x.clock_in), byId[x.employee_id]?.name || '', sh ? `${hm(sh.start_time)}-${hm(sh.end_time)}` : '', tHM(x.clock_in), x.clock_out ? tHM(x.clock_out) : '', x.break_minutes || 0, x.clock_out ? r2(entryHours(x)) : '', ...(() => { const p = paidOf(x, sh, stH); return x.clock_out ? [tHM(p.start), tHM(p.end), r2(p.hours)] : ['', '', '']; })(), { requested: 'aangevraagd', approved: 'goedgekeurd', rejected: 'afgekeurd' }[x.overtime_status] || '', x.overtime_reason || '', x.in_method || '', x.out_method || '', x.in_distance_m ?? '', x.out_distance_m ?? '', (x.flags || []).map(f => FLAG[f] || f).join(', '), x.reason || '', ESTATUS[x.status], x.edited ? 'ja' : 'nee', x.manager_note || '']; })];
     }, `klokregistratie-${S.pmode}-${from}_${to}`],
     team: ['Medewerkerslijst', 'Contactgegevens, functies en contracturen van het hele team.', team, 'medewerkers'],
   };
@@ -1760,7 +1767,52 @@ function matchShift(e, shifts) {
   return c.sort((a, b) => Math.abs(mins(a.start_time) - m) - Math.abs(mins(b.start_time) - m))[0] || null;
 }
 // Registratie omzetten naar 'dienst-vorm' voor urentotalen en toeslagen
-const entryAsShift = (e, sh) => ({ id: e.id, employee_id: e.employee_id, date: tDate(e.clock_in), start_time: tHM(e.clock_in), end_time: tHM(e.clock_out), break_minutes: e.break_minutes || 0, position: sh?.position || '', note: e.manager_note || '', published: true });
+// Begin en eind van een geplande dienst als tijdstip (nachtdienst loopt door naar de volgende dag)
+function shiftWindow(sh) {
+  const a = parse(sh.date), [h1, m1] = hm(sh.start_time).split(':').map(Number), [h2, m2] = hm(sh.end_time).split(':').map(Number);
+  const st = new Date(a); st.setHours(h1, m1, 0, 0);
+  const en = new Date(a); en.setHours(h2, m2, 0, 0);
+  if (en <= st) en.setDate(en.getDate() + 1);
+  return [st, en];
+}
+// Tijd die meetelt. "Planning is leidend": te vroeg inklokken en na het einde uitklokken tellen niet mee,
+// behalve goedgekeurde overuren. De echte kloktijden blijven altijd bewaard.
+function paidOf(x, sh, st = {}) {
+  const cin = new Date(x.clock_in), cout = x.clock_out ? new Date(x.clock_out) : null;
+  let start = cin, end = cout;
+  const why = [];
+  let overMin = 0;
+  if (st.plan_leading !== false && sh && cout) {
+    const [ps, pe] = shiftWindow(sh);
+    overMin = Math.max(0, Math.round((cout - pe) / 60000));
+    if (cin < ps) { start = ps; why.push('vroeg'); }
+    if (cout > pe && x.overtime_status !== 'approved') { end = pe; why.push('laat'); }
+    if (end < start) end = start;
+  }
+  const hours = cout ? Math.max(0, (end - start) / 3600000 - (Number(x.break_minutes) || 0) / 60) : entryHours(x);
+  return { start, end, hours, adjusted: why.length > 0, why, overMin };
+}
+const entryAsShift = (e, sh, st) => { const p = paidOf(e, sh, st); return { id: e.id, employee_id: e.employee_id, date: tDate(e.clock_in), start_time: tHM(p.start), end_time: tHM(p.end), break_minutes: e.break_minutes || 0, position: sh?.position || '', note: e.manager_note || '', published: true }; };
+
+// Vraag bij uitklokken na het einde van de dienst: langer gewerkt?  → '' (nee), reden (ja) of null (annuleren)
+function askOvertime(plannedEnd, overMin) {
+  return new Promise(res => {
+    let answer = null;
+    const dlg = openDialog('Heb je langer gewerkt?', `
+      <p style="margin:0">Je dienst eindigde om <strong>${tHM(plannedEnd)}</strong>. Het is nu ${tHM(new Date())} (${overMin} min later).</p>
+      <label class="otchoice"><input type="radio" name="ot" value="nee" checked><span><strong>Nee</strong> — ik ben om ${tHM(plannedEnd)} gestopt met werken</span></label>
+      <label class="otchoice"><input type="radio" name="ot" value="ja"><span><strong>Ja</strong> — ik heb langer gewerkt</span></label>
+      <label class="field" data-otwhy hidden>Wat heb je gedaan? (de directie beoordeelt dit)<textarea name="why" placeholder="Bijv. laatste tafel bleef lang, kassa opgemaakt"></textarea></label>
+      <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Uitklokken</button></div>`, {
+      onReady(d) { const f = $('form', d); f.addEventListener('change', () => { $('[data-otwhy]', d).hidden = f.ot.value !== 'ja'; }); },
+      onSubmit(fd) {
+        if (fd.get('ot') === 'ja') { const w = (fd.get('why') || '').trim(); if (!w) throw new Error('Vul in wat je hebt gedaan.'); answer = w; }
+        else answer = '';
+      },
+    });
+    dlg.addEventListener('close', () => res(answer));
+  });
+}
 
 async function clockCard(todayShift) {
   const [open] = await store.openEntries().then(l => l.filter(e => e.employee_id === S.me.id));
@@ -1796,16 +1848,30 @@ async function doClock(action, btn) {
   btn.disabled = true;
   const done = { in: 'Ingeklokt — fijne dienst!', uit: 'Uitgeklokt — tot de volgende keer!', pauze_start: 'Pauze gestart', pauze_eind: 'Pauze gestopt' };
   const st0 = needLoc ? await store.settings() : {};
-  let pos = null;
+  let pos = null, ot = null;
+  if (action === 'uit' && st0.plan_leading !== false) {
+    const [open] = (await store.openEntries()).filter(e => e.employee_id === S.me.id);
+    if (open) {
+      const d0 = tDate(open.clock_in);
+      const sh = matchShift(open, (await store.shifts(d0, d0)).filter(x => x.employee_id === S.me.id));
+      if (sh) {
+        const pe = shiftWindow(sh)[1], over = Math.round((Date.now() - pe) / 60000);
+        if (over >= (st0.plan_margin_min ?? 5)) {
+          ot = await askOvertime(pe, over);
+          if (ot === null) { btn.disabled = false; btn.textContent = label; return; }
+        }
+      }
+    }
+  }
   try {
     // Eerst via de wifi van de zaak (geen locatievraag); lukt dat niet, dan via gps
     if (needLoc && (st0.wifi_ips || []).length) {
       btn.textContent = 'Wifi controleren…';
-      try { await store.clock(action, null, null); toast(done[action]); return rerender(); }
+      try { await store.clock(action, null, null, ot); toast(done[action]); return rerender(); }
       catch (e) { if (e.code !== 'LC001') throw e; }
     }
     if (needLoc) { btn.textContent = 'Locatie bepalen…'; pos = await getPosition(); }
-    await store.clock(action, pos, null);
+    await store.clock(action, pos, null, ot);
     toast(done[action]); rerender();
   } catch (e) {
     btn.disabled = false; btn.textContent = label;
@@ -1815,7 +1881,7 @@ async function doClock(action, btn) {
         <div class="warnbox">${esc(e.message)}</div>
         <label class="field">Waarom klok je niet op de werklocatie? (de directie ziet dit)<textarea name="reason" required placeholder="Bijv. catering op locatie, inkoop bij de groothandel"></textarea></label>
         <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Toch ${action === 'in' ? 'inklokken' : 'uitklokken'}</button></div>`, {
-        async onSubmit(fd) { await store.clock(action, pos, fd.get('reason')); toast(done[action] + ' (gemarkeerd voor controle)'); rerender(); },
+        async onSubmit(fd) { await store.clock(action, pos, fd.get('reason'), ot); toast(done[action] + ' (gemarkeerd voor controle)'); rerender(); },
       });
     } else toast(errMsg(e), 'error');
   }
@@ -1828,7 +1894,14 @@ function clockClicks(ev) {
 }
 
 function settingsDialog(st) {
-  openDialog('Werklocatie', `
+  openDialog('Klokinstellingen', `
+    <div class="wifibox">
+      <strong>⏱ Uren berekenen</strong>
+      <label class="check"><input type="checkbox" name="plan_leading" ${st.plan_leading !== false ? 'checked' : ''}> Planning is leidend: te vroeg inklokken en na het einde uitklokken tellen niet mee, tenzij overuren zijn goedgekeurd</label>
+      <label class="field" style="width:100%">Vraag “Heb je langer gewerkt?” vanaf … minuten na einde dienst<input type="number" name="plan_margin_min" min="0" max="60" step="1" value="${st.plan_margin_min ?? 5}"></label>
+      <p class="hint">De echte kloktijden blijven altijd bewaard (verplicht volgens de Arbeidstijdenwet).</p>
+    </div>
+    <strong style="margin-top:4px">📍 Werklocatie (gps)</strong>
     <p class="hint">Klokken kan alleen binnen de straal rond dit punt. Tip: sta in de zaak en tik op <strong>Gebruik mijn huidige locatie</strong>.</p>
     <button type="button" class="btn" data-here>📍 Gebruik mijn huidige locatie</button>
     <div class="row keep">
@@ -1867,8 +1940,8 @@ function settingsDialog(st) {
       if ((lat == null) !== (lng == null)) throw new Error('Vul zowel breedte- als lengtegraad in.');
       if (lat != null && (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180)) throw new Error('Ongeldige coördinaten.');
       if (lat == null && !(st.wifi_ips || []).length) throw new Error('Stel een gps-locatie of een wifi-netwerk in.');
-      await store.saveSettings({ lat, lng, radius_m: Number(fd.get('radius_m')), allow_override: fd.get('allow_override') === 'on' });
-      toast('Werklocatie opgeslagen'); rerender();
+      await store.saveSettings({ lat, lng, radius_m: Number(fd.get('radius_m')), allow_override: fd.get('allow_override') === 'on', plan_leading: fd.get('plan_leading') === 'on', plan_margin_min: Math.max(0, Number(fd.get('plan_margin_min')) || 0) });
+      toast('Instellingen opgeslagen'); rerender();
     },
   });
 }
@@ -1887,6 +1960,8 @@ function entryDialog(e, emps, defaults = {}) {
       <label class="field">Pauze (min)<input type="number" name="break_minutes" min="0" step="5" value="${e.break_minutes ?? defaults.pauze ?? 0}"></label>
       <label class="field">Status<select name="status">${['pending', 'approved', 'rejected'].map(k => `<option value="${k}" ${(e.status === k || (k === 'approved' && (isNew || e.status === 'open'))) ? 'selected' : ''}>${ESTATUS[k]}</option>`).join('')}</select></label>
     </div>
+    <label class="field">Overuren (na einde dienst)<select name="overtime_status">${[['', 'Geen'], ['requested', 'Aangevraagd'], ['approved', 'Goedgekeurd'], ['rejected', 'Afgekeurd']].map(([k, l]) => `<option value="${k}" ${(e.overtime_status || '') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+    ${e.overtime_reason ? `<div class="warnbox">Toelichting overuren: ${esc(e.overtime_reason)}</div>` : ''}
     ${e.reason ? `<div class="warnbox">Reden medewerker: ${esc(e.reason)}</div>` : ''}
     <label class="field">Notitie directie<input name="manager_note" value="${esc(e.manager_note || '')}" placeholder="Bijv. vergeten uit te klokken, gecorrigeerd"></label>
     <p class="hint">Laat “Uit” leeg als de medewerker nog aan het werk is. Een eindtijd vóór de begintijd telt als de volgende dag.</p>
@@ -1898,7 +1973,7 @@ function entryDialog(e, emps, defaults = {}) {
       const cin = mk(fd.get('in'));
       let cout = fd.get('out') ? mk(fd.get('out')) : null;
       if (cout && cout <= cin) cout = new Date(cout.getTime() + 86400000);
-      const payload = { clock_in: cin.toISOString(), clock_out: cout ? cout.toISOString() : null, break_minutes: Number(fd.get('break_minutes')) || 0, break_started_at: null, status: cout ? fd.get('status') : 'open', manager_note: fd.get('manager_note').trim() || null };
+      const payload = { clock_in: cin.toISOString(), clock_out: cout ? cout.toISOString() : null, break_minutes: Number(fd.get('break_minutes')) || 0, break_started_at: null, status: cout ? fd.get('status') : 'open', manager_note: fd.get('manager_note').trim() || null, overtime_status: fd.get('overtime_status') || null };
       if (isNew) payload.employee_id = fd.get('employee_id'); else payload.id = e.id;
       await store.saveEntry(payload); toast('Registratie opgeslagen'); rerender();
     },
@@ -1920,30 +1995,37 @@ async function viewClockMgr(el) {
     && !open.some(o => o.employee_id === s.employee_id) && !entries.some(x => x.employee_id === s.employee_id && tDate(x.clock_in) === today));
   const forgot = open.filter(o => (now - new Date(o.clock_in)) / 3600000 > 12);
   const pending = entries.filter(x => x.status === 'pending');
-  const isClean = x => { const sh = matchShift(x, shifts); return !x.flags?.length && sh && Math.abs(entryHours(x) - shiftHours(sh)) <= 0.25; };
+  const isClean = x => { const sh = matchShift(x, shifts); return !x.flags?.length && x.overtime_status !== 'requested' && sh && Math.abs(paidOf(x, sh, st).hours - shiftHours(sh)) <= 0.25; };
   const list = (S.clockFilter === 'check' ? pending : entries.filter(x => x.clock_out)).slice().sort((a, b) => b.clock_in.localeCompare(a.clock_in));
 
   const entryCard = x => {
     const e = byId[x.employee_id] || { name: '?' };
     const sh = matchShift(x, shifts);
-    const h = entryHours(x), diff = sh ? h - shiftHours(sh) : null;
+    const h = entryHours(x), p = paidOf(x, sh, st), diff = sh && x.clock_out ? p.hours - shiftHours(sh) : null;
+    const pe = sh ? shiftWindow(sh)[1] : null;
+    const otBox = x.overtime_status === 'requested'
+      ? `<div class="otbox"><strong>⏱ Overuren aangevraagd: ${tHM(pe)} – ${tHM(x.clock_out)} (+${p.overMin} min)</strong>${x.overtime_reason ? `<span>“${esc(x.overtime_reason)}”</span>` : ''}</div>`
+      : x.overtime_status === 'approved' ? `<span class="pill ok">Overuren goedgekeurd (+${p.overMin} min)</span>`
+      : x.overtime_status === 'rejected' ? '<span class="pill">Overuren afgekeurd</span>'
+      : p.why.includes('laat') && p.overMin > 0 ? `<p class="hint" style="margin:8px 0 0">Uitgeklokt om ${tHM(x.clock_out)}, telt tot ${tHM(pe)} — geen overuren opgegeven.</p>` : '';
     const flags = (x.flags || []).map(f => `<span class="pill warn">${esc(FLAG[f] || f)}${f.includes('buiten') && (f.startsWith('in') ? x.in_distance_m : x.out_distance_m) ? ` · ${(f.startsWith('in') ? x.in_distance_m : x.out_distance_m)} m` : ''}</span>`).join('');
     return `<article class="card entry">
       <div class="entry-head"><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name)}</strong><span class="muted small">${esc(fmtShort(tDate(x.clock_in)))}</span><span class="status ${x.status === 'approved' ? 'approved' : x.status === 'rejected' ? 'rejected' : 'pending'}">${ESTATUS[x.status]}</span></div>
       <div class="entry-grid">
         <div><small>Gepland</small><b>${sh ? `${hm(sh.start_time)} – ${hm(sh.end_time)}` : '—'}</b><span>${sh ? fmtH(shiftHours(sh)) + ' u' : 'geen dienst'}</span></div>
-        <div><small>Gewerkt</small><b>${tHM(x.clock_in)} – ${x.clock_out ? tHM(x.clock_out) : '…'}</b><span>${fmtH(h)} u · ${x.break_minutes || 0} min pauze${x.in_method ? ` · ${x.in_method === 'wifi' ? '📶 wifi' : '📍 gps'}` : ''}</span></div>
-        <div><small>Verschil</small><b class="${diff == null ? '' : Math.abs(diff) <= 0.25 ? 'pos' : diff > 0 ? 'warnc' : 'neg'}">${diff == null ? '—' : fmtDiff(diff)}</b><span>${diff == null ? '' : Math.abs(diff) <= 0.25 ? 'volgens planning' : diff > 0 ? 'langer gewerkt' : 'korter gewerkt'}</span></div>
+        <div><small>Geklokt</small><b>${tHM(x.clock_in)} – ${x.clock_out ? tHM(x.clock_out) : '…'}</b><span>${fmtH(h)} u · ${x.break_minutes || 0} min pauze${x.in_method ? ` · ${x.in_method === 'wifi' ? '📶 wifi' : '📍 gps'}` : ''}</span></div>
+        <div><small>Telt mee</small><b class="${p.adjusted ? 'warnc' : ''}">${tHM(p.start)} – ${x.clock_out ? tHM(p.end) : '…'}</b><span>${fmtH(p.hours)} u${diff == null ? '' : Math.abs(diff) <= 0.25 ? ' · volgens planning' : ` · ${fmtDiff(diff)} t.o.v. planning`}</span></div>
       </div>
+      ${otBox}
       ${flags || x.edited ? `<div class="entry-flags">${flags}${x.edited ? '<span class="pill">aangepast</span>' : ''}</div>` : ''}
       ${x.reason ? `<p class="note">“${esc(x.reason)}”</p>` : ''}${x.manager_note ? `<p class="reply"><strong>Notitie:</strong> ${esc(x.manager_note)}</p>` : ''}
-      <div class="req-actions">${x.status === 'pending' ? `<button class="btn sm ok" data-eok="${x.id}">Goedkeuren</button>` : ''}<button class="btn sm" data-eedit="${x.id}">Aanpassen</button>${x.status === 'pending' ? `<button class="btn sm danger" data-eno="${x.id}">Afkeuren</button>` : ''}</div>
+      <div class="req-actions">${x.status === 'pending' ? (x.overtime_status === 'requested' ? `<button class="btn sm ok" data-eok="${x.id}|approved">Goedkeuren mét overuren</button><button class="btn sm" data-eok="${x.id}|rejected">Goedkeuren zonder overuren</button>` : `<button class="btn sm ok" data-eok="${x.id}">Goedkeuren</button>`) : ''}<button class="btn sm" data-eedit="${x.id}">Aanpassen</button>${x.status === 'pending' ? `<button class="btn sm danger" data-eno="${x.id}">Afkeuren</button>` : ''}</div>
     </article>`;
   };
 
   el.innerHTML = `
     <div class="page-head"><div><h1>Klokken</h1><p>Wie is er aan het werk, en gewerkte uren controleren.</p></div>
-      <div class="actions"><button class="btn" data-settings>📍 Werklocatie</button><button class="btn" data-newentry>+ Registratie</button></div></div>
+      <div class="actions"><button class="btn" data-settings>⚙︎ Instellingen</button><button class="btn" data-newentry>+ Registratie</button></div></div>
     ${st.lat == null ? '<div class="warnbox" style="margin-bottom:14px">Stel eerst de <strong>werklocatie</strong> in, anders kan niemand klokken.</div>' : ''}
     <div class="clock-top">
       ${await clockCard(todayShift)}
@@ -1979,7 +2061,8 @@ async function viewClockMgr(el) {
     const cf = ev.target.closest('[data-cf]'); if (cf) { S.clockFilter = cf.dataset.cf; return rerender(); }
     const all = [...entries, ...open];
     const ed = ev.target.closest('[data-eedit]'); if (ed) return entryDialog(all.find(x => x.id === ed.dataset.eedit), emps);
-    const okB = ev.target.closest('[data-eok]'); if (okB) { const x = all.find(y => y.id === okB.dataset.eok); await store.setEntryStatus(x.id, 'approved'); toast('Goedgekeurd'); return rerender(); }
+    const okB = ev.target.closest('[data-eok]');
+    if (okB) { const [id, otd] = okB.dataset.eok.split('|'); await store.setEntryStatus(id, 'approved', null, otd || null); toast(otd === 'approved' ? 'Goedgekeurd, inclusief overuren' : otd === 'rejected' ? 'Goedgekeurd, zonder overuren' : 'Goedgekeurd'); return rerender(); }
     const no = ev.target.closest('[data-eno]');
     if (no) return openDialog('Registratie afkeuren', `<label class="field">Reden<input name="note" placeholder="Bijv. dubbele registratie"></label><div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn danger" value="save">Afkeuren</button></div>`, {
       async onSubmit(fd) { await store.setEntryStatus(no.dataset.eno, 'rejected', fd.get('note').trim() || null); toast('Afgekeurd'); rerender(); } });

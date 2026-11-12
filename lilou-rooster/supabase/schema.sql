@@ -196,6 +196,11 @@ $$;
 alter table public.settings add column if not exists wifi_ips text[] not null default '{}';
 alter table public.time_entries add column if not exists in_method text;
 alter table public.time_entries add column if not exists out_method text;
+-- "Planning is leidend": overuren na het einde van de dienst tellen alleen mee na goedkeuring
+alter table public.settings add column if not exists plan_leading boolean not null default true;
+alter table public.settings add column if not exists plan_margin_min int not null default 5;
+alter table public.time_entries add column if not exists overtime_status text check (overtime_status in ('requested', 'approved', 'rejected'));
+alter table public.time_entries add column if not exists overtime_reason text;
 
 create or replace function public.request_ip() returns text
 language plpgsql stable as $$
@@ -221,7 +226,7 @@ grant execute on function public.register_wifi() to authenticated;
 
 drop function if exists public.clock(text, double precision, double precision, double precision, text);
 create or replace function public.clock(p_action text, p_lat double precision, p_lng double precision,
-                                        p_accuracy double precision, p_reason text default null)
+                                        p_accuracy double precision, p_reason text default null, p_overtime text default null)
 returns public.time_entries
 language plpgsql security definer set search_path = public as $$
 declare
@@ -280,6 +285,8 @@ begin
         out_lat = p_lat, out_lng = p_lng, out_accuracy = p_accuracy, out_distance_m = round(d), out_method = method,
         flags = flags || case when flag is null then '{}'::text[] else array['uit_' || flag] end,
         reason = case when r is null then reason else concat_ws(' / ', reason, r) end,
+        overtime_status = case when nullif(trim(coalesce(p_overtime, '')), '') is null then null else 'requested' end,
+        overtime_reason = nullif(trim(coalesce(p_overtime, '')), ''),
         status = 'pending'
       where id = e.id returning * into e;
     end if;
@@ -289,8 +296,8 @@ begin
   return e;
 end $$;
 
-revoke all on function public.clock(text, double precision, double precision, double precision, text) from public, anon;
-grant execute on function public.clock(text, double precision, double precision, double precision, text) to authenticated;
+revoke all on function public.clock(text, double precision, double precision, double precision, text, text) from public, anon;
+grant execute on function public.clock(text, double precision, double precision, double precision, text, text) to authenticated;
 
 -- =====================================================================
 --  OPEN DIENSTEN, RUILEN, BESCHIKBAARHEID en MELDINGEN
