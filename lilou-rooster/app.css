@@ -91,6 +91,10 @@ label.field { display: grid; gap: 5px; font-size: 13px; font-weight: 500; color:
 .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 1px; border-color: var(--accent); }
 .field input[type="color"] { padding: 4px; height: 42px; }
 .row { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+/* Velden mogen nooit breder worden dan hun kolom (datumvelden op mobiel) */
+.row > *, .split > *, .stack > *, .field { min-width: 0; }
+.field input, .field select, .field textarea { min-width: 0; max-width: 100%; }
+input[type="date"], input[type="time"] { min-width: 0; -webkit-appearance: none; appearance: none; min-height: 44px; }
 .row.three { grid-template-columns: 1fr 1fr 1fr; }
 .stack { display: grid; gap: 14px; }
 .hint { font-size: 13px; color: var(--muted); margin: 0; }

@@ -1,0 +1,13 @@
+{
+  "name": "lilou-rooster",
+  "private": true,
+  "description": "Rooster-app voor Lilou: planning, klokken, ruilen, verlof en exports",
+  "scripts": {
+    "test": "npm run test:e2e && npm run test:db",
+    "test:e2e": "node tests/e2e.js",
+    "test:db": "bash tests/db/run.sh"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

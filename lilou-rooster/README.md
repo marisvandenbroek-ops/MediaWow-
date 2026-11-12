@@ -52,6 +52,26 @@ op hun telefoon of computer om hun rooster te zien en vragen zelf vakantie of vr
 - De echte kloktijden blijven altijd bewaard (Arbeidstijdenwet); de export toont zowel
   *geklokt* als *telt mee*. Leg de regel vast in het personeelshandboek.
 
+**Lonen, verlof en regels (directie)**
+- **Uurloon, geboortedatum en verlofrecht** per medewerker in een afgeschermd deel (alleen
+  directie en de medewerker zelf).
+- **Loonkosten** per periode: bruto loon incl. toeslagen (instelbaar per avond/nacht/zondag/
+  feestdag; de hoogste telt), vakantiegeld en werkgeverslasten (indicatie). Ook per dag in de planning.
+- Export **Loonkosten per functie** (kostenplaatsen) voor Moni/Exact.
+- **Verlofsaldo**: recht per jaar (standaard 4 × contracturen) + beginsaldo − goedgekeurde uren.
+  Bij goedkeuren stelt de app het aantal uren voor.
+- **Arbeidstijdenwet-signalen** in de planning en het inplanvenster: te weinig rust, te lange
+  dienst, te veel uren per week en de jongerenregels (16–17 jaar: max. 9 u/dienst, 45 u/week, niet
+  tussen 23:00 en 06:00, 12 u rust; onder 16: niet na 19:00). Signalering, geen juridisch advies.
+
+**Automatisch (elke 15 minuten)**
+- Herinnering een uur voor de dienst en als iemand vergeet uit te klokken.
+- Een uur na het einde van de dienst automatisch uitklokken op de geplande eindtijd (gemarkeerd
+  voor controle).
+- Exacte locaties na 90 dagen wissen; oude meldingen opruimen.
+- **Logboek**: elke wijziging door de directie aan uren, medewerkers of loon wordt vastgelegd
+  en is per registratie/medewerker terug te zien.
+
 **Voor medewerkers**
 - **Mijn rooster**: eerstvolgende dienst en de komende 6 weken, met uren per week.
 - **Zet in mijn agenda**: download alle diensten als agendabestand (iPhone, Google, Outlook).
@@ -73,7 +93,8 @@ servers in de EU mogelijk).
 
 1. **Supabase-project aanmaken** — ga naar supabase.com → *New project*. Kies regio
    **Central EU (Frankfurt)** i.v.m. AVG.
-2. **Database klaarzetten** — open *SQL Editor* → *New query*, plak de inhoud van
+2. **Database klaarzetten** — zet eerst *Database → Extensions → pg_cron* aan (voor de
+   automatische taken). Open dan *SQL Editor* → *New query*, plak de inhoud van
    [`supabase/schema.sql`](supabase/schema.sql) en klik *Run*.
 3. **Eerste leidinggevende toevoegen** — voer in de SQL Editor uit (met je eigen gegevens):
    ```sql
@@ -157,6 +178,19 @@ Mogelijke vervolgstap: via de Lightspeed Restaurant (K-Series) API de geklokte u
 per dag ophalen, om geplande uren naast gewerkte uren en omzet te zetten. Dat vraagt een
 API-koppeling (en een kleine server-functie) en kan later worden toegevoegd.
 
+## Testen
+```bash
+npm install            # eenmalig (Playwright)
+npm run test:e2e       # 19 browsertests op de demo (mobiel + desktop)
+npm run test:db        # 46 databasecontroles op een lokale PostgreSQL (zie tests/db/run.sh)
+```
+Draai beide na elke wijziging; ze controleren onder meer de rechten (wie mag wat), klokken,
+ruilen, verlof, loonkosten en de automatische taken.
+
+## Documenten
+- `docs/privacyverklaring-medewerkers.md` — concept-privacyverklaring voor het personeel
+- `docs/personeelshandboek-rooster.md` — concepttekst voor het personeelshandboek
+
 ## Bestanden
 | Bestand | Wat |
 |---|---|
@@ -164,5 +198,8 @@ API-koppeling (en een kleine server-functie) en kan later worden toegevoegd.
 | `app.js` | Alle app-logica (geen build-stap nodig) |
 | `app.css` | Opmaak, licht/donker, mobiel |
 | `config.js` | Instellingen + Supabase-sleutels |
-| `supabase/schema.sql` | Database, koppelingen en beveiligingsregels |
+| `supabase/schema.sql` | Database, beveiligingsregels, functies en automatische taken |
+| `supabase/functions/send-push` | Pushmeldingen versturen |
+| `tests/` | Browser- en databasetests |
+| `docs/` | Privacyverklaring en handboektekst (concept) |
 | `manifest.webmanifest`, `sw.js`, `icon*` | Installeren als app op de telefoon |

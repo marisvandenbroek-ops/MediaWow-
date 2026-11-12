@@ -2327,7 +2327,7 @@ async function viewClockMgr(el) {
       ? `<div class="otbox"><strong>⏱ Overuren aangevraagd: ${tHM(pe)} – ${tHM(x.clock_out)} (+${p.overMin} min)</strong>${x.overtime_reason ? `<span>“${esc(x.overtime_reason)}”</span>` : ''}</div>`
       : x.overtime_status === 'approved' ? `<span class="pill ok">Overuren goedgekeurd (+${p.overMin} min)</span>`
       : x.overtime_status === 'rejected' ? '<span class="pill">Overuren afgekeurd</span>'
-      : p.why.includes('laat') && p.overMin > 0 ? `<p class="hint" style="margin:8px 0 0">Uitgeklokt om ${tHM(x.clock_out)}, telt tot ${tHM(pe)} — geen overuren opgegeven.</p>` : '';
+      : p.why.includes('laat') && p.overMin >= (st.plan_margin_min ?? 5) ? `<p class="hint" style="margin:8px 0 0">Uitgeklokt om ${tHM(x.clock_out)}, telt tot ${tHM(pe)} — geen overuren opgegeven.</p>` : '';
     const flags = (x.flags || []).map(f => `<span class="pill warn">${esc(FLAG[f] || f)}${f.includes('buiten') && (f.startsWith('in') ? x.in_distance_m : x.out_distance_m) ? ` · ${(f.startsWith('in') ? x.in_distance_m : x.out_distance_m)} m` : ''}</span>`).join('');
     return `<article class="card entry">
       <div class="entry-head"><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name)}</strong><span class="muted small">${esc(fmtShort(tDate(x.clock_in)))}</span><span class="status ${x.status === 'approved' ? 'approved' : x.status === 'rejected' ? 'rejected' : 'pending'}">${ESTATUS[x.status]}</span></div>
