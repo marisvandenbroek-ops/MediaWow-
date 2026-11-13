@@ -466,7 +466,10 @@ async function supabaseStore() {
     async resetPassword(email) { ok(await sb.auth.resetPasswordForEmail(email, { redirectTo: redirect })); },
     async updatePassword(password) { ok(await sb.auth.updateUser({ password })); },
     async signOut() { await sb.auth.signOut(); },
-    async employees() { return ok(await sb.from('employees').select('*').order('name')); },
+    async employees() {
+      if (isMgr()) return ok(await sb.from('employees').select('*').order('name'));
+      return ok(await sb.rpc('team'));   // medewerkers: alleen naam, functie en kleur van collega's
+    },
     async saveEmployee(e) {
       const { id, ...rest } = e;
       if (id) { ok(await sb.from('employees').update(rest).eq('id', id)); return id; }

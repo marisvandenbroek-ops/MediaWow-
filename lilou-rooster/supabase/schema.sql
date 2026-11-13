@@ -110,7 +110,18 @@ alter table public.requests  enable row level security;
 -- Medewerkers: iedereen van het team ziet het team; alleen leidinggevenden wijzigen
 drop policy if exists emp_select on public.employees;
 create policy emp_select on public.employees for select to authenticated
-  using (public.my_employee_id() is not null or public.is_manager());
+  using (public.is_manager() or user_id = auth.uid());   -- medewerker: alleen de eigen gegevens
+
+-- Collega's zien alleen naam, functie en kleur (geen e-mail, telefoon of contracturen)
+create or replace function public.team()
+returns table (id uuid, name text, "position" text, role text, color text, active boolean)
+language sql stable security definer set search_path = public as $$
+  select e.id, e.name, e.position, e.role, e.color, e.active from public.employees e
+   where public.my_employee_id() is not null or public.is_manager()
+   order by e.name
+$$;
+revoke execute on function public.team() from public, anon;
+grant execute on function public.team() to authenticated;
 drop policy if exists emp_write on public.employees;
 create policy emp_write on public.employees for all to authenticated
   using (public.is_manager()) with check (public.is_manager());

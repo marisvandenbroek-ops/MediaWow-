@@ -153,6 +153,10 @@ select as_user(2);
 select t_ok((select hourly_wage from employee_private) = 15.00, 'medewerker ziet eigen loon');
 select as_user(3);
 select t_ok(t_count('select * from employee_private') = 0, 'medewerker ziet loon van ander niet');
+select t_ok(t_count('select * from employees') = 1, 'medewerker ziet van de medewerkerstabel alleen zichzelf');
+select t_ok(t_count('select * from team()') > 1, 'medewerker ziet collega''s via team() (alleen naam, functie, kleur)');
+select t_ok(t_count('select * from time_entries where employee_id <> my_employee_id()') = 0, 'medewerker ziet geen kloktijden van collega''s');
+select t_ok(t_count('select * from requests where employee_id <> my_employee_id()') = 0, 'medewerker ziet geen verlof van collega''s');
 reset role;
 
 \echo '== Automatische taken'
