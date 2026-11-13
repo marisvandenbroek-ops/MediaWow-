@@ -742,6 +742,23 @@ function renderUnlinked(email) {
 
 async function signOut() { clearInterval(S.poll); await store.signOut(); S.me = null; renderAuth(); }
 
+// Controleert of de eigen rol of status is gewijzigd (bv. shiftleader → medewerker, of uit dienst).
+// De database weigert ongeoorloofde acties al direct; dit zorgt dat ook het scherm meteen klopt.
+let meCheckedAt = 0;
+async function checkMe(force = false) {
+  if (!S.me || (!force && Date.now() - meCheckedAt < 15000)) return true;
+  meCheckedAt = Date.now();
+  let r; try { r = await store.init(); } catch (e) { return true; }   // geen verbinding: niets doen
+  const emp = r && r.employee;
+  if (!emp || emp.active === false) { await signOut(); toast('Je account is niet meer actief. Je bent uitgelogd.', 'error'); return false; }
+  if (emp.role !== S.me.role) {
+    S.me = emp; S.view = canPlan() ? 'planning' : 'mijn';
+    renderShell(); toast('Je rechten zijn gewijzigd'); return false;
+  }
+  Object.assign(S.me, emp); return true;
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.me) checkMe(true); });
+
 // Standaardwaarden uit config.js; de directie kan ze overschrijven op de pagina Instellingen
 const CFG_DEFAULTS = { posities: [...(CFG.posities || [])], diensten: (CFG.diensten || []).map(d => ({ ...d })), toeslagen: { ...(CFG.toeslagen || {}) } };
 function applySettings(st) {
@@ -821,6 +838,7 @@ async function maybeRunJobs() {
 
 async function go(view) {
   clearInterval(S.timer);
+  if (!(await checkMe())) return;
   await maybeRunJobs();
   if (S.view !== view) window.scrollTo(0, 0);
   S.view = view;
