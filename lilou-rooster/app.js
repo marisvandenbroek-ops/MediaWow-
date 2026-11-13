@@ -1255,6 +1255,24 @@ async function publishWeek(from, to, weekShifts, quiet = false) {
   } catch (x) { toast('Gepubliceerd, maar niet gemaild: ' + errMsg(x), 'error'); }
 }
 
+/* ================= Verlof en het rooster ================= */
+// Keuze wat er met ingeplande diensten gebeurt als verlof wordt goedgekeurd
+function conflictChoice(c) {
+  if (!c.length) return '';
+  return `<div class="warnbox">Staat ${c.length}× ingepland in deze periode: ${c.map(s => `${esc(fmtShort(s.date))} ${hm(s.start_time)}–${hm(s.end_time)}`).join(', ')}.</div>
+    <fieldset class="choice"><legend>Wat moet er met ${c.length > 1 ? 'deze diensten' : 'deze dienst'} gebeuren?</legend>
+      <label class="check"><input type="radio" name="conflict" value="open" checked> <span><strong>Open dienst van maken</strong><br><span class="hint">Collega's kunnen zich aanmelden; jij kiest wie hem krijgt.</span></span></label>
+      <label class="check"><input type="radio" name="conflict" value="delete"> <span><strong>Verwijderen</strong><br><span class="hint">De dienst vervalt helemaal.</span></span></label>
+      <label class="check"><input type="radio" name="conflict" value="keep"> <span><strong>Laten staan</strong><br><span class="hint">Je past het later zelf aan in de planning.</span></span></label>
+    </fieldset>`;
+}
+async function resolveConflicts(c, how) {
+  if (!c.length || !how || how === 'keep') return c.length ? ' · diensten staan nog in het rooster' : '';
+  if (how === 'delete') { for (const x of c) await store.deleteShift(x.id); return ` · ${c.length} dienst${c.length > 1 ? 'en' : ''} verwijderd`; }
+  await store.saveShifts(c.map(x => ({ id: x.id, employee_id: null })));
+  return ` · ${c.length} open dienst${c.length > 1 ? 'en' : ''} gemaakt`;
+}
+
 /* ================= Instellingen (directie) ================= */
 async function viewSettings(el) {
   const st = await store.settings();
@@ -1598,16 +1616,23 @@ async function viewLeaveMgr(el) {
         const est = estimateLeaveHours(r, e, sh);
         return openDialog('Verlof goedkeuren', `
           <p style="margin:0"><strong>${esc(e.name || '')}</strong> · ${reqDates(r)}</p>
-          ${c.length ? `<div class="warnbox">Staat ${c.length}× ingepland in deze periode (${c.map(s => fmtShort(s.date)).join(', ')}). Pas die diensten daarna aan in de planning.</div>` : ''}
+          ${conflictChoice(c)}
           <label class="field">Af te schrijven verlofuren<input type="number" name="hours" min="0" step="0.5" value="${est}"></label>
           <p class="hint">Voorstel: ${sh.some(s => s.employee_id === r.employee_id) ? 'de geplande uren in deze periode' : 'dagen × contracturen ÷ 7'}. Saldo nu ${fmtH(bal.rest)} uur → na goedkeuren <strong data-after>${fmtH(bal.rest - est)}</strong> uur.</p>
           <label class="field">Reactie (optioneel)<input name="note" placeholder="Bijv. fijne vakantie!"></label>
           <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn ok" value="save">Goedkeuren</button></div>`, {
           onReady(dlg) { const f = $('form', dlg); f.hours.oninput = () => { $('[data-after]', dlg).textContent = fmtH(bal.rest - (Number(f.hours.value) || 0)); }; },
-          async onSubmit(fd) { await store.decideRequest(r.id, 'approved', fd.get('note').trim() || null, Number(fd.get('hours')) || 0); toast('Verlof goedgekeurd'); rerender(); },
+          async onSubmit(fd) { await store.decideRequest(r.id, 'approved', fd.get('note').trim() || null, Number(fd.get('hours')) || 0); toast('Verlof goedgekeurd' + await resolveConflicts(c, fd.get('conflict'))); rerender(); },
         });
       }
-      if (c.length && !await ask(`Let op: deze medewerker staat ${c.length}× ingepland in deze periode. Na goedkeuren kun je die diensten in de planning aanpassen. Doorgaan?`)) return;
+      if (c.length) {
+        return openDialog('Aanvraag goedkeuren', `
+          <p style="margin:0"><strong>${esc(byId[r.employee_id]?.name || '')}</strong> · ${esc(REQ[r.type])} · ${reqDates(r)}</p>
+          ${conflictChoice(c)}
+          <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn ok" value="save">Goedkeuren</button></div>`, {
+          async onSubmit(fd) { await store.decideRequest(r.id, 'approved', null); toast('Aanvraag goedgekeurd' + await resolveConflicts(c, fd.get('conflict'))); rerender(); },
+        });
+      }
       await store.decideRequest(r.id, 'approved', null); toast('Aanvraag goedgekeurd'); return rerender();
     }
     const no = ev.target.closest('[data-no]');

@@ -495,6 +495,11 @@ dialog.dlg:has(.exportprev) { width: min(900px, calc(100vw - 32px)); }
 .spdrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; }
 @media (max-width: 600px) { .spdrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-bottom: 10px; border-bottom: 1px solid var(--line); } .spdrow .field:nth-child(2) { grid-column: span 2; order: -1; } }
 
+fieldset.choice { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 0; display: grid; gap: 10px; }
+fieldset.choice legend { font-weight: 600; padding: 0 4px; }
+fieldset.choice .check { align-items: flex-start; }
+fieldset.choice .hint { margin: 0; }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }

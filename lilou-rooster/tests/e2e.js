@@ -180,6 +180,19 @@ async function test(name, fn) {
     await shared.click('dialog button[value=save]'); await shared.waitForTimeout(300);
     const { db } = await demoDb(shared); assert.ok(db.requests.some(r => r.status === 'approved' && Number(r.leave_hours) === hours));
   });
+  await test('verlof goedkeuren met ingeplande dienst: wordt een open dienst', async () => {
+    const ds = await shared.evaluate(() => { const d = new Date(); d.setDate(d.getDate() + 30); const p = x => String(x).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); });
+    await setDemoDb(shared, `const e = db.employees.find(x => x.name === 'Mehmet Yilmaz');
+      db.shifts.push({ id: 'vk1', employee_id: e.id, date: a, start_time: '12:00', end_time: '20:00', break_minutes: 30, position: 'Keuken', note: '', published: true });
+      db.requests.push({ id: 'rq-vk1', employee_id: e.id, type: 'vrij', start_date: a, end_date: a, note: '', status: 'pending', created_at: new Date().toISOString() });`, ds);
+    await shared.reload(); await shared.waitForSelector('[data-tab=aanvragen]'); await shared.click('[data-tab=aanvragen]');
+    await shared.click('[data-rt=verlof]'); await shared.click('[data-ok="rq-vk1"]'); await shared.waitForSelector('dialog [name=conflict][value=open]');
+    assert.ok(await shared.isChecked('dialog [name=conflict][value=open]'), 'open dienst is niet de standaardkeuze');
+    await shared.click('dialog button[value=save]'); await shared.waitForSelector('.toast:has-text("open dienst")');
+    const { db } = await demoDb(shared);
+    assert.equal(db.shifts.find(s => s.id === 'vk1').employee_id, null, 'dienst is niet open gemaakt');
+    assert.equal(db.requests.find(r => r.id === 'rq-vk1').status, 'approved');
+  });
   await test('Arbeidstijdenwet: nachtdienst van 17-jarige gemarkeerd', async () => {
     await shared.click('[data-tab=planning]'); await shared.waitForSelector('table.grid');
     const t = await shared.$eval('.chip.atw', e => e.title); assert.match(t, /17-jarigen/);
