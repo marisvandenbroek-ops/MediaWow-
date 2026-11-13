@@ -786,6 +786,20 @@ $$;
 revoke execute on function public.team() from public, anon;
 grant execute on function public.team() to authenticated;
 
+-- Agenda-abonnement: elke medewerker een eigen geheime link (alleen zelf en directie zien hem)
+alter table public.employees add column if not exists calendar_token uuid not null default gen_random_uuid();
+create unique index if not exists employees_calendar_token_idx on public.employees (calendar_token);
+create or replace function public.reset_calendar_token() returns uuid
+language plpgsql security definer set search_path = public as $$
+declare t uuid := gen_random_uuid();
+begin
+  update public.employees set calendar_token = t where id = public.my_employee_id();
+  if not found then raise exception 'Je account is niet gekoppeld aan een medewerker.'; end if;
+  return t;
+end $$;
+revoke execute on function public.reset_calendar_token() from public, anon;
+grant execute on function public.reset_calendar_token() to authenticated;
+
 -- Omzet per dag (verwacht en werkelijk) en doelen voor de personeelskosten. Alleen de directie.
 create table if not exists public.revenue (
   date       date primary key,
@@ -979,6 +993,27 @@ grant usage, select on all sequences in schema public to authenticated;
 grant usage on schema public to service_role;
 grant all on all tables in schema public to service_role;
 grant usage, select on all sequences in schema public to service_role;
+
+-- =====================================================================
+--  EXTRA AFSCHERMING (uit de beveiligingscontrole van Supabase)
+-- =====================================================================
+do $$ declare f record; begin
+  -- vaste zoekpad voor rekenfuncties
+  for f in select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname in ('shift_label', 'request_ip', 'today_nl', 'distance_m', 'shift_start_ts', 'shift_end_ts')
+  loop execute format('alter function %s set search_path = public', f.sig); end loop;
+  -- interne hulpfuncties en triggers: niet aanroepbaar via internet (de database gebruikt ze zelf)
+  for f in select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname in ('entry_shift', 'first_name', 'shift_label', 'link_employee', 'link_new_user', 'trg_audit',
+              'trg_request_notify', 'trg_shift_notify', 'trg_shift_swaps', 'trg_employee_inactive', 'notify', 'notify_team', 'notify_managers',
+              'shift_start_ts', 'shift_end_ts', 'distance_m', 'request_ip')
+  loop execute format('revoke execute on function %s from public, anon, authenticated', f.sig); end loop;
+  -- hulpfuncties voor de beveiligingsregels: alleen voor ingelogde gebruikers
+  for f in select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname in ('is_manager', 'is_planner', 'my_employee_id', 'today_nl')
+  loop execute format('revoke execute on function %s from public, anon', f.sig); execute format('grant execute on function %s to authenticated', f.sig); end loop;
+end $$;
+-- app_secrets en reminder_log hebben bewust geen regels: alleen de server mag erbij.
 
 -- =====================================================================
 --  EERSTE LEIDINGGEVENDE — pas naam en e-mail aan en voer daarna uit:

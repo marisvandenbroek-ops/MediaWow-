@@ -243,5 +243,21 @@ select t_ok(t_count('select * from revenue') = 0, 'medewerker ziet geen omzet');
 select t_fails($q$insert into revenue (date, forecast) values (today_nl() + 1, 100)$q$, 'medewerker kan geen omzet invullen');
 reset role;
 
+\echo '== Agendalink'
+set role authenticated; select as_user(2);
+select t_ok((select calendar_token is not null from employees where id = my_employee_id()), 'medewerker heeft een eigen agendalink');
+create temporary table _tok as select calendar_token from employees where id = 'a0000000-0000-0000-0000-000000000002';
+select reset_calendar_token();
+select t_ok((select e.calendar_token <> t.calendar_token from employees e, _tok t where e.id = 'a0000000-0000-0000-0000-000000000002'), 'nieuwe agendalink maakt de oude ongeldig');
+select t_ok(t_count($q$select calendar_token from employees where id <> my_employee_id()$q$) = 0, 'medewerker ziet geen agendalinks van anderen');
+reset role;
+
+\echo '== Afscherming functies'
+select t_ok(not has_function_privilege('anon', 'public.is_manager()', 'execute'), 'anoniem kan is_manager niet aanroepen');
+select t_ok(not has_function_privilege('authenticated', 'public.first_name(uuid)', 'execute'), 'interne hulpfunctie first_name niet via internet aan te roepen');
+select t_ok(not has_function_privilege('authenticated', 'public.trg_shift_notify()', 'execute'), 'triggerfunctie niet via internet aan te roepen');
+select t_ok(has_function_privilege('authenticated', 'public.is_planner()', 'execute'), 'ingelogde gebruiker kan is_planner gebruiken (beveiligingsregels)');
+select t_ok((select proconfig::text like '%search_path%' from pg_proc where proname = 'shift_label'), 'shift_label heeft een vast zoekpad');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

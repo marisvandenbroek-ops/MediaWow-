@@ -287,6 +287,7 @@ function demoStore() {
     async dayInfo(from, to) { db.dayinfo ||= {}; return Object.values(db.dayinfo).filter(d => d.date >= from && d.date <= to).map(clone); },
     async saveDay(date, guests) { db.dayinfo ||= {}; if (guests == null) delete db.dayinfo[date]; else db.dayinfo[date] = { date, guests }; save(); },
     async vapidKey() { return ''; },
+    async resetCalendarToken() { return uid(); },
     async requests() {
       return clone(db.requests.filter(r => canPlan() || r.employee_id === mem)).sort((a, b) => b.created_at.localeCompare(a.created_at));
     },
@@ -551,6 +552,7 @@ async function supabaseStore() {
       }
       return data;
     },
+    async resetCalendarToken() { const { data, error } = await sb.rpc('reset_calendar_token'); if (error) throw error; return data; },
     async vapidKey() {
       if (CFG.vapidPublicKey) return CFG.vapidPublicKey;
       if (this._vapid) return this._vapid;
@@ -1770,7 +1772,7 @@ async function viewMine(el) {
   el.onclick = ev => {
     if (clockClicks(ev)) return;
     const sw = ev.target.closest('[data-swap]'); if (sw) return swapDialog(mine, emps, all, sw.dataset.swap, swaps);
-    if (ev.target.closest('[data-ics]')) downloadIcs(mine);
+    if (ev.target.closest('[data-ics]')) agendaDialog(mine);
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
     const mf = ev.target.closest('[data-mf]'); if (mf) { S.mineWeek = mf.dataset.mf === 'week' ? start : null; return rerender(); }
     const w = ev.target.closest('[data-w]');
@@ -1786,6 +1788,42 @@ async function viewMine(el) {
       S.mineWeek = addDays(S.mineWeek, dx < 0 ? 7 : -7); rerender();
     };
   }
+}
+
+// Agenda koppelen: abonnement dat vanzelf bijwerkt (iPhone/Mac via webcal, Android/computer via Google Agenda)
+function agendaDialog(mine) {
+  const tok = S.me.calendar_token;
+  const ok2 = !store.demo && tok && CFG.supabaseUrl;
+  const https = ok2 ? `${CFG.supabaseUrl.replace(/\/$/, '')}/functions/v1/agenda?t=${tok}` : '';
+  const webcal = https.replace(/^https:/, 'webcal:');
+  const google = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcal)}`;
+  const apple = /iphone|ipad|ipod|macintosh/i.test(navigator.userAgent);
+  openDialog('Zet in mijn agenda', ok2 ? `
+    <p style="margin:0">Je diensten komen in je eigen agenda en blijven <strong>vanzelf bijgewerkt</strong>: nieuwe en gewijzigde diensten verschijnen automatisch.</p>
+    <div class="agenda-btns">
+      <a class="btn ${apple ? 'primary' : ''} block" href="${esc(webcal)}" data-agclose>📅 iPhone- of Mac-agenda</a>
+      <a class="btn ${apple ? '' : 'primary'} block" href="${esc(google)}" target="_blank" rel="noopener" data-agclose>Google Agenda (Android en computer)</a>
+      <button type="button" class="btn block" data-agcopy>Link kopiëren (Outlook en andere)</button>
+    </div>
+    <p class="hint">iPhone: kies <em>Abonneer</em> en daarna in welke agenda. Android: tik op Google Agenda en kies <em>Toevoegen</em>; de diensten verschijnen daarna in de agenda op je telefoon.</p>
+    <details class="agmore"><summary>Meer opties</summary>
+      <p class="hint">De link is persoonlijk. Heb je hem per ongeluk gedeeld? Maak een nieuwe; de oude werkt dan niet meer (koppel je agenda daarna opnieuw).</p>
+      <div class="req-actions"><button type="button" class="btn sm" data-agreset>Nieuwe link maken</button><button type="button" class="btn sm ghost" data-agfile>Eenmalig bestand downloaden</button></div>
+    </details>` : `
+    <p style="margin:0">${store.demo ? 'In de echte app koppel je hier je agenda: je diensten komen dan automatisch in je iPhone-, Google- of Outlook-agenda en blijven bijgewerkt.' : 'Agenda koppelen is nog niet ingesteld. Je kunt je diensten wel eenmalig als bestand toevoegen.'}</p>
+    <button type="button" class="btn block" data-agfile>Eenmalig bestand downloaden</button>`, {
+    onReady(dlg) {
+      $$('[data-agclose]', dlg).forEach(a => a.addEventListener('click', () => setTimeout(() => dlg.close(), 300)));
+      const cp = $('[data-agcopy]', dlg);
+      if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(https); toast('Agendalink gekopieerd'); } catch (x) { prompt('Kopieer deze link:', https); } };
+      const rs = $('[data-agreset]', dlg);
+      if (rs) rs.onclick = async () => {
+        if (!await ask('Nieuwe agendalink maken? De oude link werkt dan niet meer; koppel je agenda daarna opnieuw.', 'Nieuwe link')) return;
+        try { S.me.calendar_token = await store.resetCalendarToken(); dlg.close(); toast('Nieuwe link gemaakt'); agendaDialog(mine); } catch (x) { toast(errMsg(x), 'error'); }
+      };
+      const fl = $('[data-agfile]', dlg); if (fl) fl.onclick = () => { downloadIcs(mine); };
+    },
+  });
 }
 
 function downloadIcs(shifts) {
@@ -3171,5 +3209,7 @@ window.addEventListener('hashchange', () => { if (store && !S.me && store.demo) 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) { /* ignore */ }
 }
+// Alleen in de demo: haakje voor de automatische tests
+if (DEMO) window.__rooster = { S, CFG, get store() { return store; }, agendaDialog };
 boot();
 })();

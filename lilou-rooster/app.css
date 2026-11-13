@@ -597,6 +597,10 @@ fieldset.choice .hint { margin: 0; }
   .demo-banner { margin-left: var(--side); }
 }
 
+.agenda-btns { display: grid; gap: 8px; }
+.agenda-btns a.btn { text-decoration: none; justify-content: center; text-align: center; }
+.agmore summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }

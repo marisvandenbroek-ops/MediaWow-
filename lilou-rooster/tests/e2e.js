@@ -429,6 +429,20 @@ async function test(name, fn) {
     assert.match(await shared.textContent('dialog [data-cost]'), /kost ± € \d/);
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
   });
+  await test('agenda koppelen: links voor iPhone (webcal) en Google, met persoonlijke sleutel', async () => {
+    const html = await shared.evaluate(() => {
+      const { S, CFG, store, agendaDialog } = window.__rooster;
+      document.querySelectorAll('dialog[open]').forEach(d => d.close());
+      const keep = [store.demo, CFG.supabaseUrl, S.me.calendar_token];
+      store.demo = false; CFG.supabaseUrl = 'https://voorbeeld.supabase.co'; S.me.calendar_token = '11111111-2222-3333-4444-555555555555';
+      agendaDialog([]);
+      const d = document.querySelector('dialog[open]'); const out = d.innerHTML; d.close();
+      [store.demo, CFG.supabaseUrl, S.me.calendar_token] = keep;
+      return out;
+    });
+    assert.ok(html.includes('webcal://voorbeeld.supabase.co/functions/v1/agenda?t=11111111-2222-3333-4444-555555555555'), 'geen webcal-link');
+    assert.ok(html.includes('calendar.google.com/calendar/r?cid=webcal%3A%2F%2Fvoorbeeld.supabase.co'), 'geen Google-link');
+  });
   await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'] });
     const p = watch(await ctx.newPage());
