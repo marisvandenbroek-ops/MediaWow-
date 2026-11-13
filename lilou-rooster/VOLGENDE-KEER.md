@@ -13,6 +13,8 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
    Daarna één update uploaden (app.js + sw.js).
 1b. Uitnodigingsmail met uitleg: Supabase › Authentication › Emails › Invite user: onderwerp + inhoud van
    supabase/email/uitnodiging.html plakken; daarna invite-employee opnieuw deployen (geeft de voornaam mee).
+1c. Idee: uitlegpagina rooster.lilou-ede.nl/uitleg.html (inhoud van de teammeeting-presentatie, met schermafbeeldingen),
+   gelinkt vanuit de uitnodigingsmail en onderaan in de app. Een bijlage kan niet in de Supabase-mail.
 2. App doorlopen: Instellingen deel 2 (gesloten dagen, toeslagen via Boomloon, doelen, werklocatie in het restaurant),
    daarna deel 3 Team (uurlonen, contracttypes, rollen, verlof "meegenomen uit vorig jaar").
 3. Sessie naar de Mac halen: `claude --teleport --chrome` in de map MediaWow-, dan `/chrome`.
