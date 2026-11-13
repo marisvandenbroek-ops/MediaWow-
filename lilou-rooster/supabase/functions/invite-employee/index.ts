@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     // 3. Uitnodiging versturen (Supabase gebruikt de mailtemplate "Invite user" en jullie eigen mailserver)
     const { error } = await admin.auth.admin.inviteUserByEmail(emp.email, {
       redirectTo: typeof redirect_to === 'string' ? redirect_to : undefined,
-      data: { name: emp.name },
+      data: { name: emp.name, first_name: String(emp.name).trim().split(/\s+/)[0] },   // voornaam voor de aanhef in de uitnodigingsmail
     });
     if (error) {
       if (/already|registered|exists/i.test(error.message)) {
