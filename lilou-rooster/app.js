@@ -1840,7 +1840,8 @@ function swapDialog(myShifts, emps, allShifts, preselect, swaps = []) {
       f.to.onchange = () => {
         const list = f.to.value ? theirs(f.to.value) : [];
         wrap.hidden = !f.to.value;
-        f.swap_shift_id.innerHTML = '<option value="">Niets — alleen overdragen</option>' + list.map(s => `<option value="${s.id}">${esc(opt(s))}</option>`).join('');
+        const nm = (colleagues.find(e => e.id === f.to.value)?.name || '').split(' ')[0];
+        f.swap_shift_id.innerHTML = '<option value="">Niets — alleen overdragen</option>' + (list.length ? list.map(s => `<option value="${s.id}">${esc(opt(s))}</option>`).join('') : `<option disabled>${esc(nm)} heeft geen komende diensten om te ruilen</option>`);
       };
     },
     async onSubmit(fd) {
