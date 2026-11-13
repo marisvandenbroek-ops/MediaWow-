@@ -169,7 +169,6 @@
               <p class="body">
                 <span class="f-body">HET EERSTE DINER IN HET POMPHUIS,</span>
                 <span class="f-body">VOORDAT DE DEUREN OPENGAAN.</span>
-                <span class="f-body">KIES JE AVOND TOT 23 NOVEMBER.</span>
               </p>
             </div>
             <p class="url f-url">LILOU-EDE.NL/AANMELDEN<span class="ul f-ul"></span></p>
@@ -195,7 +194,6 @@
               <p class="note">HET EERSTE DINER IN HET POMPHUIS,<br>VOORDAT DE DEUREN OPENGAAN.</p>
               <a class="cta" href="https://www.lilou-ede.nl/aanmelden" target="_blank" rel="noopener">RESERVEER JE PLEK <span aria-hidden="true">→</span></a>
               <p class="backurl">LILOU-EDE.NL/AANMELDEN</p>
-              <p class="countdown" id="countdown"></p>
             </div>
             <div class="paper"></div>
             <div class="shade"></div>
@@ -308,8 +306,7 @@
   });
 
   (() => {
-    const days = Math.ceil((new Date(2026, 10, 23, 23, 59) - new Date()) / 864e5);
-    $('#countdown').textContent = days > 1 ? `NOG ${days} DAGEN OM TE KIEZEN` : days === 1 ? 'LAATSTE DAG OM TE KIEZEN' : '';
+
   })();
 
   $$('.night').forEach(b => b.addEventListener('click', () => {
