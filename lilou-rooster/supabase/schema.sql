@@ -972,6 +972,71 @@ create table if not exists public.app_secrets (key text primary key, value text 
 alter table public.app_secrets enable row level security;
 
 -- =====================================================================
+--  PRIKBORD: mededelingen van de directie (nieuwe menukaart, huisregels e.d.)
+-- =====================================================================
+create table if not exists public.announcements (
+  id              uuid primary key default gen_random_uuid(),
+  title           text not null check (length(title) between 1 and 120),
+  body            text,
+  pinned          boolean not null default false,
+  attachment_path text,             -- bestand in opslag-map 'mededelingen'
+  attachment_name text,
+  attachment_type text,
+  created_by      uuid references public.employees(id) on delete set null,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+create table if not exists public.announcement_reads (
+  announcement_id uuid not null references public.announcements(id) on delete cascade,
+  employee_id     uuid not null references public.employees(id) on delete cascade,
+  read_at         timestamptz not null default now(),
+  primary key (announcement_id, employee_id)
+);
+alter table public.announcements enable row level security;
+alter table public.announcement_reads enable row level security;
+drop policy if exists ann_select on public.announcements;
+create policy ann_select on public.announcements for select to authenticated
+  using (public.my_employee_id() is not null or public.is_manager());
+drop policy if exists ann_write on public.announcements;
+create policy ann_write on public.announcements for all to authenticated
+  using (public.is_manager()) with check (public.is_manager());
+drop policy if exists annr_select on public.announcement_reads;
+create policy annr_select on public.announcement_reads for select to authenticated
+  using (public.is_manager() or employee_id = public.my_employee_id());
+drop policy if exists annr_insert on public.announcement_reads;
+create policy annr_insert on public.announcement_reads for insert to authenticated
+  with check (employee_id = public.my_employee_id());
+
+-- Nieuwe mededeling: iedereen krijgt een melding (en pushmelding)
+create or replace function public.trg_announcement_notify() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public.notify_team('📣 ' || new.title, coalesce(left(new.body, 140), 'Nieuwe mededeling op het prikbord'), 'mededelingen', new.created_by);
+  return null;
+end $$;
+drop trigger if exists announcements_notify on public.announcements;
+create trigger announcements_notify after insert on public.announcements
+  for each row execute function public.trg_announcement_notify();
+
+-- Bijlagen (foto of pdf, bv. de menukaart) in een besloten opslag-map; alleen ingelogd team kan ze openen
+do $$ begin
+  if exists (select 1 from pg_namespace where nspname = 'storage') then
+    insert into storage.buckets (id, name, public) values ('mededelingen', 'mededelingen', false) on conflict (id) do nothing;
+    execute 'drop policy if exists mededelingen_lezen on storage.objects';
+    execute $p$create policy mededelingen_lezen on storage.objects for select to authenticated
+      using (bucket_id = 'mededelingen' and (public.my_employee_id() is not null or public.is_manager()))$p$;
+    execute 'drop policy if exists mededelingen_plaatsen on storage.objects';
+    execute $p$create policy mededelingen_plaatsen on storage.objects for insert to authenticated
+      with check (bucket_id = 'mededelingen' and public.is_manager())$p$;
+    execute 'drop policy if exists mededelingen_verwijderen on storage.objects';
+    execute $p$create policy mededelingen_verwijderen on storage.objects for delete to authenticated
+      using (bucket_id = 'mededelingen' and public.is_manager())$p$;
+  end if;
+exception when others then
+  raise notice 'Opslag voor bijlagen niet ingesteld (%). Mededelingen werken wel; alleen bijlagen niet.', sqlerrm;
+end $$;
+
+-- =====================================================================
 --  TOEGANG PER TABEL
 --  Werkt ook als "Automatically expose new tables" in Supabase UIT staat.
 --  Welke rijen iemand ziet of wijzigt, bepalen daarna de beveiligingsregels (RLS) hierboven.
@@ -981,8 +1046,9 @@ revoke truncate, references, trigger on all tables in schema public from authent
 grant select, insert, update, delete on
   public.employees, public.shifts, public.requests, public.settings, public.time_entries,
   public.shift_applications, public.swaps, public.availability, public.push_subscriptions,
-  public.employee_private, public.day_info, public.revenue
+  public.employee_private, public.day_info, public.revenue, public.announcements
   to authenticated;
+grant select, insert on public.announcement_reads to authenticated;
 grant select on public.notifications, public.audit_log to authenticated;
 revoke insert, update, delete on public.notifications, public.audit_log from authenticated;
 grant update (read_at) on public.notifications to authenticated;          -- alleen 'gelezen' zelf zetten
@@ -1005,7 +1071,7 @@ do $$ declare f record; begin
   -- interne hulpfuncties en triggers: niet aanroepbaar via internet (de database gebruikt ze zelf)
   for f in select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
             where n.nspname = 'public' and p.proname in ('entry_shift', 'first_name', 'shift_label', 'link_employee', 'link_new_user', 'trg_audit',
-              'trg_request_notify', 'trg_shift_notify', 'trg_shift_swaps', 'trg_employee_inactive', 'notify', 'notify_team', 'notify_managers',
+              'trg_request_notify', 'trg_shift_notify', 'trg_shift_swaps', 'trg_employee_inactive', 'trg_announcement_notify', 'notify', 'notify_team', 'notify_managers',
               'shift_start_ts', 'shift_end_ts', 'distance_m', 'request_ip')
   loop execute format('revoke execute on function %s from public, anon, authenticated', f.sig); end loop;
   -- hulpfuncties voor de beveiligingsregels: alleen voor ingelogde gebruikers

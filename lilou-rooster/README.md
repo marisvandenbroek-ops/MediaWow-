@@ -207,6 +207,9 @@ ruilen, verlof, loonkosten en de automatische taken.
 | `config.js` | Instellingen + Supabase-sleutels |
 | `supabase/schema.sql` | Database, beveiligingsregels, functies en automatische taken |
 | `supabase/functions/send-push` | Pushmeldingen versturen |
+| `supabase/functions/mail-rooster` | Weekrooster mailen bij publiceren (secret SMTP_PASS) |
+| `supabase/functions/agenda` | Persoonlijk agenda-abonnement (Verify JWT uit) |
+| `supabase/functions/invite-employee` | Uitnodiging per mail (Verify JWT uit) |
 | `tests/` | Browser- en databasetests |
 | `privacy.html`, `afspraken.html`, `docs.css` | Documenten voor het personeel |
 | `manifest.webmanifest`, `sw.js`, `icon*` | Installeren als app op de telefoon |

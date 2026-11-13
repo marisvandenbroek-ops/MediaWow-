@@ -259,5 +259,23 @@ select t_ok(not has_function_privilege('authenticated', 'public.trg_shift_notify
 select t_ok(has_function_privilege('authenticated', 'public.is_planner()', 'execute'), 'ingelogde gebruiker kan is_planner gebruiken (beveiligingsregels)');
 select t_ok((select proconfig::text like '%search_path%' from pg_proc where proname = 'shift_label'), 'shift_label heeft een vast zoekpad');
 
+\echo '== Prikbord'
+set role authenticated; select as_user(1);
+insert into announcements (id, title, body, created_by) values ('80000000-0000-0000-0000-000000000001', 'Nieuwe menukaart', 'Vanaf vrijdag het najaarsmenu', 'a0000000-0000-0000-0000-000000000001');
+reset role;
+select t_ok(t_count($q$select * from notifications where title = '📣 Nieuwe menukaart'$q$) >= 2, 'team krijgt melding van nieuwe mededeling');
+set role authenticated; select as_user(2);
+select t_ok(t_count('select * from announcements') = 1, 'medewerker ziet de mededeling');
+select t_fails($q$insert into announcements (title) values ('nep')$q$, 'medewerker kan geen mededeling plaatsen');
+insert into announcement_reads (announcement_id, employee_id) values ('80000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002');
+select t_fails($q$insert into announcement_reads (announcement_id, employee_id) values ('80000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003')$q$, 'medewerker kan niet namens een ander "gelezen" zetten');
+insert into storage.objects (bucket_id, name) select 'mededelingen', 'x.pdf' where false;
+select t_fails($q$insert into storage.objects (bucket_id, name) values ('mededelingen', 'nep.pdf')$q$, 'medewerker kan geen bijlage uploaden');
+select as_user(1);
+select t_ok(t_count('select * from announcement_reads') = 1, 'directie ziet wie het gelezen heeft');
+insert into storage.objects (bucket_id, name) values ('mededelingen', 'menu.pdf');
+select t_ok(t_count($q$select * from storage.objects where bucket_id = 'mededelingen'$q$) = 1, 'directie kan een bijlage uploaden');
+reset role;
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

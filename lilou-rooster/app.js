@@ -154,11 +154,15 @@ function demoSeed() {
   // voorbeeldomzet voor deze week: verwacht per dag, werkelijk tot en met gisteren
   const revenue = {};
   [950, 1100, 1250, 1300, 2100, 2600, 1400].forEach((v, i) => { const d = iso(addDays(mon, i)); revenue[d] = { date: d, forecast: v, actual: d < iso(new Date()) ? Math.round(v * (0.9 + ((i * 7) % 5) / 25)) : null }; });
-  return { employees: E, shifts: S, requests: R, entries: T, settings, applications: A, swaps: W, availability: V, notifications: N, private: P, revenue };
+  const announcements = [
+    { id: uid(), title: 'Welkom in de nieuwe rooster-app', body: 'Hier vind je voortaan je rooster, ruil je diensten en vraag je verlof aan. Zet de app op je beginscherm en zet meldingen aan via het belletje.', pinned: true, created_by: mark.id, created_at: new Date(Date.now() - 6 * 864e5).toISOString() },
+    { id: uid(), title: 'Nieuwe najaarskaart vanaf vrijdag', body: 'Vrijdag gaat de najaarskaart live. Donderdag om 15:00 proeven we alles samen in de keuken; fijn als je erbij bent.', pinned: false, created_by: mark.id, created_at: new Date(Date.now() - 864e5).toISOString() },
+  ];
+  return { employees: E, shifts: S, requests: R, entries: T, settings, applications: A, swaps: W, availability: V, notifications: N, private: P, revenue, announcements, annReads: [] };
 }
 
 function demoStore() {
-  const KEY = 'lilou-rooster-demo-v8';
+  const KEY = 'lilou-rooster-demo-v9';
   let mem = null;
   let db;
   try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* ignore */ }
@@ -278,6 +282,27 @@ function demoStore() {
       save();
     },
     async mailRoster(from, to, ids) { return { sent: ids.length, failed: [], demo: true }; },
+    // --- prikbord
+    async announcements() {
+      db.announcements ||= []; db.annReads ||= [];
+      return { list: clone(db.announcements).sort((a, b) => (b.pinned - a.pinned) || b.created_at.localeCompare(a.created_at)), reads: clone(db.annReads.filter(r => isMgr() || r.employee_id === mem)) };
+    },
+    async saveAnnouncement(a) {
+      if (!isMgr()) throw new Error('Alleen de directie kan mededelingen plaatsen.');
+      db.announcements ||= [];
+      if (a.id) Object.assign(db.announcements.find(x => x.id === a.id), a, { updated_at: new Date().toISOString() });
+      else { const n = { pinned: false, ...a, id: uid(), created_by: mem, created_at: new Date().toISOString() }; db.announcements.push(n); notifyTeam('📣 ' + n.title, (n.body || 'Nieuwe mededeling op het prikbord').slice(0, 140), 'mededelingen', mem); }
+      save();
+    },
+    async deleteAnnouncement(id) { db.announcements = db.announcements.filter(x => x.id !== id); db.annReads = (db.annReads || []).filter(r => r.announcement_id !== id); save(); },
+    async markAnnRead(id) { db.annReads ||= []; if (!db.annReads.some(r => r.announcement_id === id && r.employee_id === mem)) db.annReads.push({ announcement_id: id, employee_id: mem, read_at: new Date().toISOString() }); save(); },
+    async uploadAttachment(file) {
+      if (file.size > 1.5e6) throw new Error('In de demo kunnen alleen bestanden tot 1,5 MB.');
+      const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+      const path = 'demo/' + uid(); db.files ||= {}; db.files[path] = data; save();
+      return { path, name: file.name, type: file.type };
+    },
+    async attachmentUrl(path) { return (db.files || {})[path] || ''; },
     async revenue(from, to) { db.revenue ||= {}; if (!isMgr()) return []; return Object.values(db.revenue).filter(d => d.date >= from && d.date <= to).map(clone); },
     async saveRevenue(date, patch) {
       if (!isMgr()) throw new Error('Alleen de directie kan omzet invullen.');
@@ -530,6 +555,35 @@ async function supabaseStore() {
     },
     async deleteShift(id) { ok(await sb.from('shifts').delete().eq('id', id)); },
     async publish(from, to) { ok(await sb.rpc('publish_week', { p_from: from, p_to: to })); },
+    // --- prikbord
+    async announcements() {
+      const [list, reads] = await Promise.all([
+        sb.from('announcements').select('*').order('pinned', { ascending: false }).order('created_at', { ascending: false }).limit(60),
+        sb.from('announcement_reads').select('*')]);
+      return { list: ok(list), reads: ok(reads) };
+    },
+    async saveAnnouncement(a) {
+      const { id, ...rest } = a;
+      if (id) ok(await sb.from('announcements').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', id));
+      else ok(await sb.from('announcements').insert({ ...rest, created_by: S.me.id }));
+    },
+    async deleteAnnouncement(id, path) {
+      if (path) await sb.storage.from('mededelingen').remove([path]);
+      ok(await sb.from('announcements').delete().eq('id', id));
+    },
+    async markAnnRead(id) {
+      const { error } = await sb.from('announcement_reads').insert({ announcement_id: id, employee_id: S.me.id });
+      if (error && error.code !== '23505') throw error;   // al gelezen = prima
+    },
+    async uploadAttachment(file) {
+      if (file.size > 10e6) throw new Error('Het bestand is groter dan 10 MB.');
+      const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5);
+      const path = `${new Date().getFullYear()}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await sb.storage.from('mededelingen').upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+      if (error) throw new Error('Uploaden mislukt: ' + error.message);
+      return { path, name: file.name, type: file.type };
+    },
+    async attachmentUrl(path) { const { data } = await sb.storage.from('mededelingen').createSignedUrl(path, 3600); return data?.signedUrl || ''; },
     async revenue(from, to) { if (!isMgr()) return []; return ok(await sb.from('revenue').select('*').gte('date', from).lte('date', to)); },
     async saveRevenue(date, patch) {
       const cur = ok(await sb.from('revenue').select('*').eq('date', date).maybeSingle()) || { date, forecast: null, actual: null };
@@ -1420,13 +1474,93 @@ async function publishWeek(from, to, weekShifts, quiet = false) {
   } catch (x) { toast('Gepubliceerd, maar niet gemaild: ' + errMsg(x), 'error'); }
 }
 
+/* ================= Prikbord ================= */
+const annBody = t => esc(t || '').replace(/\n/g, '<br>');
+function annCard(a, { read, mgr, readInfo } = {}) {
+  const img = /^image\//.test(a.attachment_type || '');
+  return `<article class="ann card ${a.pinned ? 'pinned' : ''} ${read ? 'read' : 'unread'}" data-ann="${a.id}">
+    <div class="ann-head"><div><h3>${a.pinned ? '<span title="Vastgezet">📌</span> ' : ''}${esc(a.title)}</h3><small class="muted">${esc(fmtShort(iso(new Date(a.created_at))))}</small></div>
+      ${mgr ? `<div class="ann-tools"><button type="button" class="btn sm ghost" data-annedit="${a.id}">Bewerken</button></div>` : ''}</div>
+    ${a.body ? `<p class="ann-body">${annBody(a.body)}</p>` : ''}
+    ${a.attachment_path ? (img ? `<a class="ann-img" data-annlink="${esc(a.attachment_path)}" target="_blank" rel="noopener"><img data-annimg="${esc(a.attachment_path)}" alt="${esc(a.attachment_name || 'Afbeelding')}"></a>`
+      : `<a class="btn sm ann-file" data-annlink="${esc(a.attachment_path)}" target="_blank" rel="noopener">📄 ${esc(a.attachment_name || 'Bijlage openen')}</a>`) : ''}
+    <div class="ann-foot">${mgr ? `<button type="button" class="linkbtn" data-annreads="${a.id}">${readInfo}</button>` : read ? '<span class="muted small">✓ Gelezen</span>' : `<button type="button" class="btn sm primary" data-annread="${a.id}">👍 Gelezen</button>`}</div>
+  </article>`;
+}
+// bijlagen pas na het tekenen ophalen (beveiligde links zijn tijdelijk)
+async function fillAnnFiles(el) {
+  for (const n of $$('[data-annimg], [data-annlink]', el)) {
+    const p = n.dataset.annimg || n.dataset.annlink; if (!p) continue;
+    const u = await store.attachmentUrl(p); if (!u) continue;
+    if (n.dataset.annimg) n.src = u; else n.href = u;
+  }
+}
+function annDialog(a = {}) {
+  const isNew = !a.id;
+  openDialog(isNew ? 'Nieuwe mededeling' : 'Mededeling bewerken', `
+    <label class="field">Titel<input name="title" maxlength="120" required value="${esc(a.title || '')}" placeholder="Bijv. Nieuwe najaarskaart vanaf vrijdag"></label>
+    <label class="field">Bericht<textarea name="body" rows="5" placeholder="Wat moet het team weten?">${esc(a.body || '')}</textarea></label>
+    <label class="field">Foto of pdf (optioneel, bijv. de menukaart)<input type="file" name="file" accept="image/*,application/pdf"></label>
+    ${a.attachment_path ? `<label class="check"><input type="checkbox" name="dropfile"> Huidige bijlage verwijderen (${esc(a.attachment_name || '')})</label>` : ''}
+    <label class="check"><input type="checkbox" name="pinned" ${a.pinned ? 'checked' : ''}> Vastzetten bovenaan (bijv. huisregels of de menukaart)</label>
+    ${isNew ? '<p class="hint">Iedereen krijgt een melding en de mededeling staat bovenaan in hun rooster tot ze hem gelezen hebben.</p>' : ''}
+    <div class="dlg-foot">${isNew ? '' : '<button class="btn danger" value="delete" formnovalidate>Verwijderen</button>'}<span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">${isNew ? 'Plaatsen' : 'Opslaan'}</button></div>`, {
+    async onSubmit(fd, action) {
+      if (action === 'delete') { if (!await ask('Deze mededeling verwijderen?', 'Verwijderen')) throw 'cancel'; await store.deleteAnnouncement(a.id, a.attachment_path); toast('Mededeling verwijderd'); return rerender(); }
+      const rec = { title: fd.get('title').trim(), body: fd.get('body').trim() || null, pinned: fd.get('pinned') === 'on' };
+      if (!rec.title) throw new Error('Vul een titel in.');
+      if (a.id) rec.id = a.id;
+      if (fd.get('dropfile') === 'on') Object.assign(rec, { attachment_path: null, attachment_name: null, attachment_type: null });
+      const file = fd.get('file');
+      if (file && file.size) { const up = await store.uploadAttachment(file); Object.assign(rec, { attachment_path: up.path, attachment_name: up.name, attachment_type: up.type }); }
+      await store.saveAnnouncement(rec);
+      toast(isNew ? 'Mededeling geplaatst · het team krijgt een melding' : 'Opgeslagen'); rerender();
+    },
+  });
+}
+async function annReadsDialog(a, reads, emps) {
+  const team = emps.filter(e => e.active !== false && e.id !== a.created_by);
+  const got = new Set(reads.filter(r => r.announcement_id === a.id).map(r => r.employee_id));
+  const yes = team.filter(e => got.has(e.id)), no = team.filter(e => !got.has(e.id));
+  openDialog('Wie heeft het gelezen?', `<p style="margin:0"><strong>${esc(a.title)}</strong></p>
+    <div><h3 class="small-h">Gelezen (${yes.length})</h3><p>${yes.map(e => esc(e.name)).join(', ') || '<span class="muted">Nog niemand</span>'}</p></div>
+    <div><h3 class="small-h">Nog niet (${no.length})</h3><p>${no.map(e => esc(e.name)).join(', ') || '<span class="muted">Iedereen heeft het gelezen 🎉</span>'}</p></div>
+    <div class="dlg-foot"><button type="button" class="btn primary" data-close>Sluiten</button></div>`);
+}
+// Prikbord bovenaan Mijn rooster: ongelezen mededelingen en vastgezette berichten
+async function boardHTML() {
+  const { list, reads } = await store.announcements();
+  const mineRead = new Set(reads.filter(r => r.employee_id === S.me.id).map(r => r.announcement_id));
+  const unread = list.filter(a => !mineRead.has(a.id));
+  const pinnedRead = list.filter(a => a.pinned && mineRead.has(a.id));
+  if (!unread.length && !pinnedRead.length && !list.length) return '';
+  return `<section class="board">
+    ${unread.map(a => annCard(a, { read: false })).join('')}
+    ${pinnedRead.length ? `<div class="pinlist">${pinnedRead.map(a => `<details class="pinitem"><summary>📌 ${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}</div>` : ''}
+    ${list.length > unread.length + pinnedRead.length ? '<button type="button" class="linkbtn small" data-annall>Alle mededelingen</button>' : ''}
+  </section>`;
+}
+function bindBoard(el) {
+  fillAnnFiles(el);
+  return async ev => {
+    const r = ev.target.closest('[data-annread]');
+    if (r) { await store.markAnnRead(r.dataset.annread); toast('Bedankt!'); rerender(); return true; }
+    if (ev.target.closest('[data-annall]')) {
+      const { list } = await store.announcements();
+      const dlg = openDialog('Alle mededelingen', `<div class="annall">${list.map(a => annCard(a, { read: true })).join('')}</div><div class="dlg-foot"><button type="button" class="btn primary" data-close>Sluiten</button></div>`);
+      fillAnnFiles(dlg); return true;
+    }
+    return false;
+  };
+}
+
 /* ================= Overzicht (dashboard directie) ================= */
 async function viewDashboard(el) {
   S.dashWeek ||= mondayOf(new Date());
   const from = iso(S.dashWeek), to = iso(addDays(S.dashWeek, 6)), today = todayIso();
-  const [emps0, shifts, ents, privList, st, revRows, reqs, apps, openE, avail] = await Promise.all([
+  const [emps0, shifts, ents, privList, st, revRows, reqs, apps, openE, avail, board] = await Promise.all([
     store.employees(), store.shifts(from, to), store.entries(from, to), store.privates(), store.settings(), store.revenue(from, to),
-    store.requests(), store.applications(), store.openEntries(), store.availability(from, to)]);
+    store.requests(), store.applications(), store.openEntries(), store.availability(from, to), store.announcements()]);
   applySettings(st);
   const emps = sortEmps(emps0), byId = Object.fromEntries(emps.map(e => [e.id, e]));
   const privs = Object.fromEntries(privList.map(p => [p.employee_id, p]));
@@ -1498,6 +1632,14 @@ async function viewDashboard(el) {
       </section>
     </div>
     <section class="card pad dsect">
+      <div class="sect-head"><h2>Prikbord</h2><button class="btn sm primary" data-annnew>+ Nieuwe mededeling</button></div>
+      ${board.list.length ? `<div class="annlist">${board.list.slice(0, 6).map(a => {
+        const team = emps.filter(e => e.active !== false && e.id !== a.created_by).length;
+        const n = board.reads.filter(r => r.announcement_id === a.id && emps.some(e => e.id === r.employee_id && e.active !== false && e.id !== a.created_by)).length;
+        return annCard(a, { mgr: true, readInfo: `Gelezen door ${n} van ${team}` });
+      }).join('')}</div>` : '<p class="hint" style="margin:0">Deel hier nieuws met het team, zoals een nieuwe menukaart, een proeverij of de huisregels. Iedereen krijgt een melding en ziet het bovenaan in de app. WhatsApp blijft voor het gewone kletsen.</p>'}
+    </section>
+    <section class="card pad dsect">
       <h2>Per dag</h2>
       <p class="hint">Omzet invullen is optioneel. Doe je het, dan zie je de personeelskosten als percentage van de omzet. Vul de verwachte omzet in (of in de planning). De werkelijke omzet vul je achteraf in uit de kassa; later kan die automatisch uit Lightspeed komen. Kosten % = geplande personeelskosten gedeeld door de omzet.</p>
       <div class="table-wrap"><table class="list daytable"><thead><tr><th>Dag</th><th class="num">Verwacht</th><th class="num">Werkelijk</th><th class="num hide-sm">Uren gepland</th><th class="num hide-sm">Kosten gepland</th><th class="num">Kosten %</th><th class="num hide-sm">Uren gewerkt</th></tr></thead>
@@ -1517,7 +1659,11 @@ async function viewDashboard(el) {
       ${posRows.length ? `<div class="table-wrap"><table class="list"><thead><tr><th>Functie</th><th class="num">Uren</th><th class="num">Kosten</th><th class="num hide-sm">Kosten per uur</th><th class="num">Aandeel</th></tr></thead>
       <tbody>${posRows.map(({ p, k }) => `<tr><td>${esc(p)}</td><td class="num">${fmtH(k.hours)}</td><td class="num">${euro0(k.cost)}</td><td class="num hide-sm"><span class="${goalColor('hour', k.perHour, st)}">${k.perHour != null && k.cost ? euro(k.perHour) : '—'}</span></td><td class="num">${P.cost ? pct1(k.cost / P.cost * 100) : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<p class="hint">Nog geen diensten deze week.</p>'}
     </section>`;
+  fillAnnFiles(el);
   el.onclick = ev => {
+    if (ev.target.closest('[data-annnew]')) return annDialog();
+    const ae = ev.target.closest('[data-annedit]'); if (ae) return annDialog(board.list.find(a => a.id === ae.dataset.annedit));
+    const ar = ev.target.closest('[data-annreads]'); if (ar) return annReadsDialog(board.list.find(a => a.id === ar.dataset.annreads), board.reads, emps);
     const dw = ev.target.closest('[data-dw]');
     if (dw) { const n = Number(dw.dataset.dw); S.dashWeek = n ? addDays(S.dashWeek, 7 * n) : mondayOf(new Date()); return rerender(); }
     if (ev.target.closest('[data-gosettings2]')) return go('instellingen');
@@ -1708,7 +1854,7 @@ async function viewMine(el) {
   const today = todayIso();
   const nowHM = `${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
   const next = mine.find(s => s.date > today || (s.date === today && hm(s.end_time) > nowHM) || (s.date === today && mins(s.end_time) <= mins(s.start_time)));
-  const clockHTML = await clockCard(mine.find(s => s.date === today));
+  const [clockHTML, boardH] = await Promise.all([clockCard(mine.find(s => s.date === today)), boardHTML().catch(() => '')]);
   let workedHTML = '';
   if (sel) {
     const [ents0, stM] = await Promise.all([store.entries(iso(sel), iso(addDays(sel, 6))), store.settings()]);
@@ -1763,14 +1909,17 @@ async function viewMine(el) {
   el.innerHTML = `
     <div class="page-head"><div><h1>Hoi ${esc(S.me.name.split(' ')[0])}</h1><p>Je rooster${sel ? ' per week' : ' voor de komende weken'}.</p></div>
       ${mine.length ? '<button class="btn" data-ics>📅 Zet in mijn agenda</button>' : ''}</div>
+    ${boardH}
     ${clockHTML}
     ${next && !sel ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
     <div class="filters mine-filter"><button data-mf="all" class="${sel ? '' : 'active'}">Komende weken</button><button data-mf="week" class="${sel ? 'active' : ''}">Per week</button></div>
     ${body}
   `;
   bindClock(el);
-  el.onclick = ev => {
+  const boardClick = bindBoard(el);
+  el.onclick = async ev => {
     if (clockClicks(ev)) return;
+    if (await boardClick(ev)) return;
     const sw = ev.target.closest('[data-swap]'); if (sw) return swapDialog(mine, emps, all, sw.dataset.swap, swaps);
     if (ev.target.closest('[data-ics]')) agendaDialog(mine);
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
@@ -2181,6 +2330,7 @@ async function notifPanel() {
 
 // "aanvragen:ruilen" → tabblad + subtabblad
 function openView(v) {
+  if (v === 'mededelingen') v = isMgr() ? 'overzicht' : 'mijn';
   const [view, sub] = String(v).split(':');
   if (!tabsFor().some(([k]) => k === view)) return refreshBadge();
   if (sub) S.reqTab = sub;

@@ -443,6 +443,26 @@ async function test(name, fn) {
     assert.ok(html.includes('webcal://voorbeeld.supabase.co/functions/v1/agenda?t=11111111-2222-3333-4444-555555555555'), 'geen webcal-link');
     assert.ok(html.includes('calendar.google.com/calendar/r?cid=webcal%3A%2F%2Fvoorbeeld.supabase.co'), 'geen Google-link');
   });
+  await test('prikbord: directie plaatst, medewerker leest, directie ziet wie het gelezen heeft', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-tab=overzicht]'); await shared.click('[data-annnew]'); await shared.waitForSelector('dialog [name=title]');
+    await shared.fill('dialog [name=title]', 'Proeverij donderdag'); await shared.fill('dialog [name=body]', 'Om 15:00 in de keuken');
+    await shared.click('dialog button[value=save]'); await shared.waitForSelector('.annlist .ann:has-text("Proeverij donderdag")');
+    assert.match(await shared.textContent('.annlist .ann:has-text("Proeverij donderdag") [data-annreads]'), /Gelezen door 0 van \d+/);
+    const p = watch(await browser.newPage({ viewport: { width: 390, height: 844 } }));
+    await p.goto(URL + '#personeel'); await p.waitForSelector('[data-demo]');
+    await p.evaluate(s => localStorage.setItem(s.k, JSON.stringify(s.db)), await demoDb(shared));
+    await p.reload(); await p.waitForSelector('[data-demo]'); await login(p, 'Sanne');
+    await p.waitForSelector('.board .ann.unread:has-text("Proeverij donderdag")');
+    await p.click('.board .ann:has-text("Proeverij donderdag") [data-annread]');
+    await p.waitForSelector('.toast:has-text("Bedankt")');
+    await p.waitForSelector('.board .ann.unread:has-text("Proeverij donderdag")', { state: 'detached', timeout: 5000 });
+    const { db } = await demoDb(p);
+    const ann = db.announcements.find(a => a.title === 'Proeverij donderdag');
+    assert.ok(db.annReads.some(r => r.announcement_id === ann.id), 'gelezen niet opgeslagen');
+    assert.ok(db.notifications.some(n => n.title === '📣 Proeverij donderdag'), 'geen melding naar het team');
+    await p.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'] });
     const p = watch(await ctx.newPage());

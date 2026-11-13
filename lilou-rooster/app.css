@@ -601,6 +601,27 @@ fieldset.choice .hint { margin: 0; }
 .agenda-btns a.btn { text-decoration: none; justify-content: center; text-align: center; }
 .agmore summary { cursor: pointer; color: var(--muted); font-size: 14px; }
 
+/* ===== Prikbord ===== */
+.board { display: grid; gap: 10px; margin-bottom: 16px; }
+.ann { padding: 14px 16px; border-left: 4px solid var(--accent); }
+.ann.read { border-left-color: var(--line-strong); }
+.ann-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.ann-head h3 { font-size: 17px; margin: 0; }
+.ann-body { margin: 8px 0 0; line-height: 1.5; }
+.ann-img { display: block; margin-top: 10px; }
+.ann-img img { max-width: 100%; max-height: 360px; border-radius: 10px; border: 1px solid var(--line); display: block; background: var(--surface-2); min-height: 40px; }
+.ann-file { margin-top: 10px; text-decoration: none; }
+.ann-foot { margin-top: 10px; display: flex; justify-content: flex-start; }
+.pinlist { display: grid; gap: 6px; }
+.pinitem { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+.pinitem summary { cursor: pointer; font-weight: 600; }
+.pinitem .ann { margin-top: 10px; box-shadow: none; border: 0; padding: 0; }
+.annlist, .annall { display: grid; gap: 10px; }
+.annlist .ann { box-shadow: none; }
+.sect-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+.sect-head h2 { margin: 0; }
+.small-h { font-size: 14px; margin: 0 0 4px; color: var(--muted); }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }

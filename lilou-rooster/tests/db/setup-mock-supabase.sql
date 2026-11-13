@@ -22,3 +22,11 @@ grant usage on schema public to authenticated, anon;
 alter default privileges in schema public grant all on tables to anon, authenticated;
 alter default privileges in schema public grant all on sequences to anon, authenticated;
 \endif
+
+-- Opslag (storage) nabootsen: buckets en objecten met beveiligingsregels
+create schema if not exists storage;
+create table if not exists storage.buckets (id text primary key, name text, public boolean default false);
+create table if not exists storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text, owner uuid);
+alter table storage.objects enable row level security;
+grant usage on schema storage to authenticated;
+grant select, insert, delete on storage.objects to authenticated;
