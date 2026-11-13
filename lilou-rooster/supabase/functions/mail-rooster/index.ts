@@ -41,17 +41,25 @@ export function buildMail(name: string, from: string, to: string, shifts: Shift[
   const subject = `Je rooster voor week ${wk} (${range})`;
   const line = (s: Shift) => `${dayLabel(s.date)}: ${hm(s.start_time)}–${hm(s.end_time)}${s.break_minutes ? ` (${s.break_minutes} min pauze)` : ''}${s.position ? ` · ${s.position}` : ''}${s.note ? ` · ${s.note}` : ''}`;
   const text = `Hoi ${first},\n\nJe rooster voor week ${wk} staat klaar:\n\n${shifts.map((s) => '• ' + line(s)).join('\n')}\n\nBekijk of wijzig (ruilen, verlof) in de app: ${appUrl}\n\nGroet,\nLilou`;
-  const rows = shifts.map((s) => `<tr>
-      <td style="padding:10px 12px;border-bottom:1px solid #ecdfd4;font-weight:600;white-space:nowrap">${esc(cap(dayLabel(s.date)))}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #ecdfd4;white-space:nowrap">${esc(hm(s.start_time))}–${esc(hm(s.end_time))}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #ecdfd4;color:#7d6359">${esc([s.position, s.break_minutes ? s.break_minutes + ' min pauze' : '', s.note].filter(Boolean).join(' · '))}</td></tr>`).join('');
-  const html = `<!doctype html><html lang="nl"><body style="margin:0;background:#f9f3ec;font-family:Arial,Helvetica,sans-serif;color:#2b1611">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9f3ec;padding:24px 12px"><tr><td align="center">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:14px;overflow:hidden">
-    <tr><td style="background:#912508;color:#f9efe6;padding:22px 24px;font-family:Georgia,serif;font-size:28px">Lilou<div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:4px;margin-top:4px">ROOSTER</div></td></tr>
-    <tr><td style="padding:22px 24px 6px;font-size:16px;line-height:1.5">Hoi ${esc(first)},<br>je rooster voor <strong>week ${wk}</strong> (${esc(range)}) staat klaar:</td></tr>
-    <tr><td style="padding:8px 12px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:15px">${rows}</table></td></tr>
-    <tr><td style="padding:18px 24px 26px"><a href="${esc(appUrl)}" style="display:inline-block;background:#912508;color:#f9efe6;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:bold">Open het rooster</a>
+  const rows = shifts.map((s) => {
+    const info = [s.position, s.break_minutes ? s.break_minutes + ' min pauze' : '', s.note].filter(Boolean).join(' · ');
+    return `<tr><td style="padding:12px 0;border-bottom:1px solid #ecdfd4">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="font-size:16px;font-weight:bold;color:#2b1611">${esc(cap(dayLabel(s.date)))}</td>
+        <td align="right" style="font-size:16px;font-weight:bold;color:#912508;white-space:nowrap">${esc(hm(s.start_time))}–${esc(hm(s.end_time))}</td>
+      </tr>${info ? `<tr><td colspan="2" style="padding-top:3px;font-size:14px;color:#7d6359">${esc(info)}</td></tr>` : ''}</table>
+    </td></tr>`;
+  }).join('');
+  const html = `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
+  <style>a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-weight:inherit!important}</style></head>
+  <body style="margin:0;background:#f9f3ec;font-family:Arial,Helvetica,sans-serif;color:#2b1611">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9f3ec;padding:16px 8px"><tr><td align="center">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:14px;overflow:hidden">
+    <tr><td style="background:#912508;color:#f9efe6;padding:20px 22px;font-family:Georgia,serif;font-size:28px">Lilou<div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:4px;margin-top:4px">ROOSTER</div></td></tr>
+    <tr><td style="padding:20px 22px 4px;font-size:16px;line-height:1.5">Hoi ${esc(first)},<br>je rooster voor <strong>week ${wk}</strong> staat klaar.<div style="font-size:14px;color:#7d6359">${esc(range)}</div></td></tr>
+    <tr><td style="padding:6px 22px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table></td></tr>
+    <tr><td style="padding:18px 22px 24px"><a href="${esc(appUrl)}" style="display:inline-block;background:#912508;color:#f9efe6;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:bold">Open het rooster</a>
       <p style="font-size:13px;color:#7d6359;margin:16px 0 0">Kun je een dienst niet werken? Bied hem aan via <em>Ruilen</em> in de app. De app is altijd leidend.</p></td></tr>
   </table></td></tr></table></body></html>`;
   return { subject, text, html };
