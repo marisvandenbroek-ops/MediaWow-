@@ -853,6 +853,10 @@ async function viewWeek(el, editable) {
   const days = [...Array(7)].map((_, i) => addDays(S.week, i));
   const today = todayIso();
   const concept = shifts.filter(s => !s.published).length;
+  // Concepten in alle komende weken (voor "Alles publiceren")
+  const future = editable ? (await store.shifts(iso(mondayOf(new Date())), iso(addDays(new Date(), 400)))).filter(s => !s.published) : [];
+  const futureWeeks = [...new Set(future.map(s => iso(mondayOf(parse(s.date)))))].sort();
+  const elsewhere = future.filter(s => s.date < from || s.date > to).length;
   const leaves = reqs.filter(r => r.status !== 'rejected' && overlaps(r.start_date, r.end_date, from, to));
   const wl = weekLabel(S.week);
   const byCell = {};
@@ -939,9 +943,10 @@ async function viewWeek(el, editable) {
       ${editable ? `<div class="actions">
         <button class="btn hide-sm" data-act="print">Afdrukken / PDF</button>
         <button class="btn" data-act="copy">Kopieer vorige week</button>
-        <button class="btn primary" data-act="publish" ${concept ? '' : 'disabled'}>${concept ? `Publiceer ${concept} dienst${concept > 1 ? 'en' : ''}` : 'Alles gepubliceerd ✓'}</button>
+        <button class="btn primary" data-act="publish" ${concept ? '' : 'disabled'}>${concept ? `Publiceer ${concept} dienst${concept > 1 ? 'en' : ''}` : 'Week gepubliceerd ✓'}</button>
       </div>` : ''}
     </div>
+    ${elsewhere ? `<div class="pubbar"><span>Nog <strong>${future.length} concept${future.length > 1 ? 'en' : ''}</strong> in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} (${futureWeeks.map(w => 'wk ' + weekNr(parse(w))).join(', ')})</span><button class="btn sm primary" data-act="publishall">Alles publiceren</button></div>` : ''}
     ${editable && !mobile ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span><span class="av av-avond">✓ avond</span> <span class="av av-niet">✕ niet</span> doorgegeven beschikbaarheid</span></div>` : ''}
     ${people.length && mobile ? mobileHTML() : ''}
     ${people.length && !mobile ? `<div class="grid-wrap"><table class="grid">
@@ -967,16 +972,19 @@ async function viewWeek(el, editable) {
     }
     if (act === 'publish') {
       if (!await ask(`${concept} dienst(en) publiceren? Het team ziet ze daarna direct in hun rooster.`)) return;
-      const ids = [...new Set(shifts.filter(s => !s.published && s.employee_id).map(s => s.employee_id))];
-      await store.publish(from, to);
-      if (!ids.length) { toast('Week gepubliceerd'); return rerender(); }
-      toast('Week gepubliceerd · mails worden verstuurd…');
+      return publishWeek(from, to, shifts);
+    }
+    if (act === 'publishall') {
+      if (!await ask(`${future.length} dienst(en) in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} publiceren? Het team ziet ze daarna direct, en wie nieuwe diensten heeft krijgt per week een mail.`, 'Alles publiceren')) return;
+      let sent = 0; const failed = [];
+      for (const w of futureWeeks) {
+        const wFrom = w, wTo = iso(addDays(parse(w), 6));
+        const r = await publishWeek(wFrom, wTo, future.filter(x => x.date >= wFrom && x.date <= wTo), true);
+        sent += r.sent || 0; if (r.failed) failed.push(...r.failed); if (r.error) failed.push(r.error);
+      }
       rerender();
-      try {
-        const r = await store.mailRoster(from, to, ids);
-        if (r.failed?.length) toast(`Gemaild naar ${r.sent}; niet gelukt: ${r.failed.join('; ')}`, 'error');
-        else toast(r.demo ? `Demo: in de echte app krijgen ${r.sent} medewerker(s) nu hun rooster per mail` : `Rooster gemaild naar ${r.sent} medewerker${r.sent === 1 ? '' : 's'}`);
-      } catch (x) { toast('Gepubliceerd, maar niet gemaild: ' + errMsg(x), 'error'); }
+      if (failed.length) toast(`Gepubliceerd. Mails: ${sent} verstuurd; niet gelukt: ${failed.join('; ')}`, 'error');
+      else toast(`${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} gepubliceerd${sent ? ` · ${sent} mail${sent > 1 ? 's' : ''} verstuurd` : ''}`);
       return;
     }
     if (act === 'copy') return copyWeek(shifts);
@@ -1107,7 +1115,17 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
         const ds = fd.getAll('days');
         const dates = ds.length ? ds.map(i => iso(addDays(m, Number(i)))) : [fd.get('date')];
         await store.saveShifts(dates.map(date => ({ ...base, date, published: false })));
-        toast(dates.length > 1 ? `${dates.length} diensten ingepland` : 'Dienst ingepland');
+        toast(dates.length > 1 ? `${dates.length} diensten ingepland als concept` : 'Dienst ingepland als concept');
+        // Meteen aanbieden om te publiceren, voor de week van de gekozen datum (die kan een andere week zijn dan op het scherm)
+        const from = iso(m), to = iso(addDays(m, 6));
+        setTimeout(async () => {
+          const wk = await store.shifts(from, to);
+          const n = wk.filter(x => !x.published).length;
+          if (!n) return rerender();
+          const yes = await ask(`Nu publiceren? Week ${weekNr(m)} heeft ${n} dienst${n > 1 ? 'en' : ''} die nog niet zichtbaar ${n > 1 ? 'zijn' : 'is'} voor het team.${base.employee_id ? ' De medewerkers krijgen hun rooster ook per mail.' : ''}`, 'Publiceren');
+          if (yes) { S.week = m; await publishWeek(from, to, wk); } else rerender();
+        }, 50);
+        return;
       } else {
         await store.saveShifts([{ ...base, id: s.id, date: fd.get('date') }]);
         toast('Dienst opgeslagen');
@@ -1115,6 +1133,24 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
       rerender();
     },
   });
+}
+
+// Publiceert een week en mailt iedereen met nieuwe diensten zijn weekrooster
+async function publishWeek(from, to, weekShifts, quiet = false) {
+  const ids = [...new Set(weekShifts.filter(s => !s.published && s.employee_id).map(s => s.employee_id))];
+  await store.publish(from, to);
+  if (quiet) {
+    if (!ids.length) return { sent: 0 };
+    try { return await store.mailRoster(from, to, ids); } catch (x) { return { sent: 0, error: errMsg(x) }; }
+  }
+  if (!ids.length) { toast('Week gepubliceerd'); return rerender(); }
+  toast('Week gepubliceerd · mails worden verstuurd…');
+  rerender();
+  try {
+    const r = await store.mailRoster(from, to, ids);
+    if (r.failed?.length) toast(`Gemaild naar ${r.sent}; niet gelukt: ${r.failed.join('; ')}`, 'error');
+    else toast(r.demo ? `Demo: in de echte app krijgen ${r.sent} medewerker(s) nu hun rooster per mail` : `Rooster gemaild naar ${r.sent} medewerker${r.sent === 1 ? '' : 's'}`);
+  } catch (x) { toast('Gepubliceerd, maar niet gemaild: ' + errMsg(x), 'error'); }
 }
 
 /* ================= My schedule ================= */

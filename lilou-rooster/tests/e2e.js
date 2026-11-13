@@ -233,10 +233,25 @@ async function test(name, fn) {
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
     await shared.click('[data-tab=planning]'); await shared.click('[data-act=next]'); await shared.waitForTimeout(200);
     await shared.click('td.cell.editable >> nth=0'); await shared.waitForSelector('dialog [name=start_time]');
-    await shared.click('dialog button[value=save]'); await shared.waitForTimeout(300);
-    await shared.click('[data-act=publish]'); await shared.click('dialog button[value=save]');
+    await shared.click('dialog button[value=save]');
+    // na inplannen vraagt de app meteen of de week gepubliceerd moet worden
+    await shared.waitForSelector('dialog[open]:has-text("Nu publiceren?")'); await shared.click('dialog[open] button[value=save]');
     await shared.waitForSelector('.toast:has-text("per mail")');
     await shared.click('[data-act=today]');
+  });
+  await test('alles publiceren: concepten in meerdere weken in één keer', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-tab=planning]'); await shared.click('[data-act=today]');
+    for (const wk of [2, 3]) {
+      await setDemoDb(shared, `const m=new Date(); m.setDate(m.getDate()-((m.getDay()+6)%7)+7*a); const p=x=>String(x).padStart(2,'0'); const d=m.getFullYear()+'-'+p(m.getMonth()+1)+'-'+p(m.getDate());
+        db.shifts.push({ id: 'pa'+a, employee_id: db.employees[2].id, date: d, start_time: '12:00', end_time: '18:00', break_minutes: 0, position: 'Bediening', note: '', published: false });`, wk);
+    }
+    await shared.reload(); await shared.waitForSelector('[data-tab=planning]'); await shared.click('[data-tab=planning]');
+    await shared.waitForSelector('[data-act=publishall]'); await shared.click('[data-act=publishall]'); await shared.click('dialog[open] button[value=save]');
+    await shared.waitForSelector('.toast:has-text("gepubliceerd")');
+    const left = await shared.evaluate(() => { const k = Object.keys(localStorage).find(x => x.startsWith('lilou-rooster-demo-')); return JSON.parse(localStorage.getItem(k)).shifts.filter(s => s.id.startsWith('pa') && !s.published).length; });
+    assert.equal(left, 0);
+    assert.ok(!(await shared.$('[data-act=publishall]')), 'balk verdwijnt na publiceren');
   });
   await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'] });
