@@ -23,7 +23,7 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 5. Wens Mark: grafiek kosten vs. benodigde omzet (kosten / doel-%) vs. werkelijke omzet, per uur/dag/week/maand/jaar.
    Live per uur via kassakoppeling (Lightspeed? K- of L-serie navragen) + ingeklokte mensen; knop "Naar huis sturen" in Klokken.
    Bekend: Lightspeed K-serie, live tijdens de dienst gewenst. Mark vraagt API-toegang (alleen financiële leesrechten)
-   aan via de Lightspeed-accountmanager; sleutel komt in Supabase Secrets, nooit in de chat. Nog navragen: doel-%.
+   aan via de Lightspeed-accountmanager; sleutel komt in Supabase Secrets, nooit in de chat. Doel personeelskosten: max 30% (in Instellingen zetten).
 6. Optioneel: zelf aanmelden uitzetten in Supabase en knop "Eerste keer inloggen" weghalen (alleen nog uitnodigen per mail).
 
 ## Eerder openstaand
