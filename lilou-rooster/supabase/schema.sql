@@ -1018,6 +1018,20 @@ drop trigger if exists announcements_notify on public.announcements;
 create trigger announcements_notify after insert on public.announcements
   for each row execute function public.trg_announcement_notify();
 
+-- Bijgewerkte mededeling opnieuw melden: iedereen moet hem opnieuw lezen
+create or replace function public.renotify_announcement(p_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare a public.announcements;
+begin
+  if not public.is_manager() then raise exception 'Alleen de directie kan dit.'; end if;
+  select * into a from public.announcements where id = p_id;
+  if not found then raise exception 'Mededeling niet gevonden.'; end if;
+  delete from public.announcement_reads where announcement_id = p_id;
+  perform public.notify_team('📣 ' || a.title, coalesce(left(a.body, 140), 'Bijgewerkte mededeling op het prikbord'), 'mededelingen', public.my_employee_id());
+end $$;
+revoke execute on function public.renotify_announcement(uuid) from public, anon;
+grant execute on function public.renotify_announcement(uuid) to authenticated;
+
 -- Bijlagen (foto of pdf, bv. de menukaart) in een besloten opslag-map; alleen ingelogd team kan ze openen
 do $$ begin
   if exists (select 1 from pg_namespace where nspname = 'storage') then

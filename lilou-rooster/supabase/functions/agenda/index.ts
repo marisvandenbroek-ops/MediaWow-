@@ -28,15 +28,26 @@ function utcStamp(date: string, time: string, plusDays = 0): string {
   return new Date(guess).toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
 }
 const esc = (s: unknown) => String(s ?? '').replace(/[\\;,]/g, (m) => '\\' + m).replace(/\r?\n/g, '\\n');
-// Regels langer dan 75 tekens vouwen (agendastandaard)
-const fold = (line: string) => line.length <= 74 ? line : line.match(/.{1,74}/g)!.join('\r\n ');
+// Regels langer dan 75 bytes vouwen (agendastandaard), zonder een teken (bv. emoji) door te knippen
+const enc = new TextEncoder();
+function fold(line: string): string {
+  const out: string[] = []; let cur = '', bytes = 0, max = 75;
+  for (const ch of line) {
+    const b = enc.encode(ch).length;
+    if (bytes + b > max) { out.push(cur); cur = ''; bytes = 0; max = 74; }   // vervolgregels beginnen met een spatie
+    cur += ch; bytes += b;
+  }
+  out.push(cur);
+  return out.join('\r\n ');
+}
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   const t = url.searchParams.get('t') ?? '';
   if (!/^[0-9a-f-]{36}$/i.test(t)) return new Response('Onbekende agenda', { status: 404 });
   const { data: e } = await db.from('employees').select('id, name, active').eq('calendar_token', t).maybeSingle();
-  if (!e || !e.active) return new Response('Onbekende agenda', { status: 404 });
+  if (!e) return new Response('Onbekende agenda', { status: 404 });
+  // uit dienst: lege agenda, zodat oude diensten uit de agenda van de medewerker verdwijnen
 
   const today = new Date(); const from = new Date(today.getTime() - 60 * 864e5).toISOString().slice(0, 10);
   const to = new Date(today.getTime() + 200 * 864e5).toISOString().slice(0, 10);
@@ -46,7 +57,7 @@ Deno.serve(async (req) => {
   const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Rooster//NL', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     `X-WR-CALNAME:${esc(BEDRIJF + ' rooster')}`, `X-WR-TIMEZONE:${TZ}`, 'REFRESH-INTERVAL;VALUE=DURATION:PT1H', 'X-PUBLISHED-TTL:PT1H'];
-  for (const s of shifts ?? []) {
+  for (const s of e.active ? (shifts ?? []) : []) {
     const overnight = s.end_time.slice(0, 5) <= s.start_time.slice(0, 5);
     lines.push('BEGIN:VEVENT', `UID:${s.id}@rooster`, `DTSTAMP:${now}`,
       `DTSTART:${utcStamp(s.date, s.start_time)}`, `DTEND:${utcStamp(s.date, s.end_time, overnight ? 1 : 0)}`,

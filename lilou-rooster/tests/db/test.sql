@@ -273,6 +273,11 @@ insert into storage.objects (bucket_id, name) select 'mededelingen', 'x.pdf' whe
 select t_fails($q$insert into storage.objects (bucket_id, name) values ('mededelingen', 'nep.pdf')$q$, 'medewerker kan geen bijlage uploaden');
 select as_user(1);
 select t_ok(t_count('select * from announcement_reads') = 1, 'directie ziet wie het gelezen heeft');
+select renotify_announcement('80000000-0000-0000-0000-000000000001');
+select t_ok(t_count('select * from announcement_reads') = 0, 'opnieuw melden: iedereen leest hem opnieuw');
+select as_user(2);
+select t_fails($q$select renotify_announcement('80000000-0000-0000-0000-000000000001')$q$, 'medewerker kan niet opnieuw melden');
+select as_user(1);
 insert into storage.objects (bucket_id, name) values ('mededelingen', 'menu.pdf');
 select t_ok(t_count($q$select * from storage.objects where bucket_id = 'mededelingen'$q$) = 1, 'directie kan een bijlage uploaden');
 reset role;

@@ -581,8 +581,8 @@ fieldset.choice .hint { margin: 0; }
 .moneyrow td, .moneyrow th { background: var(--surface-2); vertical-align: top; }
 
 /* ===== Zijbalk op de laptop ===== */
-@media (min-width: 1100px) {
-  body:has(.topbar) { --side: 228px; }
+@media (min-width: 1280px) {
+  body:has(.topbar) { --side: 220px; }
   .topbar { position: fixed; inset: 0 auto 0 0; width: var(--side); border-bottom: 0; border-right: 1px solid var(--line); background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; overflow-y: auto; }
   .topbar-inner { flex-direction: column; align-items: stretch; height: 100%; padding: 22px 14px 16px; gap: 22px; max-width: none; }
   .brand { padding: 0 6px; }
@@ -602,12 +602,15 @@ fieldset.choice .hint { margin: 0; }
 .agmore summary { cursor: pointer; color: var(--muted); font-size: 14px; }
 
 /* ===== Prikbord ===== */
-.board { display: grid; gap: 10px; margin-bottom: 16px; }
+.board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 16px; }
 .ann { padding: 14px 16px; border-left: 4px solid var(--accent); }
 .ann.read { border-left-color: var(--line-strong); }
 .ann-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
 .ann-head h3 { font-size: 17px; margin: 0; }
 .ann-body { margin: 8px 0 0; line-height: 1.5; }
+.ann-body, .ann h3, .pinitem summary { overflow-wrap: anywhere; }
+.ann-body a { color: var(--accent); }
+.newdot { font-size: 11px; font-weight: 700; color: var(--accent-ink); background: var(--accent); border-radius: 20px; padding: 1px 7px; margin-right: 4px; }
 .ann-img { display: block; margin-top: 10px; }
 .ann-img img { max-width: 100%; max-height: 360px; border-radius: 10px; border: 1px solid var(--line); display: block; background: var(--surface-2); min-height: 40px; }
 .ann-file { margin-top: 10px; text-decoration: none; }
@@ -616,7 +619,7 @@ fieldset.choice .hint { margin: 0; }
 .pinitem { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
 .pinitem summary { cursor: pointer; font-weight: 600; }
 .pinitem .ann { margin-top: 10px; box-shadow: none; border: 0; padding: 0; }
-.annlist, .annall { display: grid; gap: 10px; }
+.annlist, .annall { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .annlist .ann { box-shadow: none; }
 .sect-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
 .sect-head h2 { margin: 0; }
@@ -717,6 +720,9 @@ code { font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-r
   .grid td.cell { height: auto; }
   .chip, .leave { -webkit-print-color-adjust: exact; print-color-adjust: exact; break-inside: avoid; }
   tr { break-inside: avoid; }
+  /* vertrouwelijk of niet relevant op papier */
+  .moneyrow, .covrow, .cost, .pubbar, .viewbar, .selhint, .selbar, .money, .app-foot { display: none !important; }
+  main#view, .demo-banner { margin-left: 0 !important; }
 }
 
 /* iPhone zoomt in op invulvelden met tekst kleiner dan 16px en blijft dan ingezoomd

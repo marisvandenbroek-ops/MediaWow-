@@ -463,6 +463,31 @@ async function test(name, fn) {
     assert.ok(db.notifications.some(n => n.title === '📣 Proeverij donderdag'), 'geen melding naar het team');
     await p.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('kosten per uur telt alleen uren met een uurloon', async () => {
+    const r = await shared.evaluate(() => {
+      const { kpiOf } = window.__rooster;
+      const sh = (e) => ({ employee_id: e, date: '2026-11-17', start_time: '12:00', end_time: '20:00', break_minutes: 0 });
+      return kpiOf([sh('a'), sh('b')], { a: { hourly_wage: 15 } }, { pct_vakantiegeld: 8, pct_werkgever: 25 }, 0);
+    });
+    assert.equal(r.hours, 16); assert.equal(r.noWage, 1);
+    assert.ok(Math.abs(r.perHour - r.cost / 8) < 0.001, 'kosten per uur rekent met uren zonder loon');
+  });
+  await test('afdrukken: geen loonkosten of omzet op het geprinte rooster', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-tab=planning]'); await shared.click('[data-pv=grid]').catch(() => {}); await shared.waitForSelector('tr.moneyrow');
+    await shared.emulateMedia({ media: 'print' });
+    const vis = await shared.evaluate(() => [...document.querySelectorAll('.moneyrow, .cost, .viewbar')].some(e => getComputedStyle(e).display !== 'none'));
+    await shared.emulateMedia({ media: 'screen' });
+    assert.ok(!vis, 'vertrouwelijke kosten zichtbaar in de afdruk');
+  });
+  await test('prikbord: lange link maakt de pagina op de telefoon niet breder', async () => {
+    const ctx = await browser.newContext({ ...devices['iPhone 13'] }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await p.click('[data-annnew]'); await p.fill('dialog [name=title]', 'Menukaart online'); await p.fill('dialog [name=body]', 'Zie https://www.lilou-ede.nl/' + 'menukaart-najaar-'.repeat(8) + 'definitief.pdf');
+    await p.click('dialog button[value=save]'); await p.waitForSelector('.annlist .ann:has-text("Menukaart online") a[href^="https://www.lilou-ede.nl/"]');
+    assert.ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'pagina wordt breder dan het scherm');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'] });
     const p = watch(await ctx.newPage());
