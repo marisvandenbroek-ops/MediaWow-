@@ -12,6 +12,11 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
 const server = http.createServer((req, res) => {
   const p = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]).replace(/\/$/, '/index.html'));
   if (!p.startsWith(ROOT) || !fs.existsSync(p)) { res.writeHead(404); return res.end(); }
+  // Tests draaien altijd in demo-modus: nooit tegen de echte database
+  if (p.endsWith('config.js')) {
+    res.writeHead(200, { 'content-type': 'text/javascript' });
+    return res.end(fs.readFileSync(p, 'utf8').replace(/supabaseUrl: '[^']*'/, "supabaseUrl: ''").replace(/supabaseAnonKey: '[^']*'/, "supabaseAnonKey: ''"));
+  }
   res.writeHead(200, { 'content-type': TYPES[path.extname(p)] || 'application/octet-stream' });
   fs.createReadStream(p).pipe(res);
 });
@@ -70,6 +75,18 @@ async function test(name, fn) {
       }
       await ctx.close();
     }
+  });
+
+  await test('invulvelden op de telefoon minimaal 16px (anders zoomt de iPhone in en schuift het beeld)', async () => {
+    const ctx = await browser.newContext({ ...devices['iPhone 13'] }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne');
+    const small = [];
+    for (const t of ['mijn', 'diensten', 'beschikbaar', 'aanvragen']) {
+      await p.click(`[data-tab=${t}]`); await p.waitForTimeout(150);
+      small.push(...await p.$$eval('input:not([type=checkbox]):not([type=radio]), select, textarea', els => els.filter(e => e.offsetParent && parseFloat(getComputedStyle(e).fontSize) < 16).map(e => (e.name || e.className || e.tagName))));
+    }
+    await ctx.close();
+    assert.deepStrictEqual([...new Set(small)], [], 'te kleine invulvelden');
   });
 
   console.log('Alle schermen laden');

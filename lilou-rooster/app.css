@@ -540,6 +540,12 @@ code { font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-r
   tr { break-inside: avoid; }
 }
 
+/* iPhone zoomt in op invulvelden met tekst kleiner dan 16px en blijft dan ingezoomd
+   (het beeld schuift daarna heen en weer). Op touchscreens dus altijd minimaal 16px. */
+@media (pointer: coarse), (max-width: 760px) {
+  input, select, textarea, .field input, .field select, .field textarea, input.input, .avnote { font-size: 16px !important; }
+}
+
 /* ===== Mobile ===== */
 @media (max-width: 860px) {
   .split { grid-template-columns: 1fr; }
