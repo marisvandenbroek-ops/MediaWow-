@@ -259,6 +259,8 @@ function demoStore() {
       if (o) notifyTeam(`Open dienst${o > 1 ? 'en' : ''} beschikbaar`, `${o} open dienst${o > 1 ? 'en' : ''} in week ${weekNr(parse(from))}. Meld je aan!`, 'diensten');
       save();
     },
+    async mailRoster(from, to, ids) { return { sent: ids.length, failed: [], demo: true }; },
+    async vapidKey() { return ''; },
     async requests() {
       return clone(db.requests.filter(r => isMgr() || r.employee_id === mem)).sort((a, b) => b.created_at.localeCompare(a.created_at));
     },
@@ -493,6 +495,23 @@ async function supabaseStore() {
     },
     async deleteShift(id) { ok(await sb.from('shifts').delete().eq('id', id)); },
     async publish(from, to) { ok(await sb.rpc('publish_week', { p_from: from, p_to: to })); },
+    async mailRoster(from, to, employee_ids) {
+      const { data, error } = await sb.functions.invoke('mail-rooster', { body: { from, to, employee_ids, app_url: location.origin + location.pathname } });
+      if (error) {
+        let msg = error.message || 'Mailen mislukt';
+        try { const b = await error.context.json(); if (b && b.error) msg = b.error; } catch (e) { /* geen JSON */ }
+        if (/Failed to send a request|not found|404|FunctionsFetchError|FunctionsRelayError/i.test(msg)) msg = 'het mailen is nog niet ingesteld (Edge Function "mail-rooster")';
+        throw new Error(msg);
+      }
+      return data;
+    },
+    async vapidKey() {
+      if (CFG.vapidPublicKey) return CFG.vapidPublicKey;
+      if (this._vapid) return this._vapid;
+      const { data, error } = await sb.functions.invoke('send-push', { body: { action: 'public_key' } });
+      if (error || !data?.publicKey) return '';
+      return (this._vapid = data.publicKey);
+    },
     async requests() { return ok(await sb.from('requests').select('*').order('created_at', { ascending: false })); },
     async saveRequest(r) { ok(await sb.from('requests').insert(r)); },
     async decideRequest(id, status, note, hours) {
@@ -945,7 +964,17 @@ async function viewWeek(el, editable) {
     }
     if (act === 'publish') {
       if (!await ask(`${concept} dienst(en) publiceren? Het team ziet ze daarna direct in hun rooster.`)) return;
-      await store.publish(from, to); toast('Week gepubliceerd'); return rerender();
+      const ids = [...new Set(shifts.filter(s => !s.published && s.employee_id).map(s => s.employee_id))];
+      await store.publish(from, to);
+      if (!ids.length) { toast('Week gepubliceerd'); return rerender(); }
+      toast('Week gepubliceerd · mails worden verstuurd…');
+      rerender();
+      try {
+        const r = await store.mailRoster(from, to, ids);
+        if (r.failed?.length) toast(`Gemaild naar ${r.sent}; niet gelukt: ${r.failed.join('; ')}`, 'error');
+        else toast(r.demo ? `Demo: in de echte app krijgen ${r.sent} medewerker(s) nu hun rooster per mail` : `Rooster gemaild naar ${r.sent} medewerker${r.sent === 1 ? '' : 's'}`);
+      } catch (x) { toast('Gepubliceerd, maar niet gemaild: ' + errMsg(x), 'error'); }
+      return;
     }
     if (act === 'copy') return copyWeek(shifts);
     if (act === 'print') { try { window.print(); } catch (e) { toast('Afdrukken is hier niet beschikbaar', 'error'); } return; }
@@ -1449,7 +1478,7 @@ const isStandalone = () => window.matchMedia('(display-mode: standalone)').match
 async function pushState() {
   if (store.demo) return { state: 'demo' };
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return { state: isIOS() && !isStandalone() ? 'ios-install' : 'unsupported' };
-  if (!CFG.vapidPublicKey) return { state: 'not-configured' };
+  if (!(await store.vapidKey())) return { state: 'not-configured' };
   if (Notification.permission === 'denied') return { state: 'denied' };
   try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); return { state: sub ? 'on' : 'off' }; }
   catch (e) { return { state: 'off' }; }
@@ -1458,7 +1487,7 @@ async function enablePush() {
   const perm = await Notification.requestPermission();
   if (perm !== 'granted') throw new Error('Meldingen zijn niet toegestaan. Zet ze aan in de instellingen van je telefoon of browser.');
   const reg = await navigator.serviceWorker.ready;
-  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(CFG.vapidPublicKey) });
+  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(await store.vapidKey()) });
   const j = sub.toJSON();
   await store.savePushSub({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, user_agent: navigator.userAgent.slice(0, 200) });
 }
@@ -1466,7 +1495,7 @@ const PUSHTXT = {
   demo: 'In de demo worden geen echte pushmeldingen verstuurd; je ziet ze hier in de lijst.',
   'ios-install': 'Op iPhone werken pushmeldingen alleen als de app op je beginscherm staat. Tik op de deelknop → “Zet op beginscherm”, open de app daar en zet dan meldingen aan.',
   unsupported: 'Deze browser ondersteunt geen pushmeldingen. Je meldingen verschijnen wel hier.',
-  'not-configured': 'Pushmeldingen zijn nog niet ingesteld (zie README).',
+  'not-configured': 'Pushmeldingen zijn nog niet ingesteld door de directie. Je meldingen verschijnen wel hier.',
   denied: 'Meldingen zijn geblokkeerd. Zet ze aan via de instellingen van je telefoon of browser.',
   on: 'Pushmeldingen staan aan op dit toestel ✓',
 };

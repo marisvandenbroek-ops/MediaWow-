@@ -54,6 +54,7 @@ select t_fails($q$insert into shifts (employee_id, date, start_time, end_time) v
 update employees set role = 'manager' where email = 'sanne@x.nl';
 select t_ok((select role from employees where email = 'sanne@x.nl') = 'staff', 'medewerker kan zichzelf geen directie maken');
 select t_fails($q$select publish_week(today_nl(), today_nl() + 6)$q$, 'medewerker kan niet publiceren');
+select t_fails($q$select * from app_secrets$q$, 'medewerker kan interne sleutels niet lezen');
 select t_fails($q$insert into requests (employee_id, type, start_date, end_date) values ('a0000000-0000-0000-0000-000000000001', 'vrij', today_nl(), today_nl())$q$, 'geen aanvraag namens een ander');
 select t_fails($q$insert into requests (employee_id, type, start_date, end_date, status) values ('a0000000-0000-0000-0000-000000000002', 'vrij', today_nl(), today_nl(), 'approved')$q$, 'aanvraag niet zelf goedkeuren');
 insert into requests (employee_id, type, start_date, end_date) values ('a0000000-0000-0000-0000-000000000002', 'vakantie', today_nl() + 20, today_nl() + 24);

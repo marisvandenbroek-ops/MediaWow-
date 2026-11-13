@@ -137,16 +137,15 @@ Medewerkers moeten bij de eerste keer klokken locatietoegang toestaan in hun bro
 > afstand en meldingen bij elke registratie terug.
 
 ### Pushmeldingen (± 15 minuten, eenmalig)
-1. Maak sleutels aan: `npx web-push generate-vapid-keys` (op je eigen computer).
-2. Zet de **publieke** sleutel in `config.js` bij `vapidPublicKey`.
-3. Installeer de Supabase CLI en zet de functie online:
-   `supabase functions deploy send-push` (code staat in `supabase/functions/send-push`).
-4. Zet bij Supabase → *Edge Functions → Secrets*: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
-   (de geheime sleutel, nooit in de app zetten) en `VAPID_SUBJECT` (bijv. `mailto:info@lilou.nl`).
-5. Supabase → *Database → Webhooks* → nieuwe hook: tabel `notifications`, event *Insert*,
-   type *Supabase Edge Functions*, functie `send-push`.
-6. Medewerkers tikken in de app op het belletje → *Pushmeldingen aanzetten*.
-   **iPhone:** werkt alleen als de app op het beginscherm staat (iOS 16.4 of nieuwer).
+1. Zet de functie **send-push** online (Edge Functions → Deploy a new function → Via Editor, code uit
+   `supabase/functions/send-push`). "Verify JWT" mag aan blijven. De sleutels voor pushmeldingen maakt
+   de functie zelf aan en bewaart ze in de tabel `app_secrets`; je hoeft niets over te typen.
+2. Supabase → *Database → Webhooks* → *Create a new hook*: tabel `notifications`, event *Insert*,
+   type *Supabase Edge Functions*, functie `send-push`, en zet *Add auth header with service key* aan.
+
+**Rooster per mail bij publiceren:** zet de functie **mail-rooster** online (code in
+`supabase/functions/mail-rooster`), zet "Verify JWT" uit, en voeg bij *Edge Functions → Secrets* het
+secret `SMTP_PASS` toe (wachtwoord van rooster@lilou-ede.nl). De mail gaat via poort 465.
 
 Zonder deze stappen werken de meldingen gewoon in de app (belletje), alleen niet als push.
 

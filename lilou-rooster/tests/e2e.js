@@ -229,6 +229,15 @@ async function test(name, fn) {
     assert.match(await shared.textContent('dialog [data-sendinvite]'), /opnieuw/);
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
   });
+  await test('publiceren meldt dat medewerkers hun rooster per mail krijgen', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-tab=planning]'); await shared.click('[data-act=next]'); await shared.waitForTimeout(200);
+    await shared.click('td.cell.editable >> nth=0'); await shared.waitForSelector('dialog [name=start_time]');
+    await shared.click('dialog button[value=save]'); await shared.waitForTimeout(300);
+    await shared.click('[data-act=publish]'); await shared.click('dialog button[value=save]');
+    await shared.waitForSelector('.toast:has-text("per mail")');
+    await shared.click('[data-act=today]');
+  });
   await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'] });
     const p = watch(await ctx.newPage());

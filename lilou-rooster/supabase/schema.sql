@@ -844,6 +844,10 @@ end $$;
 -- Wanneer een medewerker voor het laatst per e-mail is uitgenodigd (gezet door de Edge Function invite-employee)
 alter table public.employees add column if not exists invited_at timestamptz;
 
+-- Interne sleutels (zoals de sleutels voor pushmeldingen). Alleen de server-functies kunnen erbij.
+create table if not exists public.app_secrets (key text primary key, value text not null, created_at timestamptz not null default now());
+alter table public.app_secrets enable row level security;
+
 -- =====================================================================
 --  TOEGANG PER TABEL
 --  Werkt ook als "Automatically expose new tables" in Supabase UIT staat.
@@ -859,7 +863,8 @@ grant select, insert, update, delete on
 grant select on public.notifications, public.audit_log to authenticated;
 revoke insert, update, delete on public.notifications, public.audit_log from authenticated;
 grant update (read_at) on public.notifications to authenticated;          -- alleen 'gelezen' zelf zetten
-revoke all on public.reminder_log from authenticated;                      -- alleen voor interne taken
+revoke all on public.reminder_log from authenticated;
+revoke all on public.app_secrets from authenticated;                        -- sleutels: alleen server                      -- alleen voor interne taken
 grant usage, select on all sequences in schema public to authenticated;
 -- Server-functies (Edge Functions zoals invite-employee) gebruiken de rol service_role; die komt nooit in de app
 grant usage on schema public to service_role;
