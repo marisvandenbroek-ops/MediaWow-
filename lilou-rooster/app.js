@@ -255,7 +255,7 @@ function demoStore() {
       const upd = db.shifts.filter(s => s.date >= from && s.date <= to && !s.published);
       upd.forEach(s => (s.published = true));
       const per = {}; upd.filter(s => s.employee_id).forEach(s => (per[s.employee_id] = (per[s.employee_id] || 0) + 1));
-      Object.entries(per).forEach(([emp, n]) => notify(emp, 'Nieuw rooster', `${n} nieuwe dienst${n > 1 ? 'en' : ''} in je rooster (week ${weekNr(parse(from))})`, 'mijn'));
+      Object.entries(per).forEach(([emp, n]) => notify(emp, `Je rooster voor week ${weekNr(parse(from))} staat klaar`, `Je hebt ${n} nieuwe dienst${n > 1 ? 'en' : ''}. Tik om je rooster te bekijken.`, 'mijn'));
       const o = upd.filter(s => !s.employee_id).length;
       if (o) notifyTeam(`Open dienst${o > 1 ? 'en' : ''} beschikbaar`, `${o} open dienst${o > 1 ? 'en' : ''} in week ${weekNr(parse(from))}. Meld je aan!`, 'diensten');
       save();

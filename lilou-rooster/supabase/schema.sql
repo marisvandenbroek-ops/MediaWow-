@@ -519,8 +519,8 @@ begin
   select array_agg(id) into ids from upd;
   if ids is null then return 0; end if;
   for r in select employee_id, count(*) n from public.shifts where id = any(ids) and employee_id is not null group by employee_id loop
-    perform public.notify(r.employee_id, 'Nieuw rooster', r.n || ' nieuwe dienst' || case when r.n > 1 then 'en' else '' end
-      || ' in je rooster (week ' || extract(week from p_from)::int || ')', 'mijn');
+    perform public.notify(r.employee_id, 'Je rooster voor week ' || extract(week from p_from)::int || ' staat klaar',
+      'Je hebt ' || r.n || ' nieuwe dienst' || case when r.n > 1 then 'en' else '' end || '. Tik om je rooster te bekijken.', 'mijn');
   end loop;
   select count(*) into n_open from public.shifts where id = any(ids) and employee_id is null;
   if n_open > 0 then

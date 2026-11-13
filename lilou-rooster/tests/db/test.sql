@@ -80,7 +80,7 @@ reset role;
 set role authenticated; select as_user(1);
 select t_ok(publish_week(today_nl(), today_nl() + 6) = 3, 'directie publiceert 3 diensten');
 reset role;
-select t_ok(t_count($q$select * from notifications where title = 'Nieuw rooster'$q$) = 2, 'melding nieuw rooster voor 2 medewerkers');
+select t_ok(t_count($q$select * from notifications where title like 'Je rooster voor week % staat klaar'$q$) = 2, 'melding nieuw rooster voor 2 medewerkers');
 select t_ok(t_count($q$select * from notifications where title like 'Open dienst%'$q$) = 4, 'open dienst gemeld aan heel team');
 select t_ok(t_count($q$select * from notifications where title = 'Nieuwe aanvraag'$q$) = 1, 'directie krijgt melding van verlofaanvraag');
 
