@@ -3,6 +3,7 @@
 
 const CFG = Object.assign({ appName: 'Rooster', bedrijf: '', posities: [], diensten: [] }, window.ROOSTER_CONFIG || {});
 const DEMO = !(CFG.supabaseUrl && CFG.supabaseAnonKey);
+const START_HASH = location.hash;   // bevat bij een uitnodigings- of herstellink type=invite / type=recovery
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const app = $('#app');
@@ -201,8 +202,13 @@ function demoStore() {
       if (db.employees.some(x => x.email.toLowerCase() === e.email.toLowerCase() && x.id !== e.id)) throw new Error('Dit e-mailadres is al in gebruik.');
       let id = e.id;
       if (id) { const cur = db.employees.find(x => x.id === id), old = { ...cur }; Object.assign(cur, e); audit('employees', id, 'update', old, { ...cur }); }
-      else { id = uid(); db.employees.push({ ...e, id, user_id: 'demo' }); audit('employees', id, 'insert', null, e); }
+      else { id = uid(); db.employees.push({ ...e, id, user_id: null }); audit('employees', id, 'insert', null, e); }   // net als echt: pas actief na activeren
       save(); return id;
+    },
+    async inviteEmployee(id) {
+      const e = db.employees.find(x => x.id === id);
+      e.invited_at = new Date().toISOString(); save();
+      return { email: e.email, demo: true };
     },
     async privates() { db.private ||= {}; return clone(Object.values(db.private).filter(p => isMgr() || p.employee_id === mem)); },
     async savePrivate(p) {
@@ -465,6 +471,16 @@ async function supabaseStore() {
       return ok(await sb.from('employees').insert(rest).select('id').single()).id;
     },
     async privates() { return ok(await sb.from('employee_private').select('*')); },
+    async inviteEmployee(id) {
+      const { data, error } = await sb.functions.invoke('invite-employee', { body: { employee_id: id, redirect_to: location.origin + location.pathname } });
+      if (error) {
+        let msg = error.message || 'Uitnodigen mislukt';
+        try { const b = await error.context.json(); if (b && b.error) msg = b.error; } catch (e) { /* geen JSON */ }
+        if (/Failed to send a request|not found|404|FunctionsFetchError|FunctionsRelayError/i.test(msg)) msg = 'Uitnodigen per e-mail is nog niet ingesteld (Edge Function "invite-employee"). Gebruik voorlopig "Kopieer uitnodigingsbericht".';
+        throw new Error(msg);
+      }
+      return data;
+    },
     async savePrivate(p) { ok(await sb.from('employee_private').upsert({ ...p, updated_at: new Date().toISOString() })); },
     async deleteEmployee(id) { ok(await sb.from('employees').delete().eq('id', id)); },
     async shifts(from, to) {
@@ -664,16 +680,18 @@ async function renderAuth(mode = 'login', msg = '') {
   };
 }
 
-function renderNewPassword() {
-  app.innerHTML = authPage(`${authLogo()}<h1>Nieuw wachtwoord</h1><p>Kies een nieuw wachtwoord van minimaal 8 tekens.</p>
-    <form class="stack" id="pwform"><label class="field">Nieuw wachtwoord<input name="password" type="password" minlength="8" autocomplete="new-password" required></label>
-    <button class="btn primary block">Opslaan</button></form>`);
+function renderNewPassword(kind = 'recovery') {
+  const welcome = kind === 'invite';
+  app.innerHTML = authPage(`${authLogo()}<h1>${welcome ? 'Welkom!' : 'Nieuw wachtwoord'}</h1><p>${welcome ? 'Je bent uitgenodigd voor het rooster. Kies een wachtwoord (minimaal 8 tekens); daarmee log je voortaan in.' : 'Kies een nieuw wachtwoord van minimaal 8 tekens.'}</p>
+    <form class="stack" id="pwform"><label class="field">${welcome ? 'Kies je wachtwoord' : 'Nieuw wachtwoord'}<input name="password" type="password" minlength="8" autocomplete="new-password" required></label>
+    <button class="btn primary block">${welcome ? 'Wachtwoord opslaan en beginnen' : 'Opslaan'}</button></form>
+    ${welcome ? '<p class="hint" style="margin-top:14px">Tip: zet de app daarna op je beginscherm (iPhone: deelknop → Zet op beginscherm).</p>' : ''}`);
   $('#pwform').onsubmit = async ev => {
     ev.preventDefault();
     try {
       await store.updatePassword(new FormData(ev.target).get('password'));
       history.replaceState(null, '', location.pathname);
-      toast('Wachtwoord gewijzigd');
+      toast(welcome ? 'Welkom! Je account is klaar' : 'Wachtwoord gewijzigd');
       handleSession(await store.init());
     } catch (e) { toast(errMsg(e), 'error'); }
   };
@@ -1323,9 +1341,9 @@ async function viewTeam(el) {
         <td class="num">${e.contract_hours ? fmtH(Number(e.contract_hours)) + ' u/wk' : '—'}</td>
         <td class="num hide-sm">${privs[e.id]?.hourly_wage ? euro(Number(privs[e.id].hourly_wage)) : '—'}${(() => { const a = ageOn(privs[e.id]?.birth_date, todayIso()); return a != null && a < 18 ? ` <span class="pill warn">${a} jr</span>` : ''; })()}</td>
         <td class="num hide-sm">${(() => { const b = leaveBalance(e, privs[e.id], reqs); return b.entitlement || b.opening ? fmtH(b.rest) + ' u' : '—'; })()}</td>
-        <td>${e.active === false ? '<span class="pill">inactief</span>' : e.user_id ? '<span class="pill ok">actief</span>' : '<span class="pill warn">nog niet geactiveerd</span>'}</td></tr>`).join('')}</tbody>
+        <td>${e.active === false ? '<span class="pill">inactief</span>' : e.user_id ? '<span class="pill ok">actief</span>' : e.invited_at ? `<span class="pill warn">uitgenodigd ${esc(fmtShort(iso(new Date(e.invited_at))))}</span>` : '<span class="pill warn">nog niet geactiveerd</span>'}</td></tr>`).join('')}</tbody>
     </table></div>` : '<div class="card empty">Nog geen medewerkers.</div>'}
-    ${store.demo ? '' : '<p class="hint" style="margin-top:14px">Nieuwe medewerkers activeren zelf hun account via <strong>“Eerste keer inloggen”</strong> met het e-mailadres dat je hier invult.</p>'}`;
+    <p class="hint" style="margin-top:14px">Nieuwe medewerkers krijgen een uitnodiging per e-mail van ${esc(CFG.bedrijf)}. Komt die niet aan? Open de medewerker en kies <strong>Uitnodiging opnieuw sturen</strong>, of stuur het uitnodigingsbericht via WhatsApp.</p>`;
   el.onclick = ev => {
     if (ev.target.closest('[data-new]')) return employeeDialog({ active: true, role: 'staff', color: COLORS[emps.length % COLORS.length] }, {}, reqs);
     const tr = ev.target.closest('tr[data-id]');
@@ -1366,7 +1384,8 @@ function employeeDialog(e, priv = {}, reqs = []) {
       <p class="hint">De geboortedatum gebruikt de app voor de jongerenregels uit de Arbeidstijdenwet.</p>
     </fieldset>
     ${isNew ? '' : '<details class="history" data-history><summary>Geschiedenis van wijzigingen</summary><div class="hint">Laden…</div></details>'}
-    ${!isNew && !store.demo ? `<div><button type="button" class="btn sm" data-invite>Kopieer uitnodigingsbericht</button></div>` : ''}
+    ${isNew ? `<label class="check"><input type="checkbox" name="send_invite" checked> Stuur meteen een uitnodiging per e-mail</label>` : !e.user_id && e.active !== false ? `<div class="invitebox"><span class="hint">${e.invited_at ? `Uitgenodigd op ${esc(fmtShort(iso(new Date(e.invited_at))))} ${tHM(e.invited_at)}, nog niet geactiveerd.` : 'Nog niet uitgenodigd.'}</span>
+      <div class="req-actions"><button type="button" class="btn sm primary" data-sendinvite>${e.invited_at ? 'Uitnodiging opnieuw sturen' : 'Uitnodiging sturen'}</button><button type="button" class="btn sm" data-invite>Kopieer bericht voor WhatsApp</button></div></div>` : ''}
     <div class="dlg-foot">
       ${isNew || e.id === S.me.id ? '' : '<button class="btn danger" value="delete" formnovalidate>Verwijderen</button>'}
       <span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button>
@@ -1375,6 +1394,12 @@ function employeeDialog(e, priv = {}, reqs = []) {
       const h = $('[data-history]', dlg); if (h) h.addEventListener('toggle', () => { if (h.open && !h.dataset.loaded) { h.dataset.loaded = 1; historyHTML(e.id).then(x => { $('div', h).outerHTML = x; }); } });
       const b = $('[data-invite]', dlg);
       if (b) b.onclick = async () => { try { await navigator.clipboard.writeText(invite); toast('Bericht gekopieerd — plak het in WhatsApp of mail'); } catch (x) { prompt('Kopieer dit bericht:', invite); } };
+      const si = $('[data-sendinvite]', dlg);
+      if (si) si.onclick = async () => {
+        si.disabled = true; si.textContent = 'Versturen…';
+        try { const r = await store.inviteEmployee(e.id); toast(r?.demo ? 'Demo: in de echte app gaat er nu een uitnodiging naar ' + e.email : 'Uitnodiging verstuurd naar ' + e.email); dlg.close(); rerender(); }
+        catch (x) { toast(errMsg(x), 'error'); si.disabled = false; si.textContent = 'Uitnodiging opnieuw sturen'; }
+      };
     },
     async onSubmit(fd, action) {
       if (action === 'delete') {
@@ -1394,7 +1419,10 @@ function employeeDialog(e, priv = {}, reqs = []) {
       const changed = ['hourly_wage', 'birth_date', 'leave_hours_year'].some(k => (pv[k] ?? null) !== (priv[k] ?? null)) || pv.leave_opening !== (Number(priv.leave_year) === pv.leave_year ? Number(priv.leave_opening) || 0 : 0);
       if (changed && pv.employee_id) await store.savePrivate(pv);
       if (e.id === S.me.id) Object.assign(S.me, payload);
-      toast(isNew ? 'Medewerker toegevoegd' : 'Opgeslagen');
+      if (isNew && fd.get('send_invite') === 'on' && id) {
+        try { const r = await store.inviteEmployee(id); toast(r?.demo ? 'Medewerker toegevoegd (demo: in de echte app gaat er nu een uitnodiging per mail)' : `Medewerker toegevoegd en uitnodiging verstuurd naar ${payload.email}`); }
+        catch (x) { toast('Medewerker toegevoegd, maar de uitnodiging is niet verstuurd: ' + errMsg(x), 'error'); }
+      } else toast(isNew ? 'Medewerker toegevoegd' : 'Opgeslagen');
       rerender();
     },
   });
@@ -2436,9 +2464,15 @@ async function boot() {
     return;
   }
   if (!store.demo) {
-    let recovery = /type=recovery/.test(location.hash);
-    store.sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { recovery = true; renderNewPassword(); } });
-    if (recovery) { await store.sb.auth.getSession(); return renderNewPassword(); }
+    let recovery = /type=recovery/.test(START_HASH);
+    const invited = /type=invite/.test(START_HASH);
+    store.sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY' && !recovery) { recovery = true; renderNewPassword(); } });
+    if (/error_description=/.test(START_HASH)) {
+      const msg = decodeURIComponent((START_HASH.match(/error_description=([^&]*)/) || [])[1] || '').replace(/\+/g, ' ');
+      history.replaceState(null, '', location.pathname);
+      return renderAuth('login', `<div class="msg err">De link uit de e-mail werkt niet (meer)${msg ? ': ' + esc(msg) : ''}. Vraag de directie om een nieuwe uitnodiging, of kies "Wachtwoord vergeten?".</div>`);
+    }
+    if (recovery || invited) { await store.sb.auth.getSession(); return renderNewPassword(invited ? 'invite' : 'recovery'); }
   }
   try { handleSession(await store.init()); } catch (e) { console.error(e); renderAuth('login', `<div class="msg err">${esc(errMsg(e))}</div>`); }
 }

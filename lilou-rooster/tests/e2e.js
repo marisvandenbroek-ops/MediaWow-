@@ -218,6 +218,17 @@ async function test(name, fn) {
     await shared.click('article.entry:has-text("Testnotitie") [data-eedit]'); await shared.click('dialog [data-history] summary'); await shared.waitForSelector('dialog .auditlist');
     assert.match(await shared.textContent('dialog .auditlist'), /Testnotitie/);
   });
+  await test('nieuwe medewerker: uitnodiging wordt meteen verstuurd en status zichtbaar', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-tab=team]'); await shared.click('[data-new]'); await shared.waitForSelector('dialog [name=send_invite]');
+    assert.ok(await shared.isChecked('dialog [name=send_invite]'), 'vinkje uitnodigen staat niet standaard aan');
+    await shared.fill('dialog [name=name]', 'Lisa de Jong'); await shared.fill('dialog [name=email]', 'lisa@voorbeeld.nl');
+    await shared.click('dialog button[value=save]'); await shared.waitForTimeout(300);
+    assert.match(await shared.textContent('tr:has-text("Lisa de Jong")'), /uitgenodigd/);
+    await shared.click('tr:has-text("Lisa de Jong")'); await shared.waitForSelector('dialog [data-sendinvite]');
+    assert.match(await shared.textContent('dialog [data-sendinvite]'), /opnieuw/);
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+  });
   await test('foutmelding verschijnt in het venster', async () => {
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close())); await shared.click('[data-tab=team]'); await shared.click('[data-new]');
     await shared.fill('dialog [name=name]', 'Test'); await shared.fill('dialog [name=email]', 'sanne@voorbeeld.nl'); await shared.click('dialog button[value=save]');

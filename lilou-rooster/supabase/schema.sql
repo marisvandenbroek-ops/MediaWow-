@@ -841,6 +841,9 @@ exception when others then
   raise notice 'pg_cron niet beschikbaar (%). Zet pg_cron aan en voer dit blok opnieuw uit; de app voert de taken ook zelf uit.', sqlerrm;
 end $$;
 
+-- Wanneer een medewerker voor het laatst per e-mail is uitgenodigd (gezet door de Edge Function invite-employee)
+alter table public.employees add column if not exists invited_at timestamptz;
+
 -- =====================================================================
 --  TOEGANG PER TABEL
 --  Werkt ook als "Automatically expose new tables" in Supabase UIT staat.
