@@ -1,7 +1,7 @@
 /* Stijl voor de documentpagina's (privacy.html, afspraken.html) */
-:root { --brand: #912508; --cream: #f9efe6; --bg: #f9f3ec; --surface: #fff; --line: #ecdfd4; --text: #2b1611; --muted: #7d6359;
-  --serif: 'Bodoni Moda', Didot, Georgia, serif; --caps: 'Josefin Sans', 'Inter', sans-serif; --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
-@media (prefers-color-scheme: dark) { :root { --bg: #1a1210; --surface: #241917; --line: #3a2a25; --text: #f6ebe3; --muted: #b39a8f; } }
+:root { --brand: #912508; --cream: #f9efe6; --bg: #ffffff; --surface: #fff; --line: #e8e6e4; --text: #1c1917; --muted: #6e6762;
+  --serif: 'Inter', system-ui, sans-serif; --caps: 'Inter', system-ui, sans-serif; --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121212; --surface: #1c1c1c; --line: #2e2e2e; --text: #f5f5f4; --muted: #a8a29e; } }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 var(--font); overflow-x: hidden; }
@@ -11,9 +11,9 @@ header.doc-top span { font-family: var(--caps); font-size: 12px; letter-spacing:
 main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
 .back { display: inline-block; margin-bottom: 18px; color: var(--brand); font-weight: 600; text-decoration: none; }
 @media (prefers-color-scheme: dark) { .back, a { color: #e08a6c; } }
-h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; margin: 0 0 6px; }
+h1 { font-family: var(--serif); font-weight: 700; letter-spacing: -.02em; font-size: clamp(28px, 7vw, 38px); line-height: 1.15; margin: 0 0 6px; }
 .meta { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
-h2 { font-family: var(--serif); font-weight: 600; font-size: 22px; margin: 32px 0 8px; }
+h2 { font-family: var(--serif); font-weight: 700; letter-spacing: -.01em; font-size: 22px; margin: 32px 0 8px; }
 p, li { max-width: 68ch; }
 ul { padding-left: 1.2em; } li { margin: 4px 0; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin: 14px 0; }
