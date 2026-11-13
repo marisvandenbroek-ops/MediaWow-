@@ -144,7 +144,7 @@
   .when { margin-top: 4px; font-family: var(--serif); font-style: italic; font-size: 34px; color: rgba(243, 214, 196, .88); }
   .address {
     position: absolute; left: 36px; right: 36px; bottom: 58px; z-index: 2;
-    font-size: 11.4px; font-weight: 600; letter-spacing: .12em; line-height: 2.1; color: rgba(243, 226, 214, .92);
+    font-size: 12.6px; font-weight: 600; letter-spacing: .1em; line-height: 2; color: rgba(243, 226, 214, .92);
   }
   .address span { display: block; }
   svg.arcs { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
@@ -180,6 +180,9 @@
     transition: transform .3s, box-shadow .3s;
   }
   .cta:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -10px rgba(25, 3, 0, .8); }
+  .hours { margin-top: 10px; font-size: 13px; font-weight: 600; letter-spacing: .16em; color: rgba(243, 226, 214, .92); }
+  .backurl { margin-top: 18px; font-size: 13px; font-weight: 600; letter-spacing: .14em; }
+  .open2 { margin-top: 14px; font-size: 11px; font-weight: 600; letter-spacing: .22em; color: rgba(243, 214, 196, .72); }
   .countdown { margin-top: 22px; font-size: 11px; font-weight: 600; letter-spacing: .3em; color: rgba(243, 214, 196, .7); }
 
   .hint {
@@ -234,11 +237,12 @@
               </div>
               <div class="rule f-rule"></div>
               <div><p class="opening foil f-opening">OPENING</p></div>
-              <p class="when f-when">zondag 29 november · 16:00</p>
+              <p class="when f-when">zondag 29 november</p>
+              <p class="hours f-when">14:00 – 19:00 · BORREL &amp; HAPJES</p>
             </div>
             <p class="address">
               <span class="f-addr">HET POMPHUIS · KLINKENBERGERWEG 41 · EDE</span>
-              <span class="f-addr">AANMELDEN TOT 26.11 · LILOU-EDE.NL/OPENING</span>
+              <span class="f-addr">MELD JE AAN · LILOU-EDE.NL/OPENING</span>
             </p>
             <div class="sheen" id="sheen"></div>
             <div class="glare"></div>
@@ -251,11 +255,13 @@
             <div class="content">
               <p class="kicker">DE OPENING</p>
               <h2 class="foil">29 november</h2>
-              <p class="time">zondag · 16:00</p>
+              <p class="time">zondag · 14:00 – 19:00</p>
               <p class="place">HET POMPHUIS<small>KLINKENBERGERWEG 41 · EDE</small></p>
               <div class="rule"></div>
-              <p class="deadline">Aanmelden tot 26 november</p>
-              <a class="cta" href="https://lilou-ede.nl/opening" target="_blank" rel="noopener">AANMELDEN <span aria-hidden="true">→</span></a>
+              <p class="deadline">Borrel &amp; hapjes · gratis</p>
+              <a class="cta" href="https://lilou-ede.nl/opening" target="_blank" rel="noopener">MELD JE AAN <span aria-hidden="true">→</span></a>
+              <p class="backurl">LILOU-EDE.NL/OPENING</p>
+              <p class="open2">VANAF 2 DECEMBER GEOPEND</p>
               <p class="countdown" id="countdown"></p>
             </div>
             <div class="glare"></div>
@@ -335,7 +341,7 @@
 
   /* ---------- Aftellen ---------- */
   (() => {
-    const target = new Date(2026, 10, 29, 16, 0);
+    const target = new Date(2026, 10, 29, 14, 0);
     const days = Math.ceil((target - new Date()) / 864e5);
     $('#countdown').textContent = days > 1 ? `NOG ${days} DAGEN` : days === 1 ? 'MORGEN IS HET ZOVER' : '';
   })();
@@ -420,7 +426,8 @@
   let introDone = false;
   function camZoom() {
     const s = parseFloat(getComputedStyle(stage).getPropertyValue('--scale')) || .8;
-    const z = Math.min(innerWidth * (VIDEO ? .92 : .9) / (520 * s), innerHeight * (VIDEO ? .9 : .84) / (680 * s));
+    const STORY = params.has('story');
+    const z = Math.min(innerWidth * (VIDEO ? .92 : .9) / (520 * s), innerHeight * (STORY ? .7 : VIDEO ? .9 : .84) / (680 * s));
     return Math.max(1, Math.min(z, 2.2));
   }
   addEventListener('resize', () => { if (introDone) gsap.set('#cam', { scale: camZoom() }); });
