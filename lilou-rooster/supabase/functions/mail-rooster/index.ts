@@ -41,6 +41,8 @@ export function buildMail(name: string, from: string, to: string, shifts: Shift[
   const subject = `Je rooster voor week ${wk} (${range})`;
   const line = (s: Shift) => `${dayLabel(s.date)}: ${hm(s.start_time)}–${hm(s.end_time)}${s.break_minutes ? ` (${s.break_minutes} min pauze)` : ''}${s.position ? ` · ${s.position}` : ''}${s.note ? ` · ${s.note}` : ''}`;
   const text = `Hoi ${first},\n\nJe rooster voor week ${wk} staat klaar:\n\n${shifts.map((s) => '• ' + line(s)).join('\n')}\n\nBekijk of wijzig (ruilen, verlof) in de app: ${appUrl}\n\nGroet,\nLilou`;
+  // Voorbeeldregel in de inbox (onzichtbaar in de mail zelf)
+  const preview = `Hoi ${first}, je rooster voor week ${wk} staat klaar: ` + shifts.map((s) => `${DAG[d(s.date).getUTCDay()].slice(0, 2)} ${d(s.date).getUTCDate()} ${MAAND[d(s.date).getUTCMonth()]} ${hm(s.start_time)}–${hm(s.end_time)}`).join(', ');
   const rows = shifts.map((s) => {
     const info = [s.position, s.break_minutes ? s.break_minutes + ' min pauze' : '', s.note].filter(Boolean).join(' · ');
     return `<tr><td style="padding:12px 0;border-bottom:1px solid #ecdfd4">
@@ -54,6 +56,7 @@ export function buildMail(name: string, from: string, to: string, shifts: Shift[
   <meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
   <style>a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-weight:inherit!important}</style></head>
   <body style="margin:0;background:#f9f3ec;font-family:Arial,Helvetica,sans-serif;color:#2b1611">
+  <div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;font-size:1px;line-height:1px;color:#f9f3ec">${esc(preview)}${'&#847;&zwnj;&nbsp;'.repeat(60)}</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9f3ec;padding:16px 8px"><tr><td align="center">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:14px;overflow:hidden">
     <tr><td style="background:#912508;color:#f9efe6;padding:20px 22px;font-family:Georgia,serif;font-size:28px">Lilou<div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:4px;margin-top:4px">ROOSTER</div></td></tr>
