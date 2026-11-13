@@ -141,6 +141,10 @@ async function test(name, fn) {
 
   console.log('Ruilen, open diensten, beschikbaarheid');
   await test('lopend ruilverzoek: dienst niet opnieuw te kiezen; dubbelklik maakt één verzoek', async () => {
+    // zorg dat Daan altijd een komende dienst heeft, welke dag of tijd het ook is
+    await setDemoDb(mob, `const d = db.employees.find(e => e.name.startsWith('Daan')); const t = new Date(Date.now() + 2 * 864e5);
+      db.shifts.push({ id: 'test-daan-' + Date.now(), employee_id: d.id, date: t.toISOString().slice(0, 10), start_time: '17:00', end_time: '23:00', break_minutes: 30, position: 'Bar', note: '', published: true });`);
+    await mob.reload(); await mob.waitForSelector('[data-clockcard], [data-demo]');
     await logout(mob, '#personeel'); await login(mob, 'Daan');
     await mob.click('[data-tab=diensten]'); await mob.click('[data-newswap]'); await mob.waitForSelector('dialog [name=shift_id]');
     const disabled = await mob.$$eval('dialog [name=shift_id] option[disabled]', o => o.length);
@@ -455,8 +459,11 @@ async function test(name, fn) {
     await p.reload(); await p.waitForSelector('[data-demo]'); await login(p, 'Sanne');
     await p.waitForSelector('.board .ann.unread:has-text("Proeverij donderdag")');
     await p.click('.board .ann:has-text("Proeverij donderdag") [data-annread]');
-    await p.waitForSelector('.toast:has-text("Bedankt")');
+    await p.waitForSelector('.toast:has-text("Gelezen")');
     await p.waitForSelector('.board .ann.unread:has-text("Proeverij donderdag")', { state: 'detached', timeout: 5000 });
+    // gelezen = niet weg: ingeklapt nog op het prikbord, openklappen toont de inhoud
+    await p.click('.board .pinitem summary:has-text("Proeverij donderdag")');
+    await p.waitForSelector('.board .pinitem[open] .ann:has-text("Om 15:00 in de keuken")');
     const { db } = await demoDb(p);
     const ann = db.announcements.find(a => a.title === 'Proeverij donderdag');
     assert.ok(db.annReads.some(r => r.announcement_id === ann.id), 'gelezen niet opgeslagen');

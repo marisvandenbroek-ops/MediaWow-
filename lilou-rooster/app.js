@@ -1556,7 +1556,7 @@ function annAllDialog(board, emps, mgr) {
       d.addEventListener('click', async ev => {
         const ae = ev.target.closest('[data-annedit]'); if (ae) { d.close(); return annDialog(board.list.find(a => a.id === ae.dataset.annedit)); }
         const ar = ev.target.closest('[data-annreads]'); if (ar) return annReadsDialog(board.list.find(a => a.id === ar.dataset.annreads), board.reads, emps);
-        const rd = ev.target.closest('[data-annread]'); if (rd) { await store.markAnnRead(rd.dataset.annread); toast('Bedankt!'); d.close(); rerender(); }
+        const rd = ev.target.closest('[data-annread]'); if (rd) { await store.markAnnRead(rd.dataset.annread); toast('Gelezen. Je vindt hem nog op het prikbord.'); d.close(); rerender(); }
       });
     },
   });
@@ -1568,18 +1568,22 @@ async function boardHTML() {
   const mineRead = new Set(reads.filter(r => r.employee_id === S.me.id).map(r => r.announcement_id));
   const unread = list.filter(a => !mineRead.has(a.id)).sort((a, b) => b.created_at.localeCompare(a.created_at));   // nieuwste eerst open
   const pinnedRead = list.filter(a => a.pinned && mineRead.has(a.id));
-  if (!unread.length && !pinnedRead.length && !list.length) return '';
+  // gelezen mededelingen blijven nog 14 dagen ingeklapt zichtbaar, daarna onder 'Alle mededelingen'
+  const since = new Date(Date.now() - 14 * 864e5).toISOString();
+  const recentRead = list.filter(a => !a.pinned && mineRead.has(a.id) && a.created_at >= since)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5);
+  if (!list.length) return '';
   return `<section class="board">
     ${unread.map((a, i) => i === 0 ? annCard(a, { read: false }) : `<details class="pinitem unreaditem"><summary><span class="newdot">nieuw</span> ${esc(a.title)}</summary>${annCard(a, { read: false })}</details>`).join('')}
-    ${pinnedRead.length ? `<div class="pinlist">${pinnedRead.map(a => `<details class="pinitem"><summary>📌 ${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}</div>` : ''}
-    ${list.length > unread.length + pinnedRead.length ? '<button type="button" class="linkbtn small" data-annall>Alle mededelingen</button>' : ''}
+    ${pinnedRead.length || recentRead.length ? `<div class="pinlist">${pinnedRead.map(a => `<details class="pinitem"><summary>📌 ${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}${recentRead.map(a => `<details class="pinitem"><summary><span class="muted">✓</span> ${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}</div>` : ''}
+    ${list.length > unread.length + pinnedRead.length + recentRead.length ? '<button type="button" class="linkbtn small" data-annall>Alle mededelingen</button>' : ''}
   </section>`;
 }
 function bindBoard(el) {
   fillAnnFiles(el);
   return async ev => {
     const r = ev.target.closest('[data-annread]');
-    if (r) { await store.markAnnRead(r.dataset.annread); toast('Bedankt!'); rerender(); return true; }
+    if (r) { await store.markAnnRead(r.dataset.annread); toast('Gelezen. Je vindt hem nog op het prikbord.'); rerender(); return true; }
     if (ev.target.closest('[data-annall]')) { annAllDialog(await store.announcements(), [], false); return true; }
     return false;
   };
@@ -2060,7 +2064,7 @@ async function viewRequestsStaff(el) {
   const showBal = bal.entitlement || bal.opening || bal.used;
   el.innerHTML = `
     <div class="page-head"><div><h1>Verlof</h1><p>Vraag vakantie of een vrije dag aan, of meld je ziek. Beschikbaarheid per week geef je door onder <button class="linkbtn" data-goto="beschikbaar">Beschikbaar</button>.</p></div></div>
-    ${showBal ? `<div class="card pad balance"><div><small>Verlofsaldo ${bal.year}</small><b>${fmtH(bal.rest)} uur</b></div><div class="hint">${fmtH(bal.opening)} begin + ${fmtH(bal.entitlement)} recht − ${fmtH(bal.used)} opgenomen${bal.pending ? ` · ${bal.pending} ${bal.pending === 1 ? 'aanvraag' : 'aanvragen'} in behandeling` : ''}</div></div>` : ''}
+    ${showBal ? `<div class="card pad balance"><div><small>Verlofsaldo ${bal.year}</small><b>${fmtH(bal.rest)} uur</b></div><div class="hint">${fmtH(bal.opening)} meegenomen uit ${bal.year - 1} + ${fmtH(bal.entitlement)} recht − ${fmtH(bal.used)} opgenomen${bal.pending ? ` · ${bal.pending} ${bal.pending === 1 ? 'aanvraag' : 'aanvragen'} in behandeling` : ''}</div></div>` : ''}
     <div class="split">
       <form class="card pad stack" id="reqform">
         <h3 style="font-size:18px">Nieuwe aanvraag</h3>
@@ -2253,9 +2257,9 @@ function employeeDialog(e, priv = {}, reqs = []) {
       </div>
       <div class="row keep">
         <label class="field">Verlofuren per jaar<input type="number" name="leave_hours_year" min="0" step="0.5" value="${priv.leave_hours_year ?? ''}" placeholder="4 × contract = ${fmtH(4 * (Number(e.contract_hours) || 0))}"></label>
-        <label class="field">Verlofsaldo begin ${new Date().getFullYear()} (uren)<input type="number" name="leave_opening" step="0.5" value="${Number(priv.leave_year) === new Date().getFullYear() ? priv.leave_opening ?? '' : ''}" placeholder="0"></label>
+        <label class="field">Meegenomen uit ${new Date().getFullYear() - 1} (uren)<input type="number" name="leave_opening" step="0.5" value="${Number(priv.leave_year) === new Date().getFullYear() ? priv.leave_opening ?? '' : ''}" placeholder="0"></label>
       </div>
-      ${isNew ? '' : `<p class="hint">Verlof ${bal.year}: ${fmtH(bal.opening)} begin + ${fmtH(bal.entitlement)} recht − ${fmtH(bal.used)} opgenomen = <strong>${fmtH(bal.rest)} uur over</strong>${bal.pending ? ` · ${bal.pending} ${bal.pending === 1 ? 'aanvraag' : 'aanvragen'} open` : ''}</p>`}
+      ${isNew ? '' : `<p class="hint">Verlof ${bal.year}: ${fmtH(bal.opening)} meegenomen uit ${bal.year - 1} + ${fmtH(bal.entitlement)} recht − ${fmtH(bal.used)} opgenomen = <strong>${fmtH(bal.rest)} uur over</strong>${bal.pending ? ` · ${bal.pending} ${bal.pending === 1 ? 'aanvraag' : 'aanvragen'} open` : ''}</p>`}
       <p class="hint">De geboortedatum gebruikt de app voor de jongerenregels uit de Arbeidstijdenwet.</p>
     </fieldset>
     ${isNew ? '' : '<details class="history" data-history><summary>Geschiedenis van wijzigingen</summary><div class="hint">Laden…</div></details>'}
