@@ -15,8 +15,8 @@ window.ROOSTER_CONFIG = {
   logoAuth: 'brand/lilou-logo-creme.png',      // op het inlogscherm (op rood)
 
   // Supabase (Project Settings → API)
-  supabaseUrl: '',
-  supabaseAnonKey: '',
+  supabaseUrl: 'https://vmpxdljsadibnjqzfmno.supabase.co',
+  supabaseAnonKey: 'sb_publishable_2vUfWwcgq8EOeVd4klWzag_CeQ8vJ91',   // openbare sleutel (mag in de app staan)
 
   // Pushmeldingen: publieke VAPID-sleutel (zie README → Pushmeldingen)
   vapidPublicKey: '',
