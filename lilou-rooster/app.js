@@ -72,6 +72,7 @@ const ICON = {
   team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9.5" r="2.5"/><path d="M16.5 14.6c2.3.2 4 1.7 4.5 4.4"/></svg>',
   aanvragen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20.5V5a1.5 1.5 0 0 1 1.5-1.5h11A1.5 1.5 0 0 1 19 5v15.5l-3.5-2-3.5 2-3.5-2z"/><path d="M9 9h6M9 12.5h4"/></svg>',
   uren: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   logout: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15M10 16.5 14.5 12 10 7.5M14.5 12H4"/></svg>',
 };
 
@@ -731,13 +732,22 @@ function renderUnlinked(email) {
 
 async function signOut() { clearInterval(S.poll); await store.signOut(); S.me = null; renderAuth(); }
 
-function handleSession(r) {
+// Standaardwaarden uit config.js; de directie kan ze overschrijven op de pagina Instellingen
+const CFG_DEFAULTS = { posities: [...(CFG.posities || [])], diensten: (CFG.diensten || []).map(d => ({ ...d })), toeslagen: { ...(CFG.toeslagen || {}) } };
+function applySettings(st) {
+  if (!st) return;
+  CFG.posities = Array.isArray(st.positions) && st.positions.length ? st.positions : CFG_DEFAULTS.posities;
+  CFG.diensten = Array.isArray(st.shift_templates) ? st.shift_templates : CFG_DEFAULTS.diensten;
+  CFG.toeslagen = Object.assign({}, CFG_DEFAULTS.toeslagen, st.toeslag_windows || {});
+}
+async function handleSession(r) {
   if (!r) return renderAuth();
   if (r.unlinked) return renderUnlinked(r.email);
   S.me = r.employee;
+  try { applySettings(await store.settings()); } catch (e) { /* standaardwaarden blijven gelden */ }
   S.view = isMgr() ? 'planning' : 'mijn';
   const hv = location.hash.slice(1).split(':');
-  if (tabsFor().some(([k]) => k === hv[0])) { S.view = hv[0]; if (hv[1]) S.reqTab = hv[1]; }
+  if (tabsFor().some(([k]) => k === hv[0]) || (isMgr() && hv[0] === 'instellingen')) { S.view = hv[0]; if (hv[1]) S.reqTab = hv[1]; }
   renderShell();
 }
 
@@ -756,11 +766,12 @@ function renderShell() {
     <header class="topbar"><div class="topbar-inner">
       <div class="brand">${CFG.logo ? `<div class="stack-brand"><img class="wordmark light" src="${esc(CFG.logo)}" alt="${esc(CFG.bedrijf)}"><img class="wordmark dark" src="${esc(CFG.logoDark || CFG.logo)}" alt="${esc(CFG.bedrijf)}"><div class="sub">Rooster · ${isMgr() ? 'Leiding' : esc(S.me.position || 'Team')}</div></div>` : `<div class="logo">${letter}</div><div><strong>${esc(CFG.appName)}</strong><small>${isMgr() ? 'Leidinggevende' : esc(S.me.position || 'Medewerker')}</small></div>`}</div>
       <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !isMgr() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l === 'Mijn rooster' ? 'Rooster' : l}</span>${(isMgr() ? k === 'aanvragen' : k === 'diensten') ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}</nav>
-      <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon bell" data-bell title="Meldingen" aria-label="Meldingen">${ICON.bell}<span class="ncount hidden" data-ncount></span></button><button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
+      <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon bell" data-bell title="Meldingen" aria-label="Meldingen">${ICON.bell}<span class="ncount hidden" data-ncount></span></button>${isMgr() ? `<button class="btn ghost icon" data-gosettings title="Instellingen" aria-label="Instellingen">${ICON.settings}</button>` : ''}<button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
     </div></header>
     <main id="view"></main>
     ${store.demo ? '' : `<footer class="app-foot">${LEGAL}</footer>`}`;
   $$('[data-tab]').forEach(b => (b.onclick = () => go(b.dataset.tab)));
+  const gs = $('[data-gosettings]'); if (gs) gs.onclick = () => go('instellingen');
   $('[data-logout]').onclick = signOut;
   $('[data-bell]').onclick = notifPanel;
   clearInterval(S.poll); S.poll = setInterval(refreshBadge, 60000);
@@ -803,6 +814,7 @@ async function go(view) {
   if (S.view !== view) window.scrollTo(0, 0);
   S.view = view;
   $$('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === view));
+  $('[data-gosettings]')?.classList.toggle('active', view === 'instellingen');
   const el = $('#view');
   el.onclick = null; el.onchange = null; el.ontouchstart = null; el.ontouchend = null;
   try {
@@ -814,6 +826,7 @@ async function go(view) {
     else if (view === 'klokken') await viewClockMgr(el);
     else if (view === 'diensten') await viewDiensten(el);
     else if (view === 'beschikbaar') await viewBeschikbaar(el);
+    else if (view === 'instellingen' && isMgr()) await viewSettings(el);
   } catch (e) {
     console.error(e);
     el.innerHTML = `<div class="card pad"><p class="msg err">Er ging iets mis bij het laden: ${esc(errMsg(e))}</p><button class="btn" onclick="location.reload()">Opnieuw laden</button></div>`;
@@ -1137,7 +1150,8 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
 
 // Publiceert een week en mailt iedereen met nieuwe diensten zijn weekrooster
 async function publishWeek(from, to, weekShifts, quiet = false) {
-  const ids = [...new Set(weekShifts.filter(s => !s.published && s.employee_id).map(s => s.employee_id))];
+  const mailOn = (await store.settings()).mail_on_publish !== false;
+  const ids = mailOn ? [...new Set(weekShifts.filter(s => !s.published && s.employee_id).map(s => s.employee_id))] : [];
   await store.publish(from, to);
   if (quiet) {
     if (!ids.length) return { sent: 0 };
@@ -1151,6 +1165,92 @@ async function publishWeek(from, to, weekShifts, quiet = false) {
     if (r.failed?.length) toast(`Gemaild naar ${r.sent}; niet gelukt: ${r.failed.join('; ')}`, 'error');
     else toast(r.demo ? `Demo: in de echte app krijgen ${r.sent} medewerker(s) nu hun rooster per mail` : `Rooster gemaild naar ${r.sent} medewerker${r.sent === 1 ? '' : 's'}`);
   } catch (x) { toast('Gepubliceerd, maar niet gemaild: ' + errMsg(x), 'error'); }
+}
+
+/* ================= Instellingen (directie) ================= */
+async function viewSettings(el) {
+  const st = await store.settings();
+  applySettings(st);
+  const pos = [...CFG.posities];
+  const tpl = CFG.diensten.map(d => ({ ...d }));
+  const T = Object.assign({ avondVan: '20:00', avondTot: '24:00', nachtVan: '00:00', nachtTot: '06:00' }, CFG.toeslagen);
+  const pf = (k, l, d) => `<label class="field">${l}<input type="number" name="${k}" min="0" max="300" step="0.5" value="${st[k] ?? d}"></label>`;
+  const tf = (k, l) => `<label class="field">${l}<input type="time" name="${k}" value="${esc(T[k] === '24:00' ? '23:59' : T[k])}" required></label>`;
+  const tplRow = (d, i) => `<div class="tplrow" data-i="${i}"><label class="field">Naam<input name="label" value="${esc(d.label || '')}" required maxlength="30"></label><label class="field">Van<input type="time" name="start" value="${esc(d.start || '')}" required></label><label class="field">Tot<input type="time" name="end" value="${esc(d.end || '')}" required></label><label class="field">Pauze (min)<input type="number" name="pauze" min="0" max="240" step="5" value="${Number(d.pauze) || 0}"></label><button type="button" class="btn ghost sm" data-tpldel="${i}" aria-label="Verwijderen">✕</button></div>`;
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Instellingen</h1><p>Pas de app aan aan hoe jullie werken. Wijzigingen gelden meteen voor iedereen.</p></div></div>
+    <div class="settings">
+      <section class="card pad">
+        <h2>Functies</h2>
+        <p class="hint">De functies waarvoor je inplant, zoals Bediening, Keuken of Afwas. Bestaande diensten en medewerkers houden hun functie als je er een weghaalt.</p>
+        <div class="poslist">${pos.map((p, i) => `<span class="pill">${esc(p)} <button type="button" class="linkbtn small" data-posdel="${i}" aria-label="${esc(p)} verwijderen">✕</button></span>`).join('') || '<span class="muted small">Nog geen functies.</span>'}</div>
+        <form class="addrow" data-posadd><input class="input" name="pos" placeholder="Nieuwe functie, bv. Afwas" maxlength="30" required><button class="btn">Toevoegen</button></form>
+      </section>
+
+      <section class="card pad">
+        <h2>Snelkeuze-diensten</h2>
+        <p class="hint">Deze diensten staan als knoppen in het inplanvenster, zodat je met één tik de tijden invult. De eerste is de standaard bij een nieuwe dienst.</p>
+        <form data-tplform><div class="tpllist">${tpl.map(tplRow).join('')}</div>
+          <div class="actions" style="margin-top:10px"><button type="button" class="btn" data-tpladd>+ Dienst toevoegen</button><button class="btn primary">Opslaan</button></div></form>
+      </section>
+
+      <section class="card pad">
+        <h2>Toeslagen en loonkosten</h2>
+        <p class="hint">Voor de urenexport en de loonkosten in de planning. Valt een uur onder meerdere toeslagen, dan telt de hoogste. Vraag de juiste percentages aan Moni.</p>
+        <form data-loonform>
+          <div class="row keep">${tf('avondVan', 'Avond vanaf')}${tf('avondTot', 'Avond tot')}</div>
+          <div class="row keep">${tf('nachtVan', 'Nacht vanaf')}${tf('nachtTot', 'Nacht tot')}</div>
+          <div class="row keep">${pf('pct_avond', 'Avondtoeslag %', 0)}${pf('pct_nacht', 'Nachttoeslag %', 0)}</div>
+          <div class="row keep">${pf('pct_zondag', 'Zondagtoeslag %', 0)}${pf('pct_feestdag', 'Feestdagtoeslag %', 0)}</div>
+          <div class="row keep">${pf('pct_vakantiegeld', 'Vakantiegeld %', 8)}${pf('pct_werkgever', 'Werkgeverslasten % (indicatie)', 25)}</div>
+          <div class="actions"><button class="btn primary">Opslaan</button></div>
+        </form>
+      </section>
+
+      <section class="card pad">
+        <h2>Publiceren, ruilen en klokken</h2>
+        <label class="check"><input type="checkbox" data-set="mail_on_publish" ${st.mail_on_publish !== false ? 'checked' : ''}> Medewerkers krijgen hun weekrooster per mail als je publiceert</label>
+        <label class="check"><input type="checkbox" data-set="swap_needs_approval" ${st.swap_needs_approval !== false ? 'checked' : ''}> Ruilen moet door de directie worden goedgekeurd</label>
+        <div class="setline"><div><strong>Werklocatie, wifi en klokregels</strong><p class="hint">${st.lat != null ? `Locatie ingesteld, straal ${st.radius_m || 150} m` : 'Nog geen locatie'} · ${(st.wifi_ips || []).length} wifi-netwerk${(st.wifi_ips || []).length === 1 ? '' : 'en'} · planning ${st.plan_leading !== false ? 'is leidend' : 'is niet leidend'}</p></div><button type="button" class="btn" data-clockset>Aanpassen</button></div>
+      </section>
+    </div>`;
+
+  const savePos = async list => { await store.saveSettings({ positions: list }); applySettings(await store.settings()); toast('Functies opgeslagen'); rerender(); };
+  const readTpl = () => $$('.tplrow', el).map(r => ({ label: $('[name=label]', r).value.trim(), start: $('[name=start]', r).value, end: $('[name=end]', r).value, pauze: Number($('[name=pauze]', r).value) || 0 }));
+  el.onclick = async ev => {
+    const pd = ev.target.closest('[data-posdel]');
+    if (pd) { const p = pos[Number(pd.dataset.posdel)]; if (await ask(`Functie "${p}" verwijderen uit de lijst?`, 'Verwijderen')) await savePos(pos.filter((_, i) => i !== Number(pd.dataset.posdel))); return; }
+    if (ev.target.closest('[data-tpladd]')) {
+      const list = $('.tpllist', el); const i = $$('.tplrow', el).length;
+      list.insertAdjacentHTML('beforeend', tplRow({ label: '', start: '17:00', end: '23:00', pauze: 30 }, i));
+      $$('.tplrow', el)[i].querySelector('[name=label]').focus(); return;
+    }
+    const td = ev.target.closest('[data-tpldel]'); if (td) { td.closest('.tplrow').remove(); return; }
+    if (ev.target.closest('[data-clockset]')) return settingsDialog(st);
+  };
+  el.onchange = async ev => {
+    const k = ev.target.dataset.set; if (!k) return;
+    await store.saveSettings({ [k]: ev.target.checked }); toast('Opgeslagen');
+  };
+  $('[data-posadd]', el).onsubmit = async ev => {
+    ev.preventDefault(); const v = ev.target.pos.value.trim(); if (!v) return;
+    if (pos.some(p => p.toLowerCase() === v.toLowerCase())) return toast('Deze functie bestaat al', 'error');
+    await savePos([...pos, v]);
+  };
+  $('[data-tplform]', el).onsubmit = async ev => {
+    ev.preventDefault();
+    const list = readTpl();
+    if (list.some(d => !d.label || !d.start || !d.end)) return toast('Vul bij elke dienst een naam, begin- en eindtijd in', 'error');
+    if (list.some(d => d.start === d.end)) return toast('Begin- en eindtijd mogen niet gelijk zijn', 'error');
+    await store.saveSettings({ shift_templates: list }); applySettings(await store.settings()); toast('Snelkeuze-diensten opgeslagen'); rerender();
+  };
+  $('[data-loonform]', el).onsubmit = async ev => {
+    ev.preventDefault(); const fd = new FormData(ev.target);
+    const t = k => { const v = fd.get(k); return v === '23:59' ? '24:00' : v; };
+    const o = { toeslag_windows: { avondVan: t('avondVan'), avondTot: t('avondTot'), nachtVan: t('nachtVan'), nachtTot: t('nachtTot') } };
+    ['pct_avond', 'pct_nacht', 'pct_zondag', 'pct_feestdag', 'pct_vakantiegeld', 'pct_werkgever'].forEach(k => (o[k] = Number(fd.get(k)) || 0));
+    await store.saveSettings(o); applySettings(await store.settings()); toast('Toeslagen opgeslagen'); rerender();
+  };
 }
 
 /* ================= My schedule ================= */
@@ -2132,7 +2232,7 @@ async function viewHours(el) {
 function loonSettingsDialog(st) {
   const f = (k, l, d) => `<label class="field">${l}<input type="number" name="${k}" min="0" max="300" step="0.5" value="${st[k] ?? d}"></label>`;
   openDialog('Loon & toeslagen', `
-    <p class="hint">Toeslagen in procenten van het uurloon. Valt een uur onder meerdere toeslagen, dan telt de hoogste. Tijdvakken avond/nacht staan in <code>config.js</code>.</p>
+    <p class="hint">Toeslagen in procenten van het uurloon. Valt een uur onder meerdere toeslagen, dan telt de hoogste. De tijdvakken voor avond en nacht stel je in bij Instellingen (tandwiel rechtsboven).</p>
     <div class="row keep">${f('pct_avond', 'Avondtoeslag %', 0)}${f('pct_nacht', 'Nachttoeslag %', 0)}</div>
     <div class="row keep">${f('pct_zondag', 'Zondagtoeslag %', 0)}${f('pct_feestdag', 'Feestdagtoeslag %', 0)}</div>
     <div class="row keep">${f('pct_vakantiegeld', 'Vakantiegeld %', 8)}${f('pct_werkgever', 'Werkgeverslasten % (indicatie)', 25)}</div>

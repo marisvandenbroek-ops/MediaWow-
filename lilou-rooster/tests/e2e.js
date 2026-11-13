@@ -253,6 +253,18 @@ async function test(name, fn) {
     assert.equal(left, 0);
     assert.ok(!(await shared.$('[data-act=publishall]')), 'balk verdwijnt na publiceren');
   });
+  await test('instellingen: functie en snelkeuze-dienst toevoegen werkt door in het inplanvenster', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-gosettings]'); await shared.waitForSelector('[data-posadd]');
+    await shared.fill('[data-posadd] [name=pos]', 'Runner'); await shared.click('[data-posadd] button'); await shared.waitForSelector('.poslist:has-text("Runner")');
+    await shared.click('[data-tpladd]'); await shared.fill('.tplrow >> nth=-1 >> [name=label]', 'Brunch'); await shared.fill('.tplrow >> nth=-1 >> [name=start]', '10:00'); await shared.fill('.tplrow >> nth=-1 >> [name=end]', '15:00');
+    await shared.click('[data-tplform] button.primary'); await shared.waitForSelector('.toast:has-text("Snelkeuze")');
+    await shared.click('[data-tab=planning]'); await shared.click('td.cell.editable >> nth=0'); await shared.waitForSelector('dialog [name=position]');
+    assert.ok((await shared.$$eval('dialog [name=position] option', o => o.map(x => x.textContent))).includes('Runner'), 'nieuwe functie staat niet in de lijst');
+    await shared.waitForSelector('dialog .tpl:has-text("Brunch")');
+    await shared.click('dialog .tpl:has-text("Brunch")'); assert.equal(await shared.inputValue('dialog [name=start_time]'), '10:00');
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+  });
   await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'] });
     const p = watch(await ctx.newPage());

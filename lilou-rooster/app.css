@@ -461,6 +461,19 @@ dialog.dlg:has(.exportprev) { width: min(900px, calc(100vw - 32px)); }
 .pubbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; background: var(--accent-soft); border-radius: 12px; padding: 10px 12px; margin: -4px 0 14px; font-size: 14px; }
 .pubbar .btn { flex: 0 0 auto; }
 
+.settings { display: grid; gap: 16px; max-width: 860px; }
+.settings h2 { font-size: 19px; margin-bottom: 4px; }
+.settings .hint { margin: 0 0 12px; }
+.poslist { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.poslist .pill { font-size: 14px; padding: 5px 10px; display: inline-flex; align-items: center; gap: 6px; }
+.addrow { display: flex; gap: 8px; } .addrow .input { flex: 1; min-width: 0; }
+.tpllist { display: grid; gap: 10px; }
+.tplrow { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .9fr) auto; gap: 8px; align-items: end; }
+@media (max-width: 600px) { .tplrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-bottom: 10px; border-bottom: 1px solid var(--line); } .tplrow .field:first-child { grid-column: span 2; } }
+.setline { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+.setline .hint { margin: 2px 0 0; }
+.userbox .btn.active { color: var(--accent); background: var(--accent-soft); }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }

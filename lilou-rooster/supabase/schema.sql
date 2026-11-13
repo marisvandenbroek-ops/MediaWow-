@@ -714,6 +714,11 @@ alter table public.settings add column if not exists pct_zondag       numeric(5,
 alter table public.settings add column if not exists pct_feestdag     numeric(5, 2) not null default 0;
 alter table public.settings add column if not exists pct_vakantiegeld numeric(5, 2) not null default 8;
 alter table public.settings add column if not exists pct_werkgever    numeric(5, 2) not null default 25;
+-- Instellingen die de directie zelf aanpast (pagina Instellingen); leeg = standaard uit config.js
+alter table public.settings add column if not exists positions       text[];
+alter table public.settings add column if not exists shift_templates jsonb;
+alter table public.settings add column if not exists toeslag_windows jsonb;
+alter table public.settings add column if not exists mail_on_publish boolean not null default true;
 
 -- ---------- Logboek van wijzigingen ----------
 create table if not exists public.audit_log (
