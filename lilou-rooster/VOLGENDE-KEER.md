@@ -20,6 +20,11 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
    - eerst bepalen wat er per recept in moet (foto, ingrediënten, bereiding, allergenen, kostprijs, wie wat ziet);
    - importeren uit Paprika (export als .paprikarecipes) en Dropbox (eerst vragen welk soort bestanden), dubbele samenvoegen.
 
+5. Wens Mark: grafiek kosten vs. benodigde omzet (kosten / doel-%) vs. werkelijke omzet, per uur/dag/week/maand/jaar.
+   Live per uur via kassakoppeling (Lightspeed? K- of L-serie navragen) + ingeklokte mensen; knop "Naar huis sturen" in Klokken.
+   Navragen: kassasysteem, doel-% (30-35%), live of achteraf per dag.
+6. Optioneel: zelf aanmelden uitzetten in Supabase en knop "Eerste keer inloggen" weghalen (alleen nog uitnodigen per mail).
+
 ## Eerder openstaand
 - Wachtwoord rooster@-mailbox wijzigen (+ SMTP_PASS en Supabase Auth SMTP bijwerken), 2FA op Supabase/Vimexx/GitHub.
 - Testmedewerker opruimen; Mark activeert zijn account.
