@@ -1,11 +1,8 @@
 # Instellingen voor Apache-hosting (bijv. SiteGround)
 
-# Altijd via een beveiligde verbinding (nodig voor inloggen, locatie en pushmeldingen)
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteCond %{HTTPS} off
-  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-</IfModule>
+# Geen eigen https-doorverwijzing: bij hosting met een tussenserver (zoals Vimexx) ziet de webserver
+# elke bezoeker als 'niet beveiligd', waardoor een eigen doorverwijzing een oneindige lus geeft.
+# Zet https afdwingen daarom aan in het hostingpaneel ("SSL forceren") als dat nodig is.
 
 # Juiste bestandstypes
 AddType application/manifest+json .webmanifest
