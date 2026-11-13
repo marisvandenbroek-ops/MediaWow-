@@ -842,6 +842,24 @@ exception when others then
 end $$;
 
 -- =====================================================================
+--  TOEGANG PER TABEL
+--  Werkt ook als "Automatically expose new tables" in Supabase UIT staat.
+--  Welke rijen iemand ziet of wijzigt, bepalen daarna de beveiligingsregels (RLS) hierboven.
+-- =====================================================================
+revoke all on all tables in schema public from anon;                       -- niet ingelogd: nergens bij
+revoke truncate, references, trigger on all tables in schema public from authenticated;   -- tabel leegmaken omzeilt RLS
+grant select, insert, update, delete on
+  public.employees, public.shifts, public.requests, public.settings, public.time_entries,
+  public.shift_applications, public.swaps, public.availability, public.push_subscriptions,
+  public.employee_private
+  to authenticated;
+grant select on public.notifications, public.audit_log to authenticated;
+revoke insert, update, delete on public.notifications, public.audit_log from authenticated;
+grant update (read_at) on public.notifications to authenticated;          -- alleen 'gelezen' zelf zetten
+revoke all on public.reminder_log from authenticated;                      -- alleen voor interne taken
+grant usage, select on all sequences in schema public to authenticated;
+
+-- =====================================================================
 --  EERSTE LEIDINGGEVENDE — pas naam en e-mail aan en voer daarna uit:
 -- =====================================================================
 -- insert into public.employees (name, email, role, position)

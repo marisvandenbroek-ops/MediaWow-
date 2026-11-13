@@ -63,6 +63,18 @@ select t_ok(t_count('select * from audit_log') = 0, 'logboek leeg voor medewerke
 select t_fails($q$insert into employee_private (employee_id, hourly_wage) values ('a0000000-0000-0000-0000-000000000002', 99)$q$, 'medewerker kan eigen loon niet zetten');
 reset role;
 
+\echo '== Toegang per tabel'
+set role authenticated; select as_user(2);
+select t_fails($q$truncate shifts$q$, 'medewerker kan geen tabel leegmaken');
+select t_fails($q$select * from reminder_log$q$, 'interne tabel niet leesbaar');
+reset role; set role anon;
+select t_fails($q$select * from employees$q$, 'niet ingelogd: geen toegang tot medewerkers');
+select t_fails($q$select * from shifts$q$, 'niet ingelogd: geen toegang tot diensten');
+reset role;
+set role authenticated; select as_user(1);
+select t_fails($q$truncate time_entries$q$, 'ook directie kan geen tabel leegmaken (gebruik verwijderen per regel)');
+reset role;
+
 \echo '== Publiceren en meldingen'
 set role authenticated; select as_user(1);
 select t_ok(publish_week(today_nl(), today_nl() + 6) = 3, 'directie publiceert 3 diensten');

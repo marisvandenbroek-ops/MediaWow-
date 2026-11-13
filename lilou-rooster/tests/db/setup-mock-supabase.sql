@@ -15,5 +15,9 @@ create or replace function auth.uid() returns uuid language sql stable as $$
 $$;
 grant usage on schema auth to authenticated;
 grant usage on schema public to authenticated, anon;
-alter default privileges in schema public grant all on tables to authenticated;
-alter default privileges in schema public grant all on sequences to authenticated;
+-- "Automatically expose new tables": met -v expose=1 krijgen nieuwe tabellen automatisch alle rechten
+-- (zoals Supabase standaard doet); zonder die vlag niet. De tests draaien beide varianten.
+\if :{?expose}
+alter default privileges in schema public grant all on tables to anon, authenticated;
+alter default privileges in schema public grant all on sequences to anon, authenticated;
+\endif
