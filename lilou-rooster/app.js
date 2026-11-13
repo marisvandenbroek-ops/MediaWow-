@@ -448,7 +448,7 @@ function loadScript(src) {
 }
 
 async function supabaseStore() {
-  await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js');
+  await loadScript('vendor/supabase.min.js');   // lokaal: geen verbinding met een externe CDN
   const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
   const ok = ({ data, error }) => { if (error) throw error; return data; };
   const fixShift = s => ({ ...s, start_time: hm(s.start_time), end_time: hm(s.end_time) });

@@ -7,6 +7,7 @@
 # Juiste bestandstypes
 AddType application/manifest+json .webmanifest
 AddType text/javascript .js
+AddType font/woff2 .woff2
 
 # Geen mappenoverzicht tonen
 Options -Indexes
@@ -20,7 +21,7 @@ Options -Indexes
     Header set Cache-Control "no-cache, no-store, must-revalidate"
   </Files>
   # Afbeeldingen mogen lang bewaard worden
-  <FilesMatch "\.(png|svg|jpg)$">
+  <FilesMatch "\.(png|svg|jpg|woff2)$">
     Header set Cache-Control "public, max-age=2592000"
   </FilesMatch>
   # Beveiliging
