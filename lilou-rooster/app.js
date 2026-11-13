@@ -984,6 +984,30 @@ async function viewWeek(el, editable) {
   if (S.dayWeek !== from) { S.dayWeek = from; const ti = days.findIndex(d => iso(d) === today); S.dayI = S.dayNext ?? (ti >= 0 ? ti : 0); }
   S.dayNext = undefined;
   const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+  if (!S.planView) { try { S.planView = localStorage.getItem('rooster-planview') || 'grid'; } catch (x) { S.planView = 'grid'; } }
+  const listView = editable && S.planView === 'list';
+  S.sel ||= new Set();
+  const listHTML = () => days.map((d, i) => {
+    const ds = iso(d), sp = specialDay(ds), fd = feestdag(ds);
+    const list = shifts.filter(x => x.date === ds).sort((a, b) => hm(a.start_time).localeCompare(hm(b.start_time)) || (byId[a.employee_id]?.name || '').localeCompare(byId[b.employee_id]?.name || ''));
+    const lv = leaves.filter(r => r.start_date <= ds && r.end_date >= ds);
+    const h = list.reduce((t, x) => t + shiftHours(x), 0);
+    const rowsL = list.map(x => {
+      const isOpen = !x.employee_id, e = byId[x.employee_id] || (isOpen ? { name: 'Open dienst', color: '#a8988f' } : {}), w = atw[x.id];
+      return `<button type="button" class="prow ${x.published ? '' : 'concept'} ${w ? 'atw' : ''} ${isOpen ? 'open' : ''}" data-shift="${x.id}" style="--c:${esc(e.color || COLORS[0])}" title="${w ? esc('⚠ ' + w.join('\n⚠ ')) : ''}">
+        <span class="pcheck" aria-hidden="true"></span>
+        <span class="ptime">${hm(x.start_time)}–${hm(x.end_time)}</span>
+        <span class="pwho"><strong>${esc(e.name || '?')}</strong><small>${esc(x.position || '')}${x.position ? ' · ' : ''}${fmtH(shiftHours(x))} u${x.published ? '' : ' · concept'}${w ? ` · <span class="pwarn">⚠ ${esc(w[0])}</span>` : ''}</small></span>
+        <span class="chev" aria-hidden="true">›</span></button>`;
+    }).join('');
+    return `<section class="pday ${ds === today ? 'today' : ''}">
+      <div class="pday-head"><h3>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}${fd ? ` <span class="fdtag">${esc(fd)}</span>` : ''}</h3><span class="muted small">${list.length ? `${new Set(list.filter(x => x.employee_id).map(x => x.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
+      ${covOn && !(sp?.kind === 'gesloten') ? `<div class="cov">${covHTML(ds)}</div>` : sp?.kind === 'gesloten' ? `<div class="cov">${covHTML(ds)}</div>` : ''}
+      ${lv.length ? `<div class="mleaves">${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}</div>` : ''}
+      <div class="plist">${rowsL || '<p class="hint" style="margin:6px 2px">Nog niemand ingepland.</p>'}</div>
+      <div class="pday-foot">${S.selMode ? (list.length ? `<button type="button" class="btn sm ghost" data-selday="${ds}">Hele dag selecteren</button>` : '') : `<button type="button" class="btn sm ghost" data-addon="${ds}">+ Dienst op ${DAG[i].toLowerCase()}</button>`}</div>
+    </section>`;
+  }).join('');
   const mobileHTML = () => {
     const di = S.dayI, ds = iso(days[di]);
     const list = shifts.filter(s => s.date === ds).sort((a, b) => hm(a.start_time).localeCompare(hm(b.start_time)) || (byId[a.employee_id]?.name || '').localeCompare(byId[b.employee_id]?.name || ''));
@@ -1027,15 +1051,26 @@ async function viewWeek(el, editable) {
       </div>` : ''}
     </div>
     ${elsewhere ? `<div class="pubbar"><span>Nog <strong>${future.length} concept${future.length > 1 ? 'en' : ''}</strong> in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} (${futureWeeks.map(w => 'wk ' + weekNr(parse(w))).join(', ')})</span><button class="btn sm primary" data-act="publishall">Alles publiceren</button></div>` : ''}
-    ${editable && !mobile ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span><span class="av av-avond">✓ avond</span> <span class="av av-niet">✕ niet</span> doorgegeven beschikbaarheid</span></div>` : ''}
-    ${people.length && mobile ? mobileHTML() : ''}
-    ${people.length && !mobile ? `<div class="grid-wrap"><table class="grid">
+    ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : ''}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button></div>` : ''}
+    ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren. ${listView ? '' : 'Je kunt ook een hele dag kiezen met de knop onder de lijst.'}</p>` : ''}
+    ${editable && !mobile && !listView ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span><span class="av av-avond">✓ avond</span> <span class="av av-niet">✕ niet</span> doorgegeven beschikbaarheid</span></div>` : ''}
+    ${people.length && listView ? listHTML() : ''}
+    ${people.length && mobile && !listView ? mobileHTML() : ''}
+    ${people.length && !mobile && !listView ? `<div class="grid-wrap"><table class="grid">
       <thead><tr><th class="who">Medewerker</th>${days.map(d => `<th class="${iso(d) === today ? 'today' : ''}" ${feestdag(iso(d)) ? `title="${esc(feestdag(iso(d)))}"` : ''}>${DAG[dayIdx(d)]}<b>${d.getDate()}</b>${feestdag(iso(d)) ? `<em class="fd">${esc(feestdag(iso(d)))}</em>` : ''}</th>`).join('')}</tr></thead>
       <tbody>${covOn ? `<tr class="covrow"><th class="who"><div class="who-inner"><div><strong>Bezetting</strong><small>ingepland / nodig</small></div></div></th>${days.map(d => `<td class="${iso(d) === today ? 'today' : ''}"><div class="cov">${covHTML(iso(d))}</div></td>`).join('')}</tr>` : ''}${openRow}${rows}</tbody>
       <tfoot><tr><th class="who">${fmtH(totalH)} u totaal${totalK ? `<br><span class="cost">${euro(totalK)} loonkosten</span>` : ''}</th>${foot}</tr></tfoot>
     </table></div>` : people.length ? '' : `<div class="card empty">Nog geen medewerkers. ${editable ? 'Voeg ze toe via <strong>Team</strong>.' : ''}</div>`}
     ${!editable && !shifts.length && people.length ? '<p class="hint" style="margin-top:12px">Voor deze week is nog geen rooster gepubliceerd.</p>' : ''}
+    ${S.selMode ? `<div class="selbar"><span data-selcount>${S.sel.size} geselecteerd</span><button type="button" class="btn sm" data-selall>Hele week</button><button type="button" class="btn sm" data-selnone>Wissen</button><button type="button" class="btn sm danger" data-seldel ${S.sel.size ? '' : 'disabled'}>Verwijderen</button></div>` : ''}
   `;
+  // geselecteerde diensten markeren
+  const markSel = () => {
+    $$('[data-shift]', el).forEach(b => b.classList.toggle('sel', S.sel.has(b.dataset.shift)));
+    const c = $('[data-selcount]', el); if (c) c.textContent = `${S.sel.size} geselecteerd`;
+    const d = $('[data-seldel]', el); if (d) d.disabled = !S.sel.size;
+  };
+  if (S.selMode) markSel();
 
   el.onchange = async ev => {
     const g = ev.target.closest('[data-guests]'); if (!g) return;
@@ -1047,6 +1082,30 @@ async function viewWeek(el, editable) {
     if (act === 'next') { S.week = addDays(S.week, 7); return rerender(); }
     if (act === 'today') { S.week = mondayOf(new Date()); S.dayWeek = null; return rerender(); }
     const dayB = ev.target.closest('[data-day]'); if (dayB) { S.dayI = Number(dayB.dataset.day); return rerender(); }
+    const pv = ev.target.closest('[data-pv]'); if (pv) { S.planView = pv.dataset.pv; try { localStorage.setItem('rooster-planview', S.planView); } catch (x) { /* geen opslag */ } return rerender(); }
+    if (ev.target.closest('[data-selmode]')) { S.selMode = !S.selMode; S.sel = new Set(); return rerender(); }
+    if (S.selMode) {
+      const sc = ev.target.closest('[data-shift]');
+      if (sc) { const id = sc.dataset.shift; S.sel.has(id) ? S.sel.delete(id) : S.sel.add(id); return markSel(); }
+      const sdy = ev.target.closest('[data-selday]'); if (sdy) { shifts.filter(x => x.date === sdy.dataset.selday).forEach(x => S.sel.add(x.id)); return markSel(); }
+      if (ev.target.closest('[data-selall]')) { shifts.forEach(x => S.sel.add(x.id)); return markSel(); }
+      if (ev.target.closest('[data-selnone]')) { S.sel.clear(); return markSel(); }
+      if (ev.target.closest('[data-seldel]')) {
+        const ids = [...S.sel].filter(id => shifts.some(x => x.id === id)); if (!ids.length) return;
+        const pubN = shifts.filter(x => ids.includes(x.id) && x.published && x.employee_id).length;
+        if (!await ask(`${ids.length} dienst${ids.length > 1 ? 'en' : ''} verwijderen?${pubN ? ` ${pubN} daarvan ${pubN > 1 ? 'zijn' : 'is'} al gepubliceerd; die medewerkers krijgen een melding.` : ''}`, 'Verwijderen')) return;
+        for (const id of ids) await store.deleteShift(id);
+        S.sel = new Set(); S.selMode = false; toast(`${ids.length} dienst${ids.length > 1 ? 'en' : ''} verwijderd`); return rerender();
+      }
+      if (ev.target.closest('[data-act]')) { /* weeknavigatie e.d. hieronder */ } else return;
+    }
+    const addOn = ev.target.closest('[data-addon]');
+    if (addOn) {
+      const ds = addOn.dataset.addon;
+      const free = people.find(e => e.active !== false && !shifts.some(x => x.employee_id === e.id && x.date === ds)) || people[0];
+      const t = CFG.diensten[0] || { start: '09:00', end: '17:00', pauze: 30 };
+      return shiftDialog({ employee_id: free.id, date: ds, start_time: t.start, end_time: t.end, break_minutes: t.pauze || 0, position: free.position || '', note: '' }, emps, shifts, leaves, avail, apps, privs, around);
+    }
     if (ev.target.closest('[data-goopen]')) return go('diensten');
     if (ev.target.closest('[data-addday]')) {
       const ds = iso(days[S.dayI]);
@@ -1259,7 +1318,7 @@ async function publishWeek(from, to, weekShifts, quiet = false) {
 // Keuze wat er met ingeplande diensten gebeurt als verlof wordt goedgekeurd
 function conflictChoice(c) {
   if (!c.length) return '';
-  return `<div class="warnbox">Staat ${c.length}× ingepland in deze periode: ${c.map(s => `${esc(fmtShort(s.date))} ${hm(s.start_time)}–${hm(s.end_time)}`).join(', ')}.</div>
+  return `<div class="warnbox">Staat nog ${c.length}× ingepland: ${c.map(s => `${esc(fmtShort(s.date))} ${hm(s.start_time)}–${hm(s.end_time)}`).join(', ')}.</div>
     <fieldset class="choice"><legend>Wat moet er met ${c.length > 1 ? 'deze diensten' : 'deze dienst'} gebeuren?</legend>
       <label class="check"><input type="radio" name="conflict" value="open" checked> <span><strong>Open dienst van maken</strong><br><span class="hint">Collega's kunnen zich aanmelden; jij kiest wie hem krijgt.</span></span></label>
       <label class="check"><input type="radio" name="conflict" value="delete"> <span><strong>Verwijderen</strong><br><span class="hint">De dienst vervalt helemaal.</span></span></label>
@@ -1767,6 +1826,16 @@ function employeeDialog(e, priv = {}, reqs = []) {
         catch (x) { toast('Medewerker toegevoegd, maar de uitnodiging is niet verstuurd: ' + errMsg(x), 'error'); }
       } else toast(isNew ? 'Medewerker toegevoegd' : 'Opgeslagen');
       rerender();
+      // Uit dienst gezet: komende diensten afhandelen
+      if (!isNew && e.active !== false && !payload.active) {
+        const now = new Date();
+        const fut = (await store.shifts(todayIso(), iso(addDays(now, 400)))).filter(x => x.employee_id === e.id && shiftWindow(x)[0] > now);
+        if (fut.length) setTimeout(() => openDialog(`${esc(e.name.split(' ')[0])} is uit dienst`, `
+          ${conflictChoice(fut)}
+          <div class="dlg-foot"><span class="spacer"></span><button class="btn primary" value="save">Doorvoeren</button></div>`, {
+          async onSubmit(fd2) { toast('Komende diensten afgehandeld' + await resolveConflicts(fut, fd2.get('conflict'))); rerender(); },
+        }), 60);
+      }
     },
   });
 }
