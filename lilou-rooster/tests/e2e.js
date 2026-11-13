@@ -326,6 +326,32 @@ async function test(name, fn) {
     assert.ok(!(await p.$('.cost')), 'shiftleader ziet loonkosten');
     await p.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('lijstweergave en meerdere diensten tegelijk verwijderen', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-tab=planning]'); await shared.click('[data-act=today]');
+    await shared.click('[data-pv=list]'); await shared.waitForSelector('.pday .prow');
+    const before = (await demoDb(shared)).db.shifts.length;
+    await shared.click('[data-selmode]'); await shared.waitForSelector('.selbar');
+    const ids = await shared.$$eval('.prow[data-shift]', a => a.slice(0, 2).map(x => x.dataset.shift));
+    for (const id of ids) await shared.click(`.prow[data-shift="${id}"]`);
+    assert.match(await shared.textContent('[data-selcount]'), /^2 geselecteerd/);
+    await shared.click('[data-seldel]'); await shared.click('dialog[open] button[value=save]');
+    await shared.waitForSelector('.toast:has-text("2 diensten verwijderd")');
+    const after = (await demoDb(shared)).db;
+    assert.equal(after.shifts.length, before - 2); assert.ok(!after.shifts.some(s => ids.includes(s.id)));
+    assert.ok(!(await shared.$('.selbar')), 'selecteermodus blijft aan na verwijderen');
+    await shared.click('[data-pv=grid]'); await shared.waitForSelector('table.grid');
+  });
+  await test('uit dienst zetten: komende diensten worden open diensten', async () => {
+    const ds = await shared.evaluate(() => { const d = new Date(); d.setDate(d.getDate() + 9); const p = x => String(x).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); });
+    await setDemoDb(shared, `const e = db.employees.find(x => x.name === 'Lisa de Jong'); db.shifts.push({ id: 'uit1', employee_id: e.id, date: a, start_time: '12:00', end_time: '18:00', break_minutes: 0, position: 'Bediening', note: '', published: true });`, ds);
+    await shared.reload(); await shared.waitForSelector('[data-tab=team]'); await shared.click('[data-tab=team]');
+    await shared.click('tr:has-text("Lisa de Jong")'); await shared.waitForSelector('dialog [name=active]');
+    await shared.uncheck('dialog [name=active]'); await shared.click('dialog button[value=save]');
+    await shared.waitForSelector('dialog[open] [name=conflict][value=open]'); await shared.click('dialog[open] button[value=save]');
+    await shared.waitForSelector('.toast:has-text("open dienst")');
+    assert.equal((await demoDb(shared)).db.shifts.find(s => s.id === 'uit1').employee_id, null);
+  });
   await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'] });
     const p = watch(await ctx.newPage());

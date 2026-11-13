@@ -1052,7 +1052,7 @@ async function viewWeek(el, editable) {
     </div>
     ${elsewhere ? `<div class="pubbar"><span>Nog <strong>${future.length} concept${future.length > 1 ? 'en' : ''}</strong> in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} (${futureWeeks.map(w => 'wk ' + weekNr(parse(w))).join(', ')})</span><button class="btn sm primary" data-act="publishall">Alles publiceren</button></div>` : ''}
     ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : ''}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button></div>` : ''}
-    ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren. ${listView ? '' : 'Je kunt ook een hele dag kiezen met de knop onder de lijst.'}</p>` : ''}
+    ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren${listView ? ', of kies "Hele dag selecteren" onder een dag' : ''}. Met "Hele week" in de balk onderin selecteer je alles van deze week.</p>` : ''}
     ${editable && !mobile && !listView ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span><span class="av av-avond">✓ avond</span> <span class="av av-niet">✕ niet</span> doorgegeven beschikbaarheid</span></div>` : ''}
     ${people.length && listView ? listHTML() : ''}
     ${people.length && mobile && !listView ? mobileHTML() : ''}
@@ -1070,6 +1070,7 @@ async function viewWeek(el, editable) {
     const c = $('[data-selcount]', el); if (c) c.textContent = `${S.sel.size} geselecteerd`;
     const d = $('[data-seldel]', el); if (d) d.disabled = !S.sel.size;
   };
+  el.classList.toggle('selmode', !!S.selMode);
   if (S.selMode) markSel();
 
   el.onchange = async ev => {

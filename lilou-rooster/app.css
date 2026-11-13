@@ -518,18 +518,19 @@ fieldset.choice .hint { margin: 0; }
 .pday-head h3 { font-size: 17px; }
 .pday .cov { margin-bottom: 8px; }
 .plist { display: grid; gap: 6px; }
-.prow { display: grid; grid-template-columns: auto 104px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: 10px; padding: 8px 10px; }
+.prow { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: 10px; padding: 8px 10px; }
 .prow.concept { border-style: dashed; border-left-style: solid; }
 .prow.atw { border-color: var(--bad); }
-.prow .ptime { font-weight: 700; font-variant-numeric: tabular-nums; }
-.prow .pwho strong { display: block; } .prow .pwho small { color: var(--muted); }
+.prow .ptime { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.prow .pwho { min-width: 0; } .prow .pwho strong { display: block; } .prow .pwho small { color: var(--muted); }
 .prow .pwarn { color: var(--bad); }
-.prow .pcheck { width: 0; height: 18px; }
-.prow.sel .pcheck, .selmode .prow .pcheck { width: 18px; }
-.prow .pcheck { border-radius: 5px; border: 2px solid var(--line-strong); display: none; }
+.prow .pcheck { display: none; width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--line-strong); background: var(--surface); }
+.selmode .prow .pcheck { display: block; }
 .prow.sel { outline: none; background: var(--accent-soft); }
-.prow.sel .pcheck { display: block; background: var(--accent); border-color: var(--accent); }
-@media (max-width: 520px) { .prow { grid-template-columns: auto 88px minmax(0, 1fr) auto; gap: 8px; } }
+.prow.sel .pcheck { background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/14px no-repeat; border-color: var(--accent); }
+.selmode .prow .chev { visibility: hidden; }
+.chip.sel, .mshift.sel { outline: 3px solid var(--accent); outline-offset: 1px; }
+@media (max-width: 520px) { .prow { gap: 9px; padding: 8px; } .prow .ptime { font-size: 14px; } }
 .pday-foot { margin-top: 6px; }
 
 /* ===== Requests ===== */
