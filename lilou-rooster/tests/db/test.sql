@@ -184,5 +184,27 @@ select t_ok(today_nl() = (now() at time zone 'Europe/Amsterdam')::date, 'today_n
 
 select t_ok(has_table_privilege('service_role', 'public.employees', 'select') and has_table_privilege('service_role', 'public.employees', 'update'),
             'server-functies (service_role) mogen medewerkers lezen en bijwerken (nodig voor uitnodigen)');
+\echo '== Shiftleader (planner)'
+update employees set role = 'planner' where id = 'a0000000-0000-0000-0000-000000000004';
+insert into employee_private (employee_id, hourly_wage) values ('a0000000-0000-0000-0000-000000000003', 13.00) on conflict (employee_id) do update set hourly_wage = 13.00;
+set role authenticated; select as_user(4);
+select t_ok(is_planner() and not is_manager(), 'shiftleader mag plannen, is geen directie');
+insert into shifts (id, employee_id, date, start_time, end_time) values ('50000000-0000-0000-0000-0000000000a1', 'a0000000-0000-0000-0000-000000000002', today_nl() + 20, '12:00', '18:00');
+select t_ok(t_count($q$select * from shifts where id = '50000000-0000-0000-0000-0000000000a1' and not published$q$) = 1, 'shiftleader maakt een conceptdienst en ziet die');
+select publish_week(today_nl() + 20, today_nl() + 20);
+select t_ok(t_count($q$select * from shifts where id = '50000000-0000-0000-0000-0000000000a1' and published$q$) = 1, 'shiftleader kan publiceren');
+select t_ok(t_count('select * from employee_private where employee_id <> my_employee_id()') = 0, 'shiftleader ziet geen lonen van anderen');
+select t_ok(t_count('select * from employees') = 1, 'shiftleader ziet geen persoonsgegevens van collega''s');
+update settings set pct_avond = 99 where id = 1;   -- mag niets doen (beveiligingsregel)
+select t_ok((select pct_avond from settings) is distinct from 99, 'shiftleader kan instellingen niet wijzigen');
+insert into day_info (date, guests) values (today_nl() + 20, 80);
+select t_ok(t_count('select * from day_info') = 1, 'shiftleader kan verwachte gasten invullen');
+select as_user(2);
+select t_ok(t_count('select * from day_info') = 0, 'medewerker ziet geen gastenaantallen');
+reset role;
+select t_fails($q$update employees set contract_type = 'freelance' where id = 'a0000000-0000-0000-0000-000000000002'$q$, 'onbekend contracttype geweigerd');
+update employees set contract_type = 'minmax', contract_min_hours = 12, contract_end = today_nl() + 90 where id = 'a0000000-0000-0000-0000-000000000002';
+select t_ok((select contract_type = 'minmax' from employees where id = 'a0000000-0000-0000-0000-000000000002'), 'contracttype min-max opgeslagen');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

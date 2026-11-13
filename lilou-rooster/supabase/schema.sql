@@ -65,6 +65,14 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.employees where user_id = auth.uid() and role = 'manager' and active)
 $$;
 
+-- Mag plannen: directie of shiftleader (rol 'planner'). Een shiftleader ziet geen lonen of personeelsgegevens.
+alter table public.employees drop constraint if exists employees_role_check;
+alter table public.employees add constraint employees_role_check check (role in ('staff', 'planner', 'manager'));
+create or replace function public.is_planner()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.employees where user_id = auth.uid() and role in ('manager', 'planner') and active)
+$$;
+
 -- Koppel een account aan de medewerker met hetzelfde e-mailadres,
 -- pas zodra dat e-mailadres bevestigd is (voorkomt misbruik van andermans adres)
 create or replace function public.link_new_user()
@@ -129,15 +137,15 @@ create policy emp_write on public.employees for all to authenticated
 -- Diensten: team ziet alleen gepubliceerde diensten; leidinggevenden zien en beheren alles
 drop policy if exists shift_select on public.shifts;
 create policy shift_select on public.shifts for select to authenticated
-  using (public.is_manager() or (published and public.my_employee_id() is not null));
+  using (public.is_planner() or (published and public.my_employee_id() is not null));
 drop policy if exists shift_write on public.shifts;
 create policy shift_write on public.shifts for all to authenticated
-  using (public.is_manager()) with check (public.is_manager());
+  using (public.is_planner()) with check (public.is_planner());
 
 -- Aanvragen: medewerker ziet en maakt eigen aanvragen; leidinggevende beoordeelt
 drop policy if exists req_select on public.requests;
 create policy req_select on public.requests for select to authenticated
-  using (public.is_manager() or employee_id = public.my_employee_id());
+  using (public.is_planner() or employee_id = public.my_employee_id());
 drop policy if exists req_insert on public.requests;
 create policy req_insert on public.requests for insert to authenticated
   with check (employee_id = public.my_employee_id() and status = 'pending' and manager_note is null);
@@ -383,10 +391,10 @@ alter table public.push_subscriptions enable row level security;
 -- Aanmeldingen en ruilen: lezen volgens wie het aangaat; schrijven door medewerkers alleen via de functies hieronder
 drop policy if exists app_select on public.shift_applications;
 create policy app_select on public.shift_applications for select to authenticated
-  using (public.is_manager() or employee_id = public.my_employee_id());
+  using (public.is_planner() or employee_id = public.my_employee_id());
 drop policy if exists app_write on public.shift_applications;
 create policy app_write on public.shift_applications for all to authenticated
-  using (public.is_manager()) with check (public.is_manager());
+  using (public.is_planner()) with check (public.is_planner());
 
 drop policy if exists swap_select on public.swaps;
 create policy swap_select on public.swaps for select to authenticated
@@ -398,7 +406,7 @@ create policy swap_write on public.swaps for all to authenticated
 
 drop policy if exists av_select on public.availability;
 create policy av_select on public.availability for select to authenticated
-  using (public.is_manager() or employee_id = public.my_employee_id());
+  using (public.is_planner() or employee_id = public.my_employee_id());
 drop policy if exists av_write on public.availability;
 create policy av_write on public.availability for all to authenticated
   using (public.is_manager() or employee_id = public.my_employee_id())
@@ -504,7 +512,7 @@ create or replace function public.publish_week(p_from date, p_to date) returns i
 language plpgsql security definer set search_path = public as $$
 declare ids uuid[]; r record; n_open int;
 begin
-  if not public.is_manager() then raise exception 'Alleen de directie kan publiceren.'; end if;
+  if not public.is_planner() then raise exception 'Alleen de directie of een shiftleader kan publiceren.'; end if;
   perform set_config('rooster.skip_notify', '1', true);
   with upd as (update public.shifts set published = true
                 where date between p_from and p_to and not published returning id)
@@ -547,7 +555,7 @@ create or replace function public.open_assign(p_shift uuid, p_emp uuid) returns 
 language plpgsql security definer set search_path = public as $$
 declare s public.shifts; r record;
 begin
-  if not public.is_manager() then raise exception 'Alleen de directie kan toewijzen.'; end if;
+  if not public.is_planner() then raise exception 'Alleen de directie of een shiftleader kan toewijzen.'; end if;
   perform set_config('rooster.skip_notify', '1', true);
   update public.shifts set employee_id = p_emp where id = p_shift and employee_id is null returning * into s;
   if not found then raise exception 'Deze dienst is al toegewezen.'; end if;
@@ -719,6 +727,28 @@ alter table public.settings add column if not exists positions       text[];
 alter table public.settings add column if not exists shift_templates jsonb;
 alter table public.settings add column if not exists toeslag_windows jsonb;
 alter table public.settings add column if not exists mail_on_publish boolean not null default true;
+alter table public.settings add column if not exists staffing        jsonb;   -- vaste bezetting: {"0": {"Bediening": 2}} (0 = maandag)
+alter table public.settings add column if not exists guest_ratios    jsonb;   -- {"Bediening": 20} = 1 medewerker per 20 gasten
+alter table public.settings add column if not exists special_days    jsonb;   -- [{"date": "2026-12-24", "label": "Kerstavond", "kind": "gesloten" | "feestdag"}]
+
+-- Contracttypes
+alter table public.employees add column if not exists contract_type text not null default 'vast';
+alter table public.employees drop constraint if exists employees_contract_type_check;
+alter table public.employees add constraint employees_contract_type_check check (contract_type in ('vast', 'minmax', 'nuluren', 'oproep', 'stage'));
+alter table public.employees add column if not exists contract_min_hours numeric(5, 2);
+alter table public.employees add column if not exists contract_end date;
+
+-- Verwachte gasten per dag (optioneel, voor de bezettingsberekening). Alleen directie en shiftleaders.
+create table if not exists public.day_info (
+  date       date primary key,
+  guests     int check (guests >= 0),
+  note       text,
+  updated_at timestamptz not null default now()
+);
+alter table public.day_info enable row level security;
+drop policy if exists day_info_all on public.day_info;
+create policy day_info_all on public.day_info for all to authenticated
+  using (public.is_planner()) with check (public.is_planner());
 
 -- ---------- Logboek van wijzigingen ----------
 create table if not exists public.audit_log (
@@ -874,7 +904,7 @@ revoke truncate, references, trigger on all tables in schema public from authent
 grant select, insert, update, delete on
   public.employees, public.shifts, public.requests, public.settings, public.time_entries,
   public.shift_applications, public.swaps, public.availability, public.push_subscriptions,
-  public.employee_private
+  public.employee_private, public.day_info
   to authenticated;
 grant select on public.notifications, public.audit_log to authenticated;
 revoke insert, update, delete on public.notifications, public.audit_log from authenticated;

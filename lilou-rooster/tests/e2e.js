@@ -265,6 +265,54 @@ async function test(name, fn) {
     await shared.click('dialog .tpl:has-text("Brunch")'); assert.equal(await shared.inputValue('dialog [name=start_time]'), '10:00');
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
   });
+  await test('bezetting: norm per weekdag en gasten tonen tekort per functie', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-gosettings]'); await shared.waitForSelector('[data-staffform]');
+    for (let wd = 0; wd < 7; wd++) await shared.fill(`[data-staff="${wd}"][data-pos="Afwas"]`, '1');
+    await shared.fill('[data-ratio="Bediening"]', '20');
+    await shared.click('[data-staffform] button.primary'); await shared.waitForSelector('.toast:has-text("Bezetting opgeslagen")');
+    await shared.click('[data-tab=planning]'); await shared.waitForSelector('.covrow');
+    assert.ok(await shared.$('.covrow .covp.short:has-text("Afwas 0/1")'), 'tekort afwas niet zichtbaar');
+    await shared.fill('.covrow [data-guests] >> nth=0', '100'); await shared.press('.covrow [data-guests] >> nth=0', 'Tab');
+    await shared.waitForSelector('.covrow .covp:has-text("/5")');
+  });
+  await test('gesloten dag: zichtbaar in de planning en waarschuwing bij een dienst', async () => {
+    await shared.click('[data-gosettings]'); await shared.waitForSelector('[data-dayform]');
+    const ds = await shared.evaluate(() => { const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 2); const p = x => String(x).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); });
+    await shared.click('[data-dayadd]'); await shared.fill('.spdrow >> nth=-1 >> [name=date]', ds); await shared.fill('.spdrow >> nth=-1 >> [name=label]', 'Personeelsuitje');
+    await shared.click('[data-dayform] button.primary'); await shared.waitForSelector('.toast:has-text("Dagen opgeslagen")');
+    await shared.click('[data-tab=planning]'); await shared.click('[data-act=today]'); await shared.waitForSelector('.covp.closed:has-text("Personeelsuitje")');
+    await setDemoDb(shared, `const e = db.employees.find(x => x.name === 'Lisa de Jong') || db.employees[2]; db.shifts.push({ id: 'dicht1', employee_id: e.id, date: a, start_time: '12:00', end_time: '18:00', break_minutes: 0, position: 'Bediening', note: '', published: false });`, ds);
+    await shared.reload(); await shared.waitForSelector('[data-tab=planning]'); await shared.click('[data-tab=planning]');
+    await shared.waitForSelector('[data-shift="dicht1"].atw');
+    assert.match(await shared.getAttribute('[data-shift="dicht1"]', 'title'), /gesloten/);
+  });
+  await test('contracttype oproep: waarschuwing bij oproep korter dan 3 uur', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-tab=team]'); await shared.click('tr:has-text("Eva Smit")'); await shared.waitForSelector('dialog [name=contract_type]');
+    await shared.selectOption('dialog [name=contract_type]', 'oproep');
+    assert.ok(await shared.isHidden('dialog [data-minrow]'), 'minimum-veld hoort verborgen bij oproep');
+    await shared.click('dialog button[value=save]'); await shared.waitForSelector('tr:has-text("Eva Smit"):has-text("Oproep")');
+    const ds = await shared.evaluate(() => { const d = new Date(); d.setDate(d.getDate() + 14); const p = x => String(x).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); });
+    await setDemoDb(shared, `const e = db.employees.find(x => x.name === 'Eva Smit'); db.shifts.push({ id: 'kort1', employee_id: e.id, date: a, start_time: '12:00', end_time: '14:00', break_minutes: 0, position: 'Bediening', note: '', published: false });`, ds);
+    await shared.reload(); await shared.waitForSelector('[data-tab=planning]'); await shared.click('[data-tab=planning]');
+    await shared.click('[data-act=next]'); await shared.click('[data-act=next]');
+    await shared.waitForSelector('[data-shift="kort1"].atw');
+    assert.match(await shared.getAttribute('[data-shift="kort1"]', 'title'), /minimaal 3 uur/);
+  });
+  await test('shiftleader: plant en publiceert, maar ziet geen lonen, team of uren', async () => {
+    await setDemoDb(shared, `db.employees.find(x => x.name === 'Daan Jansen').role = 'planner';`);
+    const p = watch(await browser.newPage({ viewport: { width: 1360, height: 900 } }));
+    await p.goto(URL + '#personeel'); await p.waitForSelector('[data-demo]');
+    await p.evaluate(s => localStorage.setItem(s.k, JSON.stringify(s.db)), await demoDb(shared));
+    await p.reload(); await p.waitForSelector('[data-demo]'); await login(p, 'Daan');
+    const tabs = await p.$$eval('[data-tab]', a => a.map(x => x.dataset.tab));
+    assert.ok(!tabs.includes('uren') && !tabs.includes('team') && !tabs.includes('klokken'), 'shiftleader ziet directietabs: ' + tabs.join(','));
+    assert.ok(!(await p.$('[data-gosettings]')), 'shiftleader ziet instellingen');
+    await p.click('[data-tab=planning]'); await p.waitForSelector('[data-act=publish]');
+    assert.ok(!(await p.$('.cost')), 'shiftleader ziet loonkosten');
+    await p.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'] });
     const p = watch(await ctx.newPage());

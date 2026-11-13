@@ -1,5 +1,5 @@
 // Eenvoudige service worker: app-bestanden offline beschikbaar, data altijd live.
-const CACHE = 'rooster-v8';
+const CACHE = 'rooster-v9';
 const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'config.js', 'icon-192.png', 'brand/lilou-wordmark-rood.png', 'brand/lilou-wordmark-creme.png', 'manifest.webmanifest', 'vendor/fonts.css', 'vendor/supabase.min.js'];
 
 self.addEventListener('install', e => {

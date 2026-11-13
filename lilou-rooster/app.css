@@ -474,6 +474,27 @@ dialog.dlg:has(.exportprev) { width: min(900px, calc(100vw - 32px)); }
 .setline .hint { margin: 2px 0 0; }
 .userbox .btn.active { color: var(--accent); background: var(--accent-soft); }
 
+.cov { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.covp { font-size: 11.5px; font-weight: 600; padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
+.covp.ok { background: var(--ok-soft); color: var(--ok); }
+.covp.short { background: var(--bad-soft); color: var(--bad); }
+.covp.closed { background: var(--surface-2); color: var(--muted); border: 1px dashed var(--line-strong); white-space: normal; }
+.covrow td, .covrow th { background: var(--surface-2); vertical-align: top; }
+.guests { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--muted); }
+.guests input { width: 58px; padding: 3px 6px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); }
+.mcov { margin: -2px 0 10px; }
+.mcov .covp { font-size: 13px; padding: 3px 9px; }
+.stafftable { border-collapse: collapse; width: 100%; min-width: 420px; font-size: 14px; }
+.stafftable th, .stafftable td { padding: 4px; text-align: center; }
+.stafftable thead th { font-size: 12px; color: var(--muted); font-weight: 600; }
+.stafftable tbody th, .stafftable tfoot th { text-align: left; font-weight: 600; white-space: nowrap; }
+.stafftable tfoot th { font-size: 12px; color: var(--muted); }
+.stafftable tfoot td, .stafftable tfoot th { border-top: 1px solid var(--line); padding-top: 8px; }
+.stafftable input { width: 100%; max-width: 64px; text-align: center; padding: 6px 4px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); }
+.daylist2 { display: grid; gap: 10px; }
+.spdrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+@media (max-width: 600px) { .spdrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-bottom: 10px; border-bottom: 1px solid var(--line); } .spdrow .field:nth-child(2) { grid-column: span 2; order: -1; } }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }

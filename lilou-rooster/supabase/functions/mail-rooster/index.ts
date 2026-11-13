@@ -34,15 +34,16 @@ function weekNr(iso: string) {
 
 type Shift = { date: string; start_time: string; end_time: string; break_minutes: number; position: string | null; note: string | null };
 
-export function buildMail(name: string, from: string, to: string, shifts: Shift[], appUrl: string) {
+export function buildMail(name: string, from: string, to: string, shifts: Shift[], appUrl: string, changed = false) {
   const first = (name || '').split(' ')[0];
   const wk = weekNr(from);
   const range = `${d(from).getUTCDate()} ${MAAND[d(from).getUTCMonth()]} – ${d(to).getUTCDate()} ${MAAND[d(to).getUTCMonth()]}`;
-  const subject = `Je rooster voor week ${wk} (${range})`;
+  const subject = changed ? `Je rooster voor week ${wk} is gewijzigd (${range})` : `Je rooster voor week ${wk} (${range})`;
+  const intro = changed ? (shifts.length ? `je rooster voor week ${wk} is gewijzigd. Dit is je actuele rooster:` : `je rooster voor week ${wk} is gewijzigd. Je hebt die week geen diensten meer.`) : `je rooster voor week ${wk} staat klaar:`;
   const line = (s: Shift) => `${dayLabel(s.date)}: ${hm(s.start_time)}–${hm(s.end_time)}${s.break_minutes ? ` (${s.break_minutes} min pauze)` : ''}${s.position ? ` · ${s.position}` : ''}${s.note ? ` · ${s.note}` : ''}`;
-  const text = `Hoi ${first},\n\nJe rooster voor week ${wk} staat klaar:\n\n${shifts.map((s) => '• ' + line(s)).join('\n')}\n\nBekijk of wijzig (ruilen, verlof) in de app: ${appUrl}\n\nGroet,\nLilou`;
+  const text = `Hoi ${first},\n\n${intro.charAt(0).toUpperCase() + intro.slice(1)}\n\n${shifts.map((s) => '• ' + line(s)).join('\n')}\n\nBekijk of wijzig (ruilen, verlof) in de app: ${appUrl}\n\nGroet,\nLilou`;
   // Voorbeeldregel in de inbox (onzichtbaar in de mail zelf)
-  const preview = `Hoi ${first}, je rooster voor week ${wk} staat klaar: ` + shifts.map((s) => `${DAG[d(s.date).getUTCDay()].slice(0, 2)} ${d(s.date).getUTCDate()} ${MAAND[d(s.date).getUTCMonth()]} ${hm(s.start_time)}–${hm(s.end_time)}`).join(', ');
+  const preview = `Hoi ${first}, ${intro} ` + shifts.map((s) => `${DAG[d(s.date).getUTCDay()].slice(0, 2)} ${d(s.date).getUTCDate()} ${MAAND[d(s.date).getUTCMonth()]} ${hm(s.start_time)}–${hm(s.end_time)}`).join(', ');
   const rows = shifts.map((s) => {
     const info = [s.position, s.break_minutes ? s.break_minutes + ' min pauze' : '', s.note].filter(Boolean).join(' · ');
     return `<tr><td style="padding:12px 0;border-bottom:1px solid #ecdfd4">
@@ -60,7 +61,7 @@ export function buildMail(name: string, from: string, to: string, shifts: Shift[
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9f3ec;padding:16px 8px"><tr><td align="center">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:14px;overflow:hidden">
     <tr><td style="background:#912508;color:#f9efe6;padding:20px 22px;font-family:Georgia,serif;font-size:28px">Lilou<div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:4px;margin-top:4px">ROOSTER</div></td></tr>
-    <tr><td style="padding:20px 22px 4px;font-size:16px;line-height:1.5">Hoi ${esc(first)},<br>je rooster voor <strong>week ${wk}</strong> staat klaar.<div style="font-size:14px;color:#7d6359">${esc(range)}</div></td></tr>
+    <tr><td style="padding:20px 22px 4px;font-size:16px;line-height:1.5">Hoi ${esc(first)},<br>${changed ? `je rooster voor <strong>week ${wk}</strong> is gewijzigd.${shifts.length ? ' Dit is je actuele rooster:' : ' Je hebt die week geen diensten meer.'}` : `je rooster voor <strong>week ${wk}</strong> staat klaar.`}<div style="font-size:14px;color:#7d6359">${esc(range)}</div></td></tr>
     <tr><td style="padding:6px 22px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table></td></tr>
     <tr><td style="padding:18px 22px 24px"><a href="${esc(appUrl)}" style="display:inline-block;background:#912508;color:#f9efe6;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:bold">Open het rooster</a>
       <p style="font-size:13px;color:#7d6359;margin:16px 0 0">Kun je een dienst niet werken? Bied hem aan via <em>Ruilen</em> in de app. De app is altijd leidend.</p></td></tr>
@@ -79,14 +80,14 @@ Deno.serve(async (req) => {
     const { data: who, error: whoErr } = await admin.auth.getUser(token);
     if (whoErr || !who?.user) return json({ error: 'Niet ingelogd.' }, 401);
     const { data: me, error: meErr } = await admin.from('employees').select('id').eq('user_id', who.user.id)
-      .eq('role', 'manager').eq('active', true).maybeSingle();
+      .in('role', ['manager', 'planner']).eq('active', true).maybeSingle();
     if (meErr) return json({ error: 'Database niet bereikbaar voor de server-functie: ' + meErr.message }, 500);
-    if (!me) return json({ error: 'Alleen de directie kan het rooster mailen.' }, 403);
+    if (!me) return json({ error: 'Alleen de directie of een shiftleader kan het rooster mailen.' }, 403);
 
     const pass = Deno.env.get('SMTP_PASS');
     if (!pass) return json({ error: 'Mail is nog niet ingesteld: zet SMTP_PASS bij Edge Functions → Secrets.' }, 500);
 
-    const { from, to, employee_ids, app_url } = await req.json();
+    const { from, to, employee_ids, app_url, changed } = await req.json();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to) || !Array.isArray(employee_ids)) return json({ error: 'Ongeldige aanvraag.' }, 400);
     const ids = [...new Set(employee_ids.filter((x: unknown) => typeof x === 'string'))].slice(0, 200);
     if (!ids.length) return json({ sent: 0, failed: [] });
@@ -103,8 +104,8 @@ Deno.serve(async (req) => {
     let sent = 0; const failed: string[] = [];
     for (const e of emps ?? []) {
       const mine = (shifts ?? []).filter((s) => s.employee_id === e.id);
-      if (!e.active || !e.email || !mine.length) continue;
-      const m = buildMail(e.name, from, to, mine as Shift[], appUrl);
+      if (!e.active || !e.email || (!mine.length && !changed)) continue;
+      const m = buildMail(e.name, from, to, mine as Shift[], appUrl, changed === true);
       try {
         await mailer.sendMail({ from: `"Lilou Rooster" <${user}>`, to: e.email, subject: m.subject, text: m.text, html: m.html });
         sent++;
