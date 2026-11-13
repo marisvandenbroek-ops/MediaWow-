@@ -4,492 +4,139 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lilou Proefdiner</title>
-<meta name="description" content="Geanimeerde uitnodiging voor de avant-première van Lilou — het eerste diner in Het Pomphuis, 26 & 27 november.">
+<meta name="description" content="Uitnodiging voor de avant-première van Lilou — het eerste diner in Het Pomphuis, 26 & 27 november.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg-1: #8f3628;
-    --bg-2: #3e100a;
-    --cream: #f5efe6;
-    --cream-lo: #e7ddcf;
-    --ink-red: #8b2611;
-    --ink-dark: #3a1a12;
-    --line: rgba(139, 38, 17, .55);
-    --serif: "Cormorant Garamond", "Times New Roman", serif;
-    --sans: "Inter", "Helvetica Neue", Arial, sans-serif;
-    /* papier met reliëf (belicht van linksboven) */
-    --paper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='p' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.62' numOctaves='4' seed='4'/><feDiffuseLighting lighting-color='%23ffffff' surfaceScale='1.5' diffuseConstant='1.08'><feDistantLight azimuth='225' elevation='52'/></feDiffuseLighting></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>");
-    --fibers: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.04 .09' numOctaves='3' seed='11'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .35  0 0 0 0 .25  0 0 0 1.4 -.75'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
-    /* linnen tafelkleed */
-    --linen: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='a'><feTurbulence type='fractalNoise' baseFrequency='.9 .03' numOctaves='2' seed='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .7 0'/></filter><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='.03 .9' numOctaves='2' seed='5'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .7 0'/></filter><rect width='100%' height='100%' filter='url(%23a)'/><rect width='100%' height='100%' filter='url(%23b)' opacity='.85'/></svg>");
-    --cloth: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='900'><filter id='c' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.0035 .006' numOctaves='3' seed='8'/><feDiffuseLighting lighting-color='%23ffffff' surfaceScale='9' diffuseConstant='1'><feDistantLight azimuth='225' elevation='38'/></feDiffuseLighting></filter><rect width='100%' height='100%' filter='url(%23c)'/></svg>");
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
-  body { background: var(--bg-2); overflow: hidden; font-family: var(--sans); -webkit-font-smoothing: antialiased; }
-
-  /* ---------- Tafel ---------- */
-  .table { position: fixed; inset: 0; background: radial-gradient(ellipse 120% 90% at 35% 25%, var(--bg-1), var(--bg-2) 85%); }
-  .table::before { content: ""; position: absolute; inset: 0; background-image: var(--cloth); background-size: 900px; mix-blend-mode: soft-light; opacity: .55; }
-  .table::after { content: ""; position: absolute; inset: 0; background-image: var(--linen); background-size: 260px; mix-blend-mode: multiply; opacity: .32; }
-  .glow-wrap, .glow, .vignette { position: fixed; inset: 0; pointer-events: none; }
-  .glow { background: radial-gradient(ellipse 52% 44% at 48% 44%, rgba(255, 175, 115, .32), transparent 70%); }
-  .vignette { background: radial-gradient(ellipse 90% 80% at 45% 40%, transparent 50%, rgba(20, 3, 0, .55) 100%); }
-  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-
-  .stage { position: absolute; left: 50%; top: 50%; width: 800px; height: 1000px; transform: translate(-50%, -50%) scale(var(--scale, .8)); }
-  .stage:not(.ready) { visibility: hidden; }
-  .cam { position: absolute; inset: 0; transform-origin: 400px 500px; }
-  .abs { position: absolute; }
-
-  /* ---------- Bord & bestek ---------- */
-  .plate { z-index: 5; left: 230px; top: 300px; width: 340px; height: 340px; }
-  .plate svg { width: 100%; height: 100%; overflow: visible; }
-  .cutlery { z-index: 4; top: 322px; width: 60px; height: 300px; }
-  .cutlery svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(9px 15px 9px rgba(18, 2, 0, .5)) drop-shadow(1.5px 2.5px 1.2px rgba(18, 2, 0, .55)); }
-  .fork { left: 122px; }
-  .knife { left: 618px; }
-
-  /* ---------- Kaart ---------- */
-  .card-wrap { z-index: 3; left: 170px; top: 170px; width: 460px; height: 660px; perspective: 2000px; }
-  .shadows { position: absolute; inset: 0; pointer-events: none; }
-  .tshadow { position: absolute; inset: 0; border-radius: 4px; pointer-events: none; }
-  .tshadow.amb { background: rgba(18, 2, 0, .62); filter: blur(30px); transform: translate(14px, 30px) scale(.97); }
-  .tshadow.con { background: rgba(18, 2, 0, .55); filter: blur(3px); transform: translate(2px, 3px); }
-  .tilt, .card3d { position: absolute; inset: 0; transform-style: preserve-3d; }
-  .card3d { cursor: pointer; }
-  .core { position: absolute; inset: 0; border-radius: 2px; background: #d6cbbb; transform: translateZ(0); }
-  .face {
-    position: absolute; inset: 0; overflow: hidden; border-radius: 2px;
-    backface-visibility: hidden; -webkit-backface-visibility: hidden;
-    background:
-      radial-gradient(ellipse 90% 55% at 25% 0%, rgba(255, 255, 255, .7), transparent 70%),
-      linear-gradient(168deg, #faf6f0 0%, var(--cream) 50%, var(--cream-lo) 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 0 0 .6px rgba(90, 60, 30, .18), inset 0 -1px 0 rgba(90, 60, 30, .12);
-    color: var(--ink-red); text-align: center;
-    --gx: 50%; --gy: 25%; --sl: 0; --sr: 0; --st: 0; --sb: 0;
-  }
-  .front { transform: translateZ(1.4px); }
-  .back { transform: rotateY(180deg) translateZ(1.4px); }
-  .paper { position: absolute; inset: 0; pointer-events: none; z-index: 3; mix-blend-mode: multiply; }
-  .paper::before { content: ""; position: absolute; inset: 0; background-image: var(--paper); background-size: 320px; opacity: .4; }
-  .paper::after { content: ""; position: absolute; inset: 0; background-image: var(--fibers); background-size: 400px; opacity: .14; }
-  .shade {
-    position: absolute; inset: 0; pointer-events: none; z-index: 4;
-    background:
-      linear-gradient(90deg, rgba(40, 10, 0, var(--sl)), transparent 45%, transparent 55%, rgba(40, 10, 0, var(--sr))),
-      linear-gradient(180deg, rgba(40, 10, 0, var(--st)), transparent 45%, transparent 55%, rgba(40, 10, 0, var(--sb)));
-  }
-  .glare { position: absolute; inset: 0; pointer-events: none; z-index: 5; background: radial-gradient(circle at var(--gx) var(--gy), rgba(255, 252, 246, .16), transparent 55%); }
-  .sheen { position: absolute; top: -20%; bottom: -20%; width: 40%; left: 0; z-index: 5; pointer-events: none; background: linear-gradient(100deg, transparent, rgba(255, 253, 248, .22) 50%, transparent); transform: translateX(-140%) skewX(-12deg); }
-  svg.frame { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
-  svg.frame rect { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 1; }
-
-  /* letterpress: inkt licht in het papier gedrukt */
-  .press { text-shadow: 0 .8px 0 rgba(255, 255, 255, .75), 0 -.5px .4px rgba(70, 15, 3, .35); }
-
-  .front .content { position: absolute; inset: 0; padding: 64px 40px 0; z-index: 2; }
-  .mark { font-family: var(--serif); font-weight: 400; font-size: 156px; line-height: .78; letter-spacing: -.02em; }
-  .mark span { display: inline-block; }
-  .lead { margin-top: 26px; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 40px; line-height: 1.05; display: inline-block; }
-  .lead .dot { display: inline-block; }
-  .title { margin-top: 8px; font-family: var(--serif); font-weight: 500; font-size: 64px; line-height: .92; letter-spacing: .02em; perspective: 600px; }
-  .title span { display: inline-block; transform-origin: 50% 100%; }
-  .date { margin-top: 30px; color: var(--ink-dark); font-size: 22px; font-weight: 600; letter-spacing: .2em; padding-left: .2em; }
-  .body { margin-top: 16px; color: var(--ink-dark); font-size: 13.4px; font-weight: 500; letter-spacing: .08em; line-height: 1.85; }
-  .body span { display: block; }
-  .url { position: absolute; left: 40px; right: 40px; bottom: 58px; z-index: 2; font-size: 14.5px; font-weight: 600; letter-spacing: .14em; }
-  .url .ul { display: block; width: 280px; height: 1px; margin: 10px auto 0; background: var(--line); }
-
-  /* Achterkant */
-  .back .content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 36px; }
-  .back .watermark { position: absolute; left: -30px; top: -60px; z-index: 1; font-family: var(--serif); font-size: 560px; line-height: 1; color: rgba(139, 38, 17, .045); }
-  .kicker { font-size: 12px; font-weight: 600; letter-spacing: .34em; padding-left: .34em; color: var(--ink-dark); }
-  .back h2 { margin-top: 14px; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 48px; line-height: 1.05; }
-  .nights { margin-top: 30px; display: flex; gap: 14px; }
-  .night {
-    width: 166px; padding: 18px 10px 16px; border: 1px solid var(--line); border-radius: 2px;
-    background: rgba(255, 255, 255, .35); color: var(--ink-red); cursor: pointer; font-family: var(--sans);
-    transition: background .35s, color .35s, transform .35s, box-shadow .35s;
-  }
-  .night:hover { transform: translateY(-3px); box-shadow: 0 12px 20px -12px rgba(60, 10, 0, .5); }
-  .night small { display: block; font-size: 12px; font-weight: 600; letter-spacing: .2em; }
-  .night b { display: block; margin-top: 6px; font-family: var(--serif); font-weight: 500; font-size: 50px; line-height: 1; }
-  .night i { display: block; margin-top: 4px; font-family: var(--serif); font-size: 22px; }
-  .night[aria-pressed="true"] { background: var(--ink-red); color: var(--cream); box-shadow: 0 14px 24px -12px rgba(60, 10, 0, .7); }
-  .back .note { margin-top: 26px; color: var(--ink-dark); font-size: 13.2px; font-weight: 500; letter-spacing: .08em; line-height: 1.85; }
-  .cta { margin-top: 24px; display: inline-flex; align-items: center; gap: 12px; padding: 18px 30px; border-radius: 999px; background: var(--ink-red); color: var(--cream); font-size: 14px; font-weight: 600; letter-spacing: .14em; text-decoration: none; box-shadow: 0 10px 24px -10px rgba(60, 10, 0, .7); transition: transform .3s; }
-  .cta:hover { transform: translateY(-2px); }
-  .backurl { margin-top: 18px; font-size: 13px; font-weight: 600; letter-spacing: .14em; color: var(--ink-red); }
-  .countdown { margin-top: 20px; font-size: 11px; font-weight: 600; letter-spacing: .26em; color: rgba(139, 38, 17, .7); }
-
-  .hint { position: fixed; left: 0; right: 0; bottom: 70px; z-index: 45; text-align: center; font-size: 10px; font-weight: 600; letter-spacing: .4em; color: rgba(243, 214, 196, .65); }
-  .controls { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: flex; gap: 8px; }
-  .controls button {
-    display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px;
-    border: 1px solid rgba(243, 226, 214, .35); background: rgba(50, 10, 5, .4); backdrop-filter: blur(6px);
-    color: #f3e6dc; font: 600 10px/1 var(--sans); letter-spacing: .26em; text-transform: uppercase;
-    cursor: pointer; opacity: .8; transition: opacity .3s, background .3s;
-  }
-  .controls button:hover, .controls button:focus-visible { opacity: 1; background: rgba(50, 10, 5, .65); outline: none; }
-  .controls svg { width: 13px; height: 13px; }
-
-  /* Videomodus (voor MP4-export) */
-  .video .controls, .video .hint, .video .countdown { display: none; }
-  .video * { transition: none !important; }
-</style>
+<link rel="stylesheet" href="3d/page.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
 </head>
 <body>
-  <div class="table"></div>
-  <div class="glow-wrap" id="glowWrap"><div class="glow" id="glow"></div></div>
-  <canvas id="fx"></canvas>
+  <canvas id="gl" aria-label="Uitnodiging voor de avant-première van Lilou: het eerste diner in Het Pomphuis, voordat de deuren opengaan. Donderdag 26 of vrijdag 27 november. Aanmelden via lilou-ede.nl/aanmelden."></canvas>
   <div class="vignette"></div>
-
-  <main class="stage" id="stage" aria-label="Uitnodiging voor de avant-première van Lilou">
-   <div class="cam" id="cam">
-
-    <div class="abs card-wrap" id="cardWrap">
-      <div class="shadows" id="shadows"><div class="tshadow amb" id="shAmb"></div><div class="tshadow con" id="shCon"></div></div>
-      <div class="tilt" id="tilt">
-        <div class="card3d" id="card3d" role="button" tabindex="0" aria-label="Draai de uitnodiging om">
-          <div class="core"></div>
-
-          <section class="face front" id="front">
-            <svg class="frame" viewBox="0 0 460 660" aria-hidden="true">
-              <rect x="20" y="20" width="420" height="620" pathLength="1"/>
-              <rect x="26" y="26" width="408" height="608" pathLength="1"/>
-            </svg>
-            <div class="content">
-              <div class="mark press"><span id="markO">O</span><span id="markDot">.</span></div>
-              <div><p class="lead press" id="lead">Jouw plek aan tafel<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></p></div>
-              <h1 class="title press" id="title" aria-label="Avant-première"></h1>
-              <p class="date f-date">26 &amp; 27.11</p>
-              <p class="body">
-                <span class="f-body">HET EERSTE DINER IN HET POMPHUIS,</span>
-                <span class="f-body">VOORDAT DE DEUREN OPENGAAN.</span>
-              </p>
-            </div>
-            <p class="url f-url">LILOU-EDE.NL/AANMELDEN<span class="ul f-ul"></span></p>
-            <div class="paper"></div>
-            <div class="shade"></div>
-            <div class="sheen" id="sheen"></div>
-            <div class="glare"></div>
-          </section>
-
-          <section class="face back">
-            <div class="watermark" aria-hidden="true">O.</div>
-            <svg class="frame" viewBox="0 0 460 660" aria-hidden="true">
-              <rect x="20" y="20" width="420" height="620" style="stroke-dasharray:none"/>
-              <rect x="26" y="26" width="408" height="608" style="stroke-dasharray:none"/>
-            </svg>
-            <div class="content">
-              <p class="kicker">AVANT-PREMIÈRE</p>
-              <h2>Kies je avond…</h2>
-              <div class="nights" role="group" aria-label="Kies je avond">
-                <button type="button" class="night" id="n1" aria-pressed="true"><small>DONDERDAG</small><b>26.11</b></button>
-                <button type="button" class="night" id="n2" aria-pressed="false"><small>VRIJDAG</small><b>27.11</b></button>
-              </div>
-              <p class="note">HET EERSTE DINER IN HET POMPHUIS,<br>VOORDAT DE DEUREN OPENGAAN.</p>
-              <a class="cta" href="https://www.lilou-ede.nl/aanmelden" target="_blank" rel="noopener">RESERVEER JE PLEK <span aria-hidden="true">→</span></a>
-              <p class="backurl">LILOU-EDE.NL/AANMELDEN</p>
-            </div>
-            <div class="paper"></div>
-            <div class="shade"></div>
-            <div class="glare"></div>
-          </section>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bestek -->
-    <div class="abs cutlery fork" id="fork" aria-hidden="true">
-      <svg viewBox="0 0 60 300">
-        <defs>
-          <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="#6d6863"/><stop offset=".18" stop-color="#cfcbc6"/><stop offset=".34" stop-color="#fdfcfa"/>
-            <stop offset=".5" stop-color="#a39d97"/><stop offset=".72" stop-color="#ecebe8"/><stop offset="1" stop-color="#77716b"/>
-          </linearGradient>
-          <linearGradient id="steelV" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#fff" stop-opacity=".0"/><stop offset=".35" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/>
-          </linearGradient>
-        </defs>
-        <path d="M14 8 v58 M24 8 v58 M36 8 v58 M46 8 v58" stroke="url(#steel)" stroke-width="5" stroke-linecap="round"/>
-        <path d="M11 60 Q11 92 26 100 Q24 120 25 160 Q26 230 23 282 Q23 292 30 292 Q37 292 37 282 Q34 230 35 160 Q36 120 34 100 Q49 92 49 60 Z" fill="url(#steel)"/>
-        <path d="M11 60 Q11 92 26 100 Q24 120 25 160 Q26 230 23 282 Q23 292 30 292 Q37 292 37 282 Q34 230 35 160 Q36 120 34 100 Q49 92 49 60 Z" fill="url(#steelV)"/>
-      </svg>
-    </div>
-    <div class="abs cutlery knife" id="knife" aria-hidden="true">
-      <svg viewBox="0 0 60 300">
-        <path d="M30 6 Q44 20 44 80 Q44 118 36 128 L24 128 L24 14 Q24 6 30 6 Z" fill="url(#steel)"/>
-        <path d="M30 6 Q44 20 44 80 Q44 118 36 128 L24 128 L24 14 Q24 6 30 6 Z" fill="url(#steelV)"/>
-        <path d="M23 128 Q22 200 23 282 Q23 292 30 292 Q37 292 37 282 Q38 200 37 128 Z" fill="url(#steel)"/>
-        <path d="M23 128 Q22 200 23 282 Q23 292 30 292 Q37 292 37 282 Q38 200 37 128 Z" fill="url(#steelV)"/>
-      </svg>
-    </div>
-
-    <!-- Bord (porselein) -->
-    <div class="abs plate" id="plate" aria-hidden="true">
-      <svg viewBox="0 0 340 340">
-        <defs>
-          <radialGradient id="rim" cx="50%" cy="50%" r="50%">
-            <stop offset="0" stop-color="#faf7f2"/><stop offset=".66" stop-color="#f4efe7"/>
-            <stop offset=".68" stop-color="#ddd3c5"/><stop offset=".72" stop-color="#fdfcf9"/>
-            <stop offset=".9" stop-color="#f3eee6"/><stop offset=".97" stop-color="#e2d9cc"/><stop offset="1" stop-color="#c9bdac"/>
-          </radialGradient>
-          <linearGradient id="rimLight" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#5a4030" stop-opacity=".18"/>
-          </linearGradient>
-          <radialGradient id="well" cx="50%" cy="50%" r="50%">
-            <stop offset="0" stop-color="#fbf8f3"/><stop offset=".8" stop-color="#f3ede4"/><stop offset="1" stop-color="#e3d9cb"/>
-          </radialGradient>
-          <linearGradient id="wellShade" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#6a4a35" stop-opacity=".2"/><stop offset=".35" stop-color="#6a4a35" stop-opacity="0"/>
-            <stop offset=".8" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".45"/>
-          </linearGradient>
-          <filter id="blurBig" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="16"/></filter>
-          <filter id="blurSm" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2.5"/></filter>
-          <filter id="blurHi" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
-        </defs>
-        <g id="plateBody">
-          <circle cx="184" cy="196" r="160" fill="rgba(18,2,0,.55)" filter="url(#blurBig)"/>
-          <circle cx="172" cy="174" r="164" fill="rgba(18,2,0,.6)" filter="url(#blurSm)"/>
-          <circle cx="170" cy="170" r="165" fill="url(#rim)"/>
-          <circle cx="170" cy="170" r="165" fill="url(#rimLight)"/>
-          <circle cx="170" cy="170" r="112" fill="url(#well)"/>
-          <circle cx="170" cy="170" r="112" fill="url(#wellShade)"/>
-          <circle cx="170" cy="170" r="112.5" fill="none" stroke="rgba(110,80,55,.22)" stroke-width="1.2"/>
-          <path d="M60 128 A118 118 0 0 1 128 58" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity=".8" filter="url(#blurHi)"/>
-          <path d="M70 118 A110 110 0 0 1 118 66" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".95"/>
-          <path d="M262 238 A130 130 0 0 1 238 262" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".5" filter="url(#blurHi)"/>
-          <ellipse cx="128" cy="118" rx="38" ry="16" fill="#fff" opacity=".35" transform="rotate(-40 128 118)" filter="url(#blurHi)"/>
-        </g>
-        <circle id="ring" cx="170" cy="170" r="140" fill="none" stroke="#8b2611" stroke-width="3" pathLength="1" stroke-dasharray="1" transform="rotate(-90 170 170)"/>
-      </svg>
-    </div>
-
-   </div>
-  </main>
-  <p class="hint" id="hint">KLIK OP DE KAART OM TE DRAAIEN</p>
-
+  <div class="grain"></div>
+  <div class="loader">Lilou</div>
   <div class="controls">
-    <button type="button" id="flipBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Draai</button>
-    <button type="button" id="replayBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/></svg>Opnieuw</button>
+    <button type="button" id="flipBtn">Draai</button>
+    <button type="button" id="replayBtn">Opnieuw</button>
   </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script>
-(() => {
-  const $ = s => document.querySelector(s);
-  const $$ = s => [...document.querySelectorAll(s)];
-  const stage = $('#stage');
-  const params = new URLSearchParams(location.search);
-  const VIDEO = params.has('video');
-  const reduce = !VIDEO && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (VIDEO) document.body.classList.add('video');
+<script type="module">
+import { createStage, printSheet, sheetMaterial, plainPaper, makeCard, rig, runner, THREE } from './3d/engine.js';
 
-  const FIT = parseFloat(params.get('fit')) || .95;
-  function fit() {
-    const s = VIDEO && params.get('fit')
-      ? (innerWidth / 800) * FIT
-      : Math.min(innerWidth / 800, innerHeight / 1000) * FIT;
-    stage.style.setProperty('--scale', s.toFixed(4));
+const SERIF = '"Cormorant Garamond"', SANS = 'Inter';
+const stage = await createStage({
+  canvas: document.getElementById('gl'),
+  fonts: [`400 80px ${SERIF}`, `500 80px ${SERIF}`, `italic 500 80px ${SERIF}`, `600 40px ${SANS}`, `500 40px ${SANS}`]
+});
+const { scene, aniso } = stage;
+
+/* ---------- Kaart: 120 x 172 mm, crème katoenpapier, rode letterpress ---------- */
+const INK = '#8b2611', DARK = '#3a1a12', LINE = 'rgba(139,38,17,.7)';
+const front = printSheet({ wmm: 120, hmm: 172, base: '#f3ece0', seed: 6, draw: p => {
+  p.rect(5.2, 5.2, 109.6, 161.6, { color: LINE, width: .22 });
+  p.rect(6.8, 6.8, 106.4, 158.4, { color: LINE, width: .22 });
+  p.text('O.', 62, 49, { font: SERIF, size: 42, weight: 400, color: INK, depth: 1.6 });
+  p.text('Jouw plek aan tafel…', 60, 66, { font: SERIF, size: 10.4, style: 'italic', weight: 500, color: INK, depth: 1.4 });
+  p.text('AVANT-', 60, 83, { font: SERIF, size: 16.7, weight: 500, spacing: .02, color: INK, depth: 1.6 });
+  p.text('PREMIÈRE', 60, 98.5, { font: SERIF, size: 16.7, weight: 500, spacing: .02, color: INK, depth: 1.6 });
+  p.text('26 & 27.11', 60, 112.5, { font: SANS, size: 5.4, weight: 600, spacing: .2, color: DARK, depth: 1.3 });
+  p.text('HET EERSTE DINER IN HET POMPHUIS,', 60, 122, { font: SANS, size: 3.3, weight: 500, spacing: .08, color: DARK });
+  p.text('VOORDAT DE DEUREN OPENGAAN.', 60, 128.5, { font: SANS, size: 3.3, weight: 500, spacing: .08, color: DARK });
+  p.text('LILOU-EDE.NL/AANMELDEN', 60, 151, { font: SANS, size: 3.7, weight: 600, spacing: .14, color: INK });
+  p.line(41, 154.5, 79, 154.5, { color: LINE, width: .2 });
+}});
+const back = printSheet({ wmm: 120, hmm: 172, base: '#f3ece0', seed: 11, draw: p => {
+  p.text('O.', 44, 150, { font: SERIF, size: 150, weight: 400, kind: 'blind', depth: .7 });
+  p.rect(5.2, 5.2, 109.6, 161.6, { color: LINE, width: .22 });
+  p.rect(6.8, 6.8, 106.4, 158.4, { color: LINE, width: .22 });
+  p.text('AVANT-PREMIÈRE', 60, 48, { font: SANS, size: 3.1, weight: 600, spacing: .34, color: DARK });
+  p.text('Kies je avond…', 60, 64, { font: SERIF, size: 12.5, style: 'italic', weight: 500, color: INK, depth: 1.4 });
+  for (const [x, d, n] of [[16, 'DONDERDAG', '26.11'], [63, 'VRIJDAG', '27.11']]) {
+    p.rect(x, 74, 41, 28, { color: LINE, width: .22 });
+    p.text(d, x + 20.5, 82.5, { font: SANS, size: 2.9, weight: 600, spacing: .2, color: INK });
+    p.text(n, x + 20.5, 96, { font: SERIF, size: 12.5, weight: 500, color: INK, depth: 1.4 });
   }
-  fit(); addEventListener('resize', fit);
+  p.text('HET EERSTE DINER IN HET POMPHUIS,', 60, 114, { font: SANS, size: 3.3, weight: 500, spacing: .08, color: DARK });
+  p.text('VOORDAT DE DEUREN OPENGAAN.', 60, 120.5, { font: SANS, size: 3.3, weight: 500, spacing: .08, color: DARK });
+  p.text('LILOU-EDE.NL/AANMELDEN', 60, 136, { font: SANS, size: 3.9, weight: 600, spacing: .14, color: INK });
+  p.line(40, 139.5, 80, 139.5, { color: LINE, width: .2 });
+}});
+const card = makeCard(stage, { wmm: 120, hmm: 172, front: sheetMaterial(front, aniso, { envIntensity: .25 }), back: sheetMaterial(back, aniso, { flip: true, envIntensity: .25 }), edge: '#d8ccb9' });
+scene.add(card.pivot);
 
-  /* Titel in losse letters */
-  const title = $('#title');
-  ['AVANT-', 'PREMIÈRE'].forEach((w, i) => {
-    if (i) title.appendChild(document.createElement('br'));
-    [...w].forEach(ch => { const s = document.createElement('span'); s.textContent = ch; s.setAttribute('aria-hidden', 'true'); title.appendChild(s); });
-  });
+/* ---------- Porseleinen bord ---------- */
+const prof = [[0, .0055], [.075, .0055], [.088, .0068], [.098, .0115], [.106, .0158], [.118, .0172], [.13, .0176], [.1365, .017], [.1402, .0154], [.1398, .0138], [.132, .0128], [.112, .0112], [.094, .0058], [.074, .0016], [.072, 0], [.064, 0], [.062, .0012], [0, .0014]].map(([x, y]) => new THREE.Vector2(x, y));
+const porcelain = new THREE.MeshPhysicalMaterial({ color: '#d9d1c4', roughness: .24, clearcoat: .8, clearcoatRoughness: .08, envMapIntensity: .45, side: THREE.DoubleSide });
+const plate = new THREE.Mesh(new THREE.LatheGeometry(prof, 128), porcelain); plate.castShadow = plate.receiveShadow = true; scene.add(plate);
+const ring = new THREE.Mesh(new THREE.RingGeometry(.1235, .1248, 128), new THREE.MeshStandardMaterial({ color: '#8b2611', roughness: .35, polygonOffset: true, polygonOffsetFactor: -2 }));
+ring.rotation.x = -Math.PI / 2; ring.position.y = .01755; scene.add(ring);
 
-  (() => {
+/* ---------- Servet + bestek ---------- */
+const linen = plainPaper({ color: '#e9e0d1', seed: 41, aniso, repeat: 1 });
+linen.roughness = .95;
+const napkin = new THREE.Mesh(new THREE.BoxGeometry(.12, .004, .23), linen); napkin.position.set(-.215, .002, .01); napkin.rotation.y = .03; napkin.castShadow = napkin.receiveShadow = true; scene.add(napkin);
+const steel = new THREE.MeshStandardMaterial({ color: '#e7e4de', metalness: 1, roughness: .16, envMapIntensity: 1.3 });
+const shape = pts => new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)));
+const ext = { depth: .0016, bevelEnabled: true, bevelThickness: .0006, bevelSize: .0005, bevelSegments: 3, curveSegments: 6 };
+const fork = new THREE.Mesh(new THREE.ExtrudeGeometry(shape([[-.0065, -.1], [-.0078, -.088], [-.0072, -.02], [-.0032, .036], [-.0045, .05], [-.012, .06], [-.012, .1], [-.0078, .1], [-.0078, .068], [-.0054, .068], [-.0054, .1], [-.0012, .1], [-.0012, .068], [.0012, .068], [.0012, .1], [.0054, .1], [.0054, .068], [.0078, .068], [.0078, .1], [.012, .1], [.012, .06], [.0045, .05], [.0032, .036], [.0072, -.02], [.0078, -.088], [.0065, -.1]]), ext), steel);
+fork.rotation.x = -Math.PI / 2; fork.position.set(-.21, .0047, .01); fork.castShadow = fork.receiveShadow = true; scene.add(fork);
+const knife = new THREE.Mesh(new THREE.ExtrudeGeometry(shape([[-.006, -.1], [-.007, -.085], [-.0065, -.005], [-.0045, 0], [-.0045, .095], [-.001, .105], [.004, .1], [.0075, .07], [.0075, 0], [.0065, -.005], [.007, -.085], [.006, -.1]]), ext), steel);
+knife.rotation.x = -Math.PI / 2; knife.position.set(.172, .0007, .01); knife.castShadow = knife.receiveShadow = true; scene.add(knife);
 
-  })();
+/* ---------- Wijnglas ---------- */
+const gprof = [[0, 0], [.038, 0], [.039, .0015], [.006, .004], [.0035, .012], [.0032, .085], [.006, .095], [.03, .115], [.041, .145], [.039, .18], [.034, .21], [.0335, .21], [.0385, .18], [.0405, .145], [.0295, .116], [.005, .1]].map(([x, y]) => new THREE.Vector2(x, y));
+const glassMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', metalness: 0, roughness: .03, transmission: 1, thickness: .0015, ior: 1.5, envMapIntensity: 1.4, side: THREE.DoubleSide, transparent: true });
+const glass = new THREE.Mesh(new THREE.LatheGeometry(gprof, 64), glassMat); glass.position.set(.15, 0, -.2); glass.castShadow = true; scene.add(glass);
 
-  $$('.night').forEach(b => b.addEventListener('click', () => {
-    $$('.night').forEach(n => n.setAttribute('aria-pressed', String(n === b)));
-  }));
+/* ---------- Tijdlijn ---------- */
+const R = rig(stage);
+const C = { x: 0, y: .0167, z: .004, ry: -.035, rz: 0 };
+const BASE_Y = .0167;
+function topDown() {
+  const d = stage.fitDistance(card.w, card.h, stage.STORY ? .9 : .92, stage.STORY ? .7 : .88);
+  return { px: C.x, py: d, pz: C.z + d * .012, tx: C.x, ty: BASE_Y, tz: C.z };
+}
+Object.assign(R.cam, { px: -.07, py: .14, pz: .62, tx: .01, ty: .02, tz: -.06 });
+Object.assign(R.light, { x: -.38, y: .58, z: -.5, tx: 0, tz: 0 });
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power2.inOut' } });
+tl.to(R.cam, { px: -.03, py: .17, pz: .5, duration: 3.6, ease: 'sine.inOut' }, 0)
+  .to(R.cam, { px: 0, py: .42, pz: .3, tz: -.02, duration: 3.2 }, 3.4)
+  .to(R.cam, { ...topDown(), duration: 2.6, ease: 'power2.inOut' }, 6.2)
+  .to(R.light, { x: -.3, z: -.6, duration: 4, ease: 'sine.inOut' }, 5.5)
+  .to(R.light, { x: -.45, z: -.38, duration: 3, ease: 'sine.inOut' }, 9.5);
 
-  /* ---------- Stofdeeltjes + kaarslicht (deterministisch op tijd t) ---------- */
-  const cv = $('#fx'), ctx = cv.getContext('2d');
-  let W, H, dpr; const fxLevel = { v: 0 };
-  function size() { dpr = Math.min(devicePixelRatio || 1, 2); W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr; }
-  size(); addEventListener('resize', size);
-  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const motes = Array.from({ length: 60 }, () => ({
-    x: rnd(), y: rnd(), r: rnd() * 2.2 + .5, vx: (rnd() - .5) * .012, vy: -(rnd() * .016 + .004),
-    ph: rnd() * 6.28, sp: rnd() * 1.2 + .6, a: rnd() * .6 + .2, blur: rnd() < .2
-  }));
-  const wrap = v => ((v % 1) + 1) % 1;
-  function drawFx(t) {
-    ctx.clearRect(0, 0, W, H);
-    const g = .86 + .07 * Math.sin(t * 7.3) + .05 * Math.sin(t * 17.1 + 1) + .03 * Math.sin(t * 31.7 + 2);
-    $('#glow').style.opacity = reduce ? 1 : g.toFixed(3);
-    if (fxLevel.v < .01) return;
-    for (const m of motes) {
-      const x = wrap(m.x + m.vx * t + Math.sin(t * .4 + m.ph) * .01) * W;
-      const y = wrap(m.y + m.vy * t) * H;
-      const tw = (Math.sin(t * m.sp + m.ph) + 1) / 2;
-      const r = m.r * dpr * (m.blur ? 2.4 : 1);
-      ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283);
-      ctx.fillStyle = `rgba(255, 214, 160, ${m.a * (.35 + tw * .65) * fxLevel.v * (m.blur ? .18 : .55)})`; ctx.fill();
-    }
-  }
+function flipTo(target, at, t) {
+  t.to(C, { rz: target, duration: 1.6, ease: 'power3.inOut' }, at)
+   .to(C, { y: BASE_Y + .07, duration: .8, ease: 'power2.out' }, at)
+   .to(C, { y: BASE_Y, duration: .8, ease: 'power2.in' }, at + .8);
+}
 
-  /* ---------- Elementen ---------- */
-  const cardWrap = $('#cardWrap'), tilt = $('#tilt'), card3d = $('#card3d'), front = $('#front');
-  const plate = $('#plate'), faces = $$('.face');
-
-  function offsetIn(el, anc) { let x = 0, y = 0; while (el && el !== anc) { x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; } return { x, y }; }
-  function oTarget() {
-    const o = $('#markO'), p = offsetIn(o, front);
-    const cx = p.x + o.offsetWidth / 2, cy = p.y + o.offsetHeight * .55;
-    return { cx, cy, stageX: cardWrap.offsetLeft + cx, stageY: cardWrap.offsetTop + cy, r: o.offsetWidth * .37 };
-  }
-
-  /* Houding van de kaart: tilt, glans, schaduw op tafel en licht/donker-zijden */
-  function pose(px, py) {
-    const rX = -py * 9, rY = px * 12;
-    // omdraaien: kaart komt van tafel, schaduw wordt smaller en zachter
-    const th = (gsap.getProperty(card3d, 'rotationY') || 0) * Math.PI / 180;
-    const c = Math.abs(Math.cos(th)), lift = Math.abs(Math.sin(th));
-    gsap.set(tilt, { rotationX: rX, rotationY: rY, z: lift * 60 });
-    faces.forEach(f => {
-      f.style.setProperty('--gx', (50 + px * 45).toFixed(1) + '%');
-      f.style.setProperty('--gy', (28 + py * 40).toFixed(1) + '%');
-      f.style.setProperty('--sl', Math.max(0, -px * .16).toFixed(3));
-      f.style.setProperty('--sr', Math.max(0, px * .16).toFixed(3));
-      f.style.setProperty('--st', Math.max(0, -py * .12).toFixed(3));
-      f.style.setProperty('--sb', Math.max(0, py * .12).toFixed(3));
-    });
-    gsap.set('#shAmb', { x: 14 - rY * 1.1 + lift * 18, y: 30 + rX * 1.1 + lift * 26, scaleX: .97 * Math.max(c, .05), scaleY: .97, opacity: 1 - lift * .45 });
-    gsap.set('#shCon', { x: 2 - rY * .25, y: 3 + rX * .25, scaleX: Math.max(c, .05), opacity: Math.max(0, 1 - lift * 2.5) });
-  }
-
-  /* Hoeveel de camera inzoomt zodat de kaart het beeld vult */
-  function camZoom() {
-    const s = parseFloat(getComputedStyle(stage).getPropertyValue('--scale')) || .8;
-    const STORY = params.has('story');
-    const z = Math.min(innerWidth * (VIDEO ? .92 : .9) / (460 * s), innerHeight * (STORY ? .7 : VIDEO ? .92 : .84) / (660 * s));
-    return Math.max(1, Math.min(z, 2.2));
-  }
-  addEventListener('resize', () => { if (introDone) gsap.set('#cam', { scale: camZoom() }); });
-
-  let tl, introDone = false;
-  function build() {
-    const T = oTarget();
-    const plateCX = plate.offsetLeft + 170, plateCY = plate.offsetTop + 170;
-    const s = T.r / 140;
-
-    tl = gsap.timeline({ paused: !VIDEO, defaults: { ease: 'power3.out' } });
-    tl
-      .fromTo('#glowWrap', { autoAlpha: 0 }, { autoAlpha: 1, duration: 1.6 }, 0)
-      .fromTo('#cam', { scale: 1.06 }, { scale: 1, duration: 3.6, ease: 'sine.inOut' }, 0)
-      .to('#cam', { scale: () => camZoom(), duration: 2, ease: 'power2.inOut' }, 4.6)
-      .fromTo(plate, { scale: 1.3, rotation: -25, y: -40, opacity: 0, x: 0 }, { scale: 1, rotation: 0, y: 0, opacity: 1, duration: 1.5 }, .25)
-      .fromTo('#plateBody', { opacity: 1 }, { opacity: 1, duration: .01 }, 0)
-      .fromTo('#ring', { opacity: 1 }, { opacity: 1, duration: .01 }, 0)
-      .fromTo('#fork', { x: -340, rotation: -8, opacity: 0 }, { x: 0, rotation: 0, opacity: 1, duration: 1.3 }, .85)
-      .fromTo('#knife', { x: 340, rotation: 8, opacity: 0 }, { x: 0, rotation: 0, opacity: 1, duration: 1.3 }, .97)
-      .fromTo('#ring', { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1.4, ease: 'power2.inOut' }, 1.25)
-
-      .to('#fork', { x: -380, opacity: 0, duration: .9, ease: 'power2.in' }, 2.8)
-      .to('#knife', { x: 380, opacity: 0, duration: .9, ease: 'power2.in' }, 2.85)
-      .to('#plateBody', { opacity: 0, duration: .9, ease: 'power1.inOut' }, 3.05)
-      .to(plate, { x: T.stageX - plateCX, y: T.stageY - plateCY, scale: s, rotation: 180, duration: 1.4, ease: 'power3.inOut' }, 3.05)
-      .fromTo(cardWrap, { clipPath: `circle(0px at ${T.cx}px ${T.cy}px)` }, { clipPath: `circle(820px at ${T.cx}px ${T.cy}px)`, duration: 1.6, ease: 'power2.inOut' }, 3.95)
-      .set(cardWrap, { clipPath: 'none' }, 5.6)
-      .fromTo('.core', { opacity: 0 }, { opacity: 1, duration: .01 }, 5.25)
-      .fromTo('#shadows', { opacity: 0 }, { opacity: 1, duration: 1.2, ease: 'power1.inOut' }, 4.85)
-      .fromTo('#markO', { opacity: 0 }, { opacity: 1, duration: .5 }, 4.2)
-      .to('#ring', { opacity: 0, duration: .45 }, 4.2)
-      .to(plate, { opacity: 0, duration: .5 }, 4.35)
-      .fromTo('#markDot', { y: -160, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: 'bounce.out' }, 4.65)
-
-      .fromTo('svg.frame rect', { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1.8, stagger: .2, ease: 'power2.inOut' }, 4.65)
-      .fromTo('#lead', { clipPath: 'inset(-20% 100% -20% 0)' }, { clipPath: 'inset(-20% 0% -20% 0)', duration: 1.5, ease: 'power1.inOut' }, 5.05)
-      .fromTo('#lead .dot', { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: .35, stagger: .18, ease: 'back.out(3)' }, 6.15)
-      .fromTo('#title span', { opacity: 0, rotationX: -95, y: 10 }, { opacity: 1, rotationX: 0, y: 0, duration: .9, stagger: .045, ease: 'back.out(1.6)' }, 5.65)
-      .fromTo('.f-date', { opacity: 0, letterSpacing: '1em' }, { opacity: 1, letterSpacing: '.2em', duration: 1.3 }, 6.45)
-      .fromTo('.f-body', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .9, stagger: .14 }, 6.75)
-      .fromTo('.f-url', { opacity: 0 }, { opacity: 1, duration: .9 }, 7.25)
-      .fromTo('.f-ul', { scaleX: 0 }, { scaleX: 1, duration: 1, ease: 'power2.inOut' }, 7.4)
-      .fromTo('#sheen', { xPercent: -140 }, { xPercent: 360, duration: 1.6, ease: 'power2.inOut' }, 7.65)
-      .fromTo(fxLevel, { v: 0 }, { v: 1, duration: 2.5 }, 6.5)
-      .fromTo('#hint', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 1 }, 8.4);
-
-    tl.eventCallback('onComplete', () => { introDone = true; });
-  }
-
-  /* ---------- Live: tilt volgt muis, anders zachte deining ---------- */
-  let pointer = null, lastMove = 0, cur = { x: 0, y: 0 }, t0 = performance.now();
-  addEventListener('pointermove', e => { pointer = { x: e.clientX / innerWidth * 2 - 1, y: e.clientY / innerHeight * 2 - 1 }; lastMove = performance.now(); });
-  if (!VIDEO) gsap.ticker.add(() => {
-    const t = (performance.now() - t0) / 1000;
-    drawFx(t);
-    if (!introDone || reduce) return;
-    const active = pointer && performance.now() - lastMove < 4000;
-    const tx = active ? pointer.x : Math.sin(t * .5) * .45;
-    const ty = active ? pointer.y : Math.cos(t * .4) * .35;
-    cur.x += (tx - cur.x) * .06; cur.y += (ty - cur.y) * .06;
-    pose(cur.x, cur.y);
-  });
-
-  let side = 0;
-  function flip() {
-    if (!introDone) return;
-    side += 180;
-    gsap.to(card3d, { rotationY: side, duration: 1.1, ease: 'power3.inOut' });
-    gsap.to('#hint', { opacity: 0, duration: .4 });
-  }
-  card3d.addEventListener('click', e => { if (!e.target.closest('a, button')) flip(); });
-  card3d.addEventListener('keydown', e => { if (e.target === card3d && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); flip(); } });
-  $('#flipBtn').addEventListener('click', flip);
-
-  function play() {
-    stage.classList.add('ready');
-    introDone = false; side = 0; cur = { x: 0, y: 0 };
-    gsap.set(card3d, { rotationY: 0 }); pose(0, 0);
-    if (!tl) build();
-    if (reduce) { tl.invalidate().progress(1).pause(); introDone = true; return; }
-    tl.invalidate().restart();
-  }
-
-  /* ---------- Videomodus: één master-tijdlijn, frame voor frame te renderen ---------- */
-  if (VIDEO) {
-    window.__ready = (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => {
-      stage.classList.add('ready');
-      build();
-      const master = gsap.timeline({ paused: true });
-      master.add(tl, 0)
-        .fromTo(card3d, { rotationY: 0 }, { rotationY: 180, duration: 1.3, ease: 'power3.inOut' }, 12.6)
-        .set('#n1', { attr: { 'aria-pressed': 'false' } }, 15.2)
-        .set('#n2', { attr: { 'aria-pressed': 'true' } }, 15.2)
-        .to(card3d, { rotationY: 360, duration: 1.3, ease: 'power3.inOut' }, 18.2)
-        .to({}, { duration: .01 }, 22.5);
-      window.__duration = 22.5;
-      window.__seek = t => {
-        master.seek(t, true);
-        const a = Math.min(1, Math.max(0, (t - 8.6) / 1.6));
-        const e = a * a * (3 - 2 * a);
-        pose(Math.sin((t - 8.6) * .6) * .3 * e, Math.sin((t - 8.6) * .5 + .6) * .2 * e);
-        drawFx(t);
-      };
-      window.__seek(0);
-    });
-    return;
-  }
-
-  $('#replayBtn').addEventListener('click', play);
-  addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') play(); });
-  let started = false;
-  const start = () => { if (!started) { started = true; play(); } };
-  (document.fonts ? document.fonts.ready : Promise.resolve()).then(start);
-  setTimeout(start, 2500);
-})();
+runner(stage, { build: () => ({
+  tl,
+  apply(t) {
+    R.apply(t);
+    card.pivot.position.set(C.x, C.y, C.z);
+    card.pivot.rotation.set(0, C.ry, C.rz);
+  },
+  videoTimeline() {
+    const m = gsap.timeline({ paused: true });
+    m.add(tl.paused(false), 0);
+    flipTo(Math.PI, 13.4, m); flipTo(Math.PI * 2, 19, m);
+    m.to({}, { duration: .01 }, 23.5);
+    return m;
+  },
+  flip() { const m = gsap.timeline(); flipTo(Math.round(C.rz / Math.PI) * Math.PI + Math.PI, 0, m); },
+  reset() { location.reload(); },
+  onResize() { Object.assign(R.cam, topDown()); },
+  pointer(x, y, done) { if (done) gsap.to(R.light, { x: -.4 + x * .3, z: -.48 + y * .25, duration: 1.2, overwrite: true }); }
+}) });
 </script>
 </body>
 </html>

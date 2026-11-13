@@ -4,520 +4,164 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lilou Opening</title>
-<meta name="description" content="Geanimeerde uitnodiging voor de opening van Lilou, c'est tout. — zondag 29 november, Het Pomphuis Ede.">
+<meta name="description" content="Uitnodiging voor de opening van Lilou, c'est tout. — zondag 29 november, 14:00–19:00, Het Pomphuis Ede.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg-1: #8a3226;
-    --bg-2: #4a140d;
-    --rust: #8e2914;
-    --rust-hi: #a8452d;
-    --rust-lo: #7a200d;
-    --cream: #f3e6dc;
-    --serif: "Cormorant Garamond", "Times New Roman", serif;
-    --sans: "Inter", "Helvetica Neue", Arial, sans-serif;
-    /* papier met reliëf (belicht van linksboven) */
-    --paper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='p' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.62' numOctaves='4' seed='4'/><feDiffuseLighting lighting-color='%23ffffff' surfaceScale='1.5' diffuseConstant='1.08'><feDistantLight azimuth='225' elevation='52'/></feDiffuseLighting></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>");
-    --fibers: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.04 .09' numOctaves='3' seed='11'/><feColorMatrix values='0 0 0 0 .45  0 0 0 0 .35  0 0 0 0 .25  0 0 0 1.4 -.75'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
-    /* linnen tafelkleed */
-    --linen: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='a'><feTurbulence type='fractalNoise' baseFrequency='.9 .03' numOctaves='2' seed='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .7 0'/></filter><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='.03 .9' numOctaves='2' seed='5'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .7 0'/></filter><rect width='100%' height='100%' filter='url(%23a)'/><rect width='100%' height='100%' filter='url(%23b)' opacity='.85'/></svg>");
-    --cloth: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='900'><filter id='c' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.0035 .006' numOctaves='3' seed='8'/><feDiffuseLighting lighting-color='%23ffffff' surfaceScale='9' diffuseConstant='1'><feDistantLight azimuth='225' elevation='38'/></feDiffuseLighting></filter><rect width='100%' height='100%' filter='url(%23c)'/></svg>");
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
-  body { background: var(--bg-2); overflow: hidden; font-family: var(--sans); -webkit-font-smoothing: antialiased; color: var(--cream); }
-
-  .backdrop { position: fixed; inset: 0; background: radial-gradient(ellipse 120% 90% at 35% 25%, var(--bg-1), var(--bg-2) 85%); }
-  .backdrop::before { content: ""; position: absolute; inset: 0; background-image: var(--cloth); background-size: 900px; mix-blend-mode: soft-light; opacity: .4; }
-  .backdrop::after { content: ""; position: absolute; inset: 0; background-image: var(--linen); background-size: 260px; mix-blend-mode: multiply; opacity: .32; }
-  .vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse 90% 80% at 45% 40%, transparent 55%, rgba(20, 3, 0, .45) 100%); }
-  .spot {
-    position: fixed; inset: 0; pointer-events: none;
-    background: radial-gradient(ellipse 45% 40% at 50% 46%, rgba(240, 130, 85, .38), transparent 70%);
-  }
-  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .grain {
-    position: fixed; inset: 0; pointer-events: none; z-index: 40;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-    opacity: .26; mix-blend-mode: multiply;
-  }
-
-  .stage {
-    position: absolute; left: 50%; top: 50%;
-    width: 800px; height: 1000px;
-    transform: translate(-50%, -50%) scale(var(--scale, .8));
-  }
-  .stage:not(.ready) { visibility: hidden; }
-  .abs { position: absolute; }
-  .cam { position: absolute; inset: 0; transform-origin: 400px 490px; }
-
-  /* ---------- Envelop ---------- */
-  .env { left: 120px; top: 470px; width: 560px; height: 380px; }
-  .env-back { z-index: 1; background: linear-gradient(180deg, #3d0f07, #5a170b); border-radius: 2px; }
-  .env-pocket {
-    z-index: 3;
-    clip-path: polygon(0 0, 50% 54%, 100% 0, 100% 100%, 0 100%);
-    filter: drop-shadow(0 30px 40px rgba(20, 2, 0, .5));
-  }
-  .env-pocket svg, .env-flap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .env-pocket::after, .env-flap::after { content: ""; position: absolute; inset: 0; background-image: var(--paper); background-size: 320px; mix-blend-mode: multiply; opacity: .3; }
-  .env-flap {
-    z-index: 4; height: 236px;
-    clip-path: polygon(0 0, 100% 0, 50% 100%);
-  }
-  .seal { z-index: 5; left: 352px; top: 642px; width: 96px; height: 96px; }
-  .seal svg { width: 100%; height: 100%; filter: drop-shadow(0 4px 5px rgba(20, 2, 0, .55)); }
-  .seal-l { clip-path: polygon(0 0, 53% 0, 46% 28%, 56% 52%, 47% 77%, 52% 100%, 0 100%); }
-  .seal-r { clip-path: polygon(53% 0, 100% 0, 100% 100%, 52% 100%, 47% 77%, 56% 52%, 46% 28%); }
-
-  /* ---------- Kaart ---------- */
-  .card-wrap {
-    z-index: 2;
-    left: 140px; top: 150px; width: 520px; height: 680px;
-    perspective: 1800px;
-  }
-  .tilt, .card3d { position: absolute; inset: 0; transform-style: preserve-3d; }
-  .shadows { position: absolute; inset: 0; pointer-events: none; }
-  .tshadow { position: absolute; inset: 0; border-radius: 4px; }
-  .tshadow.amb { background: rgba(15, 2, 0, .7); filter: blur(32px); transform: translate(14px, 32px) scale(.97); }
-  .tshadow.con { background: rgba(15, 2, 0, .6); filter: blur(3px); transform: translate(2px, 3px); }
-  .core { position: absolute; inset: 0; border-radius: 3px; background: #5e180a; }
-  .card3d { cursor: pointer; }
-  .face {
-    position: absolute; inset: 0; overflow: hidden; border-radius: 3px;
-    backface-visibility: hidden; -webkit-backface-visibility: hidden;
-    background:
-      radial-gradient(ellipse 80% 45% at 70% 0%, rgba(195, 95, 62, .45), transparent 70%),
-      linear-gradient(175deg, var(--rust-hi) 0%, var(--rust) 45%, var(--rust-lo) 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 200, 175, .35), inset 0 0 0 .6px rgba(30, 4, 0, .35);
-    text-align: center;
-    --lx: 1; --ly: 1.3; --gx: 50%; --gy: 20%;
-  }
-  .face::after {
-    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3;
-    background-image: var(--paper); background-size: 320px;
-    opacity: .3; mix-blend-mode: multiply;
-  }
-  .front { transform: translateZ(1.4px); }
-  .back { transform: rotateY(180deg) translateZ(1.4px); }
-  .glare {
-    position: absolute; inset: 0; pointer-events: none; z-index: 3;
-    background: radial-gradient(circle at var(--gx) var(--gy), rgba(255, 220, 195, .16), transparent 50%);
-    mix-blend-mode: screen;
-  }
-  .sheen {
-    position: absolute; top: -20%; bottom: -20%; width: 45%; left: 0; z-index: 3; pointer-events: none;
-    background: linear-gradient(100deg, transparent, rgba(255, 225, 200, .2) 50%, transparent);
-    transform: translateX(-140%) skewX(-12deg);
-  }
-
-  .emboss {
-    color: #932f19;
-    text-shadow:
-      calc(var(--lx) * -1px) calc(var(--ly) * -1px) 1px rgba(255, 190, 160, .26),
-      calc(var(--lx) * 1px) calc(var(--ly) * 1px) 1.5px rgba(40, 4, 0, .5),
-      calc(var(--lx) * 3px) calc(var(--ly) * 3px) 8px rgba(40, 4, 0, .22);
-  }
-  .front .content { position: absolute; inset: 0; padding-top: 74px; z-index: 2; }
-  .kicker { font-size: 12px; font-weight: 600; letter-spacing: .4em; padding-left: .4em; color: rgba(243, 214, 196, .8); }
-  .logo { margin-top: 30px; }
-  .logo .word { font-family: var(--serif); font-weight: 300; font-size: 192px; line-height: .85; letter-spacing: -.01em; }
-  .logo .word span { display: inline-block; }
-  .logo .tag { display: block; margin-top: 4px; font-family: var(--serif); font-weight: 600; font-size: 35px; letter-spacing: .12em; }
-  .logo .by { display: block; margin-top: 2px; font-size: 9px; font-weight: 600; letter-spacing: .22em; }
-  .rule { width: 60px; height: 1px; margin: 46px auto 0; background: rgba(243, 214, 196, .55); }
-  .opening {
-    margin-top: 28px; display: inline-block;
-    font-family: var(--serif); font-weight: 600; font-size: 46px;
-    letter-spacing: .22em; padding-left: .22em;
-  }
-  .foil {
-    background: linear-gradient(105deg, #b9824a 0%, #f1d7a2 18%, #c6955b 34%, #fff0cf 50%, #b67f47 64%, #efd29a 82%, #c0894f 100%);
-    background-size: 300% 100%;
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-    filter: drop-shadow(0 1px 0 rgba(40, 4, 0, .45));
-    animation: foil 5.5s ease-in-out infinite alternate;
-  }
-  @keyframes foil { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
-  .when { margin-top: 4px; font-family: var(--serif); font-style: italic; font-size: 34px; color: rgba(243, 214, 196, .88); }
-  .address {
-    position: absolute; left: 36px; right: 36px; bottom: 58px; z-index: 2;
-    font-size: 12.6px; font-weight: 600; letter-spacing: .1em; line-height: 2; color: rgba(243, 226, 214, .92);
-  }
-  .address span { display: block; }
-  svg.arcs { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-  .arc { fill: none; stroke-dasharray: 1; }
-  .arc.deep { stroke: rgba(60, 6, 0, .38); stroke-width: 1.5; }
-  .arc.hi   { stroke: rgba(255, 190, 160, .22); stroke-width: 1; }
-  .arc.thin { stroke: rgba(243, 214, 196, .32); stroke-width: .9; }
-
-  /* Achterkant */
-  .back .content {
-    position: absolute; inset: 0; z-index: 2;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 60px 50px;
-  }
-  .back .bigL {
-    position: absolute; right: -40px; bottom: -120px; z-index: 1;
-    font-family: var(--serif); font-weight: 300; font-size: 620px; line-height: 1;
-    opacity: .9;
-  }
-  .back .frame { position: absolute; inset: 22px; border: 1px solid rgba(243, 214, 196, .28); z-index: 2; pointer-events: none; }
-  .back h2 { font-family: var(--serif); font-weight: 500; font-size: 58px; line-height: 1; margin-top: 22px; }
-  .back .time { font-family: var(--serif); font-style: italic; font-size: 34px; color: rgba(243, 214, 196, .88); margin-top: 6px; }
-  .back .place { margin-top: 30px; font-size: 13px; font-weight: 600; letter-spacing: .26em; line-height: 2.2; }
-  .back .place small { display: block; font-size: 11.5px; font-weight: 500; letter-spacing: .14em; color: rgba(243, 214, 196, .75); }
-  .back .rule { margin-top: 30px; }
-  .back .deadline { margin-top: 28px; font-family: var(--serif); font-size: 30px; font-style: italic; }
-  .cta {
-    margin-top: 26px; display: inline-flex; align-items: center; gap: 12px;
-    padding: 17px 30px; border-radius: 999px;
-    background: var(--cream); color: var(--rust);
-    font-size: 12px; font-weight: 600; letter-spacing: .22em; text-decoration: none;
-    box-shadow: 0 10px 24px -10px rgba(25, 3, 0, .7);
-    transition: transform .3s, box-shadow .3s;
-  }
-  .cta:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -10px rgba(25, 3, 0, .8); }
-  .hours { margin-top: 10px; font-size: 13px; font-weight: 600; letter-spacing: .16em; color: rgba(243, 226, 214, .92); }
-  .backurl { margin-top: 18px; font-size: 13px; font-weight: 600; letter-spacing: .14em; }
-  .open2 { margin-top: 14px; font-size: 11px; font-weight: 600; letter-spacing: .22em; color: rgba(243, 214, 196, .72); }
-  .countdown { margin-top: 22px; font-size: 11px; font-weight: 600; letter-spacing: .3em; color: rgba(243, 214, 196, .7); }
-
-  .hint {
-    position: fixed; left: 0; right: 0; bottom: 70px; z-index: 45; text-align: center;
-    font-size: 10px; font-weight: 600; letter-spacing: .4em; color: rgba(243, 214, 196, .65);
-  }
-
-  .video .controls, .video .hint, .video .countdown { display: none; }
-  .video * { transition: none !important; }
-  .video .foil { animation: none; background-position: var(--foilpos, 50%) 50%; }
-  .controls { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: flex; gap: 8px; }
-  .controls button {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 10px 16px; border-radius: 999px;
-    border: 1px solid rgba(243, 226, 214, .35); background: rgba(50, 10, 5, .4); backdrop-filter: blur(6px);
-    color: var(--cream); font: 600 10px/1 var(--sans); letter-spacing: .26em; text-transform: uppercase;
-    cursor: pointer; opacity: .8; transition: opacity .3s, background .3s;
-  }
-  .controls button:hover, .controls button:focus-visible { opacity: 1; background: rgba(50, 10, 5, .65); outline: none; }
-  .controls svg { width: 13px; height: 13px; }
-</style>
+<link rel="stylesheet" href="3d/page.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
 </head>
 <body>
-  <div class="backdrop"></div>
-  <div class="spot" id="spot"></div>
-  <canvas id="fx"></canvas>
+  <canvas id="gl" aria-label="Uitnodiging voor de opening van Lilou op zondag 29 november, 14:00 tot 19:00 uur, Het Pomphuis, Klinkenbergerweg 41, Ede. Meld je aan via lilou-ede.nl/opening."></canvas>
   <div class="vignette"></div>
-
-  <main class="stage" id="stage" aria-label="Uitnodiging voor de opening van Lilou">
-   <div class="cam" id="cam">
-    <!-- Envelop -->
-    <div class="abs env env-back" id="envBack" aria-hidden="true"></div>
-
-    <div class="abs card-wrap" id="cardWrap">
-      <div class="shadows" id="shadows"><div class="tshadow amb" id="shAmb"></div><div class="tshadow con" id="shCon"></div></div>
-      <div class="tilt" id="tilt">
-        <div class="card3d" id="card3d" role="button" tabindex="0" aria-label="Draai de uitnodiging om">
-          <div class="core"></div>
-          <!-- Voorkant -->
-          <section class="face front" id="front">
-            <svg class="arcs" viewBox="0 0 520 680" aria-hidden="true">
-              <circle class="arc deep" cx="402" cy="585" r="204" pathLength="1" transform="rotate(-150 402 585)"/>
-              <circle class="arc hi"   cx="403.2" cy="586.6" r="204" pathLength="1" transform="rotate(-150 403.2 586.6)"/>
-              <circle class="arc thin" cx="377" cy="617" r="224" pathLength="1" transform="rotate(-160 377 617)"/>
-            </svg>
-            <div class="content">
-              <p class="kicker f-kicker">UITNODIGING</p>
-              <div class="logo">
-                <h1 class="word emboss" aria-label="Lilou"><span>L</span><span>i</span><span>l</span><span>o</span><span>u</span></h1>
-                <span class="tag emboss f-tag">c’est tout.</span>
-                <span class="by emboss f-by">by MARK MINKMAN</span>
-              </div>
-              <div class="rule f-rule"></div>
-              <div><p class="opening foil f-opening">OPENING</p></div>
-              <p class="when f-when">zondag 29 november</p>
-              <p class="hours f-when">14:00 – 19:00 · BORREL &amp; HAPJES</p>
-            </div>
-            <p class="address">
-              <span class="f-addr">HET POMPHUIS · KLINKENBERGERWEG 41 · EDE</span>
-              <span class="f-addr">MELD JE AAN · LILOU-EDE.NL/OPENING</span>
-            </p>
-            <div class="sheen" id="sheen"></div>
-            <div class="glare"></div>
-          </section>
-
-          <!-- Achterkant -->
-          <section class="face back" id="backFace">
-            <div class="bigL emboss" aria-hidden="true">L</div>
-            <div class="frame"></div>
-            <div class="content">
-              <p class="kicker">DE OPENING</p>
-              <h2 class="foil">29 november</h2>
-              <p class="time">zondag · 14:00 – 19:00</p>
-              <p class="place">HET POMPHUIS<small>KLINKENBERGERWEG 41 · EDE</small></p>
-              <div class="rule"></div>
-              <p class="deadline">Borrel &amp; hapjes · gratis</p>
-              <a class="cta" href="https://lilou-ede.nl/opening" target="_blank" rel="noopener">MELD JE AAN <span aria-hidden="true">→</span></a>
-              <p class="backurl">LILOU-EDE.NL/OPENING</p>
-              <p class="open2">VANAF 2 DECEMBER GEOPEND</p>
-              <p class="countdown" id="countdown"></p>
-            </div>
-            <div class="glare"></div>
-          </section>
-        </div>
-      </div>
-    </div>
-
-    <div class="abs env env-pocket" id="envPocket" aria-hidden="true">
-      <svg viewBox="0 0 560 380" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="pk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7f2613"/><stop offset="1" stop-color="#6a1c0d"/></linearGradient>
-          <linearGradient id="pkb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8d2c16"/><stop offset="1" stop-color="#76200f"/></linearGradient>
-        </defs>
-        <rect width="560" height="380" fill="url(#pk)"/>
-        <path d="M0 380 L280 196 L560 380 Z" fill="url(#pkb)"/>
-        <path d="M0 380 L280 196 L560 380" fill="none" stroke="rgba(30,3,0,.25)" stroke-width="1.2"/>
-        <path d="M0 0 L262 196 M560 0 L298 196" fill="none" stroke="rgba(255,180,150,.1)" stroke-width="1"/>
-      </svg>
-    </div>
-    <div class="abs env env-flap" id="envFlap" aria-hidden="true">
-      <svg viewBox="0 0 560 236" preserveAspectRatio="none">
-        <defs><linearGradient id="fl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#93311a"/><stop offset="1" stop-color="#7b2310"/></linearGradient></defs>
-        <rect width="560" height="236" fill="url(#fl)"/>
-        <path d="M0 0 L280 236 L560 0" fill="none" stroke="rgba(30,3,0,.35)" stroke-width="3"/>
-      </svg>
-    </div>
-
-    <!-- Lakzegel (twee helften die breken) -->
-    <div class="abs seal seal-l" id="sealL" aria-hidden="true"><svg viewBox="0 0 100 100"><use href="#sealArt"/></svg></div>
-    <div class="abs seal seal-r" id="sealR" aria-hidden="true"><svg viewBox="0 0 100 100"><use href="#sealArt"/></svg></div>
-
-   </div>
-  </main>
-  <p class="hint" id="hint">KLIK OP DE KAART OM TE DRAAIEN</p>
-
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <defs>
-      <radialGradient id="wax" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#7d1a0d"/><stop offset=".6" stop-color="#561006"/><stop offset="1" stop-color="#3a0903"/></radialGradient>
-      <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2d9a6"/><stop offset=".5" stop-color="#b98348"/><stop offset="1" stop-color="#ecc98c"/></linearGradient>
-      <g id="sealArt">
-        <path d="M50 3 C60 2 66 8 74 9 C83 11 85 20 91 26 C97 33 95 42 97 50 C99 59 93 65 91 73 C88 82 80 84 74 90 C67 96 58 95 50 97 C41 99 35 93 27 91 C18 88 16 80 10 74 C4 67 5 58 3 50 C1 41 7 35 9 27 C12 18 20 16 26 10 C33 4 42 4 50 3 Z" fill="url(#wax)"/>
-        <circle cx="50" cy="50" r="33" fill="none" stroke="rgba(255,170,140,.18)" stroke-width="1.4"/>
-        <circle cx="50" cy="50" r="36" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/>
-        <ellipse cx="36" cy="28" rx="16" ry="7" fill="#fff" opacity=".16" transform="rotate(-30 36 28)"/>
-        <path d="M18 70 A38 38 0 0 0 70 86" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="3" stroke-linecap="round"/>
-        <text x="50" y="64" text-anchor="middle" font-family="Cormorant Garamond, serif" font-weight="500" font-size="44" fill="url(#gold)">L</text>
-      </g>
-    </defs>
-  </svg>
-
   <div class="grain"></div>
-
+  <div class="loader">Lilou</div>
   <div class="controls">
-    <button type="button" id="flipBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Draai</button>
-    <button type="button" id="replayBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/></svg>Opnieuw</button>
+    <button type="button" id="flipBtn">Draai</button>
+    <button type="button" id="replayBtn">Opnieuw</button>
   </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script>
-(() => {
-  const $ = s => document.querySelector(s);
-  const $$ = s => [...document.querySelectorAll(s)];
-  const stage = $('#stage');
-  const params = new URLSearchParams(location.search);
-  const VIDEO = params.has('video');
-  const reduce = !VIDEO && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (VIDEO) document.body.classList.add('video');
+<script type="module">
+import { createStage, printSheet, sheetMaterial, plainPaper, makeCard, rig, runner, THREE } from './3d/engine.js';
 
-  /* ---------- Schalen ---------- */
-  function fit() {
-    const f = parseFloat(params.get('fit'));
-    const s = VIDEO && f ? (innerWidth / 800) * f : Math.min(innerWidth / 800, innerHeight / 1000) * 0.95;
-    stage.style.setProperty('--scale', s.toFixed(4));
+const SERIF = '"Cormorant Garamond"', SANS = 'Inter';
+const stage = await createStage({
+  canvas: document.getElementById('gl'),
+  fonts: [`300 80px ${SERIF}`, `500 80px ${SERIF}`, `600 80px ${SERIF}`, `italic 400 80px ${SERIF}`, `italic 500 80px ${SERIF}`, `600 40px ${SANS}`, `500 40px ${SANS}`]
+});
+const { scene, aniso } = stage;
+
+/* ---------- Kaart: 130 x 170 mm, roest, crème inkt, goudfolie, blind reliëf ---------- */
+const CREAM = '#f3e3d4', RUST = '#7c2513';
+const front = printSheet({ wmm: 130, hmm: 170, base: RUST, seed: 4, draw: p => {
+  p.arc(100.5, 146, 51, 0, Math.PI * 2, { kind: 'blind', width: .5 });
+  p.arc(94, 154, 56, Math.PI * .9, Math.PI * 1.9, { color: 'rgba(243,214,196,.35)', width: .22 });
+  p.text('UITNODIGING', 65, 23, { font: SANS, size: 3, weight: 600, spacing: .4, color: CREAM });
+  p.text('Lilou', 65, 69, { font: SERIF, size: 50, weight: 300, kind: 'blind', depth: 1.6 });
+  p.text('c’est tout.', 65, 81, { font: SERIF, size: 9, weight: 600, spacing: .12, kind: 'blind' });
+  p.text('by MARK MINKMAN', 65, 86.5, { font: SANS, size: 2.2, weight: 600, spacing: .2, kind: 'blind' });
+  p.line(57.5, 97, 72.5, 97, { color: CREAM, width: .25 });
+  p.text('OPENING', 65, 112, { font: SERIF, size: 12, weight: 600, spacing: .2, kind: 'foil' });
+  p.text('zondag 29 november', 65, 123.5, { font: SERIF, size: 8.6, style: 'italic', weight: 400, color: CREAM });
+  p.text('14:00 – 19:00 · BORREL & HAPJES', 65, 132, { font: SANS, size: 3.3, weight: 600, spacing: .14, color: CREAM });
+  p.text('HET POMPHUIS · KLINKENBERGERWEG 41 · EDE', 65, 151, { font: SANS, size: 3.15, weight: 600, spacing: .1, color: CREAM });
+  p.text('MELD JE AAN · LILOU-EDE.NL/OPENING', 65, 157.5, { font: SANS, size: 3.15, weight: 600, spacing: .1, color: CREAM });
+}});
+const back = printSheet({ wmm: 130, hmm: 170, base: RUST, seed: 8, draw: p => {
+  p.text('L', 104, 192, { font: SERIF, size: 150, weight: 300, kind: 'blind', depth: .9 });
+  p.rect(6, 6, 118, 158, { color: 'rgba(243,214,196,.4)', width: .2 });
+  p.text('DE OPENING', 65, 38, { font: SANS, size: 3, weight: 600, spacing: .4, color: CREAM });
+  p.text('29 november', 65, 59, { font: SERIF, size: 15, weight: 500, kind: 'foil' });
+  p.text('zondag · 14:00 – 19:00', 65, 71, { font: SERIF, size: 8.4, style: 'italic', color: CREAM });
+  p.text('HET POMPHUIS', 65, 86, { font: SANS, size: 3.3, weight: 600, spacing: .26, color: CREAM });
+  p.text('KLINKENBERGERWEG 41 · EDE', 65, 92, { font: SANS, size: 2.9, weight: 500, spacing: .14, color: 'rgba(243,214,196,.8)' });
+  p.line(57.5, 101, 72.5, 101, { color: CREAM, width: .25 });
+  p.text('Borrel & hapjes · gratis', 65, 115, { font: SERIF, size: 7.6, style: 'italic', color: CREAM });
+  p.text('MELD JE AAN', 65, 130, { font: SANS, size: 3.6, weight: 600, spacing: .24, kind: 'foil' });
+  p.text('LILOU-EDE.NL/OPENING', 65, 137, { font: SANS, size: 3.3, weight: 600, spacing: .12, color: CREAM });
+  p.text('VANAF 2 DECEMBER GEOPEND', 65, 147, { font: SANS, size: 2.6, weight: 600, spacing: .22, color: 'rgba(243,214,196,.72)' });
+}});
+const card = makeCard(stage, { wmm: 130, hmm: 170, front: sheetMaterial(front, aniso), back: sheetMaterial(back, aniso, { flip: true }), edge: '#5e1a0c' });
+
+/* ---------- Envelop 145 x 190 mm met lakzegel ---------- */
+const EW = .145, EH = .19, FD = .085;
+const paper = plainPaper({ color: '#d9ccb8', seed: 12, aniso });
+const inner = plainPaper({ color: '#b9a891', seed: 13, aniso });
+const env = new THREE.Group(); scene.add(env);
+const V = ([x, y]) => new THREE.Vector2(x, y);
+const backP = new THREE.Mesh(new THREE.PlaneGeometry(EW, EH), inner); backP.rotation.x = -Math.PI / 2; backP.position.y = .0002; backP.receiveShadow = true;
+const pocket = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape([[-EW / 2, -EH / 2], [EW / 2, -EH / 2], [EW / 2, EH / 2], [0, EH / 2 - .07], [-EW / 2, EH / 2]].map(V))), paper);
+pocket.rotation.x = -Math.PI / 2; pocket.position.y = .0012; pocket.castShadow = pocket.receiveShadow = true;
+const fold = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape([[-EW / 2, -EH / 2], [EW / 2, -EH / 2], [0, -EH / 2 + .09]].map(V))), paper);
+fold.rotation.x = -Math.PI / 2; fold.position.y = .00135; fold.castShadow = fold.receiveShadow = true;
+const flapPivot = new THREE.Group(); flapPivot.position.set(0, .0015, -EH / 2);
+const flap = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape([[-EW / 2, 0], [EW / 2, 0], [0, -FD]].map(V))), paper);
+flap.rotation.x = -Math.PI / 2; flap.castShadow = flap.receiveShadow = true; flapPivot.add(flap);
+// lakzegel
+const sealSheet = printSheet({ wmm: 34, hmm: 34, ppm: 16, base: '#5e1109', seed: 3, draw: p => {
+  p.arc(17, 17, 13, 0, Math.PI * 2, { kind: 'blind', width: .7 });
+  p.arc(17, 17, 15.5, 0, Math.PI * 2, { kind: 'blind', width: 1.4 });
+  p.text('L', 17, 23.5, { font: SERIF, size: 19, weight: 500, kind: 'blind', depth: 2 });
+}});
+const sealTop = sheetMaterial(sealSheet, aniso, { normalScale: 1.6 });
+sealTop.roughnessMap = null; sealTop.metalnessMap = null; sealTop.roughness = .32; sealTop.metalness = 0; sealTop.envMapIntensity = 1;
+const sealSide = new THREE.MeshStandardMaterial({ color: '#4d0d07', roughness: .4 });
+const seal = new THREE.Mesh(new THREE.CylinderGeometry(.017, .0175, .0028, 48), [sealSide, sealTop, sealSide]);
+seal.position.set(0, .0029, -EH / 2 + FD - .013); seal.castShadow = true; seal.receiveShadow = true;
+env.add(backP, pocket, fold, flapPivot, seal);
+env.rotation.y = .12; // = ENV_A
+env.add(card.pivot); // kaart beweegt in envelop-coördinaten
+{ // goudconfetti op tafel
+  const n = 140, geo = new THREE.BoxGeometry(.004, .00008, .0022);
+  const mat = new THREE.MeshStandardMaterial({ color: '#d7a95e', metalness: 1, roughness: .28, envMapIntensity: 1.2 });
+  const im = new THREE.InstancedMesh(geo, mat, n); im.castShadow = true; im.receiveShadow = true;
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(), ps = new THREE.Vector3();
+  let sd = 31; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < n; i++) {
+    let x, z; do { x = (rnd() - .5) * .62; z = (rnd() - .5) * .62 - .06; } while (Math.abs(x) < .085 && z > -.215 && z < .11);
+    e.set((rnd() - .5) * .35, rnd() * Math.PI, (rnd() - .5) * .35); q.setFromEuler(e);
+    const k = .6 + rnd() * .8; sc.set(k, 1, k); ps.set(x, .0003, z);
+    im.setMatrixAt(i, m4.compose(ps, q, sc));
   }
-  fit(); addEventListener('resize', fit);
+  scene.add(im);
+}
 
-  /* ---------- Aftellen ---------- */
-  (() => {
-    const target = new Date(2026, 10, 29, 14, 0);
-    const days = Math.ceil((target - new Date()) / 864e5);
-    $('#countdown').textContent = days > 1 ? `NOG ${days} DAGEN` : days === 1 ? 'MORGEN IS HET ZOVER' : '';
-  })();
+/* ---------- Tijdlijn ---------- */
+const R = rig(stage);
+const C = { x: 0, y: .0007, z: .008, ry: 0, rz: 0 };
+const F = { a: 0 };
+const ENV_A = .12, FW = { x: .075, z: -.15 };           // eindpositie kaart (wereld)
+const FINAL = { x: FW.x * Math.cos(ENV_A) - FW.z * Math.sin(ENV_A), y: .0036, z: FW.x * Math.sin(ENV_A) + FW.z * Math.cos(ENV_A), ry: -.07 - ENV_A };
+function topDown() {
+  const d = stage.fitDistance(card.w, card.h, stage.STORY ? .9 : .92, stage.STORY ? .7 : .88);
+  return { px: FW.x, py: d, pz: FW.z + d * .012, tx: FW.x, ty: FINAL.y, tz: FW.z };
+}
 
-  /* ---------- Champagnebubbels ---------- */
-  const cv = $('#fx'), ctx = cv.getContext('2d');
-  let W, H, dpr; const fxLevel = { v: 0 };
-  function size() {
-    dpr = Math.min(devicePixelRatio || 1, 2);
-    W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr;
-  }
-  size(); addEventListener('resize', size);
-  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const bubbles = Array.from({ length: 70 }, () => ({
-    x: rnd(), y: rnd(), r: rnd() * 2.4 + .6, sp: (rnd() * .0009 + .0003) * 60,
-    wob: rnd() * 6.283, a: rnd() * .5 + .2
-  }));
-  const wrap = v => ((v % 1.1) + 1.1) % 1.1 - .05;
-  function drawFx(t) {
-    ctx.clearRect(0, 0, W, H);
-    if (fxLevel.v <= 0.01) return;
-    for (const b of bubbles) {
-      const x = (b.x + Math.sin(b.wob + t * 1.8) * .004) * W, y = wrap(b.y - b.sp * t) * H, r = b.r * dpr;
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(244, 205, 150, ${b.a * fxLevel.v * .55})`; ctx.fill();
-      ctx.beginPath(); ctx.arc(x - r * .35, y - r * .35, r * .35, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255, 245, 225, ${b.a * fxLevel.v * .6})`; ctx.fill();
-    }
-  }
-  const t0 = performance.now();
-  if (!VIDEO) gsap.ticker.add(() => drawFx((performance.now() - t0) / 1000));
+Object.assign(R.cam, { px: .2, py: .13, pz: .52, tx: 0, ty: 0, tz: -.03 });
+const tl = gsap.timeline({ paused: true, defaults: { ease: 'power2.inOut' } });
+tl.to(R.cam, { px: .12, py: .16, pz: .44, duration: 3.4, ease: 'sine.inOut' }, 0)
+  .to(F, { a: -Math.PI + .004, duration: 1.7, ease: 'power2.inOut' }, 2.4)
+  .to(R.cam, { px: .07, py: .52, pz: .26, tz: -.1, duration: 3.2 }, 3.4)
+  .to(C, { z: -.165, duration: 2, ease: 'power2.inOut' }, 4.0)
+  .to(C, { y: .025, duration: .7, ease: 'power2.out' }, 6.0)
+  .to(C, { x: FINAL.x, z: FINAL.z, ry: FINAL.ry, duration: 1.6, ease: 'power2.inOut' }, 6.0)
+  .to(C, { y: FINAL.y, duration: .9, ease: 'power2.in' }, 6.7)
+  .to(R.cam, { ...topDown(), duration: 2.6, ease: 'power2.inOut' }, 6.4)
+  .to(R.light, { x: -.34, y: .5, z: -.62, tx: FW.x, tz: FW.z, duration: 3.5, ease: 'sine.inOut' }, 6.4)
+  .to(R.light, { x: -.48, z: -.34, duration: 2.4, ease: 'sine.inOut' }, 9.9);
 
-  /* ---------- Licht (reliëf) ---------- */
-  const faces = $$('.face');
-  const light = { x: -3, y: -2 };
-  const applyLight = () => faces.forEach(f => { f.style.setProperty('--lx', light.x.toFixed(2)); f.style.setProperty('--ly', light.y.toFixed(2)); });
+function flipTo(target, at, t) {
+  t.to(C, { rz: target, duration: 1.5, ease: 'power3.inOut' }, at)
+   .to(C, { y: .05, duration: .75, ease: 'power2.out' }, at)
+   .to(C, { y: FINAL.y, duration: .75, ease: 'power2.in' }, at + .75);
+}
 
-  /* ---------- Elementen ---------- */
-  const env = ['#envBack', '#envPocket', '#envFlap'].map($);
-  const seals = [$('#sealL'), $('#sealR')];
-  const cardWrap = $('#cardWrap'), tilt = $('#tilt'), card3d = $('#card3d');
-  const letters = $$('.logo .word span');
-
-  gsap.set($('#envFlap'), { transformOrigin: '50% 0%', transformPerspective: 1300 });
-
-  /* ---------- Tijdlijn ---------- */
-  const tl = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
-  tl
-    .fromTo('#spot', { opacity: 0 }, { opacity: 1, duration: 1.6 }, 0)
-    .fromTo([...env, ...seals], { y: 560, opacity: 0 }, { y: 0, opacity: 1, duration: 1.3 }, .2)
-    .fromTo(seals, { x: 0, rotation: 0, scale: 1 }, { scale: 1.08, duration: .14, yoyo: true, repeat: 3, ease: 'sine.inOut' }, 1.55)
-    .to('#sealL', { x: -70, y: 140, rotation: -40, opacity: 0, duration: 1, ease: 'power2.in' }, 2.05)
-    .to('#sealR', { x: 70, y: 150, rotation: 35, opacity: 0, duration: 1, ease: 'power2.in' }, 2.05)
-    .fromTo('#envFlap', { rotationX: 0, zIndex: 4 }, { rotationX: 180, duration: 1, ease: 'power2.inOut' }, 2.25)
-    .set('#envFlap', { zIndex: 0 }, 2.75)
-    .fromTo(cardWrap, { y: 170, scale: .5, opacity: 0, zIndex: 2 }, { opacity: 1, duration: .01 }, 1.5)
-    .to(cardWrap, { y: -230, duration: 1.2, ease: 'power2.inOut' }, 3.1)
-    .set(cardWrap, { zIndex: 10 }, 4.25)
-    .to(env, { y: 760, opacity: 0, duration: 1.1, ease: 'power2.in' }, 4.2)
-    .to(cardWrap, { y: 0, scale: 1, duration: 1.5, ease: 'power3.inOut' }, 4.3)
-    .fromTo(card3d, { rotationY: 0 }, { rotationY: 360, duration: 1.5, ease: 'power3.inOut' }, 4.3)
-    .set(card3d, { rotationY: 0 }, 5.85)
-    .fromTo('#spot', { scale: 1 }, { scale: 1.25, duration: 2 }, 4.3)
-    .fromTo('#cam', { scale: 1 }, { scale: () => camZoom(), duration: 2, ease: 'power2.inOut' }, 5.4)
-    .fromTo('#shadows', { opacity: 0 }, { opacity: 1, duration: 1.2, ease: 'power1.inOut' }, 4.6)
-
-    // inhoud voorkant
-    .fromTo('.f-kicker', { opacity: 0, y: 12, letterSpacing: '1em' }, { opacity: 1, y: 0, letterSpacing: '.4em', duration: 1.2 }, 5.7)
-    .fromTo(letters, { opacity: 0, y: 46, filter: 'blur(10px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.4, stagger: .1 }, 5.9)
-    .fromTo(light, { x: -3, y: -2.2 }, { x: 1, y: 1.3, duration: 3, ease: 'power2.inOut', onUpdate: applyLight }, 5.9)
-    .fromTo('.arc', { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.8, stagger: .25, ease: 'power2.inOut' }, 6.1)
-    .fromTo('.f-tag', { opacity: 0, y: 14, filter: 'blur(6px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.1 }, 6.55)
-    .fromTo('.f-by', { opacity: 0 }, { opacity: 1, duration: 1 }, 6.8)
-    .fromTo('.f-rule', { scaleX: 0 }, { scaleX: 1, duration: 1, ease: 'power2.inOut' }, 6.9)
-    .fromTo('.f-opening', { opacity: 0, letterSpacing: '.8em', filter: 'blur(4px)' }, { opacity: 1, letterSpacing: '.22em', filter: 'blur(0px)', duration: 1.6 }, 7.05)
-    .fromTo('.f-when', { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 1.1 }, 7.45)
-    .fromTo('.f-addr', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 1, stagger: .15 }, 7.75)
-    .fromTo('#sheen', { xPercent: -140 }, { xPercent: 330, duration: 1.6, ease: 'power2.inOut' }, 8.1)
-    .fromTo(fxLevel, { v: 0 }, { v: 1, duration: 2.5, ease: 'power1.inOut' }, 7.6)
-    .fromTo('#hint', { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 1 }, 9);
-
-  let introDone = false;
-  function camZoom() {
-    const s = parseFloat(getComputedStyle(stage).getPropertyValue('--scale')) || .8;
-    const STORY = params.has('story');
-    const z = Math.min(innerWidth * (VIDEO ? .92 : .9) / (520 * s), innerHeight * (STORY ? .7 : VIDEO ? .9 : .84) / (680 * s));
-    return Math.max(1, Math.min(z, 2.2));
-  }
-  addEventListener('resize', () => { if (introDone) gsap.set('#cam', { scale: camZoom() }); });
-  tl.eventCallback('onComplete', () => { introDone = true; });
-
-  /* ---------- 3D-tilt + glans ---------- */
-  const rx = gsap.quickTo(tilt, 'rotationX', { duration: .9, ease: 'power3.out' });
-  const ry = gsap.quickTo(tilt, 'rotationY', { duration: .9, ease: 'power3.out' });
-  let pointer = null, lastMove = 0;
-  addEventListener('pointermove', e => {
-    pointer = { x: (e.clientX / innerWidth) * 2 - 1, y: (e.clientY / innerHeight) * 2 - 1 };
-    lastMove = performance.now();
-  });
-  function shadows(rX, rY) {
-    const th = (gsap.getProperty(card3d, 'rotationY') || 0) * Math.PI / 180;
-    const c = Math.abs(Math.cos(th)), lift = Math.abs(Math.sin(th));
-    gsap.set('#shAmb', { x: 14 - rY * 1.1 + lift * 18, y: 32 + rX * 1.1 + lift * 26, scaleX: .97 * Math.max(c, .05), scaleY: .97, opacity: 1 - lift * .45 });
-    gsap.set('#shCon', { x: 2 - rY * .25, y: 3 + rX * .25, scaleX: Math.max(c, .05), opacity: Math.max(0, 1 - lift * 2.5) });
-    return lift;
-  }
-  function pose(px, py, direct) {
-    if (direct) gsap.set(tilt, { rotationX: -py * 9, rotationY: px * 12 }); else { rx(-py * 9); ry(px * 12); }
-    const lift = shadows(-py * 9, px * 12);
-    gsap.set(tilt, { z: lift * 60 });
-    faces.forEach(f => {
-      f.style.setProperty('--gx', (50 + px * 45).toFixed(1) + '%');
-      f.style.setProperty('--gy', (35 + py * 40).toFixed(1) + '%');
-    });
-    light.x = 1 - px * 1.6; light.y = 1.3 - py * 1.4; applyLight();
-  }
-  if (!VIDEO) gsap.ticker.add(() => {
-    if (!introDone || reduce) { shadows(0, 0); return; }
-    const t = performance.now() / 1000;
-    const active = pointer && performance.now() - lastMove < 4000;
-    const px = active ? pointer.x : Math.sin(t * .5) * .45;
-    const py = active ? pointer.y : Math.cos(t * .4) * .35;
-    pose(px, py, false);
-  });
-
-  /* ---------- Draaien ---------- */
-  let side = 0;
-  function flip() {
-    if (!introDone) return;
-    side += 180;
-    gsap.to(card3d, { rotationY: side, duration: 1.1, ease: 'power3.inOut' });
-    gsap.to('#hint', { opacity: 0, duration: .4 });
-  }
-  card3d.addEventListener('click', e => { if (!e.target.closest('a')) flip(); });
-  card3d.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
-  $('#flipBtn').addEventListener('click', flip);
-
-  /* ---------- Afspelen ---------- */
-  function play() {
-    stage.classList.add('ready');
-    introDone = false; side = 0;
-    gsap.set(tilt, { rotationX: 0, rotationY: 0 });
-    if (reduce) { tl.invalidate().progress(1).pause(); introDone = true; return; }
-    tl.invalidate().restart();
-  }
-  if (VIDEO) {
-    window.__ready = (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => {
-      stage.classList.add('ready');
-      tl.invalidate().paused(false);
-      const master = gsap.timeline({ paused: true });
-      master.add(tl, 0)
-        .fromTo(card3d, { rotationY: 0 }, { rotationY: 180, duration: 1.3, ease: 'power3.inOut', immediateRender: false }, 13)
-        .to(card3d, { rotationY: 360, duration: 1.3, ease: 'power3.inOut' }, 18.4)
-        .to({}, { duration: .01 }, 23);
-      window.__duration = 23;
-      window.__seek = t => {
-        master.seek(t, true);
-        const a = Math.min(1, Math.max(0, (t - 9.2) / 1.6)), e = a * a * (3 - 2 * a);
-        if (t > 9.2) pose(Math.sin((t - 9.2) * .6) * .3 * e, Math.sin((t - 9.2) * .5 + .6) * .2 * e, true);
-        else shadows(0, 0);
-        document.querySelectorAll('.foil').forEach(f => f.style.setProperty('--foilpos', (50 + 50 * Math.sin(t * .57)).toFixed(1) + '%'));
-        drawFx(t);
-      };
-      window.__seek(0);
-    });
-    return;
-  }
-
-  $('#replayBtn').addEventListener('click', play);
-  addEventListener('keydown', e => { if (e.key === 'r' || e.key === 'R') play(); });
-
-  let started = false;
-  const start = () => { if (!started) { started = true; play(); } };
-  (document.fonts ? document.fonts.ready : Promise.resolve()).then(start);
-  setTimeout(start, 2500);
-})();
+runner(stage, { build: () => ({
+  tl,
+  apply(t) {
+    R.apply(t);
+    card.pivot.position.set(C.x, C.y, C.z);
+    card.pivot.rotation.set(0, C.ry, C.rz);
+    flapPivot.rotation.x = F.a;
+  },
+  videoTimeline() {
+    const m = gsap.timeline({ paused: true });
+    m.add(tl.paused(false), 0);
+    flipTo(Math.PI, 13.4, m); flipTo(Math.PI * 2, 19, m);
+    m.to({}, { duration: .01 }, 23.5);
+    return m;
+  },
+  flip() { const m = gsap.timeline(); flipTo(Math.round(C.rz / Math.PI) * Math.PI + Math.PI, 0, m); },
+  reset() { location.reload(); },
+  onResize() { Object.assign(R.cam, topDown()); },
+  pointer(x, y, done) { if (done) gsap.to(R.light, { x: -.42 + x * .3, z: -.45 + y * .25, duration: 1.2, overwrite: true }); }
+}) });
 </script>
 </body>
 </html>
