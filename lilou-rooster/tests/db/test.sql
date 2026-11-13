@@ -206,5 +206,31 @@ select t_fails($q$update employees set contract_type = 'freelance' where id = 'a
 update employees set contract_type = 'minmax', contract_min_hours = 12, contract_end = today_nl() + 90 where id = 'a0000000-0000-0000-0000-000000000002';
 select t_ok((select contract_type = 'minmax' from employees where id = 'a0000000-0000-0000-0000-000000000002'), 'contracttype min-max opgeslagen');
 
+\echo '== Opruimen bij wijzigingen'
+insert into shifts (id, employee_id, date, start_time, end_time, published) values
+  ('50000000-0000-0000-0000-0000000000b1', 'a0000000-0000-0000-0000-000000000003', today_nl() + 30, '12:00', '18:00', true),
+  ('50000000-0000-0000-0000-0000000000b2', null, today_nl() + 31, '12:00', '18:00', true);
+insert into swaps (id, shift_id, from_employee, status) values ('70000000-0000-0000-0000-0000000000b1', '50000000-0000-0000-0000-0000000000b1', 'a0000000-0000-0000-0000-000000000003', 'open');
+update shifts set employee_id = null where id = '50000000-0000-0000-0000-0000000000b1';
+select t_ok((select status from swaps where id = '70000000-0000-0000-0000-0000000000b1') = 'cancelled', 'ruilverzoek vervalt als de dienst open wordt gemaakt');
+select t_ok(t_count($q$select * from notifications where title = 'Open dienst beschikbaar'$q$) > 0, 'team krijgt melding van nieuwe open dienst');
+insert into shift_applications (shift_id, employee_id) values ('50000000-0000-0000-0000-0000000000b2', 'a0000000-0000-0000-0000-000000000003');
+update employees set active = false where id = 'a0000000-0000-0000-0000-000000000003';
+select t_ok((select status from shift_applications where shift_id = '50000000-0000-0000-0000-0000000000b2' and employee_id = 'a0000000-0000-0000-0000-000000000003') = 'rejected', 'uit dienst: aanmelding open dienst vervalt');
+set role authenticated; select as_user(1);
+select t_fails($q$select open_assign('50000000-0000-0000-0000-0000000000b2', 'a0000000-0000-0000-0000-000000000003')$q$, 'open dienst kan niet naar iemand die uit dienst is');
+reset role;
+insert into time_entries (employee_id, clock_in, clock_out, status) values ('a0000000-0000-0000-0000-000000000003', now() - interval '2 days', now() - interval '2 days' + interval '3 hours', 'approved');
+select t_fails($q$delete from employees where id = 'a0000000-0000-0000-0000-000000000003'$q$, 'medewerker met kloktijden kan niet verwijderd worden');
+update employees set active = true where id = 'a0000000-0000-0000-0000-000000000003';
+insert into requests (id, employee_id, type, start_date, end_date, status) values ('60000000-0000-0000-0000-0000000000b1', 'a0000000-0000-0000-0000-000000000002', 'vrij', today_nl() + 40, today_nl() + 40, 'approved');
+update requests set status = 'pending' where id = '60000000-0000-0000-0000-0000000000b1';
+select t_ok(t_count($q$select * from notifications where title = 'Aanvraag weer in behandeling'$q$) = 1, 'melding als verlof weer in behandeling gaat');
+set role authenticated; select as_user(4);
+select t_ok((select contract_type from team() where id = 'a0000000-0000-0000-0000-000000000002') is not null, 'shiftleader ziet contracttype (voor waarschuwingen)');
+select as_user(2);
+select t_ok((select contract_type from team() where id = 'a0000000-0000-0000-0000-000000000003') is null, 'medewerker ziet geen contract van collega''s');
+reset role;
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

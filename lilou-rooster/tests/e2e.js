@@ -352,6 +352,51 @@ async function test(name, fn) {
     await shared.waitForSelector('.toast:has-text("open dienst")');
     assert.equal((await demoDb(shared)).db.shifts.find(s => s.id === 'uit1').employee_id, null);
   });
+  await test('nieuwe dienst: andere datum kiezen wordt ook echt opgeslagen', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-tab=planning]'); await shared.click('[data-act=today]'); await shared.click('[data-pv=grid]').catch(() => {});
+    await shared.click('[data-act=next]'); await shared.click('[data-act=next]'); await shared.click('[data-act=next]');
+    await shared.click('td.cell.editable >> nth=-1', { position: { x: 20, y: 40 } }); await shared.waitForSelector('dialog [name=date]');
+    const d0 = await shared.inputValue('dialog [name=date]');
+    const p = x => String(x).padStart(2, '0'); const dt = new Date(d0 + 'T12:00:00'); dt.setDate(dt.getDate() + (dt.getDay() === 0 ? -1 : 1));
+    const d1 = dt.getFullYear() + '-' + p(dt.getMonth() + 1) + '-' + p(dt.getDate());
+    await shared.fill('dialog [name=date]', d1); await shared.dispatchEvent('dialog [name=date]', 'change');
+    const before = (await demoDb(shared)).db.shifts.length;
+    await shared.click('dialog button[value=save]'); await shared.waitForTimeout(400);
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    const after = (await demoDb(shared)).db.shifts;
+    assert.equal(after.length, before + 1, 'niet precies één dienst toegevoegd');
+    assert.equal(after[after.length - 1].date, d1, 'dienst staat op de oude datum');
+  });
+  await test('kopieer vorige week slaat uit dienst en goedgekeurd verlof over', async () => {
+    await setDemoDb(shared, `const m=new Date(); m.setDate(m.getDate()-((m.getDay()+6)%7)+7*5); const p=x=>String(x).padStart(2,'0'); const f=d=>d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+      const d1=f(m), m2=new Date(m); m2.setDate(m2.getDate()+8); const d2=f(m2);
+      const ina = db.employees.find(x => x.name === 'Lisa de Jong'); ina.active = false;
+      const eva = db.employees.find(x => x.name === 'Eva Smit');
+      db.shifts = db.shifts.filter(s => !(s.date >= d1 && s.date <= f(new Date(m.getTime()+13*864e5))));
+      db.shifts.push({ id: 'kp1', employee_id: ina.id, date: d1, start_time: '12:00', end_time: '18:00', break_minutes: 0, position: '', note: '', published: true });
+      const d3=new Date(m); d3.setDate(d3.getDate()+1);
+      db.shifts.push({ id: 'kp2', employee_id: eva.id, date: f(d3), start_time: '12:00', end_time: '18:00', break_minutes: 0, position: '', note: '', published: true });
+      db.requests.push({ id: 'kp-lv', employee_id: eva.id, type: 'vakantie', start_date: d2, end_date: d2, status: 'approved', created_at: new Date().toISOString() });`);
+    await shared.reload(); await shared.waitForSelector('[data-tab=planning]'); await shared.click('[data-tab=planning]'); await shared.click('[data-act=today]');
+    for (let i = 0; i < 6; i++) await shared.click('[data-act=next]');
+    await shared.click('[data-act=copy]');
+    const msg = await shared.waitForSelector('.toast, dialog[open]');
+    const txt = await msg.textContent();
+    assert.match(txt, /overgeslagen/, 'geen melding over overgeslagen diensten: ' + txt);
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+  });
+  await test('shiftleader ziet concepten en kan publiceren (demo gelijk aan database)', async () => {
+    await setDemoDb(shared, `const d = db.employees.find(x => x.name === 'Daan Jansen'); d.role = 'planner'; d.active = true;`);
+    const p = watch(await browser.newPage({ viewport: { width: 1360, height: 900 } }));
+    await p.goto(URL + '#personeel'); await p.waitForSelector('[data-demo]');
+    await p.evaluate(s => localStorage.setItem(s.k, JSON.stringify(s.db)), await demoDb(shared));
+    await p.reload(); await p.waitForSelector('[data-demo]'); await login(p, 'Daan');
+    await p.click('[data-tab=planning]'); await p.waitForSelector('table.grid');
+    const total = (await demoDb(p)).db.shifts.filter(s => !s.published).length;
+    if (total) assert.ok((await p.$$('.chip.concept')).length > 0 || await p.$('[data-act=publishall]'), 'shiftleader ziet geen concepten');
+    await p.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'] });
     const p = watch(await ctx.newPage());

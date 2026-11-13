@@ -64,7 +64,7 @@ export function buildMail(name: string, from: string, to: string, shifts: Shift[
     <tr><td style="padding:20px 22px 4px;font-size:16px;line-height:1.5">Hoi ${esc(first)},<br>${changed ? `je rooster voor <strong>week ${wk}</strong> is gewijzigd.${shifts.length ? ' Dit is je actuele rooster:' : ' Je hebt die week geen diensten meer.'}` : `je rooster voor <strong>week ${wk}</strong> staat klaar.`}<div style="font-size:14px;color:#7d6359">${esc(range)}</div></td></tr>
     <tr><td style="padding:6px 22px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table></td></tr>
     <tr><td style="padding:18px 22px 24px"><a href="${esc(appUrl)}" style="display:inline-block;background:#912508;color:#f9efe6;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:bold">Open het rooster</a>
-      <p style="font-size:13px;color:#7d6359;margin:16px 0 0">Kun je een dienst niet werken? Bied hem aan via <em>Ruilen</em> in de app. De app is altijd leidend.</p></td></tr>
+      <p style="font-size:13px;color:#7d6359;margin:16px 0 0">Kun je een dienst niet werken? Bied hem aan via <em>Diensten</em> in de app. De app is altijd leidend.</p></td></tr>
   </table></td></tr></table></body></html>`;
   return { subject, text, html };
 }

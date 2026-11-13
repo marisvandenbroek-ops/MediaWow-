@@ -120,16 +120,6 @@ drop policy if exists emp_select on public.employees;
 create policy emp_select on public.employees for select to authenticated
   using (public.is_manager() or user_id = auth.uid());   -- medewerker: alleen de eigen gegevens
 
--- Collega's zien alleen naam, functie en kleur (geen e-mail, telefoon of contracturen)
-create or replace function public.team()
-returns table (id uuid, name text, "position" text, role text, color text, active boolean)
-language sql stable security definer set search_path = public as $$
-  select e.id, e.name, e.position, e.role, e.color, e.active from public.employees e
-   where public.my_employee_id() is not null or public.is_manager()
-   order by e.name
-$$;
-revoke execute on function public.team() from public, anon;
-grant execute on function public.team() to authenticated;
 drop policy if exists emp_write on public.employees;
 create policy emp_write on public.employees for all to authenticated
   using (public.is_manager()) with check (public.is_manager());
@@ -483,12 +473,28 @@ begin
     if old.employee_id is not null and old.employee_id is distinct from new.employee_id then
       perform public.notify(old.employee_id, 'Dienst vervallen', public.shift_label(old.date, old.start_time, old.end_time), 'mijn');
     end if;
+    if old.employee_id is not null and new.employee_id is null then
+      perform public.notify_team('Open dienst beschikbaar', public.shift_label(new.date, new.start_time, new.end_time) || '. Meld je aan!', 'diensten', old.employee_id);
+    end if;
   end if;
   return new;
 end $$;
 drop trigger if exists shifts_notify on public.shifts;
 create trigger shifts_notify after update or delete on public.shifts
   for each row execute function public.trg_shift_notify();
+
+create or replace function public.trg_shift_swaps() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'DELETE' or old.employee_id is distinct from new.employee_id then
+    update public.swaps set status = 'cancelled', decided_at = now()
+     where status in ('open', 'accepted') and (shift_id = old.id or swap_shift_id = old.id);
+  end if;
+  return null;
+end $$;
+drop trigger if exists shifts_swaps on public.shifts;
+create trigger shifts_swaps after update of employee_id or delete on public.shifts
+  for each row execute function public.trg_shift_swaps();
 
 create or replace function public.trg_request_notify() returns trigger
 language plpgsql security definer set search_path = public as $$
@@ -500,6 +506,8 @@ begin
   elsif new.status is distinct from old.status and new.status in ('approved', 'rejected') then
     perform public.notify(new.employee_id, 'Aanvraag ' || case when new.status = 'approved' then 'goedgekeurd' else 'afgewezen' end,
       lbl || ' ' || per || coalesce(' — ' || nullif(new.manager_note, ''), ''), 'aanvragen');
+  elsif new.status is distinct from old.status and new.status = 'pending' then
+    perform public.notify(new.employee_id, 'Aanvraag weer in behandeling', lbl || ' ' || per || ' wordt opnieuw beoordeeld.', 'aanvragen');
   end if;
   return new;
 end $$;
@@ -556,6 +564,7 @@ language plpgsql security definer set search_path = public as $$
 declare s public.shifts; r record;
 begin
   if not public.is_planner() then raise exception 'Alleen de directie of een shiftleader kan toewijzen.'; end if;
+  if not exists (select 1 from public.employees where id = p_emp and active) then raise exception 'Deze medewerker is niet (meer) actief.'; end if;
   perform set_config('rooster.skip_notify', '1', true);
   update public.shifts set employee_id = p_emp where id = p_shift and employee_id is null returning * into s;
   if not found then raise exception 'Deze dienst is al toegewezen.'; end if;
@@ -572,6 +581,7 @@ language plpgsql security definer set search_path = public as $$
 declare w public.swaps;
 begin
   select * into w from public.swaps where id = p_id;
+  if not exists (select 1 from public.employees where id = w.taken_by and active) then raise exception 'De collega is niet meer actief; de ruil kan niet doorgaan.'; end if;
   perform set_config('rooster.skip_notify', '1', true);
   update public.shifts set employee_id = w.taken_by where id = w.shift_id and employee_id = w.from_employee;
   if not found then raise exception 'De dienst is intussen gewijzigd; de ruil kan niet doorgaan.'; end if;
@@ -731,12 +741,50 @@ alter table public.settings add column if not exists staffing        jsonb;   --
 alter table public.settings add column if not exists guest_ratios    jsonb;   -- {"Bediening": 20} = 1 medewerker per 20 gasten
 alter table public.settings add column if not exists special_days    jsonb;   -- [{"date": "2026-12-24", "label": "Kerstavond", "kind": "gesloten" | "feestdag"}]
 
+-- Uit dienst: openstaande aanmeldingen en ruilverzoeken vervallen
+create or replace function public.trg_employee_inactive() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if old.active and not new.active then
+    update public.shift_applications set status = 'rejected' where employee_id = new.id and status = 'pending';
+    update public.swaps set status = 'cancelled', decided_at = now()
+     where status in ('open', 'accepted') and (from_employee = new.id or to_employee = new.id or taken_by = new.id);
+  end if;
+  return null;
+end $$;
+drop trigger if exists employees_inactive on public.employees;
+create trigger employees_inactive after update of active on public.employees
+  for each row execute function public.trg_employee_inactive();
+
+-- Kloktijden zijn loonadministratie: een medewerker met kloktijden kan niet verwijderd worden (zet op inactief)
+alter table public.time_entries drop constraint if exists time_entries_employee_id_fkey;
+alter table public.time_entries add constraint time_entries_employee_id_fkey
+  foreign key (employee_id) references public.employees(id) on delete restrict;
+
 -- Contracttypes
 alter table public.employees add column if not exists contract_type text not null default 'vast';
 alter table public.employees drop constraint if exists employees_contract_type_check;
 alter table public.employees add constraint employees_contract_type_check check (contract_type in ('vast', 'minmax', 'nuluren', 'oproep', 'stage'));
 alter table public.employees add column if not exists contract_min_hours numeric(5, 2);
 alter table public.employees add column if not exists contract_end date;
+
+-- Collega's zien alleen naam, functie en kleur; een shiftleader ziet ook het contract (voor waarschuwingen)
+drop function if exists public.team();
+create function public.team()
+returns table (id uuid, name text, "position" text, role text, color text, active boolean,
+               contract_type text, contract_hours numeric, contract_min_hours numeric, contract_end date)
+language sql stable security definer set search_path = public as $$
+  select e.id, e.name, e.position, e.role, e.color, e.active,
+         case when public.is_planner() then e.contract_type end,
+         case when public.is_planner() then e.contract_hours end,
+         case when public.is_planner() then e.contract_min_hours end,
+         case when public.is_planner() then e.contract_end end
+    from public.employees e
+   where public.my_employee_id() is not null or public.is_manager()
+   order by e.name
+$$;
+revoke execute on function public.team() from public, anon;
+grant execute on function public.team() to authenticated;
 
 -- Verwachte gasten per dag (optioneel, voor de bezettingsberekening). Alleen directie en shiftleaders.
 create table if not exists public.day_info (
