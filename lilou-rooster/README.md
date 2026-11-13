@@ -196,8 +196,8 @@ Draai beide na elke wijziging; ze controleren onder meer de rechten (wie mag wat
 ruilen, verlof, loonkosten en de automatische taken.
 
 ## Documenten
-- `docs/privacyverklaring-medewerkers.md` — concept-privacyverklaring voor het personeel
-- `docs/personeelshandboek-rooster.md` — concepttekst voor het personeelshandboek
+- `privacy.html` — privacyverklaring voor het personeel (pagina in de app)
+- `afspraken.html` — afspraken over rooster, klokken en verlof (pagina in de app)
 
 ## Bestanden
 | Bestand | Wat |
@@ -209,5 +209,5 @@ ruilen, verlof, loonkosten en de automatische taken.
 | `supabase/schema.sql` | Database, beveiligingsregels, functies en automatische taken |
 | `supabase/functions/send-push` | Pushmeldingen versturen |
 | `tests/` | Browser- en databasetests |
-| `docs/` | Privacyverklaring en handboektekst (concept) |
+| `privacy.html`, `afspraken.html`, `docs.css` | Documenten voor het personeel |
 | `manifest.webmanifest`, `sw.js`, `icon*` | Installeren als app op de telefoon |

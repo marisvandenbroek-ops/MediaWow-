@@ -451,6 +451,13 @@ dialog.dlg:has(.exportprev) { width: min(900px, calc(100vw - 32px)); }
 .invitebox { border: 1px dashed var(--line-strong); border-radius: 12px; padding: 10px 12px; display: grid; gap: 4px; }
 .invitebox .req-actions { margin-top: 4px; }
 
+.legal { display: flex; justify-content: center; gap: 8px; margin-top: 18px; font-size: 13px; }
+.legal a { color: inherit; opacity: .8; text-decoration: none; } .legal a:hover { opacity: 1; text-decoration: underline; }
+.auth .legal { color: var(--brand-ink); }
+.app-foot { color: var(--muted); padding: 8px 16px 28px; }
+@media (max-width: 760px) { .app-foot { padding-bottom: calc(96px + env(safe-area-inset-bottom)); } }
+@media print { .app-foot, .legal { display: none; } }
+
 /* ===== Requests ===== */
 .split { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
 .filters { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }

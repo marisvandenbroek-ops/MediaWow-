@@ -622,9 +622,10 @@ function ask(msg, okLabel = 'Doorgaan') {
 }
 
 /* ================= Auth screens ================= */
+const LEGAL = `<nav class="legal"><a href="afspraken.html">Afspraken</a><span aria-hidden="true">·</span><a href="privacy.html">Privacy</a></nav>`;
 function authPage(card) {
   const top = CFG.logoAuth ? `<div class="auth-brand"><img src="${esc(CFG.logoAuth)}" alt="${esc(CFG.bedrijf)}"><span>Rooster${location.hash === '#directie' ? ' · Directie' : location.hash === '#personeel' ? ' · Personeel' : ''}</span></div>` : '';
-  return `<div class="auth"><div class="auth-wrap">${top}<div class="auth-card">${card}</div></div></div>`;
+  return `<div class="auth"><div class="auth-wrap">${top}<div class="auth-card">${card}</div>${store && store.demo ? '' : LEGAL}</div></div>`;
 }
 const authLogo = () => (CFG.logoAuth ? '' : `<div class="logo big">${esc((CFG.bedrijf || CFG.appName).charAt(0))}</div>`);
 async function renderAuth(mode = 'login', msg = '') {
@@ -735,7 +736,8 @@ function renderShell() {
       <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !isMgr() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l === 'Mijn rooster' ? 'Rooster' : l}</span>${(isMgr() ? k === 'aanvragen' : k === 'diensten') ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}</nav>
       <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon bell" data-bell title="Meldingen" aria-label="Meldingen">${ICON.bell}<span class="ncount hidden" data-ncount></span></button><button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
     </div></header>
-    <main id="view"></main>`;
+    <main id="view"></main>
+    ${store.demo ? '' : `<footer class="app-foot">${LEGAL}</footer>`}`;
   $$('[data-tab]').forEach(b => (b.onclick = () => go(b.dataset.tab)));
   $('[data-logout]').onclick = signOut;
   $('[data-bell]').onclick = notifPanel;
