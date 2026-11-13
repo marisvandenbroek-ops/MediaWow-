@@ -861,6 +861,10 @@ revoke insert, update, delete on public.notifications, public.audit_log from aut
 grant update (read_at) on public.notifications to authenticated;          -- alleen 'gelezen' zelf zetten
 revoke all on public.reminder_log from authenticated;                      -- alleen voor interne taken
 grant usage, select on all sequences in schema public to authenticated;
+-- Server-functies (Edge Functions zoals invite-employee) gebruiken de rol service_role; die komt nooit in de app
+grant usage on schema public to service_role;
+grant all on all tables in schema public to service_role;
+grant usage, select on all sequences in schema public to service_role;
 
 -- =====================================================================
 --  EERSTE LEIDINGGEVENDE — pas naam en e-mail aan en voer daarna uit:

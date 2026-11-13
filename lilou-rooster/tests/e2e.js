@@ -229,6 +229,20 @@ async function test(name, fn) {
     assert.match(await shared.textContent('dialog [data-sendinvite]'), /opnieuw/);
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
   });
+  await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {
+    const ctx = await browser.newContext({ ...devices['iPhone 13'] });
+    const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await p.click('[data-tab=team]'); await p.click('tr:has-text("Sanne") >> nth=0'); await p.waitForSelector('dialog[open]');
+    const r = await p.evaluate(() => {
+      const d = document.querySelector('dialog[open]'); const cs = getComputedStyle(d);
+      return { oy: cs.overflowY, fits: d.getBoundingClientRect().bottom <= innerHeight + 1, htmlOv: getComputedStyle(document.documentElement).overflow };
+    });
+    assert.equal(r.oy, 'auto'); assert.ok(r.fits, 'venster valt buiten het scherm'); assert.equal(r.htmlOv, 'hidden');
+    await p.locator('dialog[open] button[value=save]').scrollIntoViewIfNeeded();
+    assert.ok(await p.locator('dialog[open] button[value=save]').isVisible());
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('foutmelding verschijnt in het venster', async () => {
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close())); await shared.click('[data-tab=team]'); await shared.click('[data-new]');
     await shared.fill('dialog [name=name]', 'Test'); await shared.fill('dialog [name=email]', 'sanne@voorbeeld.nl'); await shared.click('dialog button[value=save]');

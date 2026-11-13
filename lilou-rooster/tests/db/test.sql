@@ -177,5 +177,7 @@ select t_ok(t_count($q$select * from notifications where title like 'Je dienst b
 select t_ok((select in_lat is null and in_distance_m = 12 from time_entries where clock_in < now() - interval '90 days'), 'locatie na 90 dagen gewist, afstand bewaard');
 select t_ok(today_nl() = (now() at time zone 'Europe/Amsterdam')::date, 'today_nl() is Nederlandse datum');
 
+select t_ok(has_table_privilege('service_role', 'public.employees', 'select') and has_table_privilege('service_role', 'public.employees', 'update'),
+            'server-functies (service_role) mogen medewerkers lezen en bijwerken (nodig voor uitnodigen)');
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

@@ -493,7 +493,12 @@ table.list tr.inactive td { opacity: .5; }
 dialog.dlg {
   border: 0; padding: 0; border-radius: 18px; background: var(--surface); color: var(--text);
   width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 48px); box-shadow: 0 24px 64px rgba(0,0,0,.25);
+  max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
 }
+/* Pagina achter een open venster niet laten meescrollen (iPhone) */
+html:has(dialog.dlg[open]), html:has(dialog.dlg[open]) body { overflow: hidden; }
+@media (pointer: coarse) { dialog.dlg::backdrop { backdrop-filter: none; } }
 dialog.dlg::backdrop { background: rgba(23, 18, 15, .45); backdrop-filter: blur(2px); }
 .dlg header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 6px; }
 .dlg header h2 { font-size: 21px; }

@@ -28,8 +28,9 @@ Deno.serve(async (req) => {
     const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
     const { data: who, error: whoErr } = await admin.auth.getUser(token);
     if (whoErr || !who?.user) return json({ error: 'Niet ingelogd.' }, 401);
-    const { data: me } = await admin.from('employees').select('id').eq('user_id', who.user.id)
+    const { data: me, error: meErr } = await admin.from('employees').select('id').eq('user_id', who.user.id)
       .eq('role', 'manager').eq('active', true).maybeSingle();
+    if (meErr) return json({ error: 'Database niet bereikbaar voor de server-functie: ' + meErr.message }, 500);
     if (!me) return json({ error: 'Alleen de directie kan medewerkers uitnodigen.' }, 403);
 
     // 2. Welke medewerker?
