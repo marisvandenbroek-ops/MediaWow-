@@ -232,5 +232,16 @@ select as_user(2);
 select t_ok((select contract_type from team() where id = 'a0000000-0000-0000-0000-000000000003') is null, 'medewerker ziet geen contract van collega''s');
 reset role;
 
+\echo '== Omzet'
+set role authenticated; select as_user(1);
+insert into revenue (date, forecast) values (today_nl(), 2500);
+select t_ok(t_count('select * from revenue') = 1, 'directie kan omzet invullen');
+select as_user(4);
+select t_ok(t_count('select * from revenue') = 0, 'shiftleader ziet geen omzet');
+select as_user(2);
+select t_ok(t_count('select * from revenue') = 0, 'medewerker ziet geen omzet');
+select t_fails($q$insert into revenue (date, forecast) values (today_nl() + 1, 100)$q$, 'medewerker kan geen omzet invullen');
+reset role;
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

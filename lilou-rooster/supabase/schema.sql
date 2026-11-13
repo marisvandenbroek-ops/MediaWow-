@@ -786,6 +786,21 @@ $$;
 revoke execute on function public.team() from public, anon;
 grant execute on function public.team() to authenticated;
 
+-- Omzet per dag (verwacht en werkelijk) en doelen voor de personeelskosten. Alleen de directie.
+create table if not exists public.revenue (
+  date       date primary key,
+  forecast   numeric(10, 2) check (forecast >= 0),
+  actual     numeric(10, 2) check (actual >= 0),
+  updated_at timestamptz not null default now()
+);
+alter table public.revenue enable row level security;
+drop policy if exists revenue_mgr on public.revenue;
+create policy revenue_mgr on public.revenue for all to authenticated
+  using (public.is_manager()) with check (public.is_manager());
+alter table public.settings add column if not exists goal_labor_pct    numeric(5, 2);   -- personeelskosten als % van de omzet
+alter table public.settings add column if not exists goal_productivity numeric(8, 2);   -- omzet per gewerkt uur
+alter table public.settings add column if not exists goal_cost_hour    numeric(6, 2);   -- gemiddelde personeelskosten per uur
+
 -- Verwachte gasten per dag (optioneel, voor de bezettingsberekening). Alleen directie en shiftleaders.
 create table if not exists public.day_info (
   date       date primary key,
@@ -952,7 +967,7 @@ revoke truncate, references, trigger on all tables in schema public from authent
 grant select, insert, update, delete on
   public.employees, public.shifts, public.requests, public.settings, public.time_entries,
   public.shift_applications, public.swaps, public.availability, public.push_subscriptions,
-  public.employee_private, public.day_info
+  public.employee_private, public.day_info, public.revenue
   to authenticated;
 grant select on public.notifications, public.audit_log to authenticated;
 revoke insert, update, delete on public.notifications, public.audit_log from authenticated;

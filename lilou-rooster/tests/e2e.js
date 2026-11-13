@@ -397,6 +397,38 @@ async function test(name, fn) {
     if (total) assert.ok((await p.$$('.chip.concept')).length > 0 || await p.$('[data-act=publishall]'), 'shiftleader ziet geen concepten');
     await p.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('overzicht: kerngetallen, omzet invullen kleurt de kosten tegen het doel', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-tab=overzicht]'); await shared.waitForSelector('.kpis .kpi');
+    assert.equal(await shared.$$eval('.kpis .kpi', a => a.length), 4);
+    const first = await shared.$$eval('[data-revf]', a => a[a.length - 1].dataset.revf);   // zondag: nog geen werkelijke omzet
+    await shared.fill(`[data-revf="${first}"]`, '100'); await shared.press(`[data-revf="${first}"]`, 'Tab');
+    await shared.waitForTimeout(400);
+    const db = (await demoDb(shared)).db;
+    assert.equal(db.revenue[first].forecast, 100, 'omzet niet opgeslagen');
+    // lage omzet → kosten % ver boven het doel → rood (als er die dag kosten zijn)
+    const cls = await shared.$eval(`[data-revf="${first}"]`, i => i.closest('tr').querySelector('.kp').className);
+    assert.ok(cls.includes('bad'), 'kosten ver boven doel horen rood te zijn: ' + cls);
+  });
+  await test('planning: omzetregel alleen voor de directie', async () => {
+    await shared.click('[data-tab=planning]'); await shared.click('[data-act=today]'); await shared.click('[data-pv=grid]').catch(() => {});
+    await shared.waitForSelector('tr.moneyrow [data-rev]');
+    const p = watch(await browser.newPage({ viewport: { width: 1360, height: 900 } }));
+    await p.goto(URL + '#personeel'); await p.waitForSelector('[data-demo]');
+    await p.evaluate(s => localStorage.setItem(s.k, JSON.stringify(s.db)), await demoDb(shared));
+    await p.reload(); await p.waitForSelector('[data-demo]'); await login(p, 'Daan');   // shiftleader (eerder ingesteld)
+    await p.click('[data-tab=planning]'); await p.waitForSelector('table.grid');
+    assert.ok(!(await p.$('tr.moneyrow')), 'shiftleader ziet omzet');
+    assert.ok(!(await p.$('[data-tab=overzicht]')), 'shiftleader ziet het overzicht');
+    await p.close(); pages.splice(pages.indexOf(p), 1);
+  });
+  await test('inplannen: je ziet direct wat de dienst kost', async () => {
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await shared.click('[data-tab=planning]'); await shared.click('[data-act=today]');
+    await shared.click('tr:has-text("Sanne Bakker") td.cell.editable >> nth=0', { position: { x: 20, y: 40 } }); await shared.waitForSelector('dialog [data-cost]:not(.hidden)');
+    assert.match(await shared.textContent('dialog [data-cost]'), /kost ± € \d/);
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+  });
   await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'] });
     const p = watch(await ctx.newPage());
