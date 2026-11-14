@@ -329,6 +329,14 @@ em{font-style:italic}
 .s:has(.phone-pdf){justify-content:flex-start;padding-top:190px}
 .s:has(.phone-pdf) .ftr{display:none}
 .phone-pdf .menu-page{padding:34px 30px 38px}
+.duo{display:flex;gap:40px;justify-content:center;margin-top:36px}
+.duo-col{display:flex;flex-direction:column;align-items:center;gap:22px}
+.s:has(.duo){justify-content:flex-start;padding-top:200px}
+.s:has(.duo) h2{font-size:68px}
+.phone-duo{width:360px;height:700px;border-radius:56px;padding:12px}
+.phone-duo .screen{border-radius:46px}
+.shot{width:100%;height:100%;object-fit:cover;object-position:top}
+.duo-cap{font-size:24px;white-space:nowrap;font-weight:500;background:#fff;padding:12px 22px;border-radius:100px;box-shadow:0 8px 20px rgba(0,0,0,.08);border-left:6px solid #E8F27A}
 `;
 
 function slideHTML(sl, i, n) {

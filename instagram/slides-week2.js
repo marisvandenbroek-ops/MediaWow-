@@ -35,13 +35,13 @@ module.exports = [
         <h1 class="lg">Inzoomen. Wachten. Scrollen. <em>Wegklikken.</em></h1>
         <p class="lead">Op een telefoon is een pdf-menu een afknapper. En in december zoeken gasten juist dáár naar jouw kerstdiner.</p>` },
       { theme: 'greige', html: `
-        <div class="kicker">02 — Zo doe je het wél</div>
-        <h2>Een kerstmenu <em>dat verkoopt.</em></h2>
-        <div class="list">
-          <div><i>01</i>Menu als gewone tekst op je site, goed leesbaar op mobiel</div>
-          <div><i>02</i>Een opvallende ‘Reserveer je kerstdiner’-knop bovenaan</div>
-          <div><i>03</i>Data, prijs per persoon en dieetwensen in één oogopslag</div>
-        </div>` },
+        <div class="kicker">02 — Zo doe je het wél · Lilou in Ede</div>
+        <h2>Een kerstmenu <em><span class="mark">dat verkoopt.</span></em></h2>
+        <div class="duo">
+          <div class="duo-col">${phone(`<img class="shot" src="{{img:lilou/kerst-top.png}}">`, 'phone-duo')}<div class="duo-cap">Reserveerknop in beeld</div></div>
+          <div class="duo-col">${phone(`<img class="shot" src="{{img:lilou/kerst-mid.png}}">`, 'phone-duo')}<div class="duo-cap">Menu als tekst + prijzen</div></div>
+        </div>
+        <div class="hand" style="text-align:center;margin-top:34px;font-size:46px">gemaakt door MediaWow 🤍</div>` },
       { theme: 'photo', html: `
         <img class="bg-photo" src="{{img:canva/foto-015.jpg}}"><div class="bg-fade" style="background:rgba(15,10,10,.66)"></div>
         <div class="fg">
@@ -54,7 +54,7 @@ module.exports = [
 
 Op een telefoon is een pdf-menu een afknapper: inzoomen, wachten, scrollen. En juist in december zoeken gasten op hun telefoon naar een plek voor het kerstdiner.
 
-Zo doe je het wél:
+Zo doe je het wél (kijk maar naar het kerstmenu van @lilou_ede op slide 3):
 ✔️ menu als gewone tekst, goed leesbaar op mobiel
 ✔️ een opvallende ‘Reserveer je kerstdiner’-knop bovenaan
 ✔️ data, prijs per persoon en dieetwensen in één oogopslag
