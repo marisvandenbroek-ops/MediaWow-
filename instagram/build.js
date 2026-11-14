@@ -192,6 +192,13 @@ em{font-style:italic}
 .phone .screen:before{content:'';position:absolute;top:16px;left:50%;transform:translateX(-50%);width:30%;height:34px;border-radius:20px;background:#000;z-index:8}
 .phone .screen:after{content:'';position:absolute;inset:0;pointer-events:none;z-index:9;background:linear-gradient(118deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.04) 28%,rgba(255,255,255,0) 40%)}
 .phone-sm .screen:before{height:24px;top:12px}
+.cover-cta{margin-top:50px}
+.cc-label{font-size:26px;letter-spacing:.3em;text-transform:uppercase;color:#FAF4ED;margin-bottom:18px}
+.cc-box{display:flex;align-items:center;gap:22px;background:#FAF4ED;color:#1B0405;border-radius:100px;padding:20px 34px 20px 22px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.cc-box .av-user{flex:0 0 64px;height:64px}
+.cc-typed{flex:1;font-size:46px;font-weight:600;letter-spacing:.04em}
+.cc-typed:after{content:'';display:inline-block;width:4px;height:46px;background:#1B0405;margin-left:8px;vertical-align:-6px}
+.cc-post{font-size:30px;font-weight:700;color:#3A1011;letter-spacing:.02em}
 `;
 
 function slideHTML(sl, i, n) {

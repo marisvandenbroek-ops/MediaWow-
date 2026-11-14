@@ -13,7 +13,11 @@ module.exports = [
         <div class="bg-fade"></div>
         <div class="bottom">
           <div class="kicker">Gratis website-check</div>
-          <h1 class="hero">Je website verliest klanten.<br><em>Ik laat je zien waar.</em></h1>
+          <h1 class="hero" style="font-size:128px">Je website verliest klanten.<br><em>Ik laat je zien waar.</em></h1>
+          <div class="cover-cta">
+            <div class="cc-label">Reageer hieronder 👇</div>
+            <div class="cc-box"><div class="av-user"></div><span class="cc-typed">TIPS</span><span class="cc-post">Plaatsen</span></div>
+          </div>
         </div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Waarom</div>
@@ -57,9 +61,9 @@ module.exports = [
         </div>
         <span class="btn">Reageer: Tips</span>` },
     ],
-    caption: `Je website verliest klanten. En vaak zie je zelf niet waar. 👀
+    caption: `👇 Reageer TIPS en ik laat je zien waar jouw website klanten verliest.
 
-Ik help je graag op weg 🤍
+Vaak zie je het zelf niet, want jij kent je site te goed. Ik kijk er met frisse ogen naar 🤍
 
 Gratis website-check:
 1️⃣ Reageer TIPS
