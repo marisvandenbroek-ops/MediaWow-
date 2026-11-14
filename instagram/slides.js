@@ -8,17 +8,20 @@ module.exports = [
   {
     id: '1-ma-website-check',
     slides: [
-      { theme: 'photo', html: `
-        <img class="bg-photo" src="{{img:portrait.png}}" style="top:-230px;height:calc(100% + 230px)">
-        <div class="bg-fade"></div>
-        <div class="bottom">
-          <div class="kicker">Gratis website-check</div>
-          <h1 class="hero" style="font-size:128px">Je website verliest klanten.<br><em>Ik laat je zien waar.</em></h1>
-          <div class="cover-cta">
-            <div class="cc-label">Reageer hieronder 👇</div>
-            <div class="cc-box"><div class="av-user"></div><span class="cc-typed">TIPS</span><span class="cc-post">Plaatsen</span></div>
-          </div>
-        </div>` },
+      { theme: 'dark', html: `
+        <div class="kicker">Gratis website-check</div>
+        <h1 class="hero" style="font-size:132px">Ik check jouw website. <em>Gratis.</em></h1>
+        <div class="cover-cta">
+          <div class="cc-label">Reageer TIPS hieronder 👇</div>
+          <div class="cc-box"><div class="av-user"></div><span class="cc-typed">TIPS</span><span class="cc-post">Plaatsen</span></div>
+        </div>
+        ${phone(`
+          <div class="dm-head">${avatarMW}<div><b>media.wow</b><small>MediaWow Webdesign</small></div></div>
+          <div class="chat">
+            <div class="bub me">Hoi! Hier zijn je 3 tips 🤍</div>
+            <div class="bub me"><b>1.</b> Zet je boekknop bovenaan, dan vinden klanten ‘m meteen.</div>
+            <div class="bub me"><b>2.</b> Vertel in één zin wat je doet en voor wie.</div>
+          </div>`, 'phone-cover')}` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Waarom</div>
         <div class="count">3<span>·</span>2<span>·</span>1</div>
@@ -61,7 +64,7 @@ module.exports = [
         </div>
         <span class="btn">Reageer: Tips</span>` },
     ],
-    caption: `👇 Reageer TIPS en ik laat je zien waar jouw website klanten verliest.
+    caption: `👇 Reageer TIPS en ik check jouw website GRATIS. Je krijgt 3 persoonlijke tips in je DM.
 
 Vaak zie je het zelf niet, want jij kent je site te goed. Ik kijk er met frisse ogen naar 🤍
 

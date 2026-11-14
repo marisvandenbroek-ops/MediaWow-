@@ -199,6 +199,10 @@ em{font-style:italic}
 .cc-typed{flex:1;font-size:46px;font-weight:600;letter-spacing:.04em}
 .cc-typed:after{content:'';display:inline-block;width:4px;height:46px;background:#1B0405;margin-left:8px;vertical-align:-6px}
 .cc-post{font-size:30px;font-weight:700;color:#3A1011;letter-spacing:.02em}
+.phone-cover{position:absolute;left:50%;margin-left:-300px;top:880px;width:600px;height:1000px;transform:rotate(-3deg)}
+.s:has(.phone-cover){justify-content:flex-start;padding-top:200px}
+.s:has(.phone-cover) .ftr{display:none}
+.phone-cover .bub{font-size:29px}
 `;
 
 function slideHTML(sl, i, n) {
