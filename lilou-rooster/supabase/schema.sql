@@ -617,6 +617,23 @@ begin
   return n;
 end $$;
 
+-- ---------- Ziekmelden: wie bellen, en weer beter melden ----------
+alter table public.settings add column if not exists sick_contact text;
+alter table public.settings add column if not exists sick_phone   text;
+create or replace function public.sick_recover(p_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare me uuid := public.my_employee_id(); r public.requests;
+begin
+  select * into r from public.requests where id = p_id and employee_id = me and type = 'ziek';
+  if not found then raise exception 'Ziekmelding niet gevonden.'; end if;
+  if r.end_date > public.today_nl() then
+    update public.requests set end_date = greatest(r.start_date, public.today_nl()) where id = p_id;
+  end if;
+  insert into public.notifications (employee_id, title, body, view)
+  select id, '💪 Weer beter', public.first_name(me) || ' is weer beter en kan weer werken.', case when role = 'manager' then 'aanvragen:verlof' else 'planning' end
+    from public.employees where role in ('manager', 'planner') and active and id <> me;
+end $$;
+
 -- ---------- Ruilen en overdragen ----------
 create or replace function public.swap_execute(p_id uuid) returns void
 language plpgsql security definer set search_path = public as $$
@@ -745,6 +762,8 @@ grant execute on function public.publish_week(date, date), public.open_apply(uui
   public.open_assign(uuid, uuid), public.swap_offer(uuid, uuid, uuid, text), public.swap_respond(uuid, boolean),
   public.swap_decide(uuid, boolean, text), public.swap_cancel(uuid) to authenticated;
 revoke execute on function public.shifts_bulk(uuid[], text) from public, anon;
+revoke execute on function public.sick_recover(uuid) from public, anon;
+grant execute on function public.sick_recover(uuid) to authenticated;
 grant execute on function public.shifts_bulk(uuid[], text) to authenticated;
 
 -- =====================================================================

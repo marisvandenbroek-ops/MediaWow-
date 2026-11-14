@@ -813,3 +813,33 @@ button.ann-img { display: block; padding: 0; border: 0; background: none; cursor
 .pickbtn { display: grid; grid-template-columns: 12px 1fr; align-items: center; gap: 2px 8px; text-align: left; padding: 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); font: inherit; font-weight: 600; cursor: pointer; min-height: 52px; }
 .pickbtn .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); grid-row: span 2; }
 .pickbtn small { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+
+/* ===== Controleronde gebruiksgemak ===== */
+/* beschikbaarheid: kleur alleen op het knopje, niet op een blok erachter */
+.avopt.av-hele_dag, .avopt.av-ochtend, .avopt.av-middag, .avopt.av-avond, .avopt.av-niet, .avopt.av-leeg { background: none; padding: 0; margin: 0; }
+/* vensters: nooit breder dan het scherm, knoppen netjes onder elkaar op de telefoon */
+dialog.dlg { overflow-x: hidden; }
+.dlg .btn { white-space: normal; }
+@media (max-width: 520px) {
+  .dlg-foot { flex-direction: column-reverse; align-items: stretch; }
+  .dlg-foot .spacer { display: none; }
+  .dlg-foot .btn { width: 100%; justify-content: center; }
+  .dlg-foot .btn.danger { background: none; border-color: transparent; color: var(--bad); text-decoration: underline; min-height: 40px; }
+}
+/* duimvriendelijk: minimaal 44 px op de telefoon */
+@media (max-width: 760px) {
+  .btn, .btn.sm { min-height: 44px; }
+  .btn.icon { min-width: 44px; }
+  dialog .x { min-width: 44px; min-height: 44px; }
+  .tpl, .avopt span { min-height: 40px; display: inline-flex; align-items: center; }
+  .linkbtn { min-height: 40px; }
+}
+.show-sm { display: none; }
+@media (max-width: 760px) { .show-sm { display: block; } span.show-sm { display: inline; } .namecell .nm small { color: var(--muted); font-weight: 400; } }
+/* ziek gemeld */
+.sickbanner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 14px 16px; border-radius: var(--radius); background: var(--warn-soft); border: 1px solid #f0d9a8; margin-bottom: 16px; }
+.sickbanner strong { display: block; }
+.sickbanner span { color: var(--muted); font-size: 14px; }
+.callbtn { text-decoration: none; justify-content: center; }
+.sickset { display: grid; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.sickset .hint { margin: 0; }
