@@ -1,43 +1,62 @@
-// MediaWow week 1 (v2): punchier formats. Each slide = { theme, html }.
-const arrow = (rot = 0, w = 170) => `<svg class="arrow" style="width:${w}px;transform:rotate(${rot}deg)" viewBox="0 0 170 90" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M6 20 C 50 80, 110 85, 155 45"/><path d="M130 40 L157 43 L150 68"/></svg>`;
+// MediaWow week 1 — huisstijl mediawow.nl (bordeaux · crème · wit, Instrument Serif + DM Sans, eigen logo).
+// {{img:bestand}} wordt bij het bouwen vervangen door het beeld uit ./assets.
 const phone = (inner, cls = '') => `<div class="phone ${cls}"><div class="screen">${inner}</div></div>`;
+const avatarMW = `<div class="av-mw"><div class="logo-mask" style="background:#fff"></div></div>`;
 
 module.exports = [
   // ───────────── MA: WEBSITE ROAST ─────────────
   {
     id: '1-ma-website-roast',
     slides: [
-      { theme: 'dark', html: `
-        <div class="sticker" style="top:150px;right:90px">Gratis<br>& eerlijk</div>
-        <div class="kicker">Durf jij?</div>
-        <h1 class="xl">Stuur me<br>je website.</h1>
-        <h1 class="xl lime"><em>Ik roast 'm.</em> 🔥</h1>
-        <p class="lead">Eerlijk. Binnen een paar tellen.<br>Precies zoals je klant ernaar kijkt.</p>` },
-      { theme: 'light', html: `
-        <div class="kicker">Zo lang krijgt je website</div>
-        <div class="count">3<span>…</span>2<span>…</span>1</div>
-        <h2>Snapt je bezoeker het niet meteen? <span class="hl">Dan is hij weg.</span></h2>
-        <p class="hand big" style="margin-top:40px">(en hij komt niet terug om het nog eens te proberen)</p>` },
-      { theme: 'sand', html: `
-        <div class="kicker">Zo werkt de roast</div>
-        <div class="steps">
-          <div class="step"><b>1</b><span>Reageer <span class="hl">ROAST</span> onder deze post</span></div>
-          <div class="step"><b>2</b><span>Ik bekijk je site op mijn telefoon. Net als je klant.</span></div>
-          <div class="step"><b>3</b><span>Je krijgt <span class="hl">3 eerlijke punten</span> in je DM</span></div>
-        </div>
-        <p class="hand big" style="margin-top:50px">Geen verkooppraatje. Gewoon wat ik zie.</p>` },
-      { theme: 'light', html: `
-        <div class="kicker">Hier let ik op</div>
-        <div class="checks">
-          <div>Snap ik binnen 5 tellen wat je doet?</div>
-          <div>Zie ik meteen hoe ik boek of contact opneem?</div>
-          <div>Werkt het lekker op mijn telefoon?</div>
-          <div>Voelt het als <em>jóuw</em> zaak, of als een template?</div>
+      { theme: 'photo', html: `
+        <img class="bg-photo" src="{{img:portrait.png}}" style="object-position:50% 28%">
+        <div class="bg-fade"></div>
+        <div class="bottom">
+          <div class="kicker">Gratis website roast</div>
+          <h1 class="xl">Stuur me je website.<br><em>Ik roast 'm.</em></h1>
+          <span class="btn">Reageer: Roast</span>
         </div>` },
-      { theme: 'lime', html: `
-        <h1 class="xl">Klaar voor<br>de roast?</h1>
-        <div class="comment-box"><div class="av"></div><span class="typed">ROAST 🔥</span><span class="post">Plaatsen</span></div>
-        <div class="hand-note" style="left:560px;top:860px">typ dit hier ${arrow(200, 150)}</div>` },
+      { theme: 'cream', html: `
+        <div class="kicker">01 — Zo lang krijgt je website</div>
+        <div class="count">3<span>·</span>2<span>·</span>1</div>
+        <h2>Snapt je bezoeker het niet meteen? <em>Dan is hij weg.</em></h2>
+        <p class="lead">En hij komt niet terug om het nog eens te proberen.</p>` },
+      { theme: 'white', html: `
+        <div class="split">
+          <div class="split-txt">
+            <div class="kicker">02 — Zo werkt de roast</div>
+            <div class="nums">
+              <div><i>1</i><span>Reageer <b>ROAST</b> onder deze post</span></div>
+              <div><i>2</i><span>Ik bekijk je site op mijn telefoon. Net als je klant.</span></div>
+              <div><i>3</i><span>Jij krijgt <b>3 eerlijke punten</b> in je DM</span></div>
+            </div>
+          </div>
+          ${phone(`
+            <div class="dm-head">${avatarMW}<div><b>media.wow</b><small>MediaWow Webdesign</small></div></div>
+            <div class="chat">
+              <div class="bub me">Hoi! Hier is je roast 🔥</div>
+              <div class="bub me"><b>1.</b> Ik snap niet meteen wat je aanbiedt…</div>
+              <div class="bub me"><b>2.</b> Waar kan ik boeken? 👀</div>
+              <div class="bub me"><b>3.</b> Je foto's zijn top, laat ze groter zien!</div>
+            </div>`, 'phone-side')}
+        </div>` },
+      { theme: 'cream', html: `
+        <div class="kicker">03 — Hier let ik op</div>
+        <h2>Vier vragen. <em>Eerlijke antwoorden.</em></h2>
+        <div class="list">
+          <div><i>01</i>Snap ik binnen 5 tellen wat je doet?</div>
+          <div><i>02</i>Zie ik meteen hoe ik boek of contact opneem?</div>
+          <div><i>03</i>Werkt het lekker op mijn telefoon?</div>
+          <div><i>04</i>Voelt het als <em>jóuw</em> zaak, of als een template?</div>
+        </div>` },
+      { theme: 'dark', html: `
+        <div class="kicker">Klaar?</div>
+        <h1 class="lg">Durf jij de <em>roast</em> aan?</h1>
+        <div class="comments">
+          <div class="cm"><div class="av-user"></div><div><b>jouwzaak.nl</b><p>ROAST 🔥</p></div></div>
+          <div class="cm reply">${avatarMW}<div><b>media.wow</b><p>Komt eraan! Check je DM 👀</p></div></div>
+        </div>
+        <span class="btn">Reageer: Roast</span>` },
     ],
     caption: `Durf jij? 🔥
 
@@ -59,10 +78,11 @@ Ken je iemand wiens website wel een roast kan gebruiken? Tag ze (met liefde 😇
   {
     id: '2-di-de-appjes',
     slides: [
-      { theme: 'light', html: `
-        <h1 class="md">Herken je <span class="hl">deze appjes?</span></h1>
+      { theme: 'cream', html: `
+        <div class="kicker">Voor salons</div>
+        <h1 class="lg">Herken je <em>deze appjes?</em></h1>
         ${phone(`
-          <div class="chat-head"><div class="av"></div><div><b>Nieuwe klant</b><small>online</small></div></div>
+          <div class="dm-head"><div class="av-user"></div><div><b>Nieuwe klant</b><small>online</small></div></div>
           <div class="chat">
             <div class="bub">Hoi! Wat kost knippen + föhnen? 😊</div>
             <div class="bub">En hebben jullie zaterdag nog plek?</div>
@@ -71,24 +91,27 @@ Ken je iemand wiens website wel een roast kan gebruiken? Tag ze (met liefde 😇
             <div class="typing"><i></i><i></i><i></i></div>
           </div>`, 'phone-low')}` },
       { theme: 'dark', html: `
-        <h1 class="lg">Elk appje is een vraag die <em class="lime">je website</em> had moeten beantwoorden.</h1>
-        <p class="hand big lime" style="margin-top:60px">…terwijl jij met je handen in iemands haar staat.</p>` },
-      { theme: 'light', html: `
-        <div class="kicker">Vraag → oplossing op je site</div>
+        <div class="kicker">Eerlijk is eerlijk</div>
+        <h1 class="lg">Elk appje is een vraag die <em>je website</em> had moeten beantwoorden.</h1>
+        <p class="lead">…terwijl jij met je handen in iemands haar staat.</p>` },
+      { theme: 'white', html: `
+        <div class="kicker">01 — Vraag → oplossing op je site</div>
         <div class="qa">
           <div><span class="q">“Wat kost…?”</span><span class="a">Prijslijst per behandeling</span></div>
-          <div><span class="q">“Nog plek?”</span><span class="a">Online agenda in beeld</span></div>
+          <div><span class="q">“Nog plek?”</span><span class="a">Online agenda direct in beeld</span></div>
           <div><span class="q">“Online boeken?”</span><span class="a">Boekknop bovenaan, op élke pagina</span></div>
-          <div><span class="q">“Parkeren?”</span><span class="a">Route & parkeren bij contact</span></div>
+          <div><span class="q">“Parkeren?”</span><span class="a">Route en parkeren bij contact</span></div>
         </div>` },
-      { theme: 'lime', html: `
-        <h1 class="xl">Minder appjes.</h1>
-        <h1 class="xl"><em>Meer boekingen.</em></h1>
+      { theme: 'cream', html: `
+        <img class="card-img" src="{{img:mw-mockup-van-hees-salon-1.jpg}}" style="height:560px;object-position:50% 55%">
+        <div class="kicker" style="margin-top:56px">02 — Het resultaat</div>
+        <h1 class="lg">Minder appjes. <em>Meer boekingen.</em></h1>
         <p class="lead">En meer aandacht voor de klant in je stoel.</p>` },
       { theme: 'dark', html: `
         <div class="kicker">Benieuwd?</div>
-        <h1 class="lg">Hoeveel appjes zou jouw website kunnen opvangen?</h1>
-        <p class="lead">Reageer ROAST en ik kijk eerlijk mee.</p><div class="btn-line">Reageer: Roast</div>` },
+        <h1 class="lg">Hoeveel appjes zou jouw website kunnen <em>opvangen?</em></h1>
+        <p class="lead">Reageer ROAST en ik kijk eerlijk met je mee.</p>
+        <span class="btn">Reageer: Roast</span>` },
     ],
     caption: `“Hoi! Wat kost knippen?”
 “Hebben jullie zaterdag nog plek?”
@@ -110,29 +133,32 @@ Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
     id: '3-wo-red-flags',
     slides: [
       { theme: 'dark', html: `
-        <div class="flags-bg">🚩🚩🚩</div>
-        <h1 class="xl">Webdesigner<br><em class="red">red flags</em></h1>
-        <p class="hand big lime" style="margin-top:40px">gespot door… een webdesigner 🙋</p>` },
-      { theme: 'light', html: `
+        <div class="kicker">Gespot door een webdesigner</div>
+        <h1 class="xl">Webdesigner<br><em>red flags</em> 🚩</h1>
+        <p class="lead">Vier dingen waar ik altijd even van schrik. Herken jij er één?</p>` },
+      { theme: 'cream', html: `
+        <div class="kicker">01 — 02</div>
         <div class="flag"><span>🚩</span><div><h3>Je domeinnaam staat op <em>hún</em> naam.</h3><p>Stap je over? Dan ben je je eigen adres kwijt.</p></div></div>
         <div class="flag"><span>🚩</span><div><h3>Je zit jaren vast aan hun hosting.</h3><p>Opzeggen? Succes met die kleine lettertjes.</p></div></div>` },
-      { theme: 'sand', html: `
+      { theme: 'white', html: `
+        <div class="kicker">03 — 04</div>
         <div class="flag"><span>🚩</span><div><h3>Je weet nooit wie je moet bellen.</h3><p>Ticketnummer 4831. Je hoort het nog.</p></div></div>
         <div class="flag"><span>🚩</span><div><h3>‘Maatwerk’ dat verdacht veel op een template lijkt.</h3><p>Even googelen… o. Die site heeft je buurman ook.</p></div></div>` },
-      { theme: 'light', html: `
+      { theme: 'cream', html: `
         <div class="kicker">En zo hoort het wél</div>
-        <h1 class="md">Green flags 💚</h1>
-        <div class="checks green">
-          <div>Domeinnaam op <em>jóuw</em> naam</div>
-          <div>Hosting maandelijks opzegbaar</div>
-          <div>Eén vast aanspreekpunt</div>
-          <div>Echt maatwerk, geen template</div>
-        </div>
-        <p class="hand big" style="margin-top:30px">(spoiler: zo werk ik dus 😉)</p>` },
+        <h2>Green flags <em>bij</em></h2>
+        <div class="logo-mask big" style="background:var(--bordeaux);margin-top:26px"></div>
+        <div class="list">
+          <div><i>01</i>Domeinnaam op <em>jóuw</em> naam</div>
+          <div><i>02</i>Hosting maandelijks opzegbaar</div>
+          <div><i>03</i>Eén vast aanspreekpunt</div>
+          <div><i>04</i>Echt maatwerk, geen template</div>
+        </div>` },
       { theme: 'dark', html: `
-        <h1 class="lg">Zie je een 🚩 bij je huidige website?</h1>
-        <p class="lead">Stuur me een DM. Ik vertel je eerlijk wat je opties zijn.</p>
-        <p class="hand big lime" style="margin-top:50px">Of tag iemand die dit moet zien 👀</p>` },
+        <div class="kicker">Herkenbaar?</div>
+        <h1 class="lg">Zie je een 🚩 bij je <em>huidige website?</em></h1>
+        <p class="lead">Stuur me een DM. Ik vertel je eerlijk wat je opties zijn. Of tag iemand die dit moet zien.</p>
+        <span class="btn">Stuur een DM</span>` },
     ],
     caption: `🚩 Webdesigner red flags, gespot door… een webdesigner 🙋
 
@@ -155,8 +181,9 @@ Welke red flag mist er nog? 👇
   {
     id: '4-do-a-of-b',
     slides: [
-      { theme: 'light', html: `
-        <h1 class="md center-t">Welke krijgt <span class="hl">de reservering?</span></h1>
+      { theme: 'cream', html: `
+        <div class="kicker center-t">Voor horeca · Kies maar</div>
+        <h1 class="md center-t">Welke krijgt <em>de reservering?</em></h1>
         <div class="ab">
           <div class="ab-col"><div class="ab-tag">A</div>${phone(`
             <div class="site-a">
@@ -166,27 +193,31 @@ Welke red flag mist er nog? 👇
             </div>`, 'phone-sm')}</div>
           <div class="ab-col"><div class="ab-tag">B</div>${phone(`
             <div class="site-b">
-              <div class="sb-hero"><span>Lunch · Diner · Borrel</span></div>
+              <div class="sb-hero" style="background-image:url({{img:mw-home-lilou-interieur-1.jpg}})"><span>Lunch · Diner · Borrel</span></div>
               <div class="sb-btn">Reserveer een tafel</div>
               <div class="sb-chips"><span>Menu</span><span>Open tot 22:00</span><span>Route</span></div>
             </div>`, 'phone-sm')}</div>
         </div>
-        <p class="hand big center-t" style="margin-top:28px">Zeg het in de comments 👇</p>` },
+        <p class="lead center-t" style="margin-top:34px">Zeg het in de comments 👇</p>` },
       { theme: 'dark', html: `
-        <h1 class="xl">B. <em class="lime">Natuurlijk.</em></h1>
-        <p class="lead">Maar waarom eigenlijk?</p>
-        <div class="checks dark-checks" style="margin-top:50px">
-          <div>Reserveren in één tik, direct in beeld</div>
-          <div>Menu zonder pdf, gewoon leesbaar</div>
-          <div>Openingstijden zonder zoeken</div>
-          <div>Sfeer in plaats van een lap tekst</div>
+        <div class="kicker">Het antwoord</div>
+        <h1 class="xl">B. <em>Natuurlijk.</em></h1>
+        <div class="list">
+          <div><i>01</i>Reserveren in één tik, direct in beeld</div>
+          <div><i>02</i>Menu zonder pdf, gewoon leesbaar</div>
+          <div><i>03</i>Openingstijden zonder zoeken</div>
+          <div><i>04</i>Sfeer in plaats van een lap tekst</div>
         </div>` },
-      { theme: 'sand', html: `
-        <h1 class="lg">Eerlijke vraag:<br>lijkt jóuw website meer op <span class="big-a">A</span>?</h1>
-        <p class="hand big" style="margin-top:40px">geen schaamte, gebeurt de beste 😅</p>` },
-      { theme: 'lime', html: `
-        <h1 class="lg">Van A naar B? Daar ben ik voor.</h1>
-        <p class="lead">Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.</p><div class="btn-line">Reageer: Preview</div>` },
+      { theme: 'white', html: `
+        <div class="kicker">Eerlijke vraag</div>
+        <h1 class="lg">Lijkt jóuw website meer op <span class="big-a">A</span>?</h1>
+        <p class="lead">Geen schaamte. Het gebeurt de beste 😅</p>` },
+      { theme: 'cream', html: `
+        <img class="card-img" src="{{img:mw-sneak-banner.jpg}}" style="height:420px">
+        <div class="kicker" style="margin-top:56px">Gratis sneak preview</div>
+        <h1 class="md">Van A naar B? <em>Daar ben ik voor.</em></h1>
+        <p class="lead">Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.</p>
+        <span class="btn">Reageer: Preview</span>` },
     ],
     caption: `Welke krijgt de reservering: A of B? 🤔
 Zeg het in de comments 👇
@@ -210,8 +241,9 @@ Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe web
     id: '5-vr-bonnetjes',
     slides: [
       { theme: 'dark', html: `
-        <h1 class="md">Je ‘goedkope’ website.<br><em class="lime">Even afrekenen.</em></h1>
-        <div class="receipt" style="transform:rotate(-3deg)">
+        <div class="kicker">Even afrekenen</div>
+        <h1 class="md">Je <em>‘goedkope’</em> website.</h1>
+        <div class="receipt" style="transform:rotate(-2.5deg)">
           <div class="r-title">BONNETJE</div><div class="r-sub">doe-het-zelf-website</div>
           <div class="r-line"><span>Websitebouwer-abonnement</span><span>✓</span></div>
           <div class="r-line"><span>Premium template</span><span>✓</span></div>
@@ -220,20 +252,23 @@ Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe web
           <div class="r-line"><span>Klanten die afhaken</span><span>???</span></div>
           <div class="r-total"><span>TOTAAL</span><span>duurder dan<br>je denkt</span></div>
         </div>` },
-      { theme: 'light', html: `
-        <h1 class="md">En nu <span class="hl">de mijne.</span></h1>
-        <div class="receipt" style="transform:rotate(2deg)">
-          <div class="r-title">BONNETJE</div><div class="r-sub">MediaWow · maatwerk</div>
+      { theme: 'cream', html: `
+        <div class="kicker">En nu de mijne</div>
+        <h1 class="md">Maatwerk, <em>zonder verrassingen.</em></h1>
+        <div class="receipt" style="transform:rotate(1.5deg)">
+          <div class="logo-mask r-logo" style="background:#1B0405"></div><div class="r-sub">maatwerk · rhenen</div>
           <div class="r-line"><span>Maatwerk website</span><span>v.a. €2.995</span></div>
-          <div class="r-line"><span>of maandelijks, incl. hosting & onderhoud</span><span>€165 p/m</span></div>
+          <div class="r-line"><span>of gespreid, incl. hosting & onderhoud</span><span>€165 p/m</span></div>
           <div class="r-line"><span>Eén aanspreekpunt</span><span>inbegrepen</span></div>
           <div class="r-line"><span>Domein op jouw naam</span><span>inbegrepen</span></div>
           <div class="r-line"><span>Avonden zelf puzzelen</span><span>0</span></div>
           <div class="r-total"><span>TOTAAL</span><span>tijd terug<br>voor je zaak</span></div>
         </div>` },
-      { theme: 'lime', html: `
-        <h1 class="xl">Bonnetje<br><em>bewaren?</em></h1>
-        <p class="lead">Plan een kennismaking via mediawow.nl. Of reageer PREVIEW voor een gratis preview.</p><div class="btn-line">Plan een kennismaking</div>` },
+      { theme: 'dark', html: `
+        <div class="kicker">Bonnetje bewaren?</div>
+        <h1 class="xl">Laten we <em>kennismaken.</em></h1>
+        <p class="lead">Vrijblijvend, via mediawow.nl. Of reageer PREVIEW voor een gratis preview van je nieuwe website.</p>
+        <span class="btn">Plan een kennismaking</span>` },
     ],
     caption: `Je ‘goedkope’ website. Even afrekenen. 🧾
 
@@ -243,11 +278,11 @@ Klanten die afhaken: ???
 
 En nu de mijne 👇
 ✨ Maatwerk website vanaf €2.995
-✨ Of maandelijks: €165 p/m, incl. hosting en onderhoud
+✨ Of gespreid: €165 p/m, incl. hosting en onderhoud
 ✨ Eén aanspreekpunt en je domein op jouw naam
 ✨ Avonden zelf puzzelen: 0
 
-Bonnetje bewaren? Plan een kennismaking via mediawow.nl (link in bio) of reageer PREVIEW voor een gratis preview.
+Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in bio) of reageer PREVIEW voor een gratis preview.
 
 #websitelatenmaken #webdesign #ondernemen #zzp #mediawow`,
   },
@@ -257,7 +292,8 @@ Bonnetje bewaren? Plan een kennismaking via mediawow.nl (link in bio) of reageer
     id: '6-za-lockscreen',
     slides: [
       { theme: 'dark', html: `
-        <h1 class="md">Zo hoort je zaterdag<br><em class="lime">te beginnen.</em></h1>
+        <div class="kicker">Zaterdag, 08:30</div>
+        <h1 class="lg">Zo hoort je zaterdag <em>te beginnen.</em></h1>
         ${phone(`
           <div class="lock"><div class="l-date">zaterdag 21 november</div><div class="l-time">08:30</div>
             <div class="notif"><b>Reserveringen</b><small>nu</small><p>Nieuwe reservering: 4 personen, vanavond 19:30</p></div>
@@ -266,21 +302,26 @@ Bonnetje bewaren? Plan een kennismaking via mediawow.nl (link in bio) of reageer
             <div class="notif"><b>Reserveringen</b><small>31 min</small><p>Nieuwe reservering: 2 personen, zo 12:30</p></div>
           </div>`, 'phone-low phone-lock')}` },
       { theme: 'dark', html: `
-        <h1 class="md">…of zo.</h1>
+        <div class="kicker">Of…</div>
+        <h1 class="lg"><em>…zo.</em></h1>
         ${phone(`
           <div class="lock"><div class="l-date">zaterdag 21 november</div><div class="l-time">08:30</div>
             <div class="l-empty">Geen meldingen</div>
           </div>`, 'phone-low phone-lock')}` },
-      { theme: 'light', html: `
-        <h1 class="lg">Het verschil zit niet in je zaak.<br><span class="hl">Het zit in je website.</span></h1>
-        <div class="checks" style="margin-top:40px">
-          <div>Boek- of reserveerknop direct in beeld</div>
-          <div>Je reserveringssysteem netjes gekoppeld</div>
-          <div>Alles wat ze willen weten, zonder te appen</div>
+      { theme: 'cream', html: `
+        <div class="kicker">01 — Het verschil</div>
+        <h1 class="lg">Niet je zaak. <em>Je website.</em></h1>
+        <div class="list">
+          <div><i>01</i>Boek- of reserveerknop direct in beeld</div>
+          <div><i>02</i>Je reserveringssysteem netjes gekoppeld</div>
+          <div><i>03</i>Alles wat ze willen weten, zonder te appen</div>
         </div>` },
-      { theme: 'lime', html: `
-        <h1 class="lg">Wil jij meer van die meldingen?</h1>
-        <p class="lead">Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.</p><div class="btn-line">Reageer: Preview</div>` },
+      { theme: 'white', html: `
+        <img class="card-img" src="{{img:mw-mockup-lilou-1-7.jpg}}" style="height:420px;object-position:50% 62%">
+        <div class="kicker" style="margin-top:56px">Gratis sneak preview</div>
+        <h1 class="md">Meer van die <em>meldingen?</em></h1>
+        <p class="lead">Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.</p>
+        <span class="btn">Reageer: Preview</span>` },
     ],
     caption: `Zaterdagochtend. Koffie. Telefoon checken. ☕️📲
 
@@ -300,17 +341,19 @@ Wil jij meer van die meldingen? Reageer PREVIEW 🤍
   {
     id: '7-zo-unpopular-opinion',
     slides: [
-      { theme: 'lime', html: `
-        <div class="pill">Unpopular opinion</div>
+      { theme: 'white', html: `
+        <div class="kicker">Unpopular opinion</div>
         <h1 class="xl">Je hebt geen <em>mooiere</em> website nodig.</h1>
-        <p class="hand big" style="margin-top:40px">zegt de webdesigner 🙃</p>` },
+        <p class="lead">Ja, dat zegt een webdesigner 🙃</p>` },
       { theme: 'dark', html: `
-        <h1 class="xl">Je hebt een website nodig die iets <em class="lime">dóét.</em></h1>
-        <div class="words"><span>Boekt.</span><span>Antwoordt.</span><span>Verkoopt.</span></div>
+        <h1 class="xl">Je hebt een website nodig die iets <em>dóét.</em></h1>
+        <div class="words"><span>Boekt</span><span>Antwoordt</span><span>Verkoopt</span></div>
         <p class="lead">Ook als jij slaapt.</p>` },
-      { theme: 'light', html: `
-        <h1 class="lg">Mooi is de basis.<br><span class="hl">Niet het doel.</span></h1>
-        <p class="lead">Eens of oneens? Zeg het in de comments. Ik ben benieuwd 👇</p>` },
+      { theme: 'cream', html: `
+        <img class="card-img" src="{{img:mw-mockup-mark-minkman-1-7.jpg}}" style="height:560px;object-position:50% 55%">
+        <div class="kicker" style="margin-top:56px">Eens of oneens?</div>
+        <h1 class="lg">Mooi is de basis. <em>Niet het doel.</em></h1>
+        <p class="lead">Zeg het in de comments. Ik ben benieuwd 👇</p>` },
     ],
     caption: `Unpopular opinion: je hebt geen mooiere website nodig. 🙃
 (ja, dat zegt een webdesigner)
