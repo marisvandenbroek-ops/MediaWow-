@@ -15,11 +15,13 @@ module.exports = [
           <div class="kicker">Gratis website-check</div>
           <h1 class="hero">Je website verliest klanten.<br><em>Ik laat je zien waar.</em></h1>
         </div>` },
-      { theme: 'dark', html: `
-        <div class="kicker">01 — Waarom</div>
-        <div class="count">3<span>·</span>2<span>·</span>1</div>
-        <h2>Zo lang krijgt je website. <em>Daarna haken ze af.</em></h2>
-        <p class="lead">Swipe: zo help ik je die paar tellen te winnen.</p>` },
+      { theme: 'rood', html: `
+        <div class="kicker" style="position:absolute;top:200px;left:90px">01 — Waarom</div>
+        <div class="giant">3·2·1</div>
+        <div class="band">
+          <h2>Zo lang krijgt je website. <em>Daarna haken ze af.</em></h2>
+          <p class="lead">Swipe: zo help ik je die paar tellen te winnen.</p>
+        </div>` },
       { theme: 'dark', html: `
         <div class="split">
           <div class="split-txt">
@@ -93,8 +95,9 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
         <div class="kicker">Eerlijk is eerlijk</div>
         <h1 class="lg">Elk appje is een vraag die <em>je website</em> had moeten beantwoorden.</h1>
         <p class="lead">…terwijl jij met je handen in iemands haar staat.</p>` },
-      { theme: 'dark', html: `
+      { theme: 'rood', html: `
         <div class="kicker">01 — Vraag → oplossing op je site</div>
+        <h2 style="margin-bottom:50px">Zet het antwoord <em>op je site.</em></h2>
         <div class="qa">
           <div><span class="q">“Wat kost…?”</span><span class="a">Prijslijst per behandeling</span></div>
           <div><span class="q">“Nog plek?”</span><span class="a">Online agenda direct in beeld</span></div>
@@ -150,10 +153,10 @@ Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
         <div class="kicker">03 — 04</div>
         <div class="flag"><span class="flagmark"></span><div><h3>Je weet nooit wie je moet bellen.</h3><p>Ticketnummer 4831. Je hoort het nog.</p></div></div>
         <div class="flag"><span class="flagmark"></span><div><h3>‘Maatwerk’ dat verdacht veel op een template lijkt.</h3><p>Even googelen… o. Die site heeft je buurman ook.</p></div></div>` },
-      { theme: 'dark', html: `
+      { theme: 'rood', html: `
         <div class="kicker">En zo hoort het wél</div>
         <h2>Green flags <em>bij</em></h2>
-        <div class="logo-mask big" style="background:#FAF4ED;margin-top:26px"></div>
+        <div class="logo-mask big" style="background:var(--bordeaux);margin-top:26px"></div>
         <div class="list">
           <div><i>01</i>Domeinnaam op <em>jóuw</em> naam</div>
           <div><i>02</i>Hosting maandelijks opzegbaar</div>
@@ -217,10 +220,13 @@ Welke red flag mist er nog? 👇
           <div><i>03</i>Openingstijden zonder zoeken</div>
           <div><i>04</i>Sfeer in plaats van een lap tekst</div>
         </div>` },
-      { theme: 'dark', html: `
-        <div class="kicker">Eerlijke vraag</div>
-        <h1 class="lg">Lijkt jóuw website meer op <span class="big-a">A</span>?</h1>
-        <p class="lead">Geen schaamte. Het gebeurt de beste.</p>` },
+      { theme: 'rood', html: `
+        <div class="giant-a">A</div>
+        <div style="position:relative;z-index:2;margin-top:-380px">
+          <div class="kicker">Eerlijke vraag</div>
+          <h1 class="hero">Lijkt jóuw website <em>meer op A?</em></h1>
+          <p class="lead" style="max-width:420px">Geen schaamte.<br>Het gebeurt de beste.</p>
+        </div>` },
       { theme: 'dark', html: `
         <img class="card-img" src="{{img:mw-sneak-banner.jpg}}" style="height:420px">
         <div class="kicker" style="margin-top:56px">Gratis sneak preview</div>
@@ -358,8 +364,8 @@ Wil jij meer van die meldingen? Reageer PREVIEW en ik stuur je de link voor een 
         <div class="kicker">Unpopular opinion</div>
         <h1 class="hero">Je hebt geen <span class="strike">mooiere</span> website nodig.</h1>
         <p class="lead">Ja, dat zegt een webdesigner. Swipe →</p>` },
-      { theme: 'dark', html: `
-        <h1 class="xl">Je hebt een website nodig die iets <em>dóét.</em></h1>
+      { theme: 'rood', html: `
+        <h1 class="hero">Je hebt een website nodig die iets <em>dóét.</em></h1>
         <div class="words"><span>Boekt</span><span>Antwoordt</span><span>Verkoopt</span></div>
         <p class="lead">Ook als jij slaapt.</p>` },
       { theme: 'dark', html: `
