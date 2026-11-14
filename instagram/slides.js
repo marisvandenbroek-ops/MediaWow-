@@ -8,26 +8,21 @@ module.exports = [
   {
     id: '1-ma-website-check',
     slides: [
-      { theme: 'dark', html: `
-        <div class="kicker">Gratis website-check</div>
-        <h1 class="hero" style="font-size:132px">Ik check jouw website. <em>Gratis.</em></h1>
-        <div class="cover-cta">
-          <div class="cc-label">Reageer TIPS hieronder 👇</div>
-          <div class="cc-box"><div class="av-user"></div><span class="cc-typed">TIPS</span><span class="cc-post">Plaatsen</span></div>
-        </div>
-        ${phone(`
-          <div class="dm-head">${avatarMW}<div><b>media.wow</b><small>MediaWow Webdesign</small></div></div>
-          <div class="chat">
-            <div class="bub me">Hoi! Hier zijn je 3 tips 🤍</div>
-            <div class="bub me"><b>1.</b> Zet je boekknop bovenaan, dan vinden klanten ‘m meteen.</div>
-            <div class="bub me"><b>2.</b> Vertel in één zin wat je doet en voor wie.</div>
-          </div>`, 'phone-cover')}` },
+      { theme: 'greige', cls: 'nopad', html: `
+        <img src="{{img:canva/foto-157.jpg}}" style="position:absolute;left:0;top:0;width:100%;height:740px;object-fit:cover;object-position:50% 40%"><div style="position:absolute;left:0;right:0;top:0;height:220px;background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,0))"></div>
+        <div class="ghost" style="left:-20px;top:500px;font-size:300px">gratis</div>
+        <div class="panel">
+          <div class="kicker">Gratis website-check</div>
+          <h1 class="pf" style="font-size:104px;line-height:1">Ik check jouw website. <em><span class="mark">Gratis.</span></em></h1>
+          <div class="pill"><div class="av-user"></div><b>TIPS</b><span>Plaatsen</span></div>
+          <div class="hand" style="position:absolute;right:80px;top:20px;transform:rotate(-6deg)">reageer hier ↓</div>
+        </div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Waarom</div>
         <div class="count">3<span>·</span>2<span>·</span>1</div>
         <h2>Zo lang krijgt je website. <em>Daarna haken ze af.</em></h2>
         <p class="lead">Swipe: zo help ik je die paar tellen te winnen.</p>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="split">
           <div class="split-txt">
             <div class="kicker">02 — Zo werkt het</div>
@@ -46,7 +41,7 @@ module.exports = [
               <div class="bub me"><b>3.</b> Je foto's zijn prachtig. Laat ze groter zien!</div>
             </div>`, 'phone-side')}
         </div>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">03 — Hier kijk ik naar</div>
         <h2>Vier vragen, <em>vanuit je klant.</em></h2>
         <div class="list">
@@ -84,9 +79,10 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
   {
     id: '2-di-de-appjes',
     slides: [
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">Voor salons</div>
-        <h1 class="hero">Krijg jij deze appjes ook?<br><em>Dan mist je website iets.</em></h1>
+        <h1 class="hero">Krijg jij deze appjes ook?<br><em><span class="mark">Dan mist je website iets.</span></em></h1>
+        <div class="hand" style="position:absolute;left:110px;top:760px;transform:rotate(-5deg)">elke dag weer… 🙈</div>
         ${phone(`
           <div class="dm-head"><div class="av-user"></div><div><b>Nieuwe klant</b><small>online</small></div></div>
           <div class="chat">
@@ -100,7 +96,7 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
         <div class="kicker">Eerlijk is eerlijk</div>
         <h1 class="lg">Elk appje is een vraag die <em>je website</em> had moeten beantwoorden.</h1>
         <p class="lead">…terwijl jij met je handen in iemands haar staat.</p>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">01 — Vraag → oplossing op je site</div>
         <div class="qa">
           <div><span class="q">“Wat kost…?”</span><span class="a">Prijslijst per behandeling</span></div>
@@ -108,7 +104,7 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
           <div><span class="q">“Online boeken?”</span><span class="a">Boekknop bovenaan, op élke pagina</span></div>
           <div><span class="q">“Parkeren?”</span><span class="a">Route en parkeren bij contact</span></div>
         </div>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <img class="card-img" src="{{img:mw-mockup-van-hees-salon-1.jpg}}" style="height:560px;object-position:50% 55%">
         <div class="kicker" style="margin-top:56px">02 — Het resultaat</div>
         <h1 class="lg">Minder appjes. <em>Meer boekingen.</em></h1>
@@ -149,15 +145,15 @@ Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
           <div class="doc-stamp">Niet van jou</div>
         </div>
         <p class="lead">Red flag nr. 1 ziet bijna niemand. Swipe →</p>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">01 — 02</div>
         <div class="flag"><span class="flagmark"></span><div><h3>Je domeinnaam staat op <em>hún</em> naam.</h3><p>Stap je over? Dan ben je je eigen adres kwijt.</p></div></div>
         <div class="flag"><span class="flagmark"></span><div><h3>Je zit jaren vast aan hun hosting.</h3><p>Opzeggen? Succes met die kleine lettertjes.</p></div></div>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">03 — 04</div>
         <div class="flag"><span class="flagmark"></span><div><h3>Je weet nooit wie je moet bellen.</h3><p>Ticketnummer 4831. Je hoort het nog.</p></div></div>
         <div class="flag"><span class="flagmark"></span><div><h3>‘Maatwerk’ dat verdacht veel op een template lijkt.</h3><p>Even googelen… o. Die site heeft je buurman ook.</p></div></div>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">En zo hoort het wél</div>
         <h2>Green flags <em>bij</em></h2>
         <div class="logo-mask big" style="background:#FAF4ED;margin-top:26px"></div>
@@ -167,11 +163,12 @@ Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
           <div><i>03</i>Eén vast aanspreekpunt</div>
           <div><i>04</i>Echt maatwerk, geen template</div>
         </div>` },
-      { theme: 'dark', html: `
-        <div class="kicker">Herkenbaar?</div>
+      { theme: 'photo', html: `
+        <img class="bg-photo" src="{{img:canva/foto-060.jpg}}"><div class="bg-fade" style="background:rgba(10,8,8,.55)"></div>
+        <div style="position:relative"><div class="kicker">Herkenbaar?</div>
         <h1 class="lg">Herken je een red flag bij je <em>huidige website?</em></h1>
         <p class="lead">Stuur me een DM. Ik denk graag met je mee over je opties.</p>
-        <span class="btn">Stuur een DM</span>` },
+        <span class="btn lime-btn">Stuur een DM</span></div>` },
     ],
     caption: `Van wie is jouw website eigenlijk? 🤔
 Red flag nr. 1 ziet bijna niemand.
@@ -197,7 +194,7 @@ Welke red flag mist er nog? 👇
   {
     id: '4-do-a-of-b',
     slides: [
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker center-t">Voor horeca · Kies maar</div>
         <h1 class="lg center-t">Welke krijgt <em>de reservering?</em></h1>
         <div class="ab">
@@ -214,7 +211,7 @@ Welke red flag mist er nog? 👇
               <div class="sb-chips"><span>Menu</span><span>Open tot 22:00</span><span>Route</span></div>
             </div>`, 'phone-sm')}</div>
         </div>
-        <p class="lead center-t" style="margin-top:34px">Zeg het in de comments</p>` },
+        <div class="hand center-t" style="margin-top:30px;font-size:58px">zeg het in de comments: A of B? ↓</div>` },
       { theme: 'dark', html: `
         <div class="kicker">Het antwoord</div>
         <h1 class="xl">B. <em>Natuurlijk.</em></h1>
@@ -224,11 +221,11 @@ Welke red flag mist er nog? 👇
           <div><i>03</i>Openingstijden zonder zoeken</div>
           <div><i>04</i>Sfeer in plaats van een lap tekst</div>
         </div>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">Eerlijke vraag</div>
         <h1 class="lg">Lijkt jóuw website meer op <span class="big-a">A</span>?</h1>
         <p class="lead">Geen schaamte. Het gebeurt de beste.</p>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <img class="card-img" src="{{img:mw-sneak-banner.jpg}}" style="height:420px">
         <div class="kicker" style="margin-top:56px">Websites voor horeca</div>
         <h1 class="md">Van A naar B? <em>Binnen drie weken online.</em></h1>
@@ -259,10 +256,11 @@ Of reageer HORECA en ik stuur je de link 🤍
   {
     id: '5-vr-bonnetjes',
     slides: [
-      { theme: 'dark', html: `
-        <div class="kicker" style="margin-top:40px">Dag van de Ondernemer · 20 november</div>
-        <h1 class="md">Je ‘goedkope’ website <em>kost je meer dan je denkt.</em></h1>
-        <div class="receipt" style="transform:rotate(-2.5deg)">
+      { theme: 'photo', html: `
+        <img class="bg-photo" src="{{img:canva/foto-083.jpg}}"><div class="bg-fade" style="background:linear-gradient(180deg,rgba(10,8,8,.75) 0%,rgba(10,8,8,.35) 45%,rgba(10,8,8,.2) 100%)"></div>
+        <div class="kicker" style="margin-top:40px;position:relative">Dag van de Ondernemer · 20 november</div>
+        <h1 class="md" style="position:relative">Je ‘goedkope’ website <em>kost je meer dan je denkt.</em></h1>
+        <div class="receipt" style="transform:rotate(-2.5deg) scale(.88);margin-top:20px">
           <div class="r-title">BONNETJE</div><div class="r-sub">doe-het-zelf-website</div>
           <div class="r-line"><span>Websitebouwer-abonnement</span><span>✓</span></div>
           <div class="r-line"><span>Premium template</span><span>✓</span></div>
@@ -271,7 +269,7 @@ Of reageer HORECA en ik stuur je de link 🤍
           <div class="r-line"><span>Klanten die afhaken</span><span>???</span></div>
           <div class="r-total"><span>TOTAAL</span><span>duurder dan<br>je denkt</span></div>
         </div>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">En nu de mijne</div>
         <h1 class="md">Maatwerk, <em>zonder verrassingen.</em></h1>
         <div class="receipt" style="transform:rotate(1.5deg)">
@@ -312,25 +310,22 @@ Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in b
   {
     id: '6-za-no-show',
     slides: [
-      { theme: 'dark', html: `
-        <div class="kicker">Voor horeca · zaterdagavond</div>
-        <h1 class="hero">Tafel voor 4 om 19:30. <em>Niemand kwam.</em></h1>
-        <div class="tent">
-          <div class="tent-top"></div>
-          <div class="tent-card">
-            <div class="tc-k">Gereserveerd</div>
-            <div class="tc-n">Fam. de Vries</div>
-            <div class="tc-d">19:30 · 4 personen</div>
-          </div>
-          <div class="noshow">No-show</div>
-        </div>` },
+      { theme: 'photo', html: `
+        <img class="bg-photo" src="{{img:canva/foto-067.jpg}}" style="filter:brightness(.92)">
+        <div class="bg-fade" style="background:linear-gradient(180deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.55) 30%,rgba(0,0,0,0) 52%,rgba(0,0,0,.45) 100%)"></div>
+        <div class="Mmark">M</div>
+        <div style="position:absolute;left:90px;right:90px;top:190px">
+          <div class="kicker">Voor horeca · zaterdagavond</div>
+          <h1 class="pf" style="font-size:96px;line-height:1;color:#fff">Tafel voor 4 om 19:30.<br><em>Niemand kwam.</em></h1>
+        </div>
+        <div class="note" style="left:460px;top:860px">zo voorkom je dit →</div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Wat één restaurant deed</div>
         <div class="big-stat"><span class="from">30%</span><span class="arr">→</span><span class="to">3%</span></div>
         <h2>Minder no-shows. <em>Met één aanpassing.</em></h2>
         <p class="lead">Een restaurant in Wateringen vraagt bij het reserveren €10 aanbetaling per persoon. Hun no-shows daalden van 30 naar 3 procent.</p>
         <p class="src">Bron: Entree Magazine</p>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">02 — Zo regel je het op je website</div>
         <h2>Reserveren mét <em>commitment.</em></h2>
         <div class="list">
@@ -339,7 +334,7 @@ Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in b
           <div><i>03</i>Annuleren in één klik, zodat ze afzeggen in plaats van wegblijven</div>
           <div><i>04</i>Duidelijke voorwaarden, vriendelijk verwoord</div>
         </div>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <img class="card-img" src="{{img:mw-mockup-lilou-1-7.jpg}}" style="height:420px;object-position:50% 62%">
         <div class="kicker" style="margin-top:56px">Websites voor horeca</div>
         <h1 class="md">Volle tafels. <em>Die ook echt komen.</em></h1>

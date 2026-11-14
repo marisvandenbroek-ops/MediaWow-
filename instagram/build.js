@@ -9,7 +9,7 @@ const OUT = path.join(__dirname, 'week-1');
 const ASSETS = path.join(__dirname, 'assets');
 const dataURI = f => `data:image/${f.endsWith('.png') ? 'png' : 'jpeg'};base64,` + fs.readFileSync(path.join(ASSETS, f)).toString('base64');
 const LOGO = dataURI('logo-zwart.png'); // used as a mask, so it can take any colour
-const FONTS = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap';
+const FONTS = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=Caveat:wght@600&family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap';
 
 const CSS = `
 :root{--ink:#1B0405;--bordeaux:#3A1011;--wine:#561C1E;--mauve:#7A5A5A;--cream:#FAF4ED;--white:#FFFFFF;--line:rgba(58,16,17,.16)}
@@ -219,15 +219,64 @@ em{font-style:italic}
 .laptop-wrap{position:relative;margin-top:56px;border-radius:6px;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,.5)}
 .laptop-wrap img{display:block;width:100%;height:520px;object-fit:cover;object-position:50% 55%}
 .neq{position:absolute;right:30px;bottom:30px;background:#1B0405;color:#FAF4ED;font-family:'Instrument Serif';font-style:italic;font-size:64px;padding:10px 30px}
+/* ===== Instagram-stijl: greige · zwart · lime (Playfair) ===== */
+.greige{background:#E9E5DF;color:#141414}
+.greige h1,.greige h2,.greige h3,.pf{font-family:'Playfair Display',serif;font-weight:400;letter-spacing:-.02em}
+.greige h1.hero{font-size:100px;line-height:1}
+.greige .phone-low{bottom:-120px}
+.nopad .hdr .h{color:#fff}
+.nopad .hdr .logo-mask{background:#fff!important} .greige h1.xl{font-size:104px;line-height:1} .greige h1.lg{font-size:86px;line-height:1.02} .greige h1.md{font-size:76px;line-height:1.04} .greige h2{font-size:74px;line-height:1.04}
+.greige em,.greige h1 em,.greige h3 em{color:#141414;font-style:italic}
+.greige .kicker{color:#6b6258;font-weight:500;letter-spacing:.32em}
+.greige .lead{color:#3a3530;opacity:1}
+.greige .btn{background:#141414;color:#fff}
+.mark{background:linear-gradient(transparent 55%,#E8F27A 55%,#E8F27A 92%,transparent 92%);padding:0 6px;margin:0 -6px}
+.dark .mark,.photo .mark{color:inherit;background:linear-gradient(transparent 60%,rgba(232,242,122,.55) 60%,rgba(232,242,122,.55) 92%,transparent 92%)}
+.hand{font-family:Caveat,cursive;font-weight:600;font-size:50px;color:#141414}
+.dark .hand,.photo .hand{color:#E8F27A}
+.ghost{position:absolute;font-family:'Playfair Display';font-style:italic;color:rgba(255,255,255,.55);white-space:nowrap;line-height:1}
+.nopad{padding:0!important}
+.panel{position:absolute;left:0;right:0;top:740px;bottom:0;padding:56px 90px 0}
+.panel .kicker{margin-bottom:22px}
+.pill{display:flex;align-items:center;gap:18px;background:#fff;border-radius:100px;padding:16px 30px 16px 16px;box-shadow:0 14px 40px rgba(0,0,0,.12);font-size:38px;margin-top:40px}
+.pill .av-user{flex:0 0 58px;height:58px}
+.pill b{flex:1;font-weight:600}.pill b:after{content:'';display:inline-block;width:3px;height:38px;background:#141414;margin-left:6px;vertical-align:-6px}
+.pill span{font-weight:600;color:#3B82F6;font-size:28px}
+.note{position:absolute;transform:rotate(-4deg);background:#E8F27A;color:#141414;font-family:Caveat;font-weight:600;font-size:48px;padding:14px 28px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.Mmark{position:absolute;top:150px;right:80px;font-family:'Playfair Display';font-size:120px;line-height:1;color:#E8F27A;z-index:5}
+.lime-btn{background:#E8F27A!important;color:#141414!important}
+.photo .kicker{color:rgba(255,255,255,.85)}
+/* greige componenten */
+.greige .list{border:0;display:flex;flex-direction:column;gap:14px}
+.greige .list div{border:0;background:#fff;border-radius:6px;padding:28px 34px 28px 110px;color:#141414}
+.greige .list i{left:34px;top:22px;font-family:'Playfair Display';font-style:italic;font-size:48px;color:#141414}
+.greige .list div:first-child{box-shadow:inset 6px 0 0 #E8F27A}
+.greige .qa{border:0;display:flex;flex-direction:column;gap:14px}
+.greige .qa div{border:0;background:#fff;border-radius:6px;padding:32px 38px}
+.greige .qa .q{font-family:'Playfair Display';color:#141414;font-size:48px}
+.greige .qa .a{border-left-color:#E8F27A;border-left-width:6px}
+.greige .flag{background:#fff;border-radius:6px;padding:42px 44px;margin-bottom:20px;border:0}
+.greige .flag h3{font-size:62px;line-height:1.05}
+.greige .flag p{color:#6b6258;opacity:1}
+.greige .nums div{border-color:rgba(20,20,20,.12)} .greige .nums i{font-family:'Playfair Display';color:#141414}
+.greige .nums b{background:linear-gradient(transparent 55%,#E8F27A 55%);padding:0 4px}
+.greige .big-a{background:#141414;color:#E8F27A;font-family:'Playfair Display'}
+.greige .ab-tag{background:#141414;color:#E8F27A;font-family:'Playfair Display'}
+.greige .card-img{box-shadow:0 24px 50px rgba(0,0,0,.18)}
+.greige .phone{box-shadow:0 40px 80px rgba(0,0,0,.25)}
+.greige .receipt{box-shadow:0 30px 60px rgba(0,0,0,.18)}
+.greige .r-total span:last-child{background:#E8F27A;color:#141414}
+.greige .logo-mask.big{background:#141414!important}
+.greige .Mcorner{position:absolute;top:150px;right:80px;font-family:'Playfair Display';font-size:110px;color:#E8F27A;line-height:1}
 `;
 
 function slideHTML(sl, i, n) {
   const html = sl.html.replace(/\{\{img:([^}]+)\}\}/g, (_, f) => dataURI(f));
   const onDark = sl.theme === 'dark' || sl.theme === 'photo';
-  const logoColor = onDark ? '#fff' : 'var(--bordeaux)';
+  const logoColor = onDark ? '#fff' : (sl.theme === 'greige' ? '#141414' : 'var(--bordeaux)');
   const counter = n > 1 ? (i === 0 ? 'Swipe →' : `${String(i + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}`) : 'mediawow.nl';
   return `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONTS}"><style>${CSS}</style></head>
-<body><div class="s ${sl.theme}">${html}
+<body><div class="s ${sl.theme} ${sl.cls || ''}">${html}
 <div class="hdr"><div class="logo-mask" style="background:${logoColor}"></div><span class="h">@media.wow</span></div>
 <div class="ftr"><span>mediawow.nl</span><span>${counter}</span></div></div></body></html>`;
 }
