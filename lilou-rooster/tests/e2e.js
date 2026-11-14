@@ -280,7 +280,7 @@ async function test(name, fn) {
   });
   await test('instellingen: functie en snelkeuze-dienst toevoegen werkt door in het inplanvenster', async () => {
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
-    await shared.click('[data-gosettings]'); await shared.waitForSelector('[data-posadd]');
+    await shared.click('[data-gosettings]'); await shared.waitForSelector('[data-posadd]'); await shared.evaluate(() => document.querySelectorAll('details.setsec').forEach(d => (d.open = true)));
     await shared.fill('[data-posadd] [name=pos]', 'Runner'); await shared.click('[data-posadd] button'); await shared.waitForSelector('.poslist:has-text("Runner")');
     await shared.click('[data-tpladd]'); await shared.fill('.tplrow >> nth=-1 >> [name=label]', 'Brunch'); await shared.fill('.tplrow >> nth=-1 >> [name=start]', '10:00'); await shared.fill('.tplrow >> nth=-1 >> [name=end]', '15:00');
     await shared.click('[data-tplform] button.primary'); await shared.waitForSelector('.toast:has-text("Snelkeuze")');
@@ -292,7 +292,7 @@ async function test(name, fn) {
   });
   await test('bezetting: norm per weekdag en gasten tonen tekort per functie', async () => {
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
-    await shared.click('[data-gosettings]'); await shared.waitForSelector('[data-staffform]');
+    await shared.click('[data-gosettings]'); await shared.waitForSelector('[data-staffform]'); await shared.evaluate(() => document.querySelectorAll('details.setsec').forEach(d => (d.open = true)));
     for (let wd = 0; wd < 7; wd++) await shared.fill(`[data-staff="${wd}"][data-pos="Afwas"]`, '1');
     await shared.fill('[data-ratio="Bediening"]', '20');
     await shared.click('[data-staffform] button.primary'); await shared.waitForSelector('.toast:has-text("Bezetting opgeslagen")');
@@ -302,7 +302,7 @@ async function test(name, fn) {
     await shared.waitForSelector('.covrow .covp:has-text("/5")');
   });
   await test('gesloten dag: zichtbaar in de planning en waarschuwing bij een dienst', async () => {
-    await shared.click('[data-gosettings]'); await shared.waitForSelector('[data-dayform]');
+    await shared.click('[data-gosettings]'); await shared.waitForSelector('[data-dayform]'); await shared.evaluate(() => document.querySelectorAll('details.setsec').forEach(d => (d.open = true)));
     const ds = await shared.evaluate(() => { const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 2); const p = x => String(x).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); });
     await shared.click('[data-dayadd]'); await shared.fill('.spdrow >> nth=-1 >> [name=date]', ds); await shared.fill('.spdrow >> nth=-1 >> [name=label]', 'Personeelsuitje');
     await shared.click('[data-dayform] button.primary'); await shared.waitForSelector('.toast:has-text("Dagen opgeslagen")');
@@ -592,7 +592,7 @@ async function test(name, fn) {
   await test('lijsten: directie past een lijst aan in Instellingen', async () => {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#directie'); await login(p, 'Mark');
-    await p.click('[data-gosettings]'); await p.click('[data-ledit]:has-text("Opening bar")');
+    await p.click('[data-gosettings]'); await p.click('details.setsec:has([data-ledit]) summary'); await p.click('[data-ledit]:has-text("Opening bar")');
     await p.waitForSelector('dialog [name=items]');
     const v = await p.inputValue('dialog [name=items]');
     await p.fill('dialog [name=items]', v + '\nMuntblaadjes klaar');
@@ -600,6 +600,26 @@ async function test(name, fn) {
     const { db } = await demoDb(p); const l = db.checklists.find(x => x.name === 'Opening bar');
     assert.ok(l.items.some(it => it.label === 'Muntblaadjes klaar'), 'onderdeel niet toegevoegd');
     assert.strictEqual(l.items[0].id, 'i1', 'bestaande onderdelen kregen een nieuw id (vinkjes zouden verdwijnen)');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
+  await test('mijn uren: medewerker ziet eigen gewerkte uren per week', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne');
+    await p.click('[data-gohours]'); await p.waitForSelector('.mhsum');
+    const { db } = await demoDb(p); const sanne = db.employees.find(e => e.name.startsWith('Sanne'));
+    const mine = db.entries.filter(e => e.employee_id === sanne.id && e.clock_out && e.clock_in.slice(0, 7) === new Date().toISOString().slice(0, 7)).length;
+    if (mine) await p.waitForSelector('.mhrow');
+    assert.ok(!(await p.$$eval('.mhrow', r => r.length)) || mine, 'uren van een ander zichtbaar');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
+  await test('beschikbaarheid: vaste week herhalen vult alleen lege dagen in de komende 4 weken', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Noor');
+    await p.click('[data-tab=beschikbaar]'); await p.click('[data-fill=hele_dag]');
+    await p.click('#avform button[value=repeat]'); await p.waitForSelector('.toast:has-text("komende 4 weken")');
+    const { db } = await demoDb(p); const noor = db.employees.find(e => e.name.startsWith('Noor'));
+    const days = new Set(db.availability.filter(a => a.employee_id === noor.id).map(a => a.date));
+    assert.ok(days.size >= 35, 'niet 5 weken ingevuld: ' + days.size);
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
   await test('telefoon: geen enkel scherm loopt rechts van het scherm af', async () => {
@@ -611,7 +631,7 @@ async function test(name, fn) {
       const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } }); const p = watch(await ctx.newPage());
       await fresh(p, hash); await login(p, who);
       for (const t of tabs) {
-        if (t === 'instellingen') await p.click('[data-gosettings]'); else await p.click(`[data-tab=${t}]`);
+        if (t === 'instellingen') { await p.click('[data-gosettings]'); await p.waitForSelector('details.setsec'); await p.evaluate(() => document.querySelectorAll('details.setsec').forEach(d => (d.open = true))); } else await p.click(`[data-tab=${t}]`);
         await p.waitForTimeout(350);
         const o = await outside(p); assert.deepStrictEqual(o, [], `${who} › ${t} is te breed: ${o.join(', ')}`);
       }

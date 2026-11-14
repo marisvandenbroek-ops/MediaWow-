@@ -1072,6 +1072,7 @@ async function go(view) {
     else if (view === 'diensten') await viewDiensten(el);
     else if (view === 'beschikbaar') await viewBeschikbaar(el);
     else if (view === 'lijsten') await viewLijsten(el);
+    else if (view === 'mijnuren') await viewMyHours(el);
     else if (view === 'instellingen' && isMgr()) await viewSettings(el);
     else if (view === 'overzicht' && isMgr()) await viewDashboard(el);
   } catch (e) {
@@ -1964,6 +1965,34 @@ async function resolveConflicts(c0, how) {
   return how === 'delete' ? ` · ${c.length} dienst${c.length > 1 ? 'en' : ''} verwijderd` : ` · ${c.length} open dienst${c.length > 1 ? 'en' : ''} gemaakt`;
 }
 
+/* ================= Mijn uren (medewerker) ================= */
+async function viewMyHours(el) {
+  S.mhMonth ||= iso(new Date()).slice(0, 7);
+  const [y, m] = S.mhMonth.split('-').map(Number);
+  const first = new Date(y, m - 1, 1), last = new Date(y, m, 0);
+  const from = iso(mondayOf(first)), to = iso(addDays(mondayOf(last), 6));
+  const [ents0, shifts, st] = await Promise.all([store.entries(from, to), store.shifts(iso(addDays(parse(from), -1)), to), store.settings()]);
+  const ents = ents0.filter(x => x.employee_id === S.me.id).sort((a, b) => a.clock_in.localeCompare(b.clock_in));
+  const weeks = {};
+  ents.forEach(x => { const sh = matchShift(x, shifts), p = paidOf(x, sh, st), wk = iso(mondayOf(new Date(x.clock_in))); (weeks[wk] ||= []).push({ x, sh, p }); });
+  const inMonth = Object.values(weeks).flat().filter(r => tDate(r.x.clock_in).slice(0, 7) === S.mhMonth);
+  const tot = inMonth.reduce((t, r) => t + r.p.hours, 0), ok = inMonth.filter(r => r.x.status === 'approved').reduce((t, r) => t + r.p.hours, 0);
+  const ch = Number(S.me.contract_hours) || 0;
+  const label = first.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' });
+  const row = r => `<li class="mhrow"><span><strong>${esc(fmtShort(tDate(r.x.clock_in)))}</strong> ${tHM(new Date(r.x.clock_in))}–${r.x.clock_out ? tHM(new Date(r.x.clock_out)) : '…'}${r.x.break_minutes ? ` · ${r.x.break_minutes} min pauze` : ''}${r.p.adjusted ? ' <small class="muted">(volgens rooster)</small>' : ''}</span>
+    <span class="mhh">${r.x.clock_out ? fmtH(r.p.hours) + ' u' : 'bezig'}<small class="st-${r.x.status}">${esc(ESTATUS[r.x.status] || '')}</small></span></li>`;
+  const wkeys = Object.keys(weeks).sort().reverse();
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Mijn uren</h1><p>Je gewerkte tijd volgens het klokken. Klopt er iets niet? Meld het bij de directie.</p></div></div>
+    <div class="toolbar"><div class="weeknav"><button class="btn icon" data-mm="-1" aria-label="Vorige maand">‹</button><div class="label"><strong>${esc(label)}</strong></div><button class="btn icon" data-mm="1" aria-label="Volgende maand">›</button></div></div>
+    <div class="card pad mhsum"><div><small>Gewerkt deze maand</small><b>${fmtH(tot)} uur</b></div><div><small>Waarvan goedgekeurd</small><b>${fmtH(ok)} uur</b></div>${ch ? `<div><small>Contract</small><b>${fmtH(ch)} u/week</b></div>` : ''}</div>
+    ${wkeys.length ? wkeys.map(k => { const l = weeks[k], h = l.reduce((t, r) => t + r.p.hours, 0);
+      return `<section class="lgroup"><h2>Week ${weekNr(parse(k))} <span class="muted">· ${fmtH(h)} uur${ch && iso(addDays(parse(k), 6)) < todayIso() ? ` (${h - ch >= 0 ? '+' : '−'}${fmtH(Math.abs(h - ch))} t.o.v. contract)` : ch ? ' (week loopt nog)' : ''}</span></h2><ul class="card loglist">${l.map(row).join('')}</ul></section>`; }).join('')
+      : '<div class="card empty">Geen geklokte uren in deze maand.</div>'}
+    <p class="hint">Rooster is leidend: te vroeg inklokken of later uitklokken telt alleen mee als de directie overuren goedkeurt.</p>`;
+  el.onclick = ev => { const b = ev.target.closest('[data-mm]'); if (b) { const d = new Date(y, m - 1 + Number(b.dataset.mm), 1); S.mhMonth = iso(d).slice(0, 7); rerender(); } };
+}
+
 /* ================= Lijsten (afvinken met naam en tijd, temperaturen, registraties) ================= */
 const bizToday = () => iso(new Date(Date.now() - 5 * 3600e3));   // sluiten na middernacht telt voor die avond
 const itemsOn = (l, ds) => (l.items || []).filter(it => (!it.from || it.from <= ds) && (!it.removed || it.removed > ds));
@@ -1991,9 +2020,10 @@ async function viewLijsten(el) {
   const tk = (l, it) => ticks.find(t => t.checklist_id === l.id && t.period === periodOf(l.moment, ds) && t.item_id === it.id);
   const past = ds < today, closed = specialDay(ds)?.kind === 'gesloten';
   const card = l => {
+    const over = l.moment === 'week' || l.moment === 'maand' ? periodOf(l.moment, ds) < periodOf(l.moment, today) : past;
     const items = itemsOn(l, ds), done = items.filter(it => tk(l, it)).length, full = items.length && done === items.length;
     const flagged = items.some(it => tk(l, it)?.flagged);
-    const stat = full ? `<span class="pill ok">Klaar ✓</span>` : closed && !done ? '<span class="pill">Gesloten</span>' : past && l.moment !== 'week' && l.moment !== 'maand' ? `<span class="pill bad">Niet afgemaakt</span>` : `<span class="pill">${done}/${items.length}</span>`;
+    const stat = full ? `<span class="pill ok">Klaar ✓</span>` : closed && !done && !(l.moment === 'week' || l.moment === 'maand') ? '<span class="pill">Gesloten</span>' : over ? `<span class="pill bad">Niet afgemaakt</span>` : `<span class="pill">${done}/${items.length}</span>`;
     const rows = items.map(it => {
       const t = tk(l, it), mine = t && t.employee_id === S.me.id;
       const undo = t && (lead || (mine && !past && !t.flagged)) ? `<button type="button" class="linkbtn small" data-untick="${t.id}" aria-label="Vinkje weghalen">ongedaan</button>` : '';
@@ -2086,9 +2116,26 @@ async function fillLeadPanels(el, byId, fn) {
   ].sort((a, b) => b.at.localeCompare(a.at));
   op.insertAdjacentHTML('beforeend', flags.length ? `<h2 style="margin-top:16px">Buiten de norm <span class="muted">(laatste 7 dagen)</span></h2><ul class="card loglist">${flags.map(x => `<li class="logrow flag">${esc(fmtShort(iso(new Date(x.at))))} ${tTime(x.at)} · ${esc(fn(x.who))}<br>${x.html}</li>`).join('')}</ul>` : '');
   const per = {};
-  recent.forEach(t => { const p = (per[t.employee_id] ||= { n: 0, flag: 0, last: '' }); p.n++; if (t.flagged) p.flag++; if (t.at > p.last) p.last = t.at; });
+  const P = id => (per[id] ||= { n: 0, flag: 0, last: '', miss: 0 });
+  recent.forEach(t => { const p = P(t.employee_id); p.n++; if (t.flagged) p.flag++; if (t.at > p.last) p.last = t.at; });
+  // wie stond er ingeroosterd op een dag dat een lijst van zijn afdeling niet af was? (gisteren en eerder, max 30 dagen)
+  try {
+    const yday = iso(addDays(parse(bizToday()), -1));
+    const sh = (await store.shifts(since, yday)).filter(x => x.employee_id && x.published);
+    const dl = lists.filter(l => l.active !== false && ['opening', 'sluiting', 'dag'].includes(l.moment));
+    const tickSet = new Set(recent.map(t => `${t.checklist_id}|${iso(new Date(new Date(t.at).getTime() - 5 * 3600e3))}|${t.item_id}`));
+    for (let d = since; d <= yday; d = iso(addDays(parse(d), 1))) {
+      if (specialDay(d)?.kind === 'gesloten') continue;
+      const onDay = sh.filter(x => x.date === d);
+      if (!onDay.length) continue;
+      dl.forEach(l => {
+        const its = itemsOn(l, d); if (!its.length || its.every(it => tickSet.has(`${l.id}|${d}|${it.id}`))) return;
+        new Set(onDay.filter(x => !l.department || x.position === l.department).map(x => x.employee_id)).forEach(id => P(id).miss++);
+      });
+    }
+  } catch (e) { /* overzicht zonder gemiste lijsten */ }
   const rows = Object.entries(per).sort((a, b) => b[1].n - a[1].n);
-  st.innerHTML = `<h2>Wie vinkt af <span class="muted">(laatste 30 dagen)</span></h2>${rows.length ? `<div class="table-wrap card"><table class="table"><thead><tr><th>Medewerker</th><th class="num">Vinkjes</th><th class="num">Buiten de norm</th><th class="num hide-sm">Laatst</th></tr></thead><tbody>${rows.map(([id, p]) => `<tr><td>${esc(byId[id]?.name || '?')}</td><td class="num">${p.n}</td><td class="num">${p.flag || '—'}</td><td class="num hide-sm">${esc(fmtShort(iso(new Date(p.last))))} ${tTime(p.last)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="hint">Nog niets afgevinkt.</p>'}
+  st.innerHTML = `<h2>Wie vinkt af <span class="muted">(laatste 30 dagen)</span></h2>${rows.length ? `<div class="table-wrap card"><table class="table"><thead><tr><th>Medewerker</th><th class="num">Vinkjes</th><th class="num">Buiten de norm</th><th class="num" title="Aantal keren dat een lijst van zijn of haar afdeling niet af was op een dag dat diegene ingeroosterd stond">Lijst niet af</th><th class="num hide-sm">Laatst</th></tr></thead><tbody>${rows.map(([id, p]) => `<tr><td>${esc(byId[id]?.name || '?')}</td><td class="num">${p.n}</td><td class="num">${p.flag || '—'}</td><td class="num ${p.miss ? 'bad' : ''}">${p.miss || '—'}</td><td class="num hide-sm">${p.last ? `${esc(fmtShort(iso(new Date(p.last))))} ${tTime(p.last)}` : '—'}</td></tr>`).join('')}</tbody></table></div><p class="hint">"Lijst niet af" telt per dienst: stond je ingeroosterd op een dag dat een lijst van jouw afdeling niet helemaal is afgevinkt, dan telt die mee.</p>` : '<p class="hint">Nog niets afgevinkt.</p>'}
     <p class="hint">Lijsten aanpassen (taken, koelingen, afdeling) doe je bij <button class="linkbtn" data-gosettings2>Instellingen</button>. ${lists.filter(l => l.active !== false).length} actieve lijsten.</p>`;
 }
 function logDialog(kind) {
@@ -2203,29 +2250,25 @@ async function viewSettings(el) {
   el.innerHTML = `
     <div class="page-head"><div><h1>Instellingen</h1><p>Pas de app aan aan hoe jullie werken. Wijzigingen gelden meteen voor iedereen.</p></div></div>
     <div class="settings">
-      <section class="card pad">
-        <h2>Functies</h2>
+      <details class="card pad setsec" data-k="1"><summary><h2>Functies</h2></summary>
         <p class="hint">De functies waarvoor je inplant, zoals Bediening, Keuken of Afwas. Bestaande diensten en medewerkers houden hun functie als je er een weghaalt.</p>
         <div class="poslist">${pos.map((p, i) => `<span class="pill">${esc(p)} <button type="button" class="linkbtn small" data-posdel="${i}" aria-label="${esc(p)} verwijderen">✕</button></span>`).join('') || '<span class="muted small">Nog geen functies.</span>'}</div>
         <form class="addrow" data-posadd><input class="input" name="pos" placeholder="Nieuwe functie, bv. Afwas" maxlength="30" required><button class="btn">Toevoegen</button></form>
-      </section>
+      </details>
 
-      <section class="card pad">
-        <h2>Lijsten</h2>
+      <details class="card pad setsec" data-k="2"><summary><h2>Lijsten</h2></summary>
         <p class="hint">Opening- en sluitlijsten, temperaturen en schoonmaak. Medewerkers zien de lijsten van hun eigen functie; elk vinkje bewaart naam en tijd.</p>
         <div class="lsetlist">${(await store.checklists()).map(l => `<button type="button" class="lsetrow ${l.active === false ? 'off' : ''}" data-ledit="${l.id}"><span><strong>${esc(l.name)}</strong><small>${esc(l.department || 'Iedereen')} · ${esc({ opening: 'bij opening', sluiting: 'bij sluiting', dag: 'elke dag', week: 'elke week', maand: 'elke maand' }[l.moment])} · ${(l.items || []).length} onderdelen${l.active === false ? ' · niet actief' : ''}</small></span><span class="chev">›</span></button>`).join('')}</div>
         <div class="actions" style="margin-top:10px"><button type="button" class="btn" data-lnew>+ Nieuwe lijst</button></div>
-      </section>
+      </details>
 
-      <section class="card pad">
-        <h2>Snelkeuze-diensten</h2>
+      <details class="card pad setsec" data-k="3"><summary><h2>Snelkeuze-diensten</h2></summary>
         <p class="hint">Deze diensten staan als knoppen in het inplanvenster, zodat je met één tik de tijden invult. De eerste is de standaard bij een nieuwe dienst.</p>
         <form data-tplform><div class="tpllist">${tpl.map(tplRow).join('')}</div>
           <div class="actions" style="margin-top:10px"><button type="button" class="btn" data-tpladd>+ Dienst toevoegen</button><button class="btn primary">Opslaan</button></div></form>
-      </section>
+      </details>
 
-      <section class="card pad">
-        <h2>Bezetting per dag</h2>
+      <details class="card pad setsec" data-k="4"><summary><h2>Bezetting per dag</h2></summary>
         <p class="hint">Hoeveel mensen je per functie nodig hebt. De planning laat per dag zien of je genoeg mensen hebt ingepland, bijvoorbeeld <span class="covp short">Bediening 2/4</span>. Leeg of 0 betekent: geen norm.</p>
         <form data-staffform>
           <div class="table-wrap"><table class="stafftable">
@@ -2236,17 +2279,15 @@ async function viewSettings(el) {
           <p class="hint" style="margin-top:8px"><strong>Optioneel, de onderste regel:</strong> vul je bijvoorbeeld 20 in bij Bediening, dan kun je in de planning per dag het aantal gasten of reserveringen invullen. De app rekent dan uit hoeveel mensen je nodig hebt: 80 gasten is 4 bediening. De norm per weekdag blijft het minimum.</p>
           <div class="actions"><button class="btn primary">Opslaan</button></div>
         </form>
-      </section>
+      </details>
 
-      <section class="card pad">
-        <h2>Gesloten dagen en extra feestdagen</h2>
+      <details class="card pad setsec" data-k="5"><summary><h2>Gesloten dagen en extra feestdagen</h2></summary>
         <p class="hint">Gesloten dagen zie je in de planning; een dienst op zo'n dag krijgt een waarschuwing. Extra feestdagen tellen mee voor de feestdagtoeslag, net als de wettelijke feestdagen.</p>
         <form data-dayform><div class="daylist2">${(CFG.specialDays || []).slice().sort((a, b) => a.date.localeCompare(b.date)).map(dayRow).join('')}</div>
           <div class="actions" style="margin-top:10px"><button type="button" class="btn" data-dayadd>+ Dag toevoegen</button><button class="btn primary">Opslaan</button></div></form>
-      </section>
+      </details>
 
-      <section class="card pad">
-        <h2>Doelen voor personeelskosten</h2>
+      <details class="card pad setsec" data-k="6"><summary><h2>Doelen voor personeelskosten</h2></summary>
         <p class="hint">De planning en het Overzicht kleuren groen (op doel), geel (net erover) of rood. Leeg laten = geen doel.</p>
         <form data-goalform>
           <div class="row keep">
@@ -2256,10 +2297,9 @@ async function viewSettings(el) {
           <label class="field">Personeelskosten per uur (€)<input type="number" name="goal_cost_hour" min="0" step="0.5" value="${st.goal_cost_hour ?? ''}" placeholder="bv. 22"></label>
           <div class="actions"><button class="btn primary">Opslaan</button></div>
         </form>
-      </section>
+      </details>
 
-      <section class="card pad">
-        <h2>Toeslagen en loonkosten</h2>
+      <details class="card pad setsec" data-k="7"><summary><h2>Toeslagen en loonkosten</h2></summary>
         <p class="hint">Voor de urenexport en de loonkosten in de planning. Valt een uur onder meerdere toeslagen, dan telt de hoogste. Vraag de juiste percentages aan je salarisadministratie.</p>
         <form data-loonform>
           <div class="row keep">${tf('avondVan', 'Avond vanaf')}${tf('avondTot', 'Avond tot')}</div>
@@ -2269,19 +2309,20 @@ async function viewSettings(el) {
           <div class="row keep">${pf('pct_vakantiegeld', 'Vakantiegeld %', 8)}${pf('pct_werkgever', 'Werkgeverslasten % (indicatie)', 25)}</div>
           <div class="actions"><button class="btn primary">Opslaan</button></div>
         </form>
-      </section>
+      </details>
 
-      <section class="card pad">
-        <h2>Publiceren, ruilen en klokken</h2>
+      <details class="card pad setsec" data-k="8"><summary><h2>Publiceren, ruilen en klokken</h2></summary>
         <label class="check"><input type="checkbox" data-set="mail_on_publish" ${st.mail_on_publish !== false ? 'checked' : ''}> Medewerkers krijgen hun weekrooster per mail als je publiceert</label>
         <form class="sickset" data-sickform><strong>Ziekmelden: wie bellen ze?</strong><p class="hint">Dit nummer staat als belknop in het venster "Ik ben ziek".</p>
           <div class="row keep"><label class="field">Naam<input name="sick_contact" maxlength="40" value="${esc(st.sick_contact || '')}" placeholder="bv. Mark"></label><label class="field">Telefoon<input name="sick_phone" type="tel" maxlength="20" value="${esc(st.sick_phone || '')}" placeholder="06 12345678"></label></div>
           <div class="actions"><button class="btn primary">Opslaan</button></div></form>
         <label class="check"><input type="checkbox" data-set="swap_needs_approval" ${st.swap_needs_approval !== false ? 'checked' : ''}> Ruilen moet door de directie worden goedgekeurd</label>
         <div class="setline"><div><strong>Werklocatie, wifi en klokregels</strong><p class="hint">${st.lat != null ? `Locatie ingesteld, straal ${st.radius_m || 150} m` : 'Nog geen locatie'} · ${(st.wifi_ips || []).length} wifi-netwerk${(st.wifi_ips || []).length === 1 ? '' : 'en'} · planning ${st.plan_leading !== false ? 'is leidend' : 'is niet leidend'}</p></div><button type="button" class="btn" data-clockset>Aanpassen</button></div>
-      </section>
+      </details>
     </div>`;
 
+  S.setOpen ||= new Set(['1']);
+  $$('details.setsec', el).forEach(d => { d.open = S.setOpen.has(d.dataset.k); d.addEventListener('toggle', () => { d.open ? S.setOpen.add(d.dataset.k) : S.setOpen.delete(d.dataset.k); }); });
   const savePos = async list => { await store.saveSettings({ positions: list }); applySettings(await store.settings()); toast('Functies opgeslagen'); rerender(); };
   const readTpl = () => $$('.tplrow', el).map(r => ({ label: $('[name=label]', r).value.trim(), start: $('[name=start]', r).value, end: $('[name=end]', r).value, pauze: Number($('[name=pauze]', r).value) || 0 }));
   el.onclick = async ev => {
@@ -2424,6 +2465,7 @@ async function viewMine(el) {
     ${sickNow ? `<div class="sickbanner"><div><strong>🤒 Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap!</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     ${clockHTML}
     ${sel ? '' : await listsHomeHTML()}
+    ${sel ? '' : '<button type="button" class="card lhome" data-gohours><span><strong>⏱️ Mijn gewerkte uren</strong><small>Per week, met je kloktijden en wat is goedgekeurd</small></span><span class="chev">›</span></button>'}
     ${next && !sel ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
     ${boardH}
     <div class="filters mine-filter"><button data-mf="all" class="${sel ? '' : 'active'}">Komende weken</button><button data-mf="week" class="${sel ? 'active' : ''}">Per week</button></div>
@@ -2438,6 +2480,7 @@ async function viewMine(el) {
     if (ev.target.closest('[data-ics]')) agendaDialog(mine);
     if (ev.target.closest('[data-sick]')) return sickDialog();
     if (ev.target.closest('[data-golists]')) return go('lijsten');
+    if (ev.target.closest('[data-gohours]')) return go('mijnuren');
     const bt = ev.target.closest('[data-better]');
     if (bt) { if (!await ask('Ben je weer beter? De directie krijgt een melding en je ziekmelding stopt vandaag.', 'Ik ben weer beter')) return; try { await store.sickRecover(bt.dataset.better); toast('Fijn dat je weer beter bent!'); rerender(); } catch (x) { toast(errMsg(x), 'error'); } return; }
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
@@ -3068,13 +3111,27 @@ async function viewBeschikbaar(el) {
       <button class="btn icon" data-w="1" aria-label="Volgende week">›</button></div>
       <div class="actions"><button class="btn sm" data-fill="hele_dag">Hele week beschikbaar</button>${prevAv.some(a => a.employee_id === S.me.id) ? '<button class="btn sm" data-copyprev>Zelfde als vorige week</button>' : ''}</div></div>
     <form class="card avform" id="avform">${rows}
-      <div class="avfoot"><span class="hint">${filled ? `✓ ${filled} van 7 dagen doorgegeven` : 'Nog niet doorgegeven'}</span><button class="btn primary">Opslaan</button></div></form>`;
+      <div class="avfoot"><span class="hint">${filled ? `✓ ${filled} van 7 dagen doorgegeven` : 'Nog niet doorgegeven'}</span><div class="actions"><button class="btn" value="repeat" title="Vult de komende 4 weken met dit patroon, alleen op dagen die nog leeg zijn">Opslaan en 4 weken herhalen</button><button class="btn primary" value="save">Opslaan</button></div></div></form>`;
   const f = $('#avform');
   f.onsubmit = async ev => {
     ev.preventDefault();
     const fd = new FormData(f);
     const out = [...Array(7)].map((_, i) => ({ date: iso(addDays(mon, i)), kind: fd.get(`k-${i}`) || null, note: (fd.get(`n-${i}`) || '').trim() || null }));
-    try { await store.saveAvailability(out); toast('Beschikbaarheid opgeslagen'); rerender(); } catch (e) { toast(errMsg(e), 'error'); }
+    try {
+      await store.saveAvailability(out);
+      if (ev.submitter?.value === 'repeat') {
+        // vaste week: de komende 4 weken alleen de lege dagen invullen (wat je al doorgaf blijft staan)
+        const later = await store.availability(iso(addDays(mon, 7)), iso(addDays(mon, 34)));
+        let n = 0;
+        for (let w = 1; w <= 4; w++) {
+          const rows = out.filter(r => r.kind).map(r => ({ ...r, date: iso(addDays(parse(r.date), 7 * w)) }))
+            .filter(r => !later.some(a => a.employee_id === S.me.id && a.date === r.date));
+          if (rows.length) { await store.saveAvailability(rows); n += rows.length; }
+        }
+        toast(`Opgeslagen en ${n} dag${n === 1 ? '' : 'en'} in de komende 4 weken ingevuld`);
+      } else toast('Beschikbaarheid opgeslagen');
+      rerender();
+    } catch (e) { toast(errMsg(e), 'error'); }
   };
   el.onclick = ev => {
     const w = ev.target.closest('[data-w]'); if (w) { S.avWeek = addDays(S.avWeek, 7 * Number(w.dataset.w)); return rerender(); }
