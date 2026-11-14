@@ -137,3 +137,21 @@ In posts kun je niet klikken op een link. Daarom:
 - **Bio-link** op mediawow.nl/horeca zetten in de week met horeca-posts (of een linklijst met horeca, salons en gratis preview).
 - **Reageer HORECA** → stuur de link in een DM (binnen 24 uur).
 - **Story** met link-sticker naar mediawow.nl/horeca op de dag dat de horeca-post of Reel live gaat.
+
+
+---
+
+## Week 1, definitieve planning (stand 14/11)
+
+| Dag | Tijd | Post | Hook | Beeld | CTA |
+|---|---|---|---|---|---|
+| Za 14/11 | live | Reel Zenchef-lockscreen | Zo zou jouw zaterdag eruit moeten zien | telefoon (video) | TIPS |
+| Ma 16/11 | 19:30 | Gratis website-check | Ik check jouw website. Gratis. | reactieveld + DM-telefoon | TIPS |
+| Di 17/11 | 19:30 | Appjes (salons) | Krijg jij deze appjes ook? Dan mist je website iets. | chat-telefoon | TIPS |
+| Wo 18/11 | 19:30 | Red flags | Van wie is jouw website eigenlijk? | domeinregistratie + stempel | DM |
+| Do 19/11 | 19:30 | A of B (horeca) | Welke krijgt de reservering? | twee telefoons | A/B + /horeca |
+| Vr 20/11 | 19:30 | Bonnetjes (Dag van de Ondernemer) | Je 'goedkope' website kost je meer dan je denkt. | kassabon | kennismaking / PREVIEW |
+| Za 21/11 | 11:00 | No-shows (actueel) | Tafel voor 4 om 19:30. Niemand kwam. | gereserveerd-kaartje + NO-SHOW-stempel | /horeca + TIPS |
+| Zo 22/11 | 19:30 | Unpopular opinion | Je hebt geen ~~mooiere~~ website nodig. | laptop op sokkel | eens/oneens |
+
+Geen content over AI/Claude-tools (wens Mariska).

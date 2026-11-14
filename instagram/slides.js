@@ -260,8 +260,8 @@ Of reageer HORECA en ik stuur je de link 🤍
     id: '5-vr-bonnetjes',
     slides: [
       { theme: 'dark', html: `
-        <div class="kicker">Even afrekenen</div>
-        <h1 class="lg">Je <em>‘goedkope’</em> website.</h1>
+        <div class="kicker" style="margin-top:40px">Dag van de Ondernemer · 20 november</div>
+        <h1 class="md">Je ‘goedkope’ website <em>kost je meer dan je denkt.</em></h1>
         <div class="receipt" style="transform:rotate(-2.5deg)">
           <div class="r-title">BONNETJE</div><div class="r-sub">doe-het-zelf-website</div>
           <div class="r-line"><span>Websitebouwer-abonnement</span><span>✓</span></div>
@@ -289,7 +289,9 @@ Of reageer HORECA en ik stuur je de link 🤍
         <p class="lead">Vrijblijvend, via mediawow.nl. Of reageer PREVIEW voor een gratis preview van je nieuwe website.</p>
         <span class="btn">Plan een kennismaking</span>` },
     ],
-    caption: `Je ‘goedkope’ website. Even afrekenen. 🧾
+    caption: `Je ‘goedkope’ website kost je meer dan je denkt. Even afrekenen. 🧾
+
+(Fijne Dag van de Ondernemer trouwens! 🥂 Vandaag dus een eerlijk bonnetje.)
 
 Abonnement ✓ Premium template ✓ Losse apps ✓
 Avonden zelf puzzelen: te veel
@@ -308,68 +310,69 @@ Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in b
 
   // ───────────── ZA: LOCKSCREEN ─────────────
   {
-    id: '6-za-lockscreen',
+    id: '6-za-no-show',
     slides: [
       { theme: 'dark', html: `
-        <div class="kicker">Voor horeca · zaterdag 08:30</div>
-        <h1 class="hero">Zo zou jouw zaterdag <em>eruit moeten zien.</em></h1>
-        ${phone(`
-          <div class="lock"><div class="l-date">zaterdag 21 november</div><div class="l-time">08:30</div>
-            <div class="notif"><div class="n-ic">🍽️</div><div class="n-b"><div class="n-top"><b>Zenchef</b><small>nu</small></div><p>Nieuwe reservering · 4 personen · vanavond 19:30</p></div></div>
-            <div class="notif"><div class="n-ic">🍽️</div><div class="n-b"><div class="n-top"><b>Zenchef</b><small>3 min</small></div><p>Nieuwe reservering · 2 personen · vanavond 20:00</p></div></div>
-            <div class="notif"><div class="n-ic">🍽️</div><div class="n-b"><div class="n-top"><b>Zenchef</b><small>11 min</small></div><p>Nieuwe reservering · 6 personen · zo 12:30 · verjaardag 🎂</p></div></div>
-            <div class="notif"><div class="n-ic">🍽️</div><div class="n-b"><div class="n-top"><b>Zenchef</b><small>24 min</small></div><p>Nieuwe reservering · 2 personen · vanavond 21:00</p></div></div>
-            <div class="notif"><div class="n-ic">🍽️</div><div class="n-b"><div class="n-top"><b>Zenchef</b><small>38 min</small></div><p>Nieuwe reservering · 8 personen · vr 19:00</p></div></div>
-            <div class="n-more">+ 7 nieuwe reserveringen</div>
-          </div>`, 'phone-big phone-lock')}` },
+        <div class="kicker">Voor horeca · zaterdagavond</div>
+        <h1 class="hero">Tafel voor 4 om 19:30. <em>Niemand kwam.</em></h1>
+        <div class="tent">
+          <div class="tent-top"></div>
+          <div class="tent-card">
+            <div class="tc-k">Gereserveerd</div>
+            <div class="tc-n">Fam. de Vries</div>
+            <div class="tc-d">19:30 · 4 personen</div>
+          </div>
+          <div class="noshow">No-show</div>
+        </div>` },
       { theme: 'dark', html: `
-        <div class="kicker">Of…</div>
-        <h1 class="lg"><em>…zo.</em></h1>
-        ${phone(`
-          <div class="lock"><div class="l-date">zaterdag 21 november</div><div class="l-time">08:30</div>
-            <div class="l-empty">Geen meldingen</div>
-          </div>`, 'phone-low phone-lock')}` },
+        <div class="kicker">01 — Wat één restaurant deed</div>
+        <div class="big-stat"><span class="from">30%</span><span class="arr">→</span><span class="to">3%</span></div>
+        <h2>Minder no-shows. <em>Met één aanpassing.</em></h2>
+        <p class="lead">Een restaurant in Wateringen vraagt bij het reserveren €10 aanbetaling per persoon. Hun no-shows daalden van 30 naar 3 procent.</p>
+        <p class="src">Bron: Entree Magazine</p>` },
       { theme: 'dark', html: `
-        <div class="kicker">01 — Het verschil</div>
-        <h1 class="lg">Niet je zaak. <em>Je website.</em></h1>
-        <p class="lead">Gasten willen gewoon reserveren, het liefst in een paar tikken. Op het moment dat zij eraan denken.</p>
+        <div class="kicker">02 — Zo regel je het op je website</div>
+        <h2>Reserveren mét <em>commitment.</em></h2>
         <div class="list">
-          <div><i>01</i>Boek- of reserveerknop direct in beeld</div>
-          <div><i>02</i>Zenchef direct op je eigen website, in jouw stijl</div>
-          <div><i>03</i>Alles wat ze willen weten, zonder te appen</div>
+          <div><i>01</i>Aanbetaling of creditcardgarantie in je reserveringsflow</div>
+          <div><i>02</i>Automatische herinnering de dag ervoor</div>
+          <div><i>03</i>Annuleren in één klik, zodat ze afzeggen in plaats van wegblijven</div>
+          <div><i>04</i>Duidelijke voorwaarden, vriendelijk verwoord</div>
         </div>` },
       { theme: 'dark', html: `
         <img class="card-img" src="{{img:mw-mockup-lilou-1-7.jpg}}" style="height:420px;object-position:50% 62%">
         <div class="kicker" style="margin-top:56px">Websites voor horeca</div>
-        <h1 class="md">Meer van die <em>meldingen?</em></h1>
-        <p class="lead">Een website die je tafels vult, met Zenchef of Guestplan erin. Bekijk de 5 horeca-ontwerpen.</p>
+        <h1 class="md">Volle tafels. <em>Die ook echt komen.</em></h1>
+        <p class="lead">Zenchef of Guestplan netjes in je eigen website. Bekijk de 5 horeca-ontwerpen.</p>
         <span class="btn">mediawow.nl/horeca</span>` },
     ],
-    caption: `Zo zou jouw zaterdag eruit moeten zien. ☕️📲
-Koffie, telefoon erbij… en de ene na de andere reservering via Zenchef.
+    caption: `Tafel voor 4 om 19:30. Niemand kwam. 🍽️
+Herkenbaar? Juist op vrijdag- en zaterdagavond doet een no-show extra pijn.
 
-Of zie jij vooral “Geen meldingen”?
+Een restaurant in Wateringen vraagt nu €10 aanbetaling per persoon bij het reserveren. Hun no-shows daalden van 30% naar 3% (bron: Entree Magazine).
 
-Het verschil zit vaak niet in je zaak, maar in je website:
-✔️ een reserveerknop die je direct ziet
-✔️ Zenchef (of Guestplan) netjes op je eigen website, in jouw stijl
-✔️ menu, openingstijden en route zonder zoeken
+Zo regel je dat via je website:
+✔️ aanbetaling of creditcardgarantie in je reserveringsflow
+✔️ een automatische herinnering de dag ervoor
+✔️ annuleren in één klik, zodat gasten afzeggen in plaats van wegblijven
+✔️ duidelijke voorwaarden, vriendelijk verwoord
 
-Wil jij meer van die meldingen? 📲
-Bekijk de 5 horeca-ontwerpen en klik rond in de live demo's op mediawow.nl/horeca (link in bio). Binnen drie weken online, vanaf €89 per maand.
+Werk je met Zenchef of Guestplan? Dan kan dat gewoon netjes in je eigen website. Bekijk de horeca-ontwerpen op mediawow.nl/horeca (link in bio).
 
-Of reageer HORECA en ik stuur je de link 🤍
+👇 Of reageer TIPS en ik check jouw website gratis.
 
-#horeca #restaurant #horecaondernemer #zenchef #restaurantwebsite #webdesign #mediawow`,
+Hoe ga jij om met no-shows? 👇
+
+#horeca #restaurant #noshow #horecaondernemer #zenchef #restaurantwebsite #mediawow`,
   },
 
-  // ───────────── ZO: UNPOPULAR OPINION ─────────────
   {
     id: '7-zo-unpopular-opinion',
     slides: [
       { theme: 'dark', html: `
         <div class="kicker">Unpopular opinion</div>
-        <h1 class="hero">Je hebt geen <span class="strike">mooiere</span> website nodig.</h1>
+        <h1 class="hero" style="font-size:124px">Je hebt geen <span class="strike">mooiere</span> website nodig.</h1>
+        <div class="laptop-wrap"><img src="{{img:mw-mockup-browz-amsterdam-1-6.jpg}}"><div class="neq">mooi + het werkt ✓</div></div>
         <p class="lead">Ja, dat zegt een webdesigner. Swipe →</p>` },
       { theme: 'dark', html: `
         <h1 class="xl">Je hebt een website nodig die iets <em>dóét.</em></h1>

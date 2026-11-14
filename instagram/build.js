@@ -203,6 +203,22 @@ em{font-style:italic}
 .s:has(.phone-cover){justify-content:flex-start;padding-top:200px}
 .s:has(.phone-cover) .ftr{display:none}
 .phone-cover .bub{font-size:29px}
+.tent{position:relative;margin:70px auto 0;width:700px;height:520px}
+.tent-card{position:absolute;left:0;right:0;bottom:0;height:420px;background:#FDFBF7;color:#1B0405;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;box-shadow:0 40px 80px rgba(0,0,0,.55);transform:perspective(900px) rotateX(10deg)}
+.tent-card:before{content:'';position:absolute;inset:22px;border:1.5px solid rgba(58,16,17,.25)}
+.tent-top{position:absolute;left:30px;right:30px;bottom:400px;height:40px;background:#E9E2D6;transform:perspective(900px) rotateX(60deg);transform-origin:bottom}
+.tc-k{font-size:24px;letter-spacing:.5em;text-transform:uppercase;color:#7A5A5A}
+.tc-n{font-family:'Instrument Serif';font-style:italic;font-size:96px;line-height:1;margin:20px 0 14px}
+.tc-d{font-size:30px;letter-spacing:.12em;color:#3A1011}
+.noshow{position:absolute;right:-50px;top:40px;z-index:3;border:6px solid #B3261E;color:#B3261E;font-size:36px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;padding:18px 30px;transform:rotate(-12deg);background:rgba(253,251,247,.9)}
+.big-stat{font-family:'Instrument Serif';font-size:230px;line-height:.9;margin-bottom:40px;display:flex;align-items:baseline;gap:30px}
+.big-stat .from{color:rgba(250,244,237,.4);text-decoration:line-through;text-decoration-thickness:8px;text-decoration-color:#B3261E}
+.big-stat .arr{font-size:.45em;color:rgba(250,244,237,.5)}
+.big-stat .to{font-style:italic;color:#E9D6C8}
+.src{margin-top:24px;font-size:22px;letter-spacing:.2em;text-transform:uppercase;color:rgba(250,244,237,.45)}
+.laptop-wrap{position:relative;margin-top:56px;border-radius:6px;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,.5)}
+.laptop-wrap img{display:block;width:100%;height:520px;object-fit:cover;object-position:50% 55%}
+.neq{position:absolute;right:30px;bottom:30px;background:#1B0405;color:#FAF4ED;font-family:'Instrument Serif';font-style:italic;font-size:64px;padding:10px 30px}
 `;
 
 function slideHTML(sl, i, n) {
