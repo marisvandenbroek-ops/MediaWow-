@@ -3,7 +3,6 @@
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const DIR = __dirname, FR = path.join(DIR, 'frames'), FPS = 30, DUR = 11;
-const PHOTO = 'data:image/jpeg;base64,' + fs.readFileSync(path.join(DIR, '..', 'assets', 'foto-kantoor.jpg')).toString('base64');
 const LOGO = 'data:image/png;base64,' + fs.readFileSync(path.join(DIR, '..', 'assets', 'logo-zwart.png')).toString('base64');
 const NOTIFS = [
   [1.6, 'nu', '4 personen · vanavond 19:30'],
@@ -36,18 +35,24 @@ h1 em{color:#E9D6C8}
 .nb{flex:1}.nt{display:flex;justify-content:space-between;font-size:26px}.nt small{color:#666;font-size:22px}
 .nb p{font-size:26px;margin-top:2px}
 .more{position:absolute;left:50%;transform:translateX(-50%);top:0;background:rgba(255,255,255,.2);border-radius:24px;padding:12px 30px;font-size:26px;white-space:nowrap}
-.end{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:0 80px 330px;background:#1B0405}
-.end .ph{position:absolute;left:0;top:-280px;width:100%;height:calc(100% + 280px);object-fit:cover;object-position:42% 30%}
-.end .fade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(27,4,5,.55) 0%,rgba(27,4,5,0) 18%,rgba(27,4,5,.15) 40%,rgba(27,4,5,.92) 62%,#1B0405 100%)}
-.end>*:not(.ph):not(.fade){position:relative}
+.end{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-start;padding:290px 80px 0;background:radial-gradient(110% 60% at 80% 105%,#3A1011 0%,#1B0405 62%);overflow:hidden}
+.ephone{position:absolute!important;left:50%;margin-left:-330px;top:1130px;width:660px;height:1300px;border-radius:92px;padding:15px;background:linear-gradient(145deg,#5a5a5c 0%,#1a1a1b 18%,#0b0b0c 50%,#2c2c2e 82%,#6a6a6c 100%);box-shadow:0 60px 120px rgba(0,0,0,.6);transform:rotate(-3deg)}
+.escreen{position:relative;height:100%;border-radius:78px;overflow:hidden;background:#FAF4ED;color:#1B0405}
+.dmh{display:flex;gap:18px;align-items:center;padding:84px 30px 22px;background:#fff;border-bottom:1px solid #eee}
+.dmh b{display:block;font-size:30px}.dmh small{font-size:22px;color:#888}
+.mw{width:76px;height:76px;border-radius:50%;background:#000;display:flex;align-items:center;justify-content:center}
+.mwl{width:62px;aspect-ratio:1058/244;background:#fff;-webkit-mask:url(${LOGO}) no-repeat center/contain}
+.dmc{padding:28px;display:flex;flex-direction:column;gap:16px;align-items:flex-end}
+.bb{background:#3A1011;color:#fff;border-radius:30px 30px 8px 30px;padding:22px 28px;font-size:31px;line-height:1.3;max-width:88%}
+.end>*{position:relative}
 .ek{font-size:26px;letter-spacing:.42em;text-transform:uppercase;color:rgba(250,244,237,.75);margin-bottom:26px}
 .cc{display:flex;align-items:center;gap:22px;background:#FAF4ED;color:#1B0405;border-radius:100px;padding:22px 36px 22px 22px;margin-top:44px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
 .cc .av{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#E9DCCD,#A88E78)}
 .cc .ty{flex:1;font-size:50px;font-weight:600}
 .cc .ty:after{content:'';display:inline-block;width:4px;height:50px;background:#1B0405;margin-left:8px;vertical-align:-6px}
 .cc .po{font-size:32px;font-weight:700;color:#3A1011}
-.hr{margin-top:36px;font-size:28px;color:rgba(250,244,237,.7)}
-.end h2{font-family:'Instrument Serif';font-weight:400;font-size:150px;line-height:.92;letter-spacing:-.02em}
+
+.end h2{font-family:'Instrument Serif';font-weight:400;font-size:140px;line-height:.92;letter-spacing:-.02em}
 .end h2 em{color:#E9D6C8}
 .end p{font-size:42px;font-weight:300;margin-top:34px;color:rgba(250,244,237,.9);line-height:1.35}
 .end p b{font-weight:700;color:#fff}
@@ -61,13 +66,20 @@ h1 em{color:#E9D6C8}
 <div class="list" id="list">${NOTIFS.map((n, i) => `<div class="n" id="n${i}"><div class="ic">🍽️</div><div class="nb"><div class="nt"><b>Zenchef</b><small>nu</small></div><p>Nieuwe reservering · ${n[2]}</p></div></div>`).join('')}
 <div class="more" id="more"></div></div></div></div>
 <div class="end" id="end">
-<img class="ph" src="${PHOTO}"><div class="fade"></div>
 <div class="lg"></div>
 <div class="ek">Gratis website-check</div>
 <h2>Ik check jouw website.<br><em>Gratis.</em></h2>
 <p>Reageer <b>TIPS</b> en je krijgt 3 persoonlijke tips in je DM.</p>
 <div class="cc"><div class="av"></div><span class="ty">TIPS</span><span class="po">Plaatsen</span></div>
-<div class="hr">Horeca? Bekijk de ontwerpen op mediawow.nl/horeca</div>
+<div class="ephone"><div class="escreen"><div class="island"></div><div class="glass"></div>
+  <div class="dmh"><div class="mw"><div class="mwl"></div></div><div><b>media.wow</b><small>MediaWow Webdesign</small></div></div>
+  <div class="dmc">
+    <div class="bb">Hoi! Hier zijn je 3 tips 🤍</div>
+    <div class="bb"><b>1.</b> Zet je reserveerknop bovenaan, dan vinden gasten ‘m meteen.</div>
+    <div class="bb"><b>2.</b> Zet je menu als tekst op je site, niet als pdf.</div>
+    <div class="bb"><b>3.</b> Je foto's zijn prachtig. Laat ze groter zien!</div>
+  </div>
+</div></div>
 </div>
 <script>
 const T=${JSON.stringify(NOTIFS.map(n => n[0]))}, H=132;
