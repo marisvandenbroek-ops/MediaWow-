@@ -274,6 +274,7 @@ function demoStore() {
     },
     async bulkShifts(ids, action) {
       const set = new Set(ids), hit = db.shifts.filter(s => set.has(s.id)), t = todayIso();
+      const owners0 = [...new Set(hit.map(x => x.employee_id).filter(Boolean))];   // één medewerker: die krijgt geen 'open diensten'-melding over zijn eigen diensten
       const per = {};
       hit.filter(s => s.published && s.employee_id && s.date >= t && db.employees.find(e => e.id === s.employee_id)?.active !== false).forEach(s => (per[s.employee_id] ||= []).push(s));
       if (action === 'delete') {
@@ -285,7 +286,7 @@ function demoStore() {
       }
       Object.entries(per).forEach(([emp, l]) => notify(emp, l.length === 1 ? 'Dienst vervallen' : `${l.length} diensten vervallen`, l.length === 1 ? lbl(l[0]) : `Er zijn ${l.length} diensten van je uit het rooster gehaald. Tik om je rooster te bekijken.`, 'mijn'));
       const o = Object.values(per).reduce((n, l) => n + l.length, 0);
-      if (action === 'open' && o) notifyTeam(`Open dienst${o > 1 ? 'en' : ''} beschikbaar`, `${o} open dienst${o > 1 ? 'en' : ''} in het rooster. Meld je aan!`, 'diensten');
+      if (action === 'open' && o) notifyTeam(`Open dienst${o > 1 ? 'en' : ''} beschikbaar`, `${o} open dienst${o > 1 ? 'en' : ''} in het rooster. Meld je aan!`, 'diensten', owners0.length === 1 ? owners0[0] : undefined);
       save(); return hit.length;
     },
     async publish(from, to) {
@@ -1186,7 +1187,7 @@ async function viewWeek(el, editable) {
       </div>` : ''}
     </div>
     ${elsewhere ? `<div class="pubbar"><span>Nog <strong>${future.length} concept${future.length > 1 ? 'en' : ''}</strong> in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} (${futureWeeks.map(w => 'wk ' + weekNr(parse(w))).join(', ')})</span><button class="btn sm primary" data-act="publishall">Alles publiceren</button></div>` : ''}
-    ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : ''}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button></div>` : ''}
+    ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : ''}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><select class="input sm personsel" data-personsel aria-label="Alle diensten van één persoon bekijken"><option value="">👤 Diensten per persoon…</option>${people.filter(e => e.active !== false).map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></div>` : ''}
     ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren${listView ? ', of kies "Hele dag selecteren" onder een dag' : ''}. Met "Hele week" in de balk onderin selecteer je alles van deze week.</p>` : ''}
     ${editable && !mobile && !listView ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span><span class="av av-avond">✓ avond</span> <span class="av av-niet">✕ niet</span> doorgegeven beschikbaarheid</span></div>` : ''}
     ${people.length && listView ? listHTML() : ''}
@@ -1211,6 +1212,8 @@ async function viewWeek(el, editable) {
   el.onkeydown = ev => { if (ev.target.matches('[data-rev]')) S.lastKey = ev.key; };
   if (S.refocus && S.refocus.attr === 'data-rev') { const { date } = S.refocus; S.refocus = null; const ins = $$('[data-rev]', el); const i = ins.findIndex(x => x.dataset.rev === date); if (ins[i + 1]) ins[i + 1].focus(); }
   el.onchange = async ev => {
+    const ps = ev.target.closest('[data-personsel]');
+    if (ps) { const e = byId[ps.value]; ps.value = ''; if (e) personShiftsDialog(e); return; }
     const rv = ev.target.closest('[data-rev]');
     if (rv) {
       if (['Tab', 'Enter'].includes(S.lastKey)) S.refocus = { attr: 'data-rev', date: rv.dataset.rev }; S.lastKey = null;
@@ -2364,7 +2367,7 @@ function employeeDialog(e, priv = {}, reqs = []) {
       ${isNew ? '' : `<p class="hint">Verlof ${bal.year}: ${fmtH(bal.opening)} meegenomen uit ${bal.year - 1} + ${fmtH(bal.entitlement)} recht − ${fmtH(bal.used)} opgenomen = <strong>${fmtH(bal.rest)} uur over</strong>${bal.pending ? ` · ${bal.pending} ${bal.pending === 1 ? 'aanvraag' : 'aanvragen'} open` : ''}</p>`}
       <p class="hint">De geboortedatum gebruikt de app voor de jongerenregels uit de Arbeidstijdenwet.</p>
     </fieldset>
-    ${isNew ? '' : `<div class="futbox"><button type="button" class="btn sm" data-futshifts>🗓️ Komende diensten uit het rooster halen…</button><span class="hint">Bijvoorbeeld als iemand stopt of langere tijd niet werkt. Alles vanaf een datum in één keer.</span></div>`}
+    ${isNew ? '' : `<div class="futbox"><div class="req-actions"><button type="button" class="btn sm" data-allshifts>👤 Alle diensten bekijken</button><button type="button" class="btn sm" data-futshifts>🗓️ Komende diensten uit het rooster halen…</button></div><span class="hint">Bijvoorbeeld als iemand stopt of langere tijd niet werkt. Alles vanaf een datum in één keer.</span></div>`}
     ${isNew ? '' : '<details class="history" data-history><summary>Geschiedenis van wijzigingen</summary><div class="hint">Laden…</div></details>'}
     ${isNew ? `<label class="check"><input type="checkbox" name="send_invite" checked> Stuur meteen een uitnodiging per e-mail</label>` : !e.user_id && e.active !== false ? `<div class="invitebox"><span class="hint">${e.invited_at ? `Uitgenodigd op ${esc(fmtShort(iso(new Date(e.invited_at))))} ${tHM(e.invited_at)}, nog niet geactiveerd.` : 'Nog niet uitgenodigd.'}</span>
       <div class="req-actions"><button type="button" class="btn sm primary" data-sendinvite>${e.invited_at ? 'Uitnodiging opnieuw sturen' : 'Uitnodiging sturen'}</button><button type="button" class="btn sm" data-invite>Kopieer bericht voor WhatsApp</button></div></div>` : ''}
@@ -2382,6 +2385,7 @@ function employeeDialog(e, priv = {}, reqs = []) {
       if (b) b.onclick = async () => { try { await navigator.clipboard.writeText(invite); toast('Bericht gekopieerd — plak het in WhatsApp of mail'); } catch (x) { prompt('Kopieer dit bericht:', invite); } };
       const fb = $('[data-futshifts]', dlg);
       if (fb) fb.onclick = () => futureShiftsDialog(e);
+      const ab = $('[data-allshifts]', dlg); if (ab) ab.onclick = () => personShiftsDialog(e);
       const si = $('[data-sendinvite]', dlg);
       if (si) si.onclick = async () => {
         si.disabled = true; si.textContent = 'Versturen…';
@@ -2427,6 +2431,39 @@ function employeeDialog(e, priv = {}, reqs = []) {
           async onSubmit(fd2) { toast('Komende diensten afgehandeld' + await resolveConflicts(fut, fd2.get('conflict'))); rerender(); },
         }), 60);
       }
+    },
+  });
+}
+
+// Alle komende diensten van één persoon, per week; selecteren en in één keer verwijderen of open zetten
+async function personShiftsDialog(e) {
+  const first = e.name.split(' ')[0], now = new Date();
+  const list = (await store.shifts(todayIso(), iso(addDays(now, 800)))).filter(x => x.employee_id === e.id)
+    .sort((a, b) => (a.date + hm(a.start_time)).localeCompare(b.date + hm(b.start_time)));
+  const total = list.reduce((t, x) => t + shiftHours(x), 0);
+  const weeks = {};
+  list.forEach(x => { const m = iso(mondayOf(parse(x.date))); (weeks[m] ||= []).push(x); });
+  const row = x => { const started = shiftWindow(x)[0] <= now;
+    return `<label class="psrow ${x.published ? '' : 'concept'}"><input type="checkbox" name="ids" value="${x.id}" ${started ? 'disabled' : ''}>
+      <span class="psdate">${esc(fmtLong(x.date))}</span><span class="pstime">${hm(x.start_time)}–${hm(x.end_time)}</span>
+      <span class="psmeta">${esc(x.position || '')}${x.published ? '' : `${x.position ? ' · ' : ''}concept`}${started ? ' · bezig' : ''}</span></label>`; };
+  openDialog(`Diensten van ${first}`, list.length ? `
+    <p class="hint" style="margin:0"><strong>${list.length}</strong> komende dienst${list.length > 1 ? 'en' : ''} · ${fmtH(total)} uur · t/m ${esc(fmtShort(list[list.length - 1].date))}</p>
+    <label class="check psall"><input type="checkbox" data-psall> Alles selecteren</label>
+    <div class="pslist">${Object.entries(weeks).map(([m, l]) => `<section class="psweek"><h3>Week ${weekNr(parse(m))} <span class="muted">· ${l.length} dienst${l.length > 1 ? 'en' : ''} · ${fmtH(l.reduce((t, x) => t + shiftHours(x), 0))} u</span></h3>${l.map(row).join('')}</section>`).join('')}</div>
+    <div class="dlg-foot"><span class="muted small" data-pscount>0 geselecteerd</span><span class="spacer"></span><button class="btn" value="open" disabled data-psact>Open dienst van maken</button><button class="btn danger" value="delete" disabled data-psact>Verwijderen</button></div>`
+    : `<p style="margin:0">${esc(first)} heeft geen komende diensten.</p><div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Sluiten</button></div>`, {
+    onReady(dlg) {
+      const boxes = () => $$('input[name=ids]:not(:disabled)', dlg);
+      const upd = () => { const n = boxes().filter(b => b.checked).length; const c = $('[data-pscount]', dlg); if (c) c.textContent = `${n} geselecteerd`; $$('[data-psact]', dlg).forEach(b => (b.disabled = !n)); const all = $('[data-psall]', dlg); if (all) all.checked = n && n === boxes().length; };
+      dlg.addEventListener('change', ev => { if (ev.target.matches('[data-psall]')) boxes().forEach(b => (b.checked = ev.target.checked)); upd(); });
+    },
+    async onSubmit(fd, action) {
+      const ids = fd.getAll('ids'); if (!ids.length) return false;
+      const how = action === 'open' ? 'open' : 'delete';
+      if (!await ask(`${ids.length} dienst${ids.length > 1 ? 'en' : ''} van ${first} ${how === 'delete' ? 'verwijderen' : 'open zetten'}? ${first} krijgt één melding.`, how === 'delete' ? 'Verwijderen' : 'Open zetten')) throw 'cancel';
+      await store.bulkShifts(ids, how);
+      toast(`${ids.length} dienst${ids.length > 1 ? 'en' : ''} ${how === 'delete' ? 'verwijderd' : 'open gezet'}`); rerender();
     },
   });
 }

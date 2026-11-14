@@ -524,6 +524,28 @@ async function test(name, fn) {
     assert.strictEqual(db.notifications.filter(n => n.employee_id === eva.id).length, 1, 'Eva krijgt meer dan één melding');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('diensten per persoon: alle weken zien, selecteren en open zetten', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await setDemoDb(p, `const e = db.employees.find(x => x.name.startsWith('Noor')); const p2 = n => String(n).padStart(2, '0');
+      for (let i = 1; i <= 30; i++) { const d = new Date(Date.now() + i * 2 * 864e5); db.shifts.push({ id: 'noor-' + i, employee_id: e.id, date: d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()), start_time: '14:00', end_time: '22:00', break_minutes: 0, position: 'Keuken', note: '', published: true }); }
+      db.notifications = [];`);
+    await p.reload(); await p.waitForSelector('[data-tab=planning]');
+    await p.click('[data-tab=planning]'); await p.waitForSelector('[data-personsel]');
+    const noor = await p.$eval('[data-personsel] option:text-matches("Noor")', o => o.value);
+    await p.selectOption('[data-personsel]', noor);
+    await p.waitForSelector('dialog:has-text("Diensten van Noor") .psweek');
+    assert.ok((await p.$$('dialog .psweek')).length >= 8, 'niet alle weken zichtbaar');
+    const n = (await p.$$('dialog input[name=ids]:not(:disabled)')).length; assert.ok(n >= 30, 'te weinig diensten: ' + n);
+    await p.check('dialog [data-psall]');
+    assert.match(await p.textContent('dialog [data-pscount]'), new RegExp(n + ' geselecteerd'));
+    await p.click('dialog button[value=open]'); await p.click('dialog:has-text("Weet je het zeker") button[value=save]');
+    await p.waitForSelector('.toast:has-text("open gezet")');
+    const { db } = await demoDb(p); const e = db.employees.find(x => x.name.startsWith('Noor'));
+    assert.strictEqual(db.shifts.filter(x => x.id.startsWith('noor-') && x.employee_id).length, 0, 'diensten niet open gezet');
+    assert.strictEqual(db.notifications.filter(x => x.employee_id === e.id).length, 1, 'Noor krijgt meer dan één melding');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('telefoon: geen enkel scherm loopt rechts van het scherm af', async () => {
     // elk element binnen #view moet binnen de schermbreedte blijven (behalve in bewust scrollende tabellen)
     const outside = p => p.evaluate(() => { const W = document.documentElement.clientWidth, out = [];
