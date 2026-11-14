@@ -84,7 +84,15 @@ em{font-style:italic}
 .phone .screen{background:#fff;border-radius:56px;height:100%;overflow:hidden;position:relative;color:#1B0405}
 .phone-side{flex:0 0 430px;height:880px;border-radius:62px}
 .phone-low{position:absolute;right:110px;bottom:-170px;width:540px;height:1000px;transform:rotate(4deg)}
-.s:has(.phone-low){justify-content:flex-start;padding-top:190px}
+.s:has(.phone-low),.s:has(.phone-big){justify-content:flex-start;padding-top:190px}
+.phone-big{position:absolute;right:70px;top:500px;width:640px;height:1160px;transform:rotate(3deg)}
+.s:has(.phone-big) .ftr{display:none}
+.s:has(.phone-big) h1.hero{font-size:112px}
+.phone-big .lock{padding:56px 26px}
+.phone-big .l-date{font-size:24px}
+.phone-big .l-time{font-size:104px;margin-bottom:22px}
+.phone-big .notif p{font-size:23px}
+.phone-big .notif{padding:16px 20px;margin-bottom:10px}
 .s:has(.phone-low) .ftr{display:none}
 .phone-sm{width:370px;height:700px;border-radius:52px;padding:12px}
 .phone-sm .screen{border-radius:42px}
@@ -131,10 +139,13 @@ em{font-style:italic}
 .phone-lock .screen{background:linear-gradient(170deg,#2E1517,#561C1E 50%,#A88E78);color:#fff}
 .lock{padding:100px 30px;text-align:center}
 .l-date{font-size:30px;font-weight:500;opacity:.9}
-.l-time{font-size:150px;font-weight:600;letter-spacing:-.03em;line-height:1.05;margin-bottom:40px}
-.notif{text-align:left;background:rgba(255,255,255,.8);color:#111;border-radius:32px;padding:22px 28px;margin-bottom:16px;display:grid;grid-template-columns:1fr auto}
+.l-time{font-size:140px;font-weight:600;letter-spacing:-.03em;line-height:1.05;margin-bottom:30px}
+.notif{text-align:left;background:rgba(255,255,255,.82);color:#111;border-radius:30px;padding:18px 22px;margin-bottom:12px;display:flex;gap:16px;align-items:center}
+.n-ic{flex:0 0 52px;height:52px;border-radius:12px;background:#FAF4ED;display:flex;align-items:center;justify-content:center;font-size:28px}
+.n-b{flex:1}.n-top{display:flex;justify-content:space-between}
+.n-more{margin-top:6px;font-size:22px;color:rgba(255,255,255,.85);background:rgba(255,255,255,.18);border-radius:20px;padding:10px 0}
 .notif b{font-size:25px} .notif small{font-size:22px;color:#666}
-.notif p{grid-column:1/3;font-size:27px;line-height:1.3;margin-top:4px}
+.notif p{font-size:24px;line-height:1.3;margin-top:2px}
 .l-empty{margin-top:120px;font-size:30px;opacity:.75}
 `;
 

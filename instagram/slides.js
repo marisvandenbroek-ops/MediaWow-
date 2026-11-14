@@ -301,15 +301,17 @@ Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in b
     id: '6-za-lockscreen',
     slides: [
       { theme: 'dark', html: `
-        <div class="kicker">Zaterdag, 08:30</div>
-        <h1 class="lg">Zo hoort je zaterdag <em>te beginnen.</em></h1>
+        <div class="kicker">Voor horeca · zaterdag 08:30</div>
+        <h1 class="hero">Zo zou jouw zaterdag <em>eruit moeten zien.</em></h1>
         ${phone(`
           <div class="lock"><div class="l-date">zaterdag 21 november</div><div class="l-time">08:30</div>
-            <div class="notif"><b>Reserveringen</b><small>nu</small><p>Nieuwe reservering: 4 personen, vanavond 19:30</p></div>
-            <div class="notif"><b>Boekingen</b><small>4 min</small><p>Nieuwe afspraak: knippen + kleuren, di 10:00</p></div>
-            <div class="notif"><b>Website</b><small>12 min</small><p>Nieuw contactformulier: “Hoi! Ik wil graag…”</p></div>
-            <div class="notif"><b>Reserveringen</b><small>31 min</small><p>Nieuwe reservering: 2 personen, zo 12:30</p></div>
-          </div>`, 'phone-low phone-lock')}` },
+            <div class="notif"><div class="n-ic">🍽️</div><div class="n-b"><div class="n-top"><b>Zenchef</b><small>nu</small></div><p>Nieuwe reservering · 4 personen · vanavond 19:30</p></div></div>
+            <div class="notif"><div class="n-ic">🍽️</div><div class="n-b"><div class="n-top"><b>Zenchef</b><small>3 min</small></div><p>Nieuwe reservering · 2 personen · vanavond 20:00</p></div></div>
+            <div class="notif"><div class="n-ic">🍽️</div><div class="n-b"><div class="n-top"><b>Zenchef</b><small>11 min</small></div><p>Nieuwe reservering · 6 personen · zo 12:30 · verjaardag 🎂</p></div></div>
+            <div class="notif"><div class="n-ic">🍽️</div><div class="n-b"><div class="n-top"><b>Zenchef</b><small>24 min</small></div><p>Nieuwe reservering · 2 personen · vanavond 21:00</p></div></div>
+            <div class="notif"><div class="n-ic">🍽️</div><div class="n-b"><div class="n-top"><b>Zenchef</b><small>38 min</small></div><p>Nieuwe reservering · 8 personen · vr 19:00</p></div></div>
+            <div class="n-more">+ 7 nieuwe reserveringen</div>
+          </div>`, 'phone-big phone-lock')}` },
       { theme: 'dark', html: `
         <div class="kicker">Of…</div>
         <h1 class="lg"><em>…zo.</em></h1>
@@ -320,9 +322,10 @@ Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in b
       { theme: 'cream', html: `
         <div class="kicker">01 — Het verschil</div>
         <h1 class="lg">Niet je zaak. <em>Je website.</em></h1>
+        <p class="lead">Gasten willen gewoon reserveren, het liefst in een paar tikken. Op het moment dat zij eraan denken.</p>
         <div class="list">
           <div><i>01</i>Boek- of reserveerknop direct in beeld</div>
-          <div><i>02</i>Je reserveringssysteem netjes gekoppeld</div>
+          <div><i>02</i>Zenchef direct op je eigen website, in jouw stijl</div>
           <div><i>03</i>Alles wat ze willen weten, zonder te appen</div>
         </div>` },
       { theme: 'cream', html: `
@@ -332,18 +335,19 @@ Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in b
         <p class="lead">Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.</p>
         <span class="btn">Reageer: Preview</span>` },
     ],
-    caption: `Zaterdagochtend. Koffie. Telefoon checken. ☕️📲
+    caption: `Zo zou jouw zaterdag eruit moeten zien. ☕️📲
+Koffie, telefoon erbij… en de ene na de andere reservering via Zenchef.
 
-Zie jij dit… of “Geen meldingen”?
+Of zie jij vooral “Geen meldingen”?
 
 Het verschil zit vaak niet in je zaak, maar in je website:
-✔️ boek- of reserveerknop direct in beeld
-✔️ reserveringssysteem netjes gekoppeld (Zenchef, Resengo, Salonized, Treatwell)
-✔️ alles wat je klant wil weten, zonder te hoeven appen
+✔️ een reserveerknop die je direct ziet
+✔️ Zenchef netjes op je eigen website, in jouw stijl
+✔️ menu, openingstijden en route zonder zoeken
 
-Wil jij meer van die meldingen? Reageer PREVIEW 🤍
+Wil jij meer van die meldingen? Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website 🤍
 
-#ondernemen #horeca #salon #websitelatenmaken #webdesign #mediawow`,
+#horeca #restaurant #horecaondernemer #zenchef #restaurantwebsite #webdesign #mediawow`,
   },
 
   // ───────────── ZO: UNPOPULAR OPINION ─────────────

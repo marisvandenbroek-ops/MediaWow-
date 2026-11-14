@@ -89,7 +89,7 @@ Verdeling: **4× ontdekking, 1× vertrouwen, 2× verkoop.** Elke post heeft een 
 | **Wo 18/11** | Vertrouwen | Van wie is jouw website eigenlijk? (4 red flags) | Carousel, 5 slides | 4 red flags · green flags (jouw werkwijze) | DM + tag iemand |
 | **Do 19/11** | Ontdekking | Welke krijgt de reservering? A of B | Carousel, quiz | 2 telefoon-mockups · antwoord + waarom · lijkt jouw site op A? | Comment A/B + PREVIEW |
 | **Vr 20/11** | Verkoop | Je ‘goedkope’ website. Even afrekenen. | Carousel, bonnetjes | DIY-bonnetje vs MediaWow-bonnetje met prijzen | Kennismaking / PREVIEW |
-| **Za 21/11** | Ontdekking + verkoop | Zo hoort je zaterdag te beginnen. | Carousel, lockscreen | Vol vs leeg · verschil zit in je website | Reageer PREVIEW |
+| **Za 21/11** | Ontdekking + verkoop | Zo zou jouw zaterdag eruit moeten zien. (lockscreen vol Zenchef-reserveringen) | Carousel, lockscreen | Vol vs leeg · verschil zit in je website | Reageer PREVIEW |
 | **Zo 22/11** | Ontdekking (gesprek) | Je hebt geen ~~mooiere~~ website nodig. | Carousel, 3 slides | Een website moet iets dóén · mooi is de basis, niet het doel | Eens of oneens? |
 
 Afbeeldingen en captions staan klaar in `week-1/<dag>/` (slide-01.png …, caption.txt).
