@@ -30,6 +30,14 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
    aan via de Lightspeed-accountmanager; sleutel komt in Supabase Secrets, nooit in de chat. Doel personeelskosten: max 30% (in Instellingen zetten).
 6. Optioneel: zelf aanmelden uitzetten in Supabase en knop "Eerste keer inloggen" weghalen (alleen nog uitnodigen per mail).
 
+7. Documenten (Operations Library, 41 bestanden in zip): advies = 28, waarvan het meeste IN DE APP.
+   Invullijst (Claude Doc): https://claude.ai/artifact/QNjpUJ7NA7WfgZopEUTMTF — wachten op Mark/chef/manager/Mariska.
+   Daarna: opgeschoonde documenten (app-regels leidend, alle functies houden) + training-PowerPoint (18 dia's).
+   App-uitbreiding in stappen: 1) tabblad Handboek (lezen, per functie) 2) HACCP-lijsten digitaal (temperatuur
+   met waarschuwing, ontvangst, schoonmaak) 3) weeklijsten opening/sluiten + briefing 4) klachten/incidenten/gebreken.
+   Let op: briefing binnen de dienst (anders onbetaalde werktijd); RI&E, preventiemedewerker, arbodienst checken.
+8. Update 21 (zip) nog uploaden en controleren.
+
 ## Eerder openstaand
 - Wachtwoord rooster@-mailbox wijzigen (+ SMTP_PASS en Supabase Auth SMTP bijwerken), 2FA op Supabase/Vimexx/GitHub.
 - Testmedewerker opruimen; Mark activeert zijn account.
