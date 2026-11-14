@@ -372,7 +372,7 @@ Hoe ga jij om met no-shows? 👇
       { theme: 'dark', html: `
         <div class="kicker">Unpopular opinion</div>
         <h1 class="hero" style="font-size:124px">Je hebt geen <span class="strike">mooiere</span> website nodig.</h1>
-        <div class="laptop-wrap"><img src="{{img:mw-mockup-browz-amsterdam-1-6.jpg}}"><div class="neq">mooi + het werkt ✓</div></div>
+        <div class="laptop-wrap"><img src="{{img:mw-home-horeca-1-1536x1152.jpg}}"><div class="neq">mooi + het werkt ✓</div></div>
         <p class="lead">Ja, dat zegt een webdesigner. Swipe →</p>` },
       { theme: 'dark', html: `
         <h1 class="xl">Je hebt een website nodig die iets <em>dóét.</em></h1>
