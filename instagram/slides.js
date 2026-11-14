@@ -199,8 +199,7 @@ Welke red flag mist er nog? 👇
   {
     id: '4-do-a-of-b',
     slides: [
-      { theme: 'photo', html: `
-        <img class="bg-photo" src="{{img:canva/foto-015.jpg}}"><div class="bg-fade" style="background:rgba(15,10,10,.7)"></div>
+      { theme: 'greige', html: `
         <div class="fg">
         <div class="kicker center-t">Voor horeca · Kies maar</div>
         <h1 class="md center-t">Welke krijgt <em>de reservering?</em></h1>
@@ -265,7 +264,7 @@ Of reageer HORECA en ik stuur je de link 🤍
   {
     id: '5-vr-bonnetjes',
     slides: [
-      { theme: 'greige', html: `
+      { theme: 'dark', html: `
         <div class="kicker" style="margin-top:40px">Dag van de Ondernemer · 20 november</div>
         <h1 class="md">Je ‘goedkope’ website <em>kost je meer dan je denkt.</em></h1>
         <div class="receipt" style="transform:rotate(-2.5deg) scale(.88);margin-top:20px">
@@ -277,7 +276,7 @@ Of reageer HORECA en ik stuur je de link 🤍
           <div class="r-line"><span>Klanten die afhaken</span><span>???</span></div>
           <div class="r-total"><span>TOTAAL</span><span>duurder dan<br>je denkt</span></div>
         </div>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">En nu de mijne</div>
         <h1 class="md">Maatwerk, <em>zonder verrassingen.</em></h1>
         <div class="receipt" style="transform:rotate(1.5deg)">
@@ -320,10 +319,15 @@ Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in b
   {
     id: '6-za-no-show',
     slides: [
-      { theme: 'dark', html: `
-        <div class="kicker">Voor horeca · zaterdagavond</div>
-        <h1 class="hero" style="font-size:112px">Tafel voor 4 om 19:30. <em>Niemand kwam.</em></h1>
-        <div class="framed"><img src="{{img:canva/foto-067.jpg}}"><div class="note" style="right:40px;bottom:40px">zo voorkom je dit →</div></div>` },
+      { theme: 'photo', html: `
+        <img class="bg-photo" src="{{img:canva/foto-067.jpg}}" style="filter:brightness(.92)">
+        <div class="bg-fade" style="background:linear-gradient(180deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.55) 30%,rgba(0,0,0,0) 52%,rgba(0,0,0,.45) 100%)"></div>
+        <div class="Mmark">M</div>
+        <div style="position:absolute;left:90px;right:90px;top:190px;z-index:2">
+          <div class="kicker">Voor horeca · zaterdagavond</div>
+          <h1 class="pf" style="font-size:96px;line-height:1;color:#fff">Tafel voor 4 om 19:30.<br><em>Niemand kwam.</em></h1>
+        </div>
+        <div class="note" style="left:460px;top:860px;z-index:2">zo voorkom je dit →</div>` },
       { theme: 'greige', html: `
         <div class="kicker">01 — Wat één restaurant deed</div>
         <div class="big-stat"><span class="from">30%</span><span class="arr">→</span><span class="to">3%</span></div>
