@@ -88,7 +88,7 @@ Ken je iemand wiens website wel een roast kan gebruiken? Tag ze (met liefde 😇
       { theme: 'dark', html: `
         <div class="kicker">Benieuwd?</div>
         <h1 class="lg">Hoeveel appjes zou jouw website kunnen opvangen?</h1>
-        <p class="lead">Reageer <span class="hl dark-hl">ROAST</span> en ik kijk eerlijk mee.</p>` },
+        <p class="lead">Reageer ROAST en ik kijk eerlijk mee.</p><div class="btn-line">Reageer: Roast</div>` },
     ],
     caption: `“Hoi! Wat kost knippen?”
 “Hebben jullie zaterdag nog plek?”
@@ -186,7 +186,7 @@ Welke red flag mist er nog? 👇
         <p class="hand big" style="margin-top:40px">geen schaamte, gebeurt de beste 😅</p>` },
       { theme: 'lime', html: `
         <h1 class="lg">Van A naar B? Daar ben ik voor.</h1>
-        <p class="lead">Reageer <b>PREVIEW</b> en ik stuur je de link voor een gratis preview van je nieuwe website.</p>` },
+        <p class="lead">Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.</p><div class="btn-line">Reageer: Preview</div>` },
     ],
     caption: `Welke krijgt de reservering: A of B? 🤔
 Zeg het in de comments 👇
@@ -233,7 +233,7 @@ Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe web
         </div>` },
       { theme: 'lime', html: `
         <h1 class="xl">Bonnetje<br><em>bewaren?</em></h1>
-        <p class="lead">Plan een kennismaking via <b>mediawow.nl</b>. Of reageer <b>PREVIEW</b> voor een gratis preview.</p>` },
+        <p class="lead">Plan een kennismaking via mediawow.nl. Of reageer PREVIEW voor een gratis preview.</p><div class="btn-line">Plan een kennismaking</div>` },
     ],
     caption: `Je ‘goedkope’ website. Even afrekenen. 🧾
 
@@ -280,8 +280,7 @@ Bonnetje bewaren? Plan een kennismaking via mediawow.nl (link in bio) of reageer
         </div>` },
       { theme: 'lime', html: `
         <h1 class="lg">Wil jij meer van die meldingen?</h1>
-        <p class="lead">Reageer <b>PREVIEW</b> en ik stuur je de link voor een gratis preview van je nieuwe website.</p>
-        <p class="hand big" style="margin-top:40px">📲 ping!</p>` },
+        <p class="lead">Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.</p><div class="btn-line">Reageer: Preview</div>` },
     ],
     caption: `Zaterdagochtend. Koffie. Telefoon checken. ☕️📲
 

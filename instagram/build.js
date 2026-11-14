@@ -121,10 +121,45 @@ em{font-style:italic}
 .foot .dots{display:flex;gap:10px}
 .foot .dots i{width:12px;height:12px;border-radius:50%;background:currentColor;opacity:.25}
 .foot .dots i.on{opacity:1;width:34px;border-radius:10px}
+/* ===== MediaWow huisstijl: bordeaux · wit · creme ===== */
+:root{--ink:#1B0405;--bordeaux:#3A1011;--wine:#561C1E;--mauve:#7A5A5A;--cream:#FAF4ED;--sand:#F4EFE8;--white:#FFFFFF}
+.light{background:var(--cream);color:var(--bordeaux)} .sand{background:var(--sand);color:var(--bordeaux)}
+.white-bg{background:var(--white);color:var(--bordeaux);box-shadow:inset 0 0 0 28px var(--white),inset 0 0 0 30px rgba(58,16,17,.25)}
+.dark{background:linear-gradient(180deg,#1B0405 0%,#1B0405 55%,#2E1517 100%);color:#fff}
+.grain:after{opacity:.035}
+.lime{color:#fff} .red{color:#E9B8B0}
+.light h1 em,.sand h1 em,.white-bg h1 em,.light h3 em,.sand h3 em,.white-bg h3 em{color:var(--wine)}
+.lead{color:inherit;opacity:.82;font-weight:400}
+.kicker{font-weight:400;letter-spacing:.38em;opacity:.65}
+.hand{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400}
+.hand.big{font-size:54px;line-height:1.15}
+.light .hand,.sand .hand,.white-bg .hand{color:var(--mauve)}
+.dark .hand{color:rgba(255,255,255,.72)}
+.hl{background:none;padding:0;margin:0;font-style:italic;color:var(--wine);text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:10px}
+p .hl,.step .hl,.lead .hl{font-style:normal;font-weight:600}
+.dark .hl{background:#fff;color:var(--ink);padding:2px 14px;border-radius:0;text-decoration:none;font-style:normal}
+.sticker{background:#fff;color:var(--ink);border-radius:0;width:auto;height:auto;padding:26px 30px;font-weight:500;font-size:24px;letter-spacing:.32em;box-shadow:none;transform:rotate(0)}
+.pill{background:var(--bordeaux);color:#fff;border-radius:0;font-weight:500;font-size:24px;letter-spacing:.38em;transform:none}
+.step{background:#fff;border-radius:4px}
+.step b{background:var(--bordeaux);color:#fff}
+.checks div:before{background:var(--bordeaux);color:#fff;font-size:30px}
+.dark .checks div:before{background:#fff;color:var(--ink)}
+.checks div{border-color:rgba(58,16,17,.15)} .dark-checks div{border-color:rgba(255,255,255,.15)}
+.qa div{border-radius:4px} .qa .a{border-left-color:var(--wine)}
+.words span{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.6);border-radius:0;font-weight:500;font-size:34px;letter-spacing:.3em;text-transform:uppercase;padding:22px 30px;transform:none!important}
+.ab-tag,.big-a{background:var(--bordeaux);color:#fff}
+.r-total span:last-child{background:var(--bordeaux);color:#fff}
+.comment-box{border-radius:6px}
+.count span{color:var(--mauve)}
+.flag h3{color:inherit}
+.btn-line{display:inline-block;margin-top:60px;align-self:flex-start;padding:30px 46px;font-size:24px;letter-spacing:.38em;text-transform:uppercase;font-weight:500}
+.white-bg .btn-line,.light .btn-line{background:var(--bordeaux);color:#fff}
+.dark .btn-line{background:#fff;color:var(--ink)}
+.mark{font-size:34px}
 `;
 
 function slideHTML(sl, i, n) {
-  const theme = sl.theme === 'lime' ? 'lime-bg' : sl.theme;
+  const theme = sl.theme === 'lime' ? 'white-bg' : sl.theme;
   const dots = n > 1 ? `<span class="dots">${Array.from({ length: n }, (_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</span>` : '<span>MediaWow webdesign</span>';
   const swipe = n > 1 && i === 0 ? '<span>Swipe →</span>' : dots;
   return `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONTS}"><style>${CSS}</style></head>
