@@ -337,6 +337,14 @@ em{font-style:italic}
 .phone-duo .screen{border-radius:46px}
 .shot{width:100%;height:100%;object-fit:cover;object-position:top}
 .duo-cap{font-size:24px;white-space:nowrap;font-weight:500;background:#fff;padding:12px 22px;border-radius:100px;box-shadow:0 8px 20px rgba(0,0,0,.08);border-left:6px solid #E8F27A}
+.bigbtn-wrap{position:relative;margin-top:110px;height:420px;display:flex;justify-content:center}
+.bigbtn{align-self:flex-start;background:#FAF4ED;color:#1B0405;font-size:54px;font-weight:600;padding:44px 80px;border-radius:100px;box-shadow:0 30px 70px rgba(0,0,0,.55),0 0 0 14px rgba(232,242,122,.25)}
+.cursor{position:absolute;left:640px;top:90px;font-size:130px;transform:rotate(-12deg);filter:drop-shadow(0 10px 14px rgba(0,0,0,.5))}
+.pricetag2{position:absolute;left:150px;top:230px;background:#E8F27A;color:#141414;font-family:Caveat;font-weight:600;font-size:56px;padding:12px 30px;transform:rotate(-6deg);box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.btnlist{display:flex;flex-direction:column;gap:18px;margin-top:40px}
+.btnlist div{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 30px;border:1px solid rgba(250,244,237,.15);border-radius:8px;background:rgba(250,244,237,.05)}
+.btnlist .sec{font-size:24px;letter-spacing:.3em;text-transform:uppercase;color:rgba(250,244,237,.6)}
+.btnlist .b2{background:#E8F27A;color:#141414;font-weight:600;font-size:30px;padding:16px 30px;border-radius:100px}
 `;
 
 function slideHTML(sl, i, n) {

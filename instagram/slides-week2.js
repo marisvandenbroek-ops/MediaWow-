@@ -265,6 +265,56 @@ Minder dan 5? Reageer TIPS voor een gratis website-check, of plan een kennismaki
 #blackfriday #ondernemen #horeca #salon #coach #websitetips #checklist #mediawow`,
   },
 
+  // ───────────── ZA 28: DE DUURSTE KNOP ─────────────
+  {
+    id: '6-za-duurste-knop',
+    slides: [
+      { theme: 'dark', html: `
+        <div class="kicker">Voor elke ondernemer</div>
+        <h1 class="hero">De duurste knop <em>van je website.</em></h1>
+        <div class="bigbtn-wrap">
+          <div class="bigbtn">Neem contact op</div>
+          <div class="cursor">👆</div>
+          <div class="pricetag2">kost je klanten</div>
+        </div>` },
+      { theme: 'greige', html: `
+        <div class="kicker">01 — Waarom</div>
+        <h2>‘Neem contact op’ <em>zegt niets.</em></h2>
+        <p class="lead">Het is vaag, het voelt als werk, en niemand weet wat er daarna gebeurt. Dus klikken ze niet.</p>
+        <div class="hand" style="margin-top:30px">je knop moet zeggen wat ze krijgen ↓</div>` },
+      { theme: 'dark', html: `
+        <div class="kicker">02 — Zo werkt het wél</div>
+        <h2>Zeg wat ze <em>krijgen.</em></h2>
+        <div class="btnlist">
+          <div><span class="sec">Restaurant</span><span class="b2">Reserveer je tafel</span></div>
+          <div><span class="sec">Salon</span><span class="b2">Boek je behandeling</span></div>
+          <div><span class="sec">Coach</span><span class="b2">Plan een gratis kennismaking</span></div>
+          <div><span class="sec">Aannemer</span><span class="b2">Vraag een offerte aan</span></div>
+        </div>` },
+      { theme: 'photo', html: `
+        <img class="bg-photo" src="{{img:canva/foto-094.jpg}}"><div class="bg-fade" style="background:rgba(15,10,10,.62)"></div>
+        <div class="fg">
+        <div class="kicker">Gratis website-check</div>
+        <h1 class="lg">Hoe heet <em>jouw</em> knop?</h1>
+        <p class="lead">Zet hem in de comments. Of reageer TIPS en ik check je hele website gratis.</p>
+        <div class="pill"><div class="av-user"></div><b>TIPS</b><span>Plaatsen</span></div></div>` },
+    ],
+    caption: `De duurste knop van je website? ‘Neem contact op.’ 💸
+
+Hij is vaag, voelt als werk, en niemand weet wat er daarna gebeurt. Dus klikken ze niet.
+
+Zeg liever wat ze krijgen:
+🍽️ Restaurant: Reserveer je tafel
+💅 Salon: Boek je behandeling
+🧭 Coach: Plan een gratis kennismaking
+🔨 Aannemer: Vraag een offerte aan
+
+Hoe heet jouw knop? Zet hem in de comments 👇
+Of reageer TIPS en ik check je hele website gratis.
+
+#webdesign #ondernemen #websitetips #conversie #salon #horeca #coach #mediawow`,
+  },
+
   // ───────────── ZO 29: BEGIN NU ─────────────
   {
     id: '7-zo-begin-nu',
