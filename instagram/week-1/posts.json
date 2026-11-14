@@ -2,14 +2,14 @@
   {
     "id": "1-ma-salon-boekingen",
     "slides": [
-      { "type": "cover", "theme": "light", "label": "Voor salons", "title": "Je stoel zit vol.\n*Je online agenda niet.*", "sub": "3 redenen waarom je website geen boekingen oplevert" },
+      { "type": "cover", "theme": "light", "label": "Voor salons", "title": "Je klanten willen boeken.\n*Je website maakt het ze lastig.*", "sub": "3 redenen waarom je website geen boekingen oplevert" },
       { "type": "point", "theme": "light", "num": "01", "title": "De boekknop staat *te ver weg.*", "body": "Klanten kijken op hun telefoon, even tussen twee dingen door. Moeten ze zoeken? Dan appen ze je. Of ze boeken ergens anders.", "tip": "Zet ‘Boek nu’ bovenaan, op élke pagina." },
       { "type": "point", "theme": "sand", "num": "02", "title": "Je prijzen zijn *niet te vinden.*", "body": "Onduidelijke prijzen geven twijfel.\nTwijfel wordt ‘later’.\nEn ‘later’ wordt meestal ‘nooit’.", "tip": "Een heldere prijslijst per behandeling, goed leesbaar op mobiel." },
       { "type": "point", "theme": "light", "num": "03", "title": "Boeken voelt als *een andere winkel.*", "body": "Een losse link naar je boekingssysteem, in een totaal andere stijl. Precies bij de laatste stap haken mensen af.", "tip": "Laat Salonized of Treatwell mooi aansluiten op je eigen website." },
-      { "type": "list", "theme": "dark", "label": "Kort samengevat", "title": "Een salonwebsite die *boekingen* oplevert:", "items": ["Boekknop direct in beeld", "Prijzen helder en compleet", "Boeken voelt als één geheel"], "body": "_Mooi is mooi. Maar vol is mooier._" },
+      { "type": "list", "theme": "dark", "label": "Kort samengevat", "title": "Een salonwebsite die *boekingen* oplevert:", "items": ["Boekknop direct in beeld", "Prijzen helder en compleet", "Boeken voelt als één geheel"], "body": "_Mooi is mooi. Maar een volle agenda is mooier._" },
       { "type": "cta", "theme": "light", "label": "Benieuwd?", "title": "Hoe zou jóuw salon er online uit kunnen zien?", "body": "Reageer met PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.", "button": "Reageer: PREVIEW" }
     ],
-    "caption": "Je stoel zit vol, je handen staan nooit stil… en toch komen er via je website nauwelijks boekingen binnen? 💭\n\nVaak ligt het niet aan jouw behandelingen. Het ligt aan drie kleine dingen op je site:\n\n1️⃣ De boekknop staat te ver weg\n2️⃣ Je prijzen zijn niet (goed) te vinden\n3️⃣ Boeken voelt als ‘naar een andere winkel gaan’\n\nSwipe voor de oplossing per punt →\n\nWerk je met Salonized of Treatwell? Dat kan gewoon mooi aansluiten op je website, zodat het voor je klant één geheel voelt.\n\nReageer met PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website 🤍\n\n#salonwebsite #kapsalon #beautysalon #salonondernemer #websitelatenmaken #webdesign #mediawow"
+    "caption": "Je klanten willen best boeken. Maar moeten ze op je website eerst zoeken? Dan appen ze je… of ze boeken ergens anders. 💭\n\nVaak ligt het niet aan jouw behandelingen. Het ligt aan drie kleine dingen op je site:\n\n1️⃣ De boekknop staat te ver weg\n2️⃣ Je prijzen zijn niet (goed) te vinden\n3️⃣ Boeken voelt als ‘naar een andere winkel gaan’\n\nSwipe voor de oplossing per punt →\n\nWerk je met Salonized of Treatwell? Dat kan gewoon mooi aansluiten op je website, zodat het voor je klant één geheel voelt.\n\nReageer met PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website 🤍\n\n#salonwebsite #kapsalon #beautysalon #salonondernemer #websitelatenmaken #webdesign #mediawow"
   },
   {
     "id": "2-di-een-aanspreekpunt",
@@ -51,14 +51,14 @@
   {
     "id": "6-za-horeca-website",
     "slides": [
-      { "type": "cover", "theme": "dark", "label": "Voor horeca", "title": "Je terras zit vol.\n*Maar je website verkoopt geen tafel.*", "sub": "4 dingen die gasten zoeken (en vaak niet vinden)" },
+      { "type": "cover", "theme": "dark", "label": "Voor horeca", "title": "Gasten willen reserveren.\n*Je website laat ze zoeken.*", "sub": "4 dingen die gasten zoeken (en vaak niet vinden)" },
       { "type": "point", "theme": "light", "num": "01", "title": "De menukaart. *Niet als pdf.*", "body": "Inzoomen, wachten, scrollen. Op een telefoon is een pdf-menu een afknapper.", "tip": "Zet je menu als gewone tekst op je site." },
       { "type": "point", "theme": "sand", "num": "02", "title": "Een reserveerknop die je *meteen ziet.*", "body": "Wie twijfelt, belt niet. Die scrolt door naar de volgende zaak.", "tip": "Werk je met Zenchef of Resengo? Laat reserveren direct op je eigen site gebeuren." },
       { "type": "point", "theme": "light", "num": "03", "title": "Openingstijden *die kloppen.*", "body": "Niets zo zonde als gasten die voor een dichte deur staan. Of wegblijven omdat ze denken dat je dicht bent.", "tip": "Houd ze bij op één plek, en check ook je Google-profiel." },
       { "type": "point", "theme": "sand", "num": "04", "title": "Foto’s die naar *meer smaken.*", "body": "Gasten kiezen met hun ogen. Laat de sfeer zien, je gerechten en de mensen achter je zaak.", "tip": "Liever een paar echte foto’s dan tien stockfoto’s." },
       { "type": "cta", "theme": "dark", "label": "Benieuwd?", "title": "Hoe zou jouw zaak online *smaken?*", "body": "Reageer met PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.", "button": "Reageer: PREVIEW" }
     ],
-    "caption": "Je terras zit vol, je keuken draait overuren… maar online laat je tafels liggen. 🍷\n\nDit zijn 4 dingen die gasten op je website zoeken, en vaak niet vinden:\n\n1️⃣ Een menukaart die je op je telefoon gewoon kunt lezen (dus geen pdf)\n2️⃣ Een reserveerknop die je meteen ziet\n3️⃣ Openingstijden die kloppen\n4️⃣ Foto’s die naar meer smaken\n\nWerk je met Zenchef of Resengo? Dan kan reserveren gewoon direct op je eigen website.\n\nReageer met PREVIEW en ik stuur je de link voor een gratis preview 🤍\n\nKen je een horecaondernemer voor wie dit handig is? Stuur het even door 👀\n\n#horeca #restaurant #horecaondernemer #restaurantwebsite #webdesign #websitelatenmaken #mediawow"
+    "caption": "Gasten willen reserveren. Maar zoeken ze op je website te lang naar je menu of een reserveerknop? Dan kiezen ze gewoon een andere zaak. 🍷\n\nDit zijn 4 dingen die gasten op je website zoeken, en vaak niet vinden:\n\n1️⃣ Een menukaart die je op je telefoon gewoon kunt lezen (dus geen pdf)\n2️⃣ Een reserveerknop die je meteen ziet\n3️⃣ Openingstijden die kloppen\n4️⃣ Foto’s die naar meer smaken\n\nWerk je met Zenchef of Resengo? Dan kan reserveren gewoon direct op je eigen website.\n\nReageer met PREVIEW en ik stuur je de link voor een gratis preview 🤍\n\nKen je een horecaondernemer voor wie dit handig is? Stuur het even door 👀\n\n#horeca #restaurant #horecaondernemer #restaurantwebsite #webdesign #websitelatenmaken #mediawow"
   },
   {
     "id": "7-zo-gratis-preview",

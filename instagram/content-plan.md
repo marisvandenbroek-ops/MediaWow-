@@ -17,8 +17,8 @@ Gebaseerd op de analyse van @media.wow (stap 1) en mediawow.nl. Alle feiten in d
 
 ### 5 postideeën per pijler
 **Website die wérkt**
-1. Je stoel zit vol, je online agenda niet *(week 1)*
-2. Je terras zit vol, maar je website verkoopt geen tafel *(week 1)*
+1. Je klanten willen boeken, je website maakt het ze lastig *(week 1)*
+2. Gasten willen reserveren, je website laat ze zoeken *(week 1)*
 3. Coaches: waarom ‘Over mij’ je belangrijkste pagina is
 4. 5 seconden-test: snapt een vreemde wat je doet?
 5. Waarom je menukaart-pdf gasten kost
@@ -48,8 +48,8 @@ Gebaseerd op de analyse van @media.wow (stap 1) en mediawow.nl. Alle feiten in d
 
 ## 2. Vijftien hooks (mix van nieuwsgierigheid, persoonlijk, fouten en meningen)
 
-1. Je stoel zit vol. Je online agenda niet.
-2. Je terras zit vol. Maar je website verkoopt geen tafel.
+1. Je klanten willen boeken. Je website maakt het ze lastig.
+2. Gasten willen reserveren. Je website laat ze zoeken.
 3. Wix, Canva of AI? Heb je mij eigenlijk nog nodig?
 4. Geen ticketnummer. Geen ‘ik verbind je door’. Gewoon ik.
 5. Wat kost een website laten maken? Geen ‘dat hangt ervan af’.
@@ -59,13 +59,13 @@ Gebaseerd op de analyse van @media.wow (stap 1) en mediawow.nl. Alle feiten in d
 9. ‘Ben je nog wel aan het werk?’ Juist daarom is het hier stil.
 10. Een website zonder knop is een winkel zonder kassa.
 11. Als een vreemde in 5 seconden niet snapt wat je doet, is hij weg.
-12. Mooi is mooi. Maar vol is mooier.
+12. Mooi is mooi. Maar een volle agenda is mooier.
 13. Het eerste wat ik vraag bij een nieuwe klant is níet ‘welke kleur?’
 14. AI kent jouw klanten niet. Ik wel (na één kop koffie).
 15. Wat als je je nieuwe website al kon zien, voordat je ja zegt?
 
 ### Top 3 en waarom
-1. **#1 “Je stoel zit vol. Je online agenda niet.”** Salons zijn een kerndoelgroep. De hook beschrijft hun situatie (druk, maar online leeg) in 7 woorden en belooft een oplossing.
+1. **#1 “Je klanten willen boeken. Je website maakt het ze lastig.”** Salons zijn een kerndoelgroep. De hook beschrijft hun situatie (druk, maar online leeg) (ze willen wel, maar het lukt niet) en wijst meteen de schuldige aan: de website, niet de salon.
 2. **#3 “Wix, Canva of AI? Heb je mij eigenlijk nog nodig?”** Dit is een vervolg op je best scorende eigen onderwerp (AI, 1.971 weergaven) en de vraag die elke twijfelende ondernemer zichzelf stelt. Omdat je eerlijk bent, durven mensen hem te delen.
 3. **#15 “Wat als je je nieuwe website al kon zien…”** Dit maakt de stap naar jou kleiner. Het sluit aan op je gratis preview, je zachtste en sterkste call-to-action.
 
@@ -77,12 +77,12 @@ Verdeling: **3× ontdekking, 2× vertrouwen, 2× verkoop.** Elke dag een andere 
 
 | Dag | Doel | Onderwerp | Hook | Format | Kernpunten | CTA |
 |---|---|---|---|---|---|---|
-| **Ma** | Ontdekking | Salonwebsite | Je stoel zit vol. Je online agenda niet. | Carousel, 6 slides | Boekknop te ver weg · prijzen onvindbaar · boeken voelt als andere winkel | Reageer PREVIEW |
+| **Ma** | Ontdekking | Salonwebsite | Je klanten willen boeken. Je website maakt het ze lastig. | Carousel, 6 slides | Boekknop te ver weg · prijzen onvindbaar · boeken voelt als andere winkel | Reageer PREVIEW |
 | **Di** | Vertrouwen | Eén aanspreekpunt | Geen ticketnummer… Gewoon ik. | Single + persoonlijke caption | Eén contactpersoon · reactie binnen 1 werkdag · snelle beslissingen | DM “waar begin ik?” |
 | **Wo** | Ontdekking | DIY vs. maatwerk | Wix, Canva of AI? | Carousel, 7 slides | Wanneer zelf doen prima is · valkuilen · wat AI niet kan · wanneer maatwerk | DM je website |
 | **Do** | Vertrouwen | Klantverhaal Lilou | *zie hieronder* | Carousel met jouw foto’s, of reel | Vraag · ontwerpkeuze · reactie klant | Bekijk portfolio |
 | **Vr** | Verkoop | Prijzen | Wat kost een website bij MediaWow? | Carousel, 6 slides | €2.995 vanaf · €165 p/m · inbegrepen · voor wie | Plan een kennismaking |
-| **Za** | Ontdekking | Horecawebsite | Je terras zit vol. Maar je website verkoopt geen tafel. | Carousel, 6 slides | Menu geen pdf · reserveerknop · openingstijden · echte foto’s | Reageer PREVIEW + doorsturen |
+| **Za** | Ontdekking | Horecawebsite | Gasten willen reserveren. Je website laat ze zoeken. | Carousel, 6 slides | Menu geen pdf · reserveerknop · openingstijden · echte foto’s | Reageer PREVIEW + doorsturen |
 | **Zo** | Verkoop | Gratis preview | Wat als je je nieuwe website al kon zien? | Single | Laagdrempelig · geen verplichting | Reageer PREVIEW |
 
 Afbeeldingen en captions staan klaar in `week-1/<dag>/` (slide-01.png …, caption.txt).
