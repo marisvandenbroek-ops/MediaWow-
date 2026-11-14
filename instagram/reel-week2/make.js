@@ -3,22 +3,22 @@ const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const DIR = __dirname, TMP = path.join(DIR, 'tmp'), FPS = 30;
 const DEMOS = [
-  ['maison', 'Maison Ambre', 'Restaurant · fine dining'],
-  ['beauty/sereen', 'Huidstudio Sereen', 'Huidzorg · met webshop'],
-  ['wijnbar', 'VOLK', 'Wijnbar · strak en grafisch'],
-  ['beauty/loods12', 'Loods 12 Hair', 'Kapsalon'],
-  ['beauty/noor', 'Atelier Noor', 'Luxe salon & wellness'],
+  ['https://www.minkmanmark.com/', 'Mark Minkman', 'Chef & culinair adviseur'],
+  ['https://www.houseofbraveleaders.nl/', 'House of Brave Leaders', 'Leiderschap & teams'],
+  ['https://www.browzamsterdam.nl/', 'Browz Amsterdam', 'Brows & lashes · met webshop'],
+  ['https://www.tuinkantoren.nl/', 'Tuinkantoren', 'Tuinkantoren op maat'],
+  ['https://www.peterlooijen.nl/', 'Peter Looijen', 'Aannemingsbedrijf'],
 ];
 const INTRO = 2.2, PER = 3.2, OUTRO = 3.6, DFR = Math.round(PER * FPS);
 const LOGO = 'file://' + path.join(DIR, '..', 'assets', 'logo-zwart.png');
 
 async function capture(b) {
   for (const [slug] of DEMOS) {
-    const d = path.join(TMP, slug.replace('/', '-')); fs.mkdirSync(d, { recursive: true });
+    const key = slug.replace(/[^a-z0-9]+/gi, '-'); const d = path.join(TMP, key); fs.mkdirSync(d, { recursive: true });
     const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     const p = await ctx.newPage();
-    await p.goto(`https://mediawow.nl/demo/${slug}/`, { waitUntil: 'networkidle', timeout: 60000 });
-    for (const t of ['Alles weigeren', 'Weigeren', 'Accepteren', 'Alles accepteren']) { try { await p.getByText(t, { exact: true }).first().click({ timeout: 800 }); break; } catch (e) {} }
+    await p.goto(slug, { waitUntil: 'networkidle', timeout: 60000 }).catch(() => {});
+    for (const t of ['Alles weigeren', 'Weigeren', 'Alleen noodzakelijk', 'Accepteren', 'Alles accepteren', 'Akkoord', 'Accept', 'Accept all']) { try { await p.getByText(t, { exact: true }).first().click({ timeout: 800 }); break; } catch (e) {} }
     await p.waitForTimeout(1500);
     const H = await p.evaluate(() => document.documentElement.scrollHeight - innerHeight);
     const dist = Math.min(H, 1800);
@@ -47,7 +47,7 @@ h1 em{color:#E9D6C8}
 .nums span{width:120px;height:120px;border-radius:50%;border:2px solid rgba(250,244,237,.4);display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif';font-size:70px;font-style:italic}
 .demo .num{position:absolute;left:80px;top:250px;font-family:'Instrument Serif';font-style:italic;font-size:300px;line-height:.8;color:#E8F27A}
 .demo .name{position:absolute;left:300px;top:270px;right:80px}
-.demo .name h1{font-size:92px}
+.demo .name h1{font-size:80px}
 .demo .name .k{margin-top:18px}
 .phone{position:absolute;left:50%;top:560px;width:640px;height:1300px;margin-left:-320px;border-radius:92px;padding:15px;background:linear-gradient(145deg,#5a5a5c 0%,#1a1a1b 18%,#0b0b0c 50%,#2c2c2e 82%,#6a6a6c 100%);box-shadow:0 60px 120px rgba(0,0,0,.6)}
 .phone .scr{position:relative;width:100%;height:100%;border-radius:78px;overflow:hidden;background:#000}
@@ -63,9 +63,9 @@ h1 em{color:#E9D6C8}
 .hand{font-family:Caveat;font-weight:600;font-size:56px;color:#E8F27A;margin-top:40px}
 </style></head><body>
 <div class="logo"></div>
-<div class="scene intro" id="s0"><div class="k">Voor horeca & salons</div><h1>5 websites. <em>Welke past bij jouw zaak?</em></h1><div class="nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div></div>
+<div class="scene intro" id="s0"><div class="k">Echt werk · MediaWow</div><h1>5 websites die ik maakte. <em>Welke is jouw favoriet?</em></h1><div class="nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div></div>
 ${DEMOS.map((d, i) => `<div class="scene demo" id="s${i + 1}"><div class="num">${i + 1}</div><div class="name"><h1>${d[1]}</h1><div class="k">${d[2]}</div></div><div class="phone"><div class="scr"><div class="isl"></div><img id="img${i + 1}"></div></div></div>`).join('')}
-<div class="scene outro" id="s6"><div class="k">Jouw keuze?</div><h1>Welke past bij <em>jouw zaak?</em></h1>
+<div class="scene outro" id="s6"><div class="k">Jouw favoriet?</div><h1>Welke is <em>jouw favoriet?</em></h1>
 <div class="cc"><div class="av"></div><span class="ty">3</span><span class="po">Plaatsen</span></div>
 <div class="hand">zet je nummer in de comments ↓</div><div class="btn">mediawow.nl</div></div>
 <script>
@@ -84,7 +84,7 @@ window.setImg=(i,src)=>new Promise(r=>{const im=document.getElementById('img'+i)
   for (let f = 0; f < INTRO * FPS; f++) { await p.evaluate(o => show(0, o), Math.min(1, f / 12)); await shot(); }
   for (let i = 0; i < DEMOS.length; i++) {
     for (let f = 0; f < DFR; f++) {
-      await p.evaluate(([i, src]) => setImg(i, src), [i + 1, 'file://' + path.join(TMP, DEMOS[i][0].replace('/', '-'), String(f).padStart(3, '0') + '.jpg')]);
+      await p.evaluate(([i, src]) => setImg(i, src), [i + 1, 'file://' + path.join(TMP, DEMOS[i][0].replace(/[^a-z0-9]+/gi, '-'), String(f).padStart(3, '0') + '.jpg')]);
       await p.evaluate(([i, o]) => show(i, o), [i + 1, Math.min(1, f / 8)]); await shot();
     }
   }
