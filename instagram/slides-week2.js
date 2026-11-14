@@ -207,7 +207,7 @@ Een website is geen impulsaankoop:
 
 Wat ik wél doe: het hele jaar door een gratis website-check. Geen deadline, geen afteltimer. Gewoon eerlijk advies.
 
-👇 Reageer TIPS en ik check jouw website gratis. Eerlijk advies, zonder afteltimer.
+👇 Reageer TIPS en ik check jouw website gratis.
 
 #blackfriday #webdesign #ondernemen #websitelatenmaken #unpopularopinion #mediawow`,
   },
