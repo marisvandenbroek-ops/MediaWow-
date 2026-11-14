@@ -5,7 +5,8 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 
 ## Stand van zaken
 - Update 17 staat live (schema, mail-rooster, agenda-functie, app-bestanden). Wachtwoord minimaal 8 tekens.
-- Update 18 (commit bbe4437) is NIET geüpload: wordt samengevoegd met punt 1 hieronder.
+- Update 19 (prikbord blijft staan + knop 'Ik ben ziek') klaar als zip; invite-employee met voornaam is live (via Supabase-koppeling).
+- Werkwijze: Supabase doe ik zelf via de Supabase-koppeling (Mariska klikt Toestaan); Mariska uploadt alleen de zip in DirectAdmin.
 
 ## Te doen
 1. Prikbord: gelezen mededelingen blijven altijd staan (ingeklapt, met ✓), alleen directie verwijdert. Knop "Gelezen" blijft.

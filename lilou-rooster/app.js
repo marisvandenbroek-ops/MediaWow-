@@ -1568,10 +1568,9 @@ async function boardHTML() {
   const mineRead = new Set(reads.filter(r => r.employee_id === S.me.id).map(r => r.announcement_id));
   const unread = list.filter(a => !mineRead.has(a.id)).sort((a, b) => b.created_at.localeCompare(a.created_at));   // nieuwste eerst open
   const pinnedRead = list.filter(a => a.pinned && mineRead.has(a.id));
-  // gelezen mededelingen blijven nog 14 dagen ingeklapt zichtbaar, daarna onder 'Alle mededelingen'
-  const since = new Date(Date.now() - 14 * 864e5).toISOString();
-  const recentRead = list.filter(a => !a.pinned && mineRead.has(a.id) && a.created_at >= since)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 5);
+  // gelezen mededelingen blijven ingeklapt staan (de nieuwste 10; oudere onder 'Alle mededelingen'); alleen de directie verwijdert ze
+  const recentRead = list.filter(a => !a.pinned && mineRead.has(a.id))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 10);
   if (!list.length) return '';
   return `<section class="board">
     ${unread.map((a, i) => i === 0 ? annCard(a, { read: false }) : `<details class="pinitem unreaditem"><summary><span class="newdot">nieuw</span> ${esc(a.title)}</summary>${annCard(a, { read: false })}</details>`).join('')}
@@ -1967,7 +1966,7 @@ async function viewMine(el) {
 
   el.innerHTML = `
     <div class="page-head"><div><h1>Hoi ${esc(S.me.name.split(' ')[0])}</h1><p>Je rooster${sel ? ' per week' : ' voor de komende weken'}.</p></div>
-      <button class="btn" data-ics>📅 Zet in mijn agenda</button></div>
+      <div class="head-actions"><button class="btn" data-ics>📅 Zet in mijn agenda</button><button class="btn" data-sick>🤒 Ik ben ziek</button></div></div>
     ${clockHTML}
     ${next && !sel ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
     ${boardH}
@@ -1981,6 +1980,7 @@ async function viewMine(el) {
     if (await boardClick(ev)) return;
     const sw = ev.target.closest('[data-swap]'); if (sw) return swapDialog(mine, emps, all, sw.dataset.swap, swaps);
     if (ev.target.closest('[data-ics]')) agendaDialog(mine);
+    if (ev.target.closest('[data-sick]')) return sickDialog();
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
     const mf = ev.target.closest('[data-mf]'); if (mf) { S.mineWeek = mf.dataset.mf === 'week' ? start : null; return rerender(); }
     const w = ev.target.closest('[data-w]');
@@ -2056,6 +2056,28 @@ function reqDates(r) {
   return r.start_date === r.end_date ? fmtLong(r.start_date) : `${fmtShort(r.start_date)} t/m ${fmtShort(r.end_date)} <span class="muted">(${n} dagen)</span>`;
 }
 
+// Ziekmelden: snel en duidelijk, met de afspraak dat je eerst belt
+function sickDialog() {
+  const t = todayIso();
+  openDialog('Ik ben ziek', `
+    <div class="warnbox"><strong>Eerst bellen.</strong> Bel zo snel mogelijk, en uiterlijk 2 uur voor je dienst, met de directie. Een melding in de app alleen is niet genoeg.</div>
+    <div class="row keep">
+      <label class="field">Ziek vanaf<input type="date" name="start_date" value="${t}" min="${iso(addDays(new Date(), -7))}" required></label>
+      <label class="field">Verwacht tot en met<input type="date" name="end_date" value="${t}" required></label>
+    </div>
+    <p class="hint" style="margin:0">Weet je nog niet hoe lang? Laat het op vandaag staan; je kunt het later doorgeven.</p>
+    <label class="field">Opmerking<textarea name="note" placeholder="Optioneel, bv. dat je al gebeld hebt"></textarea></label>
+    <p class="hint" style="margin:0">Vertel hier niet wat je hebt. Medische informatie hoort niet in de app.</p>
+    <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Ziekmelding versturen</button></div>`, {
+    onReady(dlg) { const f = $('form', dlg); f.start_date.onchange = () => { f.end_date.min = f.start_date.value; if (f.end_date.value < f.start_date.value) f.end_date.value = f.start_date.value; }; f.end_date.min = t; },
+    async onSubmit(fd) {
+      if (fd.get('end_date') < fd.get('start_date')) throw new Error('De einddatum ligt voor de begindatum');
+      await store.saveRequest({ employee_id: S.me.id, type: 'ziek', start_date: fd.get('start_date'), end_date: fd.get('end_date'), note: String(fd.get('note') || '').trim() || null });
+      toast('Ziekmelding verstuurd. Beterschap!'); rerender();
+    },
+  });
+}
+
 async function viewRequestsStaff(el) {
   const [reqs0, privList] = await Promise.all([store.requests(), store.privates()]);
   const reqs = reqs0.filter(r => r.employee_id === S.me.id);
@@ -2063,7 +2085,7 @@ async function viewRequestsStaff(el) {
   const bal = leaveBalance(S.me, privList.find(p => p.employee_id === S.me.id), reqs);
   const showBal = bal.entitlement || bal.opening || bal.used;
   el.innerHTML = `
-    <div class="page-head"><div><h1>Verlof</h1><p>Vraag vakantie of een vrije dag aan, of meld je ziek. Beschikbaarheid per week geef je door onder <button class="linkbtn" data-goto="beschikbaar">Beschikbaar</button>.</p></div></div>
+    <div class="page-head"><div><h1>Verlof</h1><p>Vraag vakantie of een vrije dag aan, of meld je ziek. Beschikbaarheid per week geef je door onder <button class="linkbtn" data-goto="beschikbaar">Beschikbaar</button>.</p></div><button class="btn" data-sick>🤒 Ik ben ziek</button></div>
     ${showBal ? `<div class="card pad balance"><div><small>Verlofsaldo ${bal.year}</small><b>${fmtH(bal.rest)} uur</b></div><div class="hint">${fmtH(bal.opening)} meegenomen uit ${bal.year - 1} + ${fmtH(bal.entitlement)} recht − ${fmtH(bal.used)} opgenomen${bal.pending ? ` · ${bal.pending} ${bal.pending === 1 ? 'aanvraag' : 'aanvragen'} in behandeling` : ''}</div></div>` : ''}
     <div class="split">
       <form class="card pad stack" id="reqform">
@@ -2098,6 +2120,7 @@ async function viewRequestsStaff(el) {
     } catch (e) { toast(errMsg(e), 'error'); }
   };
   el.onclick = async ev => {
+    if (ev.target.closest('[data-sick]')) return sickDialog();
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
     const d = ev.target.closest('[data-del]');
     if (d && await ask('Deze aanvraag intrekken?')) { await store.deleteRequest(d.dataset.del); toast('Aanvraag ingetrokken'); rerender(); }

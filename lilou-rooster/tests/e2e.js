@@ -165,6 +165,14 @@ async function test(name, fn) {
     await mob.click('[data-tab=aanvragen]'); await mob.click('#reqform button'); await mob.waitForTimeout(200);
     assert.ok(await mob.$('[data-del]'));
   });
+  await test('ziek melden via de knop "Ik ben ziek"', async () => {
+    await mob.click('[data-tab=mijn]'); await mob.click('[data-sick]'); await mob.waitForSelector('dialog .warnbox:has-text("Eerst bellen")');
+    const before = (await demoDb(mob)).db.requests.filter(r => r.type === 'ziek').length;
+    await mob.click('dialog button[value=save]'); await mob.waitForSelector('.toast:has-text("Ziekmelding verstuurd")');
+    const { db } = await demoDb(mob);
+    assert.strictEqual(db.requests.filter(r => r.type === 'ziek').length, before + 1);
+    assert.ok(db.notifications.some(n => /Ziekmelding/.test(n.body || '')), 'directie krijgt geen melding');
+  });
 
   console.log('Directie');
   const shared = watch(await browser.newPage({ viewport: { width: 1360, height: 900 } }));

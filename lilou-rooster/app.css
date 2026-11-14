@@ -598,6 +598,7 @@ fieldset.choice .hint { margin: 0; }
 }
 
 .agenda-btns { display: grid; gap: 8px; }
+.head-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .agenda-btns a.btn { text-decoration: none; justify-content: center; text-align: center; }
 .agmore summary { cursor: pointer; color: var(--muted); font-size: 14px; }
 
