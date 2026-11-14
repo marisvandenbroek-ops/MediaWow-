@@ -15,12 +15,12 @@ module.exports = [
           <div class="kicker">Gratis website-check</div>
           <h1 class="hero">Je website verliest klanten.<br><em>Ik laat je zien waar.</em></h1>
         </div>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">01 — Waarom</div>
         <div class="count">3<span>·</span>2<span>·</span>1</div>
         <h2>Zo lang krijgt je website. <em>Daarna haken ze af.</em></h2>
         <p class="lead">Swipe: zo help ik je die paar tellen te winnen.</p>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="split">
           <div class="split-txt">
             <div class="kicker">02 — Zo werkt het</div>
@@ -39,7 +39,7 @@ module.exports = [
               <div class="bub me"><b>3.</b> Je foto's zijn prachtig. Laat ze groter zien!</div>
             </div>`, 'phone-side')}
         </div>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">03 — Hier kijk ik naar</div>
         <h2>Vier vragen, <em>vanuit je klant.</em></h2>
         <div class="list">
@@ -77,7 +77,7 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
   {
     id: '2-di-de-appjes',
     slides: [
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">Voor salons</div>
         <h1 class="hero">Krijg jij deze appjes ook?<br><em>Dan mist je website iets.</em></h1>
         ${phone(`
@@ -89,11 +89,11 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
             <div class="bub">O ja, waar kan ik parkeren? 😅</div>
             <div class="typing"><i></i><i></i><i></i></div>
           </div>`, 'phone-low')}` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">Eerlijk is eerlijk</div>
         <h1 class="lg">Elk appje is een vraag die <em>je website</em> had moeten beantwoorden.</h1>
         <p class="lead">…terwijl jij met je handen in iemands haar staat.</p>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">01 — Vraag → oplossing op je site</div>
         <div class="qa">
           <div><span class="q">“Wat kost…?”</span><span class="a">Prijslijst per behandeling</span></div>
@@ -101,7 +101,7 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
           <div><span class="q">“Online boeken?”</span><span class="a">Boekknop bovenaan, op élke pagina</span></div>
           <div><span class="q">“Parkeren?”</span><span class="a">Route en parkeren bij contact</span></div>
         </div>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <img class="card-img" src="{{img:mw-mockup-van-hees-salon-1.jpg}}" style="height:560px;object-position:50% 55%">
         <div class="kicker" style="margin-top:56px">02 — Het resultaat</div>
         <h1 class="lg">Minder appjes. <em>Meer boekingen.</em></h1>
@@ -142,18 +142,18 @@ Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
           <div class="doc-stamp">Niet van jou</div>
         </div>
         <p class="lead">Red flag nr. 1 ziet bijna niemand. Swipe →</p>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">01 — 02</div>
         <div class="flag"><span class="flagmark"></span><div><h3>Je domeinnaam staat op <em>hún</em> naam.</h3><p>Stap je over? Dan ben je je eigen adres kwijt.</p></div></div>
         <div class="flag"><span class="flagmark"></span><div><h3>Je zit jaren vast aan hun hosting.</h3><p>Opzeggen? Succes met die kleine lettertjes.</p></div></div>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">03 — 04</div>
         <div class="flag"><span class="flagmark"></span><div><h3>Je weet nooit wie je moet bellen.</h3><p>Ticketnummer 4831. Je hoort het nog.</p></div></div>
         <div class="flag"><span class="flagmark"></span><div><h3>‘Maatwerk’ dat verdacht veel op een template lijkt.</h3><p>Even googelen… o. Die site heeft je buurman ook.</p></div></div>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">En zo hoort het wél</div>
         <h2>Green flags <em>bij</em></h2>
-        <div class="logo-mask big" style="background:var(--bordeaux);margin-top:26px"></div>
+        <div class="logo-mask big" style="background:#FAF4ED;margin-top:26px"></div>
         <div class="list">
           <div><i>01</i>Domeinnaam op <em>jóuw</em> naam</div>
           <div><i>02</i>Hosting maandelijks opzegbaar</div>
@@ -190,7 +190,7 @@ Welke red flag mist er nog? 👇
   {
     id: '4-do-a-of-b',
     slides: [
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker center-t">Voor horeca · Kies maar</div>
         <h1 class="lg center-t">Welke krijgt <em>de reservering?</em></h1>
         <div class="ab">
@@ -208,7 +208,7 @@ Welke red flag mist er nog? 👇
             </div>`, 'phone-sm')}</div>
         </div>
         <p class="lead center-t" style="margin-top:34px">Zeg het in de comments</p>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">Het antwoord</div>
         <h1 class="xl">B. <em>Natuurlijk.</em></h1>
         <div class="list">
@@ -217,11 +217,11 @@ Welke red flag mist er nog? 👇
           <div><i>03</i>Openingstijden zonder zoeken</div>
           <div><i>04</i>Sfeer in plaats van een lap tekst</div>
         </div>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">Eerlijke vraag</div>
         <h1 class="lg">Lijkt jóuw website meer op <span class="big-a">A</span>?</h1>
         <p class="lead">Geen schaamte. Het gebeurt de beste.</p>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <img class="card-img" src="{{img:mw-sneak-banner.jpg}}" style="height:420px">
         <div class="kicker" style="margin-top:56px">Gratis sneak preview</div>
         <h1 class="md">Van A naar B? <em>Daar ben ik voor.</em></h1>
@@ -261,7 +261,7 @@ Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe web
           <div class="r-line"><span>Klanten die afhaken</span><span>???</span></div>
           <div class="r-total"><span>TOTAAL</span><span>duurder dan<br>je denkt</span></div>
         </div>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">En nu de mijne</div>
         <h1 class="md">Maatwerk, <em>zonder verrassingen.</em></h1>
         <div class="receipt" style="transform:rotate(1.5deg)">
@@ -319,7 +319,7 @@ Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in b
           <div class="lock"><div class="l-date">zaterdag 21 november</div><div class="l-time">08:30</div>
             <div class="l-empty">Geen meldingen</div>
           </div>`, 'phone-low phone-lock')}` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <div class="kicker">01 — Het verschil</div>
         <h1 class="lg">Niet je zaak. <em>Je website.</em></h1>
         <p class="lead">Gasten willen gewoon reserveren, het liefst in een paar tikken. Op het moment dat zij eraan denken.</p>
@@ -328,7 +328,7 @@ Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in b
           <div><i>02</i>Zenchef direct op je eigen website, in jouw stijl</div>
           <div><i>03</i>Alles wat ze willen weten, zonder te appen</div>
         </div>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <img class="card-img" src="{{img:mw-mockup-lilou-1-7.jpg}}" style="height:420px;object-position:50% 62%">
         <div class="kicker" style="margin-top:56px">Gratis sneak preview</div>
         <h1 class="md">Meer van die <em>meldingen?</em></h1>
@@ -358,11 +358,11 @@ Wil jij meer van die meldingen? Reageer PREVIEW en ik stuur je de link voor een 
         <div class="kicker">Unpopular opinion</div>
         <h1 class="hero">Je hebt geen <span class="strike">mooiere</span> website nodig.</h1>
         <p class="lead">Ja, dat zegt een webdesigner. Swipe →</p>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <h1 class="xl">Je hebt een website nodig die iets <em>dóét.</em></h1>
         <div class="words"><span>Boekt</span><span>Antwoordt</span><span>Verkoopt</span></div>
         <p class="lead">Ook als jij slaapt.</p>` },
-      { theme: 'cream', html: `
+      { theme: 'dark', html: `
         <img class="card-img" src="{{img:mw-mockup-mark-minkman-1-7.jpg}}" style="height:560px;object-position:50% 55%">
         <div class="kicker" style="margin-top:56px">Eens of oneens?</div>
         <h1 class="lg">Mooi is de basis. <em>Niet het doel.</em></h1>

@@ -147,6 +147,26 @@ em{font-style:italic}
 .notif b{font-size:25px} .notif small{font-size:22px;color:#666}
 .notif p{font-size:24px;line-height:1.3;margin-top:2px}
 .l-empty{margin-top:120px;font-size:30px;opacity:.75}
+/* ===== alles donker: variaties zodat het blijft boeien ===== */
+.dark h2,.dark h1,.dark h3{color:#FAF4ED}
+.dark .count{color:#E9D6C8} .dark .count span{color:rgba(250,244,237,.4)}
+.dark .nums div{border-color:rgba(250,244,237,.14)} .dark .nums i{color:#E9D6C8}
+.dark .list{border:0;display:flex;flex-direction:column;gap:16px}
+.dark .list div{border:0;background:rgba(250,244,237,.06);border:1px solid rgba(250,244,237,.12);border-radius:6px;padding:30px 34px 30px 120px}
+.dark .list i{left:36px;top:24px;font-size:52px;font-style:italic;color:#E9D6C8}
+.dark .qa{border:0;display:flex;flex-direction:column;gap:16px}
+.dark .qa div{border:0;background:#FAF4ED;color:var(--ink);border-radius:6px;padding:34px 40px}
+.dark .qa .q{color:var(--wine)}
+.dark .flag{background:#FAF4ED;color:var(--ink);border-radius:6px;padding:44px 46px;margin-bottom:22px;border:0}
+.dark .flag h3{color:var(--ink)} .dark .flag em{color:var(--wine)}
+.dark .flag p{color:var(--mauve);opacity:1}
+.flagmark{background:#B3261E!important;box-shadow:0 0 0 10px rgba(179,38,30,.15)!important}
+.dark .words span{border-color:rgba(250,244,237,.5)!important}
+.dark .phone-side{box-shadow:0 40px 90px rgba(0,0,0,.5)}
+.dark .card-img{box-shadow:0 30px 70px rgba(0,0,0,.45)}
+.dark .big-a{background:#FAF4ED;color:var(--ink)}
+.dark .ab-tag{background:#FAF4ED;color:var(--ink)}
+.dark .lead{color:rgba(250,244,237,.8)}
 `;
 
 function slideHTML(sl, i, n) {
