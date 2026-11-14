@@ -322,5 +322,16 @@ reset role;
 select t_ok(t_count($q$select * from notifications where title = 'Open diensten beschikbaar' and employee_id = 'a0000000-0000-0000-0000-000000000002'$q$) = 1, 'collega hoort van open diensten, ook als de medewerker uit dienst is');
 update employees set active = true where id = 'a0000000-0000-0000-0000-000000000004';
 
+\echo '== Weer beter melden'
+reset role; delete from notifications;
+insert into requests (id, employee_id, type, start_date, end_date) values ('60000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', 'ziek', today_nl() - 1, today_nl() + 5);
+set role authenticated; select as_user(2);
+select t_fails($q$select sick_recover('60000000-0000-0000-0000-000000000001')$q$, 'je kunt niet namens een ander beter melden');
+select as_user(3);
+select sick_recover('60000000-0000-0000-0000-000000000001');
+reset role;
+select t_ok((select end_date from requests where id = '60000000-0000-0000-0000-000000000001') = today_nl(), 'ziekmelding stopt vandaag');
+select t_ok(t_count($q$select * from notifications where title = '💪 Weer beter'$q$) >= 1, 'directie hoort dat iemand weer beter is');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'
