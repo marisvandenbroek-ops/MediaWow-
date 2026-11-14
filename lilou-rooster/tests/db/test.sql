@@ -304,5 +304,23 @@ reset role;
 select t_ok(t_count($q$select * from notifications$q$) = 1, 'bij verwijderen: één melding in totaal');
 select t_ok((select title from notifications limit 1) = '20 diensten vervallen', 'melding noemt het aantal');
 
+\echo '== Ziekmelding en open diensten van iemand die uit dienst is'
+reset role; delete from notifications;
+set role authenticated; select as_user(2);
+insert into requests (employee_id, type, start_date, end_date) values ('a0000000-0000-0000-0000-000000000002', 'ziek', today_nl(), today_nl());
+reset role;
+select t_ok(t_count($q$select * from notifications where title = '🤒 Ziekmelding' and employee_id = 'a0000000-0000-0000-0000-000000000001'$q$) = 1, 'directie krijgt een duidelijke ziekmelding');
+delete from notifications;
+insert into shifts (id, employee_id, date, start_time, end_time, published) values
+  ('52000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', today_nl() + 5, '12:00', '18:00', true),
+  ('52000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000004', today_nl() + 6, '12:00', '18:00', true);
+update employees set active = false where id = 'a0000000-0000-0000-0000-000000000004';
+delete from notifications;
+set role authenticated; select as_user(1);
+select shifts_bulk(array['52000000-0000-0000-0000-000000000001', '52000000-0000-0000-0000-000000000002']::uuid[], 'open');
+reset role;
+select t_ok(t_count($q$select * from notifications where title = 'Open diensten beschikbaar' and employee_id = 'a0000000-0000-0000-0000-000000000002'$q$) = 1, 'collega hoort van open diensten, ook als de medewerker uit dienst is');
+update employees set active = true where id = 'a0000000-0000-0000-0000-000000000004';
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

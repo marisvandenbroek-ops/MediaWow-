@@ -248,6 +248,7 @@ function demoStore() {
       return clone(db.shifts.filter(s => s.date >= from && s.date <= to && (canPlan() || s.published)))
         .sort((a, b) => (a.date + a.start_time).localeCompare(b.date + b.start_time));
     },
+    async shiftsOf(emp, from, to) { return (await this.shifts(from, to)).filter(s => s.employee_id === emp); },
     async saveShifts(list) {
       for (const s of list) {
         if (s.id) {
@@ -285,7 +286,7 @@ function demoStore() {
         hit.forEach(s => { db.swaps.filter(w => ['open', 'accepted'].includes(w.status) && (w.shift_id === s.id || w.swap_shift_id === s.id)).forEach(w => (w.status = 'cancelled')); s.employee_id = null; });
       }
       Object.entries(per).forEach(([emp, l]) => notify(emp, l.length === 1 ? 'Dienst vervallen' : `${l.length} diensten vervallen`, l.length === 1 ? lbl(l[0]) : `Er zijn ${l.length} diensten van je uit het rooster gehaald. Tik om je rooster te bekijken.`, 'mijn'));
-      const o = Object.values(per).reduce((n, l) => n + l.length, 0);
+      const o = hit.filter(s => s.published && s.employee_id && s.date >= t).length;   // ook als de medewerker al uit dienst is
       if (action === 'open' && o) notifyTeam(`Open dienst${o > 1 ? 'en' : ''} beschikbaar`, `${o} open dienst${o > 1 ? 'en' : ''} in het rooster. Meld je aan!`, 'diensten', owners0.length === 1 ? owners0[0] : undefined);
       save(); return hit.length;
     },
@@ -341,7 +342,9 @@ function demoStore() {
     },
     async saveRequest(r) {
       db.requests.push({ ...r, id: uid(), status: 'pending', manager_note: null, created_at: new Date().toISOString() });
-      notifyMgrs('Nieuwe aanvraag', `${fname(r.employee_id)}: ${REQ[r.type]} ${fmtShort(r.start_date)}${r.end_date !== r.start_date ? ' t/m ' + fmtShort(r.end_date) : ''}`, 'aanvragen:verlof');
+      const per = `${fmtShort(r.start_date)}${r.end_date !== r.start_date ? ' t/m ' + fmtShort(r.end_date) : ''}`;
+      if (r.type === 'ziek') db.employees.filter(e => ['manager', 'planner'].includes(e.role) && e.active !== false && e.id !== r.employee_id).forEach(e => notify(e.id, '🤒 Ziekmelding', `${fname(r.employee_id)} heeft zich ziek gemeld: ${per}`, e.role === 'manager' ? 'aanvragen:verlof' : 'planning'));
+      else notifyMgrs('Nieuwe aanvraag', `${fname(r.employee_id)}: ${REQ[r.type]} ${per}`, 'aanvragen:verlof');
       save();
     },
     async decideRequest(id, status, note, hours) {
@@ -568,9 +571,18 @@ async function supabaseStore() {
       const { error } = await sb.from('employees').delete().eq('id', id);
       if (error) throw new Error(error.code === '23503' ? KLOK_DELETE : error.message);
     },
-    async shifts(from, to) {
-      return ok(await sb.from('shifts').select('*').gte('date', from).lte('date', to).order('date').order('start_time')).map(fixShift);
+    async shifts(from, to, emp) {
+      // per 1000 ophalen: de database geeft er nooit meer tegelijk, en we willen er geen missen
+      const out = [];
+      for (let i = 0; ; i += 1000) {
+        let q = sb.from('shifts').select('*').gte('date', from).lte('date', to);
+        if (emp) q = q.eq('employee_id', emp);
+        const part = ok(await q.order('date').order('start_time').order('id').range(i, i + 999));
+        out.push(...part); if (part.length < 1000) break;
+      }
+      return out.map(fixShift);
     },
+    async shiftsOf(emp, from, to) { return this.shifts(from, to, emp); },
     async saveShifts(list) {
       const ins = list.filter(s => !s.id);
       if (ins.length) ok(await sb.from('shifts').insert(ins));
@@ -1187,7 +1199,7 @@ async function viewWeek(el, editable) {
       </div>` : ''}
     </div>
     ${elsewhere ? `<div class="pubbar"><span>Nog <strong>${future.length} concept${future.length > 1 ? 'en' : ''}</strong> in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} (${futureWeeks.map(w => 'wk ' + weekNr(parse(w))).join(', ')})</span><button class="btn sm primary" data-act="publishall">Alles publiceren</button></div>` : ''}
-    ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : ''}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><select class="input sm personsel" data-personsel aria-label="Alle diensten van één persoon bekijken"><option value="">👤 Diensten per persoon…</option>${people.filter(e => e.active !== false).map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></div>` : ''}
+    ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : ''}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><button type="button" class="btn sm" data-personpick>👤 Diensten per persoon</button></div>` : ''}
     ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren${listView ? ', of kies "Hele dag selecteren" onder een dag' : ''}. Met "Hele week" in de balk onderin selecteer je alles van deze week.</p>` : ''}
     ${editable && !mobile && !listView ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span><span class="av av-avond">✓ avond</span> <span class="av av-niet">✕ niet</span> doorgegeven beschikbaarheid</span></div>` : ''}
     ${people.length && listView ? listHTML() : ''}
@@ -1212,8 +1224,6 @@ async function viewWeek(el, editable) {
   el.onkeydown = ev => { if (ev.target.matches('[data-rev]')) S.lastKey = ev.key; };
   if (S.refocus && S.refocus.attr === 'data-rev') { const { date } = S.refocus; S.refocus = null; const ins = $$('[data-rev]', el); const i = ins.findIndex(x => x.dataset.rev === date); if (ins[i + 1]) ins[i + 1].focus(); }
   el.onchange = async ev => {
-    const ps = ev.target.closest('[data-personsel]');
-    if (ps) { const e = byId[ps.value]; ps.value = ''; if (e) personShiftsDialog(e); return; }
     const rv = ev.target.closest('[data-rev]');
     if (rv) {
       if (['Tab', 'Enter'].includes(S.lastKey)) S.refocus = { attr: 'data-rev', date: rv.dataset.rev }; S.lastKey = null;
@@ -1229,6 +1239,7 @@ async function viewWeek(el, editable) {
     if (act === 'today') { S.week = mondayOf(new Date()); S.dayWeek = null; S.sel = new Set(); return rerender(); }
     const dayB = ev.target.closest('[data-day]'); if (dayB) { S.dayI = Number(dayB.dataset.day); return rerender(); }
     const pv = ev.target.closest('[data-pv]'); if (pv) { S.planView = pv.dataset.pv; try { localStorage.setItem('rooster-planview', S.planView); } catch (x) { /* geen opslag */ } return rerender(); }
+    if (ev.target.closest('[data-personpick]')) return personPicker(people.filter(e => e.active !== false));
     if (ev.target.closest('[data-selmode]')) { S.selMode = !S.selMode; S.sel = new Set(); return rerender(); }
     if (S.selMode) {
       const sc = ev.target.closest('[data-shift]');
@@ -1526,36 +1537,47 @@ function annCard(a, { read, mgr, readInfo } = {}) {
 }
 // bijlagen pas na het tekenen ophalen (beveiligde links zijn tijdelijk)
 async function fillAnnFiles(el) {
-  for (const n of $$('[data-annimg]', el)) {
-    const u = await store.attachmentUrl(n.dataset.annimg); if (u) n.src = u;
-  }
+  const todo = $$('[data-annimg]', el).filter(n => !n.src && !n.closest('details:not([open])'));
+  await Promise.all(todo.map(async n => { const u = await store.attachmentUrl(n.dataset.annimg); if (u) n.src = u; }));
+  if (!el.dataset.annToggle) { el.dataset.annToggle = '1'; el.addEventListener('toggle', ev => { if (ev.target.open) fillAnnFiles(ev.target); }, true); }
 }
 
 // Bijlagen openen in de app zelf (geen los tabblad met een Supabase-adres): foto's als afbeelding, pdf's pagina voor pagina
 let pdfjsLib = null;
+const PDFJS_DIR = 'vendor/pdfjs-4.10.38/';
 async function loadPdfjs() {
   if (pdfjsLib) return pdfjsLib;
-  const base = new URL('vendor/pdfjs/', location.href).href;
+  const base = new URL(PDFJS_DIR, location.href).href;
   const lib = await import(base + 'pdf.min.mjs');
   lib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.mjs';
   return (pdfjsLib = lib);
 }
 async function fileViewer(path, name, type) {
+  if (document.querySelector('dialog.viewer[open]')) return;   // dubbel tikken opent geen tweede venster
   const dlg = document.createElement('dialog');
   dlg.className = 'viewer';
-  dlg.innerHTML = `<div class="viewer-bar"><strong class="viewer-name">${esc(name || 'Bijlage')}</strong><button type="button" class="btn sm" data-vsave disabled>Bewaren</button><button type="button" class="x" data-vclose aria-label="Sluiten">×</button></div>
+  dlg.setAttribute('aria-labelledby', 'viewer-name');
+  dlg.innerHTML = `<div class="viewer-bar"><strong class="viewer-name" id="viewer-name">${esc(name || 'Bijlage')}</strong><button type="button" class="btn sm" data-vsave disabled>Bewaren</button><button type="button" class="x" data-vclose aria-label="Sluiten">×</button></div>
     <div class="viewer-body"><p class="viewer-msg">Bezig met openen…</p></div>`;
   document.body.append(dlg);
   const urls = [];
-  let closed = false;
-  dlg.addEventListener('close', () => { closed = true; urls.forEach(u => URL.revokeObjectURL(u)); dlg.parentNode && dlg.parentNode.removeChild(dlg); });
+  let closed = false, doc = null, io = null;
+  dlg.addEventListener('close', () => {
+    closed = true;
+    if (io) io.disconnect();
+    $$('canvas', dlg).forEach(c => { c.width = 0; c.height = 0; });   // geheugen direct vrijgeven (iPhone)
+    if (doc) { try { doc.destroy(); } catch (x) { /* al opgeruimd */ } }
+    urls.forEach(u => URL.revokeObjectURL(u));
+    if (dlg.parentNode) dlg.parentNode.removeChild(dlg);
+  });
   $('[data-vclose]', dlg).onclick = () => dlg.close();
   dlg.showModal();
   const body = $('.viewer-body', dlg);
   try {
     const blob = await store.attachmentBlob(path);
     if (closed) return;
-    const kind = /pdf/i.test(type || blob.type) || /\.pdf$/i.test(name || '') ? 'pdf' : /^image\//.test(type || blob.type) ? 'img' : 'other';
+    const t = (type || blob.type || '').toLowerCase();
+    const kind = /pdf/.test(t) || /\.pdf$/i.test(name || '') ? 'pdf' : /^image\/(jpe?g|png|gif|webp|svg\+xml|bmp|avif)$/.test(t) ? 'img' : 'other';
     const url = URL.createObjectURL(blob); urls.push(url);
     const save = $('[data-vsave]', dlg); save.disabled = false;
     save.onclick = async () => {
@@ -1566,21 +1588,29 @@ async function fileViewer(path, name, type) {
     if (kind === 'img') { body.innerHTML = `<img class="viewer-img" src="${url}" alt="${esc(name || 'Afbeelding')}">`; return; }
     if (kind === 'other') { body.innerHTML = '<p class="viewer-msg">Dit bestand kan niet in de app getoond worden. Tik op Bewaren om het op je telefoon te openen.</p>'; return; }
     const lib = await loadPdfjs();
-    const doc = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
-    if (closed) return;
+    const loaded = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()), isEvalSupported: false }).promise;
+    if (closed) { loaded.destroy(); return; }
+    doc = loaded;
     body.innerHTML = '';
     const width = Math.min(body.clientWidth - 16, 1000), ratio = Math.min(window.devicePixelRatio || 1, 2);
-    for (let i = 1; i <= doc.numPages && !closed; i++) {
-      const page = await doc.getPage(i);
-      const vp1 = page.getViewport({ scale: 1 });
-      const vp = page.getViewport({ scale: (width / vp1.width) * ratio });
-      const c = document.createElement('canvas');
-      c.className = 'viewer-page'; c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
-      c.style.width = width + 'px'; c.setAttribute('aria-label', `Pagina ${i} van ${doc.numPages}`);
-      body.append(c);
+    // pagina's pas tekenen als ze in beeld komen: ook een dikke menukaart blijft licht op de telefoon
+    const draw = async c => {
+      if (c.dataset.done || closed) return; c.dataset.done = '1';
+      const page = await doc.getPage(Number(c.dataset.page)); if (closed) return;
+      const vp = page.getViewport({ scale: (width / page.getViewport({ scale: 1 }).width) * ratio });
+      c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
       await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    };
+    io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) draw(en.target).catch(() => {}); }), { root: body, rootMargin: '600px 0px' }) : null;
+    for (let i = 1; i <= doc.numPages && !closed; i++) {
+      const vp1 = (await doc.getPage(i)).getViewport({ scale: 1 });
+      const c = document.createElement('canvas');
+      c.className = 'viewer-page'; c.dataset.page = i;
+      c.style.width = width + 'px'; c.style.height = Math.round(width * vp1.height / vp1.width) + 'px';
+      c.setAttribute('role', 'img'); c.setAttribute('aria-label', `Pagina ${i} van ${doc.numPages}`);
+      body.append(c);
+      if (io) io.observe(c); else await draw(c);
     }
-    doc.destroy();
   } catch (e) {
     if (!closed) body.innerHTML = `<p class="viewer-msg">Openen lukt niet: ${esc(errMsg(e))}. Tik op Bewaren om het bestand op je telefoon te openen.</p>`;
   }
@@ -1819,18 +1849,21 @@ async function viewDashboard(el) {
 
 /* ================= Verlof en het rooster ================= */
 // Keuze wat er met ingeplande diensten gebeurt als verlof wordt goedgekeurd
-function conflictChoice(c) {
-  if (!c.length) return '';
+const notStarted = c => c.filter(s => shiftWindow(s)[0] > new Date());
+function conflictChoice(c0, { keep = true } = {}) {
+  const c = notStarted(c0), past = c0.length - c.length;
+  if (!c.length) return past ? `<p class="hint">${past} dienst${past > 1 ? 'en' : ''} in deze periode ${past > 1 ? 'zijn' : 'is'} al begonnen of voorbij en ${past > 1 ? 'blijven' : 'blijft'} gewoon staan.</p>` : '';
   const sorted = c.slice().sort((a, b) => (a.date + a.start_time).localeCompare(b.date + b.start_time));
   const show = sorted.slice(0, 6).map(s => `${esc(fmtShort(s.date))} ${hm(s.start_time)}–${hm(s.end_time)}`).join(', ');
   return `<div class="warnbox">Staat nog ${c.length}× ingepland: ${show}${c.length > 6 ? ` en nog ${c.length - 6} meer, t/m ${esc(fmtShort(sorted[sorted.length - 1].date))}` : ''}.</div>
     <fieldset class="choice"><legend>Wat moet er met ${c.length > 1 ? 'deze diensten' : 'deze dienst'} gebeuren?</legend>
       <label class="check"><input type="radio" name="conflict" value="open" checked> <span><strong>Open dienst van maken</strong><br><span class="hint">Collega's kunnen zich aanmelden; jij kiest wie hem krijgt.</span></span></label>
       <label class="check"><input type="radio" name="conflict" value="delete"> <span><strong>Verwijderen</strong><br><span class="hint">De dienst vervalt helemaal.</span></span></label>
-      <label class="check"><input type="radio" name="conflict" value="keep"> <span><strong>Laten staan</strong><br><span class="hint">Je past het later zelf aan in de planning.</span></span></label>
-    </fieldset>`;
+      ${keep ? '<label class="check"><input type="radio" name="conflict" value="keep"> <span><strong>Laten staan</strong><br><span class="hint">Je past het later zelf aan in de planning.</span></span></label>' : ''}
+    </fieldset>${past ? `<p class="hint">${past} dienst${past > 1 ? 'en' : ''} die al begonnen ${past > 1 ? 'zijn' : 'is'} of voorbij ${past > 1 ? 'zijn' : 'is'}, ${past > 1 ? 'blijven' : 'blijft'} gewoon staan.</p>` : ''}`;
 }
-async function resolveConflicts(c, how) {
+async function resolveConflicts(c0, how) {
+  const c = notStarted(c0);
   if (!c.length || !how || how === 'keep') return c.length ? ' · diensten staan nog in het rooster' : '';
   await store.bulkShifts(c.map(x => x.id), how === 'delete' ? 'delete' : 'open');
   return how === 'delete' ? ` · ${c.length} dienst${c.length > 1 ? 'en' : ''} verwijderd` : ` · ${c.length} open dienst${c.length > 1 ? 'en' : ''} gemaakt`;
@@ -2424,7 +2457,7 @@ function employeeDialog(e, priv = {}, reqs = []) {
       // Uit dienst gezet: komende diensten afhandelen
       if (!isNew && e.active !== false && !payload.active) {
         const now = new Date();
-        const fut = (await store.shifts(todayIso(), iso(addDays(now, 400)))).filter(x => x.employee_id === e.id && shiftWindow(x)[0] > now);
+        const fut = (await store.shiftsOf(e.id, todayIso(), iso(addDays(now, 800)))).filter(x => shiftWindow(x)[0] > now);
         if (fut.length) setTimeout(() => openDialog(`${esc(e.name.split(' ')[0])} is uit dienst`, `
           ${conflictChoice(fut)}
           <div class="dlg-foot"><span class="spacer"></span><button class="btn primary" value="save">Doorvoeren</button></div>`, {
@@ -2435,10 +2468,17 @@ function employeeDialog(e, priv = {}, reqs = []) {
   });
 }
 
+function personPicker(list) {
+  openDialog('Diensten per persoon', `<p class="hint" style="margin:0">Kies wie je wilt bekijken. Je ziet al zijn of haar komende diensten, alle weken.</p>
+    <div class="pickgrid">${list.map(e => `<button type="button" class="pickbtn" data-pick="${e.id}" style="--c:${esc(e.color || COLORS[0])}"><span class="dot"></span>${esc(e.name)}<small>${esc(e.position || '')}</small></button>`).join('')}</div>`, {
+    onReady(dlg) { dlg.addEventListener('click', ev => { const b = ev.target.closest('[data-pick]'); if (!b) return; const e = list.find(x => x.id === b.dataset.pick); dlg.close(); if (e) personShiftsDialog(e); }); },
+  });
+}
+
 // Alle komende diensten van één persoon, per week; selecteren en in één keer verwijderen of open zetten
 async function personShiftsDialog(e) {
   const first = e.name.split(' ')[0], now = new Date();
-  const list = (await store.shifts(todayIso(), iso(addDays(now, 800)))).filter(x => x.employee_id === e.id)
+  const list = (await store.shiftsOf(e.id, todayIso(), iso(addDays(now, 800))))
     .sort((a, b) => (a.date + hm(a.start_time)).localeCompare(b.date + hm(b.start_time)));
   const total = list.reduce((t, x) => t + shiftHours(x), 0);
   const weeks = {};
@@ -2470,17 +2510,17 @@ async function personShiftsDialog(e) {
 
 // Alle komende diensten van één medewerker vanaf een datum in één keer verwijderen of open zetten
 async function futureShiftsDialog(e) {
-  const now = new Date(), all = (await store.shifts(todayIso(), iso(addDays(now, 800)))).filter(x => x.employee_id === e.id && shiftWindow(x)[0] > now);
+  const now = new Date(), all = (await store.shiftsOf(e.id, todayIso(), iso(addDays(now, 800)))).filter(x => shiftWindow(x)[0] > now);
   const first = e.name.split(' ')[0];
   if (!all.length) return toast(`${first} heeft geen komende diensten`);
   const pick = from => all.filter(x => x.date >= from);
   openDialog(`Komende diensten van ${first}`, `
     <label class="field">Vanaf welke datum?<input type="date" name="from" value="${todayIso()}" min="${todayIso()}" required></label>
-    <div data-futlist>${conflictChoice(all)}</div>
+    <div data-futlist>${conflictChoice(all, { keep: false })}</div>
     <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><span class="spacer"></span><button class="btn primary" value="save">Doorvoeren</button></div>`, {
     onReady(dlg) {
       const f = $('form', dlg), box = $('[data-futlist]', dlg);
-      f.from.onchange = () => { const how = (f.conflict && f.conflict.value) || 'open'; const l = pick(f.from.value || todayIso()); box.innerHTML = l.length ? conflictChoice(l) : '<p class="hint">Vanaf deze datum staan er geen diensten meer.</p>'; const r = $(`input[name=conflict][value=${how}]`, box); if (r) r.checked = true; };
+      f.from.onchange = () => { const how = (f.conflict && f.conflict.value) || 'open'; const l = pick(f.from.value || todayIso()); box.innerHTML = l.length ? conflictChoice(l, { keep: false }) : '<p class="hint">Vanaf deze datum staan er geen diensten meer.</p>'; const r = $(`input[name=conflict][value=${how}]`, box); if (r) r.checked = true; };
     },
     async onSubmit(fd) {
       const l = pick(fd.get('from') || todayIso()), how = fd.get('conflict');

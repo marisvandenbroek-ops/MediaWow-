@@ -502,7 +502,15 @@ declare lbl text := case new.type when 'vakantie' then 'Vakantie' when 'vrij' th
         per text := to_char(new.start_date, 'DD-MM') || case when new.end_date <> new.start_date then ' t/m ' || to_char(new.end_date, 'DD-MM') else '' end;
 begin
   if tg_op = 'INSERT' then
-    perform public.notify_managers('Nieuwe aanvraag', public.first_name(new.employee_id) || ': ' || lbl || ' ' || per, 'aanvragen:verlof');
+    if new.type = 'ziek' then
+      -- ziekmelding: directie én shiftleaders direct op de hoogte, met een duidelijke titel
+      insert into public.notifications (employee_id, title, body, view)
+      select id, '🤒 Ziekmelding', public.first_name(new.employee_id) || ' heeft zich ziek gemeld: ' || per,
+             case when role = 'manager' then 'aanvragen:verlof' else 'planning' end
+        from public.employees where role in ('manager', 'planner') and active and id <> new.employee_id;
+    else
+      perform public.notify_managers('Nieuwe aanvraag', public.first_name(new.employee_id) || ': ' || lbl || ' ' || per, 'aanvragen:verlof');
+    end if;
   elsif new.status is distinct from old.status and new.status in ('approved', 'rejected') then
     perform public.notify(new.employee_id, 'Aanvraag ' || case when new.status = 'approved' then 'goedgekeurd' else 'afgewezen' end,
       lbl || ' ' || per || coalesce(' — ' || nullif(new.manager_note, ''), ''), 'aanvragen');
@@ -589,8 +597,9 @@ begin
             where s.id = any(p_ids) and s.published and s.date >= public.today_nl() group by s.employee_id loop
     perform public.notify(r.employee_id, case when r.c = 1 then 'Dienst vervallen' else r.c || ' diensten vervallen' end,
       case when r.c = 1 then r.one else 'Er zijn ' || r.c || ' diensten van je uit het rooster gehaald. Tik om je rooster te bekijken.' end, 'mijn');
-    n_open := n_open + r.c;
   end loop;
+  -- open diensten tellen ook als de medewerker al uit dienst is (juist dan moeten collega's het weten)
+  select count(*) into n_open from public.shifts where id = any(p_ids) and employee_id is not null and published and date >= public.today_nl();
   -- gaat het om één medewerker, dan krijgt die zelf geen 'open diensten'-melding over zijn eigen diensten
   select case when count(distinct employee_id) = 1 then (array_agg(employee_id))[1] end into v_except
     from public.shifts where id = any(p_ids) and employee_id is not null;

@@ -171,7 +171,7 @@ async function test(name, fn) {
     await mob.click('dialog button[value=save]'); await mob.waitForSelector('.toast:has-text("Ziekmelding verstuurd")');
     const { db } = await demoDb(mob);
     assert.strictEqual(db.requests.filter(r => r.type === 'ziek').length, before + 1);
-    assert.ok(db.notifications.some(n => /Ziekmelding/.test(n.body || '')), 'directie krijgt geen melding');
+    assert.ok(db.notifications.some(n => /Ziekmelding/.test(n.title || '') && /ziek gemeld/.test(n.body || '')), 'directie krijgt geen duidelijke ziekmelding');
   });
 
   console.log('Directie');
@@ -531,9 +531,8 @@ async function test(name, fn) {
       for (let i = 1; i <= 30; i++) { const d = new Date(Date.now() + i * 2 * 864e5); db.shifts.push({ id: 'noor-' + i, employee_id: e.id, date: d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()), start_time: '14:00', end_time: '22:00', break_minutes: 0, position: 'Keuken', note: '', published: true }); }
       db.notifications = [];`);
     await p.reload(); await p.waitForSelector('[data-tab=planning]');
-    await p.click('[data-tab=planning]'); await p.waitForSelector('[data-personsel]');
-    const noor = await p.$eval('[data-personsel] option:text-matches("Noor")', o => o.value);
-    await p.selectOption('[data-personsel]', noor);
+    await p.click('[data-tab=planning]'); await p.waitForSelector('[data-personpick]');
+    await p.click('[data-personpick]'); await p.click('dialog [data-pick]:has-text("Noor")');
     await p.waitForSelector('dialog:has-text("Diensten van Noor") .psweek');
     assert.ok((await p.$$('dialog .psweek')).length >= 8, 'niet alle weken zichtbaar');
     const n = (await p.$$('dialog input[name=ids]:not(:disabled)')).length; assert.ok(n >= 30, 'te weinig diensten: ' + n);
