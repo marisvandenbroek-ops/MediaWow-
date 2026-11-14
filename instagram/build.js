@@ -396,6 +396,12 @@ em{font-style:italic}
 .sys .btn{border-radius:0}
 .sys .kicker{letter-spacing:.34em}
 .sys:not(.soft) .ftr span:first-child{font-weight:600}
+/* ===== CLEAN: minder tekst, meer beeld ===== */
+.clean.first .kicker,.clean.first .lead,.clean.first .ftr,.clean.first .hdr .h,.clean .soft-sub,.clean .soft-handle,.clean .soft-foot{display:none}
+.clean.first h1.hero{font-size:132px!important;line-height:.95}
+.clean.first .soft-mid h1{font-size:136px;line-height:.95}
+.clean.rest .ftr span:first-child{opacity:0}
+.clean.rest .kicker{display:none}
 `;
 
 function slideHTML(sl, i, n) {
@@ -404,7 +410,7 @@ function slideHTML(sl, i, n) {
   const logoColor = sl.light ? '#141414' : onDark ? '#fff' : (sl.theme === 'greige' ? '#141414' : 'var(--bordeaux)');
   const counter = n > 1 ? (i === 0 ? 'Swipe →' : `${String(i + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}`) : 'mediawow.nl';
   return `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONTS}"><style>${CSS}</style></head>
-<body><div class="s ${sl.theme} ${sl.cls || ''} ${sl.light ? 'lightphoto' : ''} ${i === 0 ? 'first' : 'rest'} ${process.env.SYSTEM ? 'sys' : ''}">${html}
+<body><div class="s ${sl.theme} ${sl.cls || ''} ${sl.light ? 'lightphoto' : ''} ${i === 0 ? 'first' : 'rest'} ${process.env.SYSTEM ? 'sys' : ''} ${process.env.CLEAN ? 'clean' : ''}">${html}
 <div class="hdr"><div class="logo-mask" style="background:${logoColor}"></div><span class="h">@media.wow</span></div>
 <div class="ftr"><span>${process.env.SYSTEM ? 'Website Check · MediaWow' : 'mediawow.nl'}</span><span>${counter}</span></div></div></body></html>`;
 }
