@@ -2,7 +2,8 @@
 // Usage: node reel/make-reel.js
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
-const DIR = __dirname, FR = path.join(DIR, 'frames'), FPS = 30, DUR = 9.5;
+const DIR = __dirname, FR = path.join(DIR, 'frames'), FPS = 30, DUR = 11;
+const PHOTO = 'data:image/jpeg;base64,' + fs.readFileSync(path.join(DIR, '..', 'assets', 'foto-kantoor.jpg')).toString('base64');
 const LOGO = 'data:image/png;base64,' + fs.readFileSync(path.join(DIR, '..', 'assets', 'logo-zwart.png')).toString('base64');
 const NOTIFS = [
   [1.6, 'nu', '4 personen · vanavond 19:30'],
@@ -35,12 +36,23 @@ h1 em{color:#E9D6C8}
 .nb{flex:1}.nt{display:flex;justify-content:space-between;font-size:26px}.nt small{color:#666;font-size:22px}
 .nb p{font-size:26px;margin-top:2px}
 .more{position:absolute;left:50%;transform:translateX(-50%);top:0;background:rgba(255,255,255,.2);border-radius:24px;padding:12px 30px;font-size:26px;white-space:nowrap}
-.end{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 90px;background:radial-gradient(110% 60% at 80% 105%,#3A1011 0%,#1B0405 62%)}
-.end h2{font-family:'Instrument Serif';font-weight:400;font-size:150px;line-height:.95}
+.end{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:0 80px 330px;background:#1B0405}
+.end .ph{position:absolute;left:0;top:-280px;width:100%;height:calc(100% + 280px);object-fit:cover;object-position:42% 30%}
+.end .fade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(27,4,5,.55) 0%,rgba(27,4,5,0) 18%,rgba(27,4,5,.15) 40%,rgba(27,4,5,.92) 62%,#1B0405 100%)}
+.end>*:not(.ph):not(.fade){position:relative}
+.ek{font-size:26px;letter-spacing:.42em;text-transform:uppercase;color:rgba(250,244,237,.75);margin-bottom:26px}
+.cc{display:flex;align-items:center;gap:22px;background:#FAF4ED;color:#1B0405;border-radius:100px;padding:22px 36px 22px 22px;margin-top:44px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.cc .av{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#E9DCCD,#A88E78)}
+.cc .ty{flex:1;font-size:50px;font-weight:600}
+.cc .ty:after{content:'';display:inline-block;width:4px;height:50px;background:#1B0405;margin-left:8px;vertical-align:-6px}
+.cc .po{font-size:32px;font-weight:700;color:#3A1011}
+.hr{margin-top:36px;font-size:28px;color:rgba(250,244,237,.7)}
+.end h2{font-family:'Instrument Serif';font-weight:400;font-size:150px;line-height:.92;letter-spacing:-.02em}
 .end h2 em{color:#E9D6C8}
-.end p{font-size:40px;font-weight:300;margin-top:40px;color:rgba(250,244,237,.82);line-height:1.4}
+.end p{font-size:42px;font-weight:300;margin-top:34px;color:rgba(250,244,237,.9);line-height:1.35}
+.end p b{font-weight:700;color:#fff}
 .btn{align-self:flex-start;margin-top:60px;padding:34px 56px;background:#FAF4ED;color:#1B0405;font-size:26px;letter-spacing:.38em;text-transform:uppercase;font-weight:500}
-.end .lg{height:64px;aspect-ratio:1058/244;background:#FAF4ED;-webkit-mask:url(${LOGO}) no-repeat center/contain;margin-bottom:80px}
+.end .lg{position:absolute!important;top:150px;left:90px;height:56px;aspect-ratio:1058/244;background:#FAF4ED;-webkit-mask:url(${LOGO}) no-repeat center/contain}
 </style></head><body>
 <div class="logo" id="logo"></div><div class="kick" id="kick">Voor horeca · zaterdag 08:30</div>
 <h1 id="title">Zo zou jouw zaterdag <em>eruit moeten zien.</em></h1>
@@ -48,7 +60,15 @@ h1 em{color:#E9D6C8}
 <div class="date">zaterdag 21 november</div><div class="time">08:30</div>
 <div class="list" id="list">${NOTIFS.map((n, i) => `<div class="n" id="n${i}"><div class="ic">🍽️</div><div class="nb"><div class="nt"><b>Zenchef</b><small>nu</small></div><p>Nieuwe reservering · ${n[2]}</p></div></div>`).join('')}
 <div class="more" id="more"></div></div></div></div>
-<div class="end" id="end"><div class="lg"></div><h2>Wil jij dit <em>ook?</em></h2><p>Bekijk 5 ontwerpen voor horeca. Binnen drie weken online, vanaf €89 per maand.</p><div class="btn">mediawow.nl/horeca</div><p style="font-size:30px;margin-top:34px">Link in bio · of reageer HORECA</p></div>
+<div class="end" id="end">
+<img class="ph" src="${PHOTO}"><div class="fade"></div>
+<div class="lg"></div>
+<div class="ek">Gratis website-check</div>
+<h2>Ik check jouw website.<br><em>Gratis.</em></h2>
+<p>Reageer <b>TIPS</b> en je krijgt 3 persoonlijke tips in je DM.</p>
+<div class="cc"><div class="av"></div><span class="ty">TIPS</span><span class="po">Plaatsen</span></div>
+<div class="hr">Horeca? Bekijk de ontwerpen op mediawow.nl/horeca</div>
+</div>
 <script>
 const T=${JSON.stringify(NOTIFS.map(n => n[0]))}, H=132;
 const cl=x=>Math.max(0,Math.min(1,x)), ease=x=>1-Math.pow(1-cl(x),3);
@@ -60,7 +80,7 @@ window.setT=t=>{
     const k=ease((t-ti)/0.35);e.style.opacity=k;e.style.transform='translateY('+(shift-40*(1-k))+'px) scale('+(0.94+0.06*k)+')'});
   const m=document.getElementById('more');const c=Math.floor(cl((t-4.8)/1.2)*9);m.style.opacity=t>4.8?1:0;m.textContent='+ '+c+' nieuwe reserveringen';
   let sh=0;T.forEach(tj=>sh+=ease((t-tj)/0.35)*H);m.style.top=(sh+10)+'px';
-  const e=ease((t-6.6)/0.6);const end=document.getElementById('end');end.style.opacity=e;end.style.transform='translateY('+(60*(1-e))+'px)';
+  const e=ease((t-6.4)/0.6);const end=document.getElementById('end');end.style.opacity=e;end.style.transform='translateY('+(60*(1-e))+'px)';
 };
 </script></body></html>`;
 (async () => {
