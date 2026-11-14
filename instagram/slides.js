@@ -4,74 +4,71 @@ const phone = (inner, cls = '') => `<div class="phone ${cls}"><div class="screen
 const avatarMW = `<div class="av-mw"><div class="logo-mask" style="background:#fff"></div></div>`;
 
 module.exports = [
-  // ───────────── MA: WEBSITE ROAST ─────────────
+  // ───────────── MA: GRATIS WEBSITE-CHECK ─────────────
   {
-    id: '1-ma-website-roast',
+    id: '1-ma-website-check',
     slides: [
       { theme: 'photo', html: `
-        <img class="bg-photo" src="{{img:portrait.png}}" style="object-position:50% 28%">
+        <img class="bg-photo" src="{{img:portrait.png}}" style="top:-230px;height:calc(100% + 230px)">
         <div class="bg-fade"></div>
         <div class="bottom">
-          <div class="kicker">Gratis website roast</div>
-          <h1 class="xl">Stuur me je website.<br><em>Ik roast 'm.</em></h1>
-          <span class="btn">Reageer: Roast</span>
+          <div class="kicker">Gratis website-check</div>
+          <h1 class="xl">Stuur me je website.<br><em>Ik geef je 3 tips.</em></h1>
+          <span class="btn">Reageer: Tips</span>
         </div>` },
       { theme: 'cream', html: `
-        <div class="kicker">01 — Zo lang krijgt je website</div>
+        <div class="kicker">01 — Waarom</div>
         <div class="count">3<span>·</span>2<span>·</span>1</div>
-        <h2>Snapt je bezoeker het niet meteen? <em>Dan is hij weg.</em></h2>
-        <p class="lead">En hij komt niet terug om het nog eens te proberen.</p>` },
-      { theme: 'white', html: `
+        <h2>Zo lang krijgt je website. <em>Ik help je die tellen goed te gebruiken.</em></h2>` },
+      { theme: 'cream', html: `
         <div class="split">
           <div class="split-txt">
-            <div class="kicker">02 — Zo werkt de roast</div>
+            <div class="kicker">02 — Zo werkt het</div>
             <div class="nums">
-              <div><i>1</i><span>Reageer <b>ROAST</b> onder deze post</span></div>
-              <div><i>2</i><span>Ik bekijk je site op mijn telefoon. Net als je klant.</span></div>
-              <div><i>3</i><span>Jij krijgt <b>3 eerlijke punten</b> in je DM</span></div>
+              <div><i>1</i><span>Reageer <b>TIPS</b> onder deze post</span></div>
+              <div><i>2</i><span>Ik bekijk je site op mijn telefoon, net als je klant</span></div>
+              <div><i>3</i><span>Jij krijgt <b>3 persoonlijke tips</b> in je DM</span></div>
             </div>
           </div>
           ${phone(`
             <div class="dm-head">${avatarMW}<div><b>media.wow</b><small>MediaWow Webdesign</small></div></div>
             <div class="chat">
-              <div class="bub me">Hoi! Hier is je roast 🔥</div>
-              <div class="bub me"><b>1.</b> Ik snap niet meteen wat je aanbiedt…</div>
-              <div class="bub me"><b>2.</b> Waar kan ik boeken? 👀</div>
-              <div class="bub me"><b>3.</b> Je foto's zijn top, laat ze groter zien!</div>
+              <div class="bub me">Hoi! Hier zijn je 3 tips 🤍</div>
+              <div class="bub me"><b>1.</b> Zet je boekknop bovenaan, dan vinden klanten ‘m meteen.</div>
+              <div class="bub me"><b>2.</b> Vertel in één zin wat je doet en voor wie.</div>
+              <div class="bub me"><b>3.</b> Je foto's zijn prachtig. Laat ze groter zien!</div>
             </div>`, 'phone-side')}
         </div>` },
       { theme: 'cream', html: `
-        <div class="kicker">03 — Hier let ik op</div>
-        <h2>Vier vragen. <em>Eerlijke antwoorden.</em></h2>
+        <div class="kicker">03 — Hier kijk ik naar</div>
+        <h2>Vier vragen, <em>vanuit je klant.</em></h2>
         <div class="list">
           <div><i>01</i>Snap ik binnen 5 tellen wat je doet?</div>
           <div><i>02</i>Zie ik meteen hoe ik boek of contact opneem?</div>
           <div><i>03</i>Werkt het lekker op mijn telefoon?</div>
-          <div><i>04</i>Voelt het als <em>jóuw</em> zaak, of als een template?</div>
+          <div><i>04</i>Voelt het als <em>jóuw</em> zaak?</div>
         </div>` },
       { theme: 'dark', html: `
-        <div class="kicker">Klaar?</div>
-        <h1 class="lg">Durf jij de <em>roast</em> aan?</h1>
+        <div class="kicker">Gratis, zonder verplichtingen</div>
+        <h1 class="lg">Zin in <em>3 tips</em> voor jouw website?</h1>
         <div class="comments">
-          <div class="cm"><div class="av-user"></div><div><b>jouwzaak.nl</b><p>ROAST 🔥</p></div></div>
-          <div class="cm reply">${avatarMW}<div><b>media.wow</b><p>Komt eraan! Check je DM 👀</p></div></div>
+          <div class="cm"><div class="av-user"></div><div><b>jouwzaak.nl</b><p>TIPS 🤍</p></div></div>
+          <div class="cm reply">${avatarMW}<div><b>media.wow</b><p>Leuk! Ik kijk ernaar. Check je DM ✨</p></div></div>
         </div>
-        <span class="btn">Reageer: Roast</span>` },
+        <span class="btn">Reageer: Tips</span>` },
     ],
-    caption: `Durf jij? 🔥
+    caption: `Je website moet het in een paar tellen doen. Ik help je graag op weg 🤍
 
-Ik roast je website. Gratis, eerlijk en door de ogen van je klant.
-
-Zo werkt het:
-1️⃣ Reageer ROAST
+Gratis website-check:
+1️⃣ Reageer TIPS
 2️⃣ Ik bekijk je site op mijn telefoon, net als je klant
-3️⃣ Je krijgt 3 eerlijke verbeterpunten in je DM
+3️⃣ Je krijgt 3 persoonlijke tips in je DM
 
-Geen verkooppraatje. Gewoon wat ik zie. 👀
+Geen verkooppraatje. Gewoon tips waar je meteen iets mee kunt.
 
-Ken je iemand wiens website wel een roast kan gebruiken? Tag ze (met liefde 😇)
+Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
 
-#websiteroast #webdesign #ondernemen #websitelatenmaken #salon #horeca #mediawow`,
+#websitecheck #webdesign #ondernemen #websitetips #salon #horeca #mediawow`,
   },
 
   // ───────────── DI: DE APPJES ─────────────
@@ -90,11 +87,11 @@ Ken je iemand wiens website wel een roast kan gebruiken? Tag ze (met liefde 😇
             <div class="bub">O ja, waar kan ik parkeren? 😅</div>
             <div class="typing"><i></i><i></i><i></i></div>
           </div>`, 'phone-low')}` },
-      { theme: 'dark', html: `
+      { theme: 'cream', html: `
         <div class="kicker">Eerlijk is eerlijk</div>
         <h1 class="lg">Elk appje is een vraag die <em>je website</em> had moeten beantwoorden.</h1>
         <p class="lead">…terwijl jij met je handen in iemands haar staat.</p>` },
-      { theme: 'white', html: `
+      { theme: 'cream', html: `
         <div class="kicker">01 — Vraag → oplossing op je site</div>
         <div class="qa">
           <div><span class="q">“Wat kost…?”</span><span class="a">Prijslijst per behandeling</span></div>
@@ -110,8 +107,8 @@ Ken je iemand wiens website wel een roast kan gebruiken? Tag ze (met liefde 😇
       { theme: 'dark', html: `
         <div class="kicker">Benieuwd?</div>
         <h1 class="lg">Hoeveel appjes zou jouw website kunnen <em>opvangen?</em></h1>
-        <p class="lead">Reageer ROAST en ik kijk eerlijk met je mee.</p>
-        <span class="btn">Reageer: Roast</span>` },
+        <p class="lead">Reageer TIPS en ik geef je 3 persoonlijke tips voor je website.</p>
+        <span class="btn">Reageer: Tips</span>` },
     ],
     caption: `“Hoi! Wat kost knippen?”
 “Hebben jullie zaterdag nog plek?”
@@ -121,7 +118,7 @@ Herkenbaar? Elk appje is een vraag die je website eigenlijk al had moeten beantw
 
 Swipe voor wat er op je site hoort, zodat je klant het zelf kan vinden →
 
-Reageer ROAST en ik kijk eerlijk naar jouw website 🔥
+Reageer TIPS en ik geef je 3 persoonlijke tips voor jouw website 🤍
 
 Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
 
@@ -134,16 +131,16 @@ Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
     slides: [
       { theme: 'dark', html: `
         <div class="kicker">Gespot door een webdesigner</div>
-        <h1 class="xl">Webdesigner<br><em>red flags</em> 🚩</h1>
+        <h1 class="xl">Webdesigner<br><em>red flags</em></h1>
         <p class="lead">Vier dingen waar ik altijd even van schrik. Herken jij er één?</p>` },
       { theme: 'cream', html: `
         <div class="kicker">01 — 02</div>
-        <div class="flag"><span>🚩</span><div><h3>Je domeinnaam staat op <em>hún</em> naam.</h3><p>Stap je over? Dan ben je je eigen adres kwijt.</p></div></div>
-        <div class="flag"><span>🚩</span><div><h3>Je zit jaren vast aan hun hosting.</h3><p>Opzeggen? Succes met die kleine lettertjes.</p></div></div>` },
-      { theme: 'white', html: `
+        <div class="flag"><span class="flagmark"></span><div><h3>Je domeinnaam staat op <em>hún</em> naam.</h3><p>Stap je over? Dan ben je je eigen adres kwijt.</p></div></div>
+        <div class="flag"><span class="flagmark"></span><div><h3>Je zit jaren vast aan hun hosting.</h3><p>Opzeggen? Succes met die kleine lettertjes.</p></div></div>` },
+      { theme: 'cream', html: `
         <div class="kicker">03 — 04</div>
-        <div class="flag"><span>🚩</span><div><h3>Je weet nooit wie je moet bellen.</h3><p>Ticketnummer 4831. Je hoort het nog.</p></div></div>
-        <div class="flag"><span>🚩</span><div><h3>‘Maatwerk’ dat verdacht veel op een template lijkt.</h3><p>Even googelen… o. Die site heeft je buurman ook.</p></div></div>` },
+        <div class="flag"><span class="flagmark"></span><div><h3>Je weet nooit wie je moet bellen.</h3><p>Ticketnummer 4831. Je hoort het nog.</p></div></div>
+        <div class="flag"><span class="flagmark"></span><div><h3>‘Maatwerk’ dat verdacht veel op een template lijkt.</h3><p>Even googelen… o. Die site heeft je buurman ook.</p></div></div>` },
       { theme: 'cream', html: `
         <div class="kicker">En zo hoort het wél</div>
         <h2>Green flags <em>bij</em></h2>
@@ -156,8 +153,8 @@ Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
         </div>` },
       { theme: 'dark', html: `
         <div class="kicker">Herkenbaar?</div>
-        <h1 class="lg">Zie je een 🚩 bij je <em>huidige website?</em></h1>
-        <p class="lead">Stuur me een DM. Ik vertel je eerlijk wat je opties zijn. Of tag iemand die dit moet zien.</p>
+        <h1 class="lg">Herken je een red flag bij je <em>huidige website?</em></h1>
+        <p class="lead">Stuur me een DM. Ik denk graag met je mee over je opties.</p>
         <span class="btn">Stuur een DM</span>` },
     ],
     caption: `🚩 Webdesigner red flags, gespot door… een webdesigner 🙋
@@ -198,8 +195,8 @@ Welke red flag mist er nog? 👇
               <div class="sb-chips"><span>Menu</span><span>Open tot 22:00</span><span>Route</span></div>
             </div>`, 'phone-sm')}</div>
         </div>
-        <p class="lead center-t" style="margin-top:34px">Zeg het in de comments 👇</p>` },
-      { theme: 'dark', html: `
+        <p class="lead center-t" style="margin-top:34px">Zeg het in de comments</p>` },
+      { theme: 'cream', html: `
         <div class="kicker">Het antwoord</div>
         <h1 class="xl">B. <em>Natuurlijk.</em></h1>
         <div class="list">
@@ -208,10 +205,10 @@ Welke red flag mist er nog? 👇
           <div><i>03</i>Openingstijden zonder zoeken</div>
           <div><i>04</i>Sfeer in plaats van een lap tekst</div>
         </div>` },
-      { theme: 'white', html: `
+      { theme: 'cream', html: `
         <div class="kicker">Eerlijke vraag</div>
         <h1 class="lg">Lijkt jóuw website meer op <span class="big-a">A</span>?</h1>
-        <p class="lead">Geen schaamte. Het gebeurt de beste 😅</p>` },
+        <p class="lead">Geen schaamte. Het gebeurt de beste.</p>` },
       { theme: 'cream', html: `
         <img class="card-img" src="{{img:mw-sneak-banner.jpg}}" style="height:420px">
         <div class="kicker" style="margin-top:56px">Gratis sneak preview</div>
@@ -316,7 +313,7 @@ Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in b
           <div><i>02</i>Je reserveringssysteem netjes gekoppeld</div>
           <div><i>03</i>Alles wat ze willen weten, zonder te appen</div>
         </div>` },
-      { theme: 'white', html: `
+      { theme: 'cream', html: `
         <img class="card-img" src="{{img:mw-mockup-lilou-1-7.jpg}}" style="height:420px;object-position:50% 62%">
         <div class="kicker" style="margin-top:56px">Gratis sneak preview</div>
         <h1 class="md">Meer van die <em>meldingen?</em></h1>
@@ -341,11 +338,11 @@ Wil jij meer van die meldingen? Reageer PREVIEW 🤍
   {
     id: '7-zo-unpopular-opinion',
     slides: [
-      { theme: 'white', html: `
+      { theme: 'dark', html: `
         <div class="kicker">Unpopular opinion</div>
         <h1 class="xl">Je hebt geen <em>mooiere</em> website nodig.</h1>
-        <p class="lead">Ja, dat zegt een webdesigner 🙃</p>` },
-      { theme: 'dark', html: `
+        <p class="lead">Ja, dat zegt een webdesigner.</p>` },
+      { theme: 'cream', html: `
         <h1 class="xl">Je hebt een website nodig die iets <em>dóét.</em></h1>
         <div class="words"><span>Boekt</span><span>Antwoordt</span><span>Verkoopt</span></div>
         <p class="lead">Ook als jij slaapt.</p>` },
@@ -353,7 +350,7 @@ Wil jij meer van die meldingen? Reageer PREVIEW 🤍
         <img class="card-img" src="{{img:mw-mockup-mark-minkman-1-7.jpg}}" style="height:560px;object-position:50% 55%">
         <div class="kicker" style="margin-top:56px">Eens of oneens?</div>
         <h1 class="lg">Mooi is de basis. <em>Niet het doel.</em></h1>
-        <p class="lead">Zeg het in de comments. Ik ben benieuwd 👇</p>` },
+        <p class="lead">Zeg het in de comments. Ik ben benieuwd.</p>` },
     ],
     caption: `Unpopular opinion: je hebt geen mooiere website nodig. 🙃
 (ja, dat zegt een webdesigner)

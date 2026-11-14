@@ -53,7 +53,7 @@ Regels voor elke hook:
 - **Herkenning vóór uitleg:** laat eerst hún situatie zien (appjes, lege lockscreen), pas daarna de tip.
 - **Visueel in één tel te snappen:** een chat, een bonnetje, een telefoon of een vlag, in plaats van een lap tekst.
 
-1. Stuur me je website. Ik roast 'm. 🔥
+1. Stuur me je website. Ik geef je 3 tips.
 2. Herken je deze appjes?
 3. Webdesigner red flags (gespot door een webdesigner)
 4. Welke krijgt de reservering: A of B?
@@ -70,7 +70,7 @@ Regels voor elke hook:
 15. Wat ik zou veranderen als ik jouw website 1 dag mocht overnemen.
 
 ### Top 3 en waarom
-1. **Website roast:** het meest uitnodigende format. Reageren is makkelijk (één woord), het levert direct gesprekken in je DM op, en mensen taggen elkaar ermee.
+1. **Gratis website-check (3 tips):** je helpt mensen echt verder. Reageren is makkelijk (één woord), het levert direct gesprekken in je DM op, en mensen taggen elkaar ermee.
 2. **A of B?:** iedereen weet het antwoord meteen, dus de drempel om te reageren is nul. Daarna kijken mensen vanzelf kritisch naar hun eigen site.
 3. **Unpopular opinion:** het is onverwacht dat een webdesigner dit zegt. Daardoor stoppen mensen met scrollen en komen er reacties (eens of oneens), wat je bereik helpt.
 
@@ -78,12 +78,12 @@ Regels voor elke hook:
 
 ## 3. Het 7-dagenplan (1 post per dag)
 
-Verdeling: **4× ontdekking, 1× vertrouwen, 2× verkoop.** Elke post heeft een interactie-CTA: ROAST, PREVIEW, A/B of eens/oneens.
+Verdeling: **4× ontdekking, 1× vertrouwen, 2× verkoop.** Elke post heeft een interactie-CTA: TIPS, PREVIEW, A/B of eens/oneens.
 
 | Dag | Doel | Hook | Format | Kernpunten | CTA |
 |---|---|---|---|---|---|
-| **Ma 16/11** | Ontdekking + leads | Stuur me je website. Ik roast 'm. 🔥 | Carousel, 5 slides | 3-2-1 · hoe het werkt · waar ik op let · comment-mockup | Reageer ROAST |
-| **Di 17/11** | Ontdekking | Herken je deze appjes? | Carousel, chat-mockup | Elk appje = vraag die je site moet beantwoorden · vraag → oplossing | Reageer ROAST + welk appje krijg jij? |
+| **Ma 16/11** | Ontdekking + leads | Stuur me je website. Ik geef je 3 tips. | Carousel, 5 slides (cover met jouw foto) | 3-2-1 · hoe het werkt (DM-mockup) · waar ik naar kijk | Reageer TIPS |
+| **Di 17/11** | Ontdekking | Herken je deze appjes? | Carousel, chat-mockup | Elk appje = vraag die je site moet beantwoorden · vraag → oplossing | Reageer TIPS + welk appje krijg jij? |
 | **Wo 18/11** | Vertrouwen | Webdesigner red flags 🚩 | Carousel, 5 slides | 4 red flags · green flags (jouw werkwijze) | DM + tag iemand |
 | **Do 19/11** | Ontdekking | Welke krijgt de reservering? A of B | Carousel, quiz | 2 telefoon-mockups · antwoord + waarom · lijkt jouw site op A? | Comment A/B + PREVIEW |
 | **Vr 20/11** | Verkoop | Je ‘goedkope’ website. Even afrekenen. | Carousel, bonnetjes | DIY-bonnetje vs MediaWow-bonnetje met prijzen | Kennismaking / PREVIEW |
@@ -92,9 +92,9 @@ Verdeling: **4× ontdekking, 1× vertrouwen, 2× verkoop.** Elke post heeft een 
 
 Afbeeldingen en captions staan klaar in `week-1/<dag>/` (slide-01.png …, caption.txt).
 
-**Belangrijk bij ROAST:** reageer binnen 24 uur op elke ROAST-comment (eerst een kort antwoord in de comments, daarna de 3 punten in de DM). Snel reageren helpt je bereik, en de DM's zijn je warmste leads.
+**Belangrijk bij TIPS:** reageer binnen 24 uur op elke TIPS-comment (eerst een kort antwoord in de comments, daarna de 3 tips in de DM). Snel reageren helpt je bereik, en de DM's zijn je warmste leads.
 
-**Volgende week:** het klantverhaal van Lilou (als je me de info stuurt) en een reel waarin je zelf een roast doet. Je posts mét jou scoren het best.
+**Volgende week:** het klantverhaal van Lilou (als je me de info stuurt) en een reel waarin je zelf een website-check doet. Je posts mét jou scoren het best.
 
 ---
 

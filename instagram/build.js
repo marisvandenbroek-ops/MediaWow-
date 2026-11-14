@@ -17,7 +17,8 @@ const CSS = `
 html,body{width:1080px;height:1350px}
 .s{width:1080px;height:1350px;position:relative;overflow:hidden;padding:180px 90px 150px;display:flex;flex-direction:column;justify-content:center;font-family:'DM Sans',sans-serif}
 .cream{background:var(--cream);color:var(--bordeaux)} .white{background:var(--white);color:var(--bordeaux)}
-.dark,.photo{background:linear-gradient(180deg,#1B0405 0%,#1B0405 55%,#2E1517 100%);color:#fff}
+.dark,.photo{background:radial-gradient(110% 70% at 85% 110%,#3A1011 0%,#1B0405 62%);color:#FAF4ED}
+.dark .lead{color:rgba(250,244,237,.8);opacity:1}
 h1,h2,h3{font-family:'Instrument Serif',serif;font-weight:400;letter-spacing:-.01em}
 h1.xl{font-size:140px;line-height:.95} h1.lg{font-size:112px;line-height:.98} h1.md{font-size:92px;line-height:1}
 h2{font-size:92px;line-height:1}
@@ -27,7 +28,8 @@ em{font-style:italic}
 .dark .kicker,.photo .kicker{color:rgba(255,255,255,.62)}
 .lead{font-size:38px;line-height:1.45;font-weight:300;margin-top:40px;max-width:860px;opacity:.85}
 .btn{align-self:flex-start;display:inline-block;margin-top:56px;padding:30px 50px;font-size:23px;letter-spacing:.38em;text-transform:uppercase;font-weight:500;background:var(--bordeaux);color:#fff}
-.dark .btn,.photo .btn{background:#fff;color:var(--ink)}
+.dark .btn,.photo .btn{background:#FAF4ED;color:var(--ink)}
+.dark em,.photo em{color:#E9D6C8}
 .center-t{text-align:center;align-self:center}
 /* header / footer */
 .hdr{position:absolute;top:70px;left:90px;right:90px;display:flex;justify-content:space-between;align-items:center;z-index:6}
@@ -56,10 +58,11 @@ em{font-style:italic}
 .qa .q{font-family:'Instrument Serif';font-style:italic;font-size:56px;color:var(--wine)}
 .qa .a{font-size:34px;line-height:1.35;font-weight:300}
 .words{display:flex;gap:18px;margin-top:56px;flex-wrap:wrap}
+.cream .words span{border-color:rgba(58,16,17,.35)!important}
 .words span{border:1.5px solid rgba(255,255,255,.55);padding:22px 34px;font-size:23px;letter-spacing:.38em;text-transform:uppercase}
 .flag{display:flex;gap:34px;align-items:flex-start;padding:46px 0;border-bottom:1.5px solid var(--line)}
 .flag:last-child{border:0}
-.flag>span{font-size:76px;line-height:1}
+.flagmark{flex:0 0 26px;height:26px;margin-top:26px;border-radius:50%;background:var(--wine);box-shadow:0 0 0 10px rgba(86,28,30,.12)}
 .flag h3{font-size:78px;line-height:1}
 .flag p{font-size:34px;line-height:1.4;margin-top:22px;font-weight:300;opacity:.85}
 /* split + phones */
