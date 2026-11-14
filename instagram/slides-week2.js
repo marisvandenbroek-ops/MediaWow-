@@ -117,19 +117,11 @@ Heb je een website van MediaWow? Cadeaubonnen met aankooplink zijn een uitbreidi
   {
     id: '3-wo-coaches-januari',
     slides: [
-      { theme: 'photo', html: `
-        <img class="bg-photo" src="{{img:canva/foto-092.jpg}}" style="object-position:50% 100%;height:2100px;top:-750px">
-        <div class="bg-fade" style="background:linear-gradient(180deg,rgba(0,0,0,.75) 0%,rgba(0,0,0,.55) 32%,rgba(0,0,0,0) 55%,rgba(0,0,0,.2) 100%)"></div>
-        <div style="position:absolute;left:90px;right:90px;top:190px;z-index:2">
-          <div class="kicker">Voor coaches</div>
-          <h1 class="pf" style="font-size:100px;line-height:1;color:#fff">In januari zoeken ze een coach. <em>Vinden ze jóu?</em></h1>
-        </div>
-        <div class="paper" style="left:500px;top:820px">
-          <b>voornemens 2027:</b>
-          <span>☐ meer rust</span>
-          <span>☐ eindelijk die stap zetten</span>
-          <span>☐ een coach zoeken</span>
-        </div>` },
+      { theme: 'greige', html: `
+        <div class="kicker">Voor coaches</div>
+        <h1 class="hero">In januari zoeken ze een coach. <em><span class="mark">Vinden ze jóu?</span></em></h1>
+        <div class="framed" style="height:470px;margin-top:40px"><img src="{{img:canva/foto-092.jpg}}" style="object-position:50% 70%">
+          <div class="paper" style="right:40px;top:60px;width:400px"><b>voornemens 2027:</b><span>☐ meer rust</span><span>☐ die stap zetten</span><span>☐ een coach zoeken</span></div></div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Het zoekmoment</div>
         <h1 class="lg">Goede voornemens beginnen <em>bij Google.</em></h1>

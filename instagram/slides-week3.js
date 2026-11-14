@@ -63,7 +63,15 @@ Check het vandaag in 5 minuten:
   {
     id: '2-di-gemiste-oproep',
     slides: [
-      soft('story/telefoon-gemist.jpg', 'Ze belden. <em>Jij stond<br>te knippen.</em>', 'In de caption: zo boeken ze, terwijl jij gewoon werkt'),
+      { theme: 'greige', html: `
+        <div class="kicker">Voor salons</div>
+        <h1 class="hero">Ze belden. <em><span class="mark">Jij stond te knippen.</span></em></h1>
+        ${phone(`
+          <div class="lock"><div class="l-date">dinsdag 1 december</div><div class="l-time">11:42</div>
+            <div class="notif"><div class="n-ic">📞</div><div class="n-b"><div class="n-top"><b>Telefoon</b><small>nu</small></div><p>Gemiste oproep · 06 4…</p></div></div>
+            <div class="notif"><div class="n-ic">📞</div><div class="n-b"><div class="n-top"><b>Telefoon</b><small>8 min</small></div><p>Gemiste oproep (2)</p></div></div>
+            <div class="notif"><div class="n-ic">📞</div><div class="n-b"><div class="n-top"><b>Telefoon</b><small>23 min</small></div><p>Gemiste oproep · Nieuwe klant</p></div></div>
+          </div>`, 'phone-cover phone-lock')}` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Wat er gebeurt</div>
         <h1 class="lg">Niet opgenomen? <em>Dan bellen ze de volgende salon.</em></h1>
@@ -99,9 +107,51 @@ Bekijk 5 ontwerpen voor salons op mediawow.nl/beauty (link in bio), of reageer T
 #salon #kapsalon #beautysalon #onlineboeken #salonized #treatwell #mediawow`,
   },
 
+  // ───────────── DO 3/12 · ZACHT: ALLEEN TELEFONISCH ─────────────
+  {
+    id: '3-wo-telefonisch',
+    slides: [
+      soft('story/telefoon-vintage.jpg', 'Reserveren? <em>Alleen<br>telefonisch.</em>', 'En dan vragen waarom de tafels leeg blijven'),
+      { theme: 'dark', html: `
+        <div class="kicker">01 — Wanneer reserveren gasten?</div>
+        <div class="clock">23:14</div>
+        <h2>Op de bank. <em>Als jij al dicht bent.</em></h2>
+        <p class="lead">Een gast die ’s avonds wil reserveren, gaat niet om 14:00 terugbellen. Die kiest een zaak waar het online kan.</p>` },
+      { theme: 'greige', html: `
+        <div class="kicker">02 — Zo vang je ze wél</div>
+        <h2>Reserveren <em>in één tik.</em></h2>
+        <div class="list">
+          <div><i>01</i>Een reserveerknop die je meteen ziet</div>
+          <div><i>02</i>Zenchef of Guestplan direct op je eigen site</div>
+          <div><i>03</i>Bevestiging en herinnering automatisch</div>
+        </div>` },
+      { theme: 'photo', html: `
+        <img class="bg-photo" src="{{img:mw-mockup-lilou-1-7.jpg}}" style="height:860px;object-position:50% 55%"><div class="bg-fade" style="background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,0) 18%,rgba(0,0,0,0) 42%,#170a0b 64%)"></div>
+        <div class="bottom">
+          <div class="kicker">Websites voor horeca</div>
+          <h1 class="md">Volle tafels, <em>ook om 23:14.</em></h1>
+          <p class="lead">Reageer TIPS voor een gratis website-check. Ontwerpen bekijken? mediawow.nl/horeca</p>
+          <span class="btn lime-btn">Reageer: Tips</span>
+        </div>` },
+    ],
+    caption: `Reserveren? Alleen telefonisch. ☎️
+En dan vragen waarom de tafels leeg blijven…
+
+Gasten reserveren op de bank, om 23:14, als jij allang dicht bent. Die gaan niet de volgende dag om 14:00 terugbellen. Die kiezen een zaak waar het online kan.
+
+Zo vang je ze wél:
+✔️ een reserveerknop die je meteen ziet
+✔️ Zenchef of Guestplan direct op je eigen site
+✔️ bevestiging en herinnering automatisch
+
+Bekijk de horeca-ontwerpen op mediawow.nl/horeca (link in bio), of reageer TIPS voor een gratis website-check 🤍
+
+#horeca #restaurant #reserveren #zenchef #horecaondernemer #restaurantwebsite #mediawow`,
+  },
+
   // ───────────── WO 2/12 · BEIGE: WELKOM OP ONZE WEBSITE ─────────────
   {
-    id: '3-wo-welkom',
+    id: '4-do-welkom',
     slides: [
       { theme: 'greige', html: `
         <div class="kicker">Openingszinnen</div>
@@ -140,48 +190,6 @@ De formule: wat je doet + wat ze nu moeten doen.
 👇 Twijfel je over de eerste zin van jóuw website? Reageer TIPS, dan schrijf ik er een betere voor je.
 
 #webdesign #copywriting #websitetips #ondernemen #horeca #salon #coach #mediawow`,
-  },
-
-  // ───────────── DO 3/12 · ZACHT: ALLEEN TELEFONISCH ─────────────
-  {
-    id: '4-do-telefonisch',
-    slides: [
-      soft('story/telefoon-vintage.jpg', 'Reserveren? <em>Alleen<br>telefonisch.</em>', 'En dan vragen waarom de tafels leeg blijven'),
-      { theme: 'dark', html: `
-        <div class="kicker">01 — Wanneer reserveren gasten?</div>
-        <div class="clock">23:14</div>
-        <h2>Op de bank. <em>Als jij al dicht bent.</em></h2>
-        <p class="lead">Een gast die ’s avonds wil reserveren, gaat niet om 14:00 terugbellen. Die kiest een zaak waar het online kan.</p>` },
-      { theme: 'greige', html: `
-        <div class="kicker">02 — Zo vang je ze wél</div>
-        <h2>Reserveren <em>in één tik.</em></h2>
-        <div class="list">
-          <div><i>01</i>Een reserveerknop die je meteen ziet</div>
-          <div><i>02</i>Zenchef of Guestplan direct op je eigen site</div>
-          <div><i>03</i>Bevestiging en herinnering automatisch</div>
-        </div>` },
-      { theme: 'photo', html: `
-        <img class="bg-photo" src="{{img:mw-mockup-lilou-1-7.jpg}}" style="height:860px;object-position:50% 55%"><div class="bg-fade" style="background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,0) 18%,rgba(0,0,0,0) 42%,#170a0b 64%)"></div>
-        <div class="bottom">
-          <div class="kicker">Websites voor horeca</div>
-          <h1 class="md">Volle tafels, <em>ook om 23:14.</em></h1>
-          <p class="lead">Reageer TIPS voor een gratis website-check. Ontwerpen bekijken? mediawow.nl/horeca</p>
-          <span class="btn lime-btn">Reageer: Tips</span>
-        </div>` },
-    ],
-    caption: `Reserveren? Alleen telefonisch. ☎️
-En dan vragen waarom de tafels leeg blijven…
-
-Gasten reserveren op de bank, om 23:14, als jij allang dicht bent. Die gaan niet de volgende dag om 14:00 terugbellen. Die kiezen een zaak waar het online kan.
-
-Zo vang je ze wél:
-✔️ een reserveerknop die je meteen ziet
-✔️ Zenchef of Guestplan direct op je eigen site
-✔️ bevestiging en herinnering automatisch
-
-Bekijk de horeca-ontwerpen op mediawow.nl/horeca (link in bio), of reageer TIPS voor een gratis website-check 🤍
-
-#horeca #restaurant #reserveren #zenchef #horecaondernemer #restaurantwebsite #mediawow`,
   },
 
   // ───────────── VR 4/12 · ROOD: SINTERKLAAS ─────────────
@@ -232,45 +240,9 @@ Fijne pakjesavond alvast! Zin in een cadeautje? 👇 Reageer TIPS voor een grati
 #sinterklaas #pakjesavond #ondernemen #overmij #websitetips #mediawow`,
   },
 
-  // ───────────── ZA 5/12 · ZACHT: COACHES ─────────────
-  {
-    id: '6-za-agenda-leeg',
-    slides: [
-      soft('story/lege-stoel-donker.jpg', 'Je agenda is leeg. <em>Je website ook?</em>', 'Voor coaches: in de caption 3 dingen die vertrouwen geven'),
-      { theme: 'dark', html: `
-        <div class="kicker">01 — Voor coaches</div>
-        <h1 class="lg">Ze lezen je site. <em>En boeken niet.</em></h1>
-        <p class="lead">Vaak niet omdat je niet goed bent, maar omdat ze niet zeker weten of jij de juiste coach voor hén bent.</p>` },
-      { theme: 'greige', html: `
-        <div class="kicker">02 — 3 dingen die vertrouwen geven</div>
-        <div class="list">
-          <div><i>01</i><b>Voor wie je bent.</b> In één zin, bovenaan.</div>
-          <div><i>02</i><b>Ervaringen van klanten.</b> Met naam en gezicht.</div>
-          <div><i>03</i><b>Een kleine eerste stap.</b> Een gratis kennismaking die je in één klik plant.</div>
-        </div>` },
-      { theme: 'dark', html: `
-        <div class="kicker">Klaar voor januari?</div>
-        <h1 class="lg">Ik kijk <em>gratis</em> mee.</h1>
-        <p class="lead">Reageer TIPS en je krijgt 3 persoonlijke tips voor je coachwebsite in je DM.</p>
-        <span class="btn lime-btn">Reageer: Tips</span>` },
-    ],
-    caption: `Je agenda is leeg. Je website ook? 🪑
-
-Ze lezen je site… en boeken niet. Vaak niet omdat je niet goed bent, maar omdat ze niet zeker weten of jij de juiste coach voor hén bent.
-
-3 dingen die vertrouwen geven:
-✔️ voor wie je bent: in één zin, bovenaan
-✔️ ervaringen van klanten, met naam en gezicht
-✔️ een kleine eerste stap: een gratis kennismaking die je in één klik plant
-
-👇 Reageer TIPS en je krijgt 3 persoonlijke tips voor je coachwebsite in je DM.
-
-#coach #coaching #lifecoach #businesscoach #ondernemen #websitetips #mediawow`,
-  },
-
   // ───────────── ZO 6/12 · BEIGE: TIJDLIJN ─────────────
   {
-    id: '7-zo-tijdlijn',
+    id: '6-za-tijdlijn',
     slides: [
       { theme: 'greige', html: `
         <div class="kicker">Achter de schermen</div>
@@ -305,4 +277,40 @@ Zin om te beginnen? Plan een vrijblijvende kennismaking via mediawow.nl (link in
 
 #achterdeschermen #webdesign #websitelatenmaken #ondernemen #mediawow`,
   },
+  // ───────────── ZA 5/12 · ZACHT: COACHES ─────────────
+  {
+    id: '7-zo-agenda-leeg',
+    slides: [
+      soft('story/lege-stoel-donker.jpg', 'Je agenda is leeg. <em>Je website ook?</em>', 'Voor coaches: in de caption 3 dingen die vertrouwen geven'),
+      { theme: 'dark', html: `
+        <div class="kicker">01 — Voor coaches</div>
+        <h1 class="lg">Ze lezen je site. <em>En boeken niet.</em></h1>
+        <p class="lead">Vaak niet omdat je niet goed bent, maar omdat ze niet zeker weten of jij de juiste coach voor hén bent.</p>` },
+      { theme: 'greige', html: `
+        <div class="kicker">02 — 3 dingen die vertrouwen geven</div>
+        <div class="list">
+          <div><i>01</i><b>Voor wie je bent.</b> In één zin, bovenaan.</div>
+          <div><i>02</i><b>Ervaringen van klanten.</b> Met naam en gezicht.</div>
+          <div><i>03</i><b>Een kleine eerste stap.</b> Een gratis kennismaking die je in één klik plant.</div>
+        </div>` },
+      { theme: 'dark', html: `
+        <div class="kicker">Klaar voor januari?</div>
+        <h1 class="lg">Ik kijk <em>gratis</em> mee.</h1>
+        <p class="lead">Reageer TIPS en je krijgt 3 persoonlijke tips voor je coachwebsite in je DM.</p>
+        <span class="btn lime-btn">Reageer: Tips</span>` },
+    ],
+    caption: `Je agenda is leeg. Je website ook? 🪑
+
+Ze lezen je site… en boeken niet. Vaak niet omdat je niet goed bent, maar omdat ze niet zeker weten of jij de juiste coach voor hén bent.
+
+3 dingen die vertrouwen geven:
+✔️ voor wie je bent: in één zin, bovenaan
+✔️ ervaringen van klanten, met naam en gezicht
+✔️ een kleine eerste stap: een gratis kennismaking die je in één klik plant
+
+👇 Reageer TIPS en je krijgt 3 persoonlijke tips voor je coachwebsite in je DM.
+
+#coach #coaching #lifecoach #businesscoach #ondernemen #websitetips #mediawow`,
+  },
+
 ];

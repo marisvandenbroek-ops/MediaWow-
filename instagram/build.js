@@ -402,6 +402,8 @@ em{font-style:italic}
 .clean.first .soft-mid h1{font-size:136px;line-height:.95}
 .clean.rest .ftr span:first-child{opacity:0}
 .clean.rest .kicker{display:none}
+.clean.first.s:has(.phone-pdf) h1.hero{font-size:104px!important}
+.sys.dark .mark,.sys.photo .mark{background:none;padding:0;margin:0}
 `;
 
 function slideHTML(sl, i, n) {

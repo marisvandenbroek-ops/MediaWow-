@@ -8,16 +8,16 @@ module.exports = [
   {
     id: '1-ma-website-check',
     slides: [
-      { theme: 'photo', html: `
-        <img class="bg-photo" src="{{img:canva/foto-157.jpg}}" style="object-position:50% 30%">
-        <div class="bg-fade" style="background:linear-gradient(180deg,rgba(0,0,0,.4) 0%,rgba(0,0,0,0) 22%,rgba(0,0,0,.05) 42%,rgba(15,10,10,.86) 66%,rgba(15,10,10,.95) 100%)"></div>
-        <div class="ghost" style="left:-20px;top:430px;font-size:300px;color:rgba(255,255,255,.35)">gratis</div>
-        <div class="bottom">
-          <div class="kicker">Gratis website-check</div>
-          <h1 class="pf" style="font-size:104px;line-height:1;color:#fff">Ik check jouw website. <em><span class="mark">Gratis.</span></em></h1>
-          <div class="pill"><div class="av-user"></div><b>TIPS</b><span>Plaatsen</span></div>
-          <div class="hand" style="position:absolute;right:0;top:-6px;transform:rotate(-6deg)">reageer hier ↓</div>
-        </div>` },
+      { theme: 'greige', html: `
+        <div class="kicker">Gratis website-check</div>
+        <h1 class="hero">Ik check jouw website. <em><span class="mark">Gratis.</span></em></h1>
+        ${phone(`
+          <div class="dm-head">${avatarMW}<div><b>media.wow</b><small>MediaWow Webdesign</small></div></div>
+          <div class="chat">
+            <div class="bub me">Hoi! Hier zijn je 3 tips 🤍</div>
+            <div class="bub me"><b>1.</b> Zet je boekknop bovenaan, dan vinden klanten ‘m meteen.</div>
+            <div class="bub me"><b>2.</b> Vertel in één zin wat je doet en voor wie.</div>
+          </div>`, 'phone-cover')}` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Waarom</div>
         <div class="count">3<span>·</span>2<span>·</span>1</div>
@@ -82,7 +82,7 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
   {
     id: '2-di-de-appjes',
     slides: [
-      { theme: 'greige', html: `
+      { theme: 'dark', html: `
         <div class="kicker">Voor salons</div>
         <h1 class="hero">Krijg jij deze appjes ook?<br><em><span class="mark">Dan mist je website iets.</span></em></h1>
         <div class="hand" style="position:absolute;left:110px;top:760px;transform:rotate(-5deg)">elke dag weer… 🙈</div>
@@ -95,11 +95,11 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
             <div class="bub">O ja, waar kan ik parkeren? 😅</div>
             <div class="typing"><i></i><i></i><i></i></div>
           </div>`, 'phone-low')}` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">Eerlijk is eerlijk</div>
         <h1 class="lg">Elk appje is een vraag die <em>je website</em> had moeten beantwoorden.</h1>
         <p class="lead">…terwijl jij met je handen in iemands haar staat.</p>` },
-      { theme: 'greige', html: `
+      { theme: 'dark', html: `
         <div class="kicker">01 — Vraag → oplossing op je site</div>
         <div class="qa">
           <div><span class="q">“Wat kost…?”</span><span class="a">Prijslijst per behandeling</span></div>
@@ -139,7 +139,7 @@ Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
   {
     id: '3-wo-red-flags',
     slides: [
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">4 red flags bij je webdesigner</div>
         <h1 class="hero">Van wie is jouw website <em>eigenlijk?</em></h1>
         <div class="doc">
@@ -150,15 +150,15 @@ Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
           <div class="doc-stamp">Niet van jou</div>
         </div>
         <p class="lead">Red flag nr. 1 ziet bijna niemand. Swipe →</p>` },
-      { theme: 'greige', html: `
+      { theme: 'dark', html: `
         <div class="kicker">01 — 02</div>
         <div class="flag"><span class="flagmark"></span><div><h3>Je domeinnaam staat op <em>hún</em> naam.</h3><p>Stap je over? Dan ben je je eigen adres kwijt.</p></div></div>
         <div class="flag"><span class="flagmark"></span><div><h3>Je zit jaren vast aan hun hosting.</h3><p>Opzeggen? Succes met die kleine lettertjes.</p></div></div>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">03 — 04</div>
         <div class="flag"><span class="flagmark"></span><div><h3>Je weet nooit wie je moet bellen.</h3><p>Ticketnummer 4831. Je hoort het nog.</p></div></div>
         <div class="flag"><span class="flagmark"></span><div><h3>‘Maatwerk’ dat verdacht veel op een template lijkt.</h3><p>Even googelen… o. Die site heeft je buurman ook.</p></div></div>` },
-      { theme: 'greige', html: `
+      { theme: 'dark', html: `
         <div class="kicker">En zo hoort het wél</div>
         <h2>Green flags <em>bij</em></h2>
         <div class="logo-mask big" style="background:#FAF4ED;margin-top:26px"></div>
@@ -199,7 +199,7 @@ Welke red flag mist er nog? 👇
   {
     id: '4-do-a-of-b',
     slides: [
-      { theme: 'greige', html: `
+      { theme: 'dark', html: `
         <div class="fg">
         <div class="kicker center-t">Voor horeca · Kies maar</div>
         <h1 class="md center-t">Welke krijgt <em>de reservering?</em></h1>
@@ -218,7 +218,7 @@ Welke red flag mist er nog? 👇
             </div>`, 'phone-sm')}</div>
         </div>
         <div class="hand center-t" style="margin-top:30px;font-size:58px">zeg het in de comments: A of B? ↓</div></div>` },
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker">Het antwoord</div>
         <h1 class="xl">B. <em>Natuurlijk.</em></h1>
         <div class="list">
@@ -227,7 +227,7 @@ Welke red flag mist er nog? 👇
           <div><i>03</i>Openingstijden zonder zoeken</div>
           <div><i>04</i>Sfeer in plaats van een lap tekst</div>
         </div>` },
-      { theme: 'greige', html: `
+      { theme: 'dark', html: `
         <div class="kicker">Eerlijke vraag</div>
         <h1 class="lg">Lijkt jóuw website meer op <span class="big-a">A</span>?</h1>
         <p class="lead">Geen schaamte. Het gebeurt de beste.</p>` },
@@ -264,7 +264,7 @@ Of reageer HORECA en ik stuur je de link 🤍
   {
     id: '5-vr-bonnetjes',
     slides: [
-      { theme: 'dark', html: `
+      { theme: 'greige', html: `
         <div class="kicker" style="margin-top:40px">Dag van de Ondernemer · 20 november</div>
         <h1 class="md">Je ‘goedkope’ website <em>kost je meer dan je denkt.</em></h1>
         <div class="receipt" style="transform:rotate(-2.5deg) scale(.88);margin-top:20px">
@@ -276,7 +276,7 @@ Of reageer HORECA en ik stuur je de link 🤍
           <div class="r-line"><span>Klanten die afhaken</span><span>???</span></div>
           <div class="r-total"><span>TOTAAL</span><span>duurder dan<br>je denkt</span></div>
         </div>` },
-      { theme: 'greige', html: `
+      { theme: 'dark', html: `
         <div class="kicker">En nu de mijne</div>
         <h1 class="md">Maatwerk, <em>zonder verrassingen.</em></h1>
         <div class="receipt" style="transform:rotate(1.5deg)">
