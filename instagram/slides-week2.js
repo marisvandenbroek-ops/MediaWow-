@@ -58,7 +58,7 @@ Zo doe je het wél:
     id: '2-di-cadeaubonnen',
     slides: [
       { theme: 'dark', html: `
-        <div class="kicker">Voor horeca & salons · december</div>
+        <div class="kicker">Voor salons, horeca & meer · december</div>
         <h1 class="hero" style="font-size:96px">Iemand zoekt nú een kadootje. <em>Verkoop jij cadeaubonnen online?</em></h1>
         <div class="giftwrap">
           <div class="gnotif"><div class="n-ic">🎁</div><div class="n-b"><div class="n-top"><b>Webshop</b><small>nu</small></div><p>Nieuwe bestelling · Cadeaubon €50</p></div></div>
@@ -76,90 +76,83 @@ Zo doe je het wél:
           <div><i>01</i>Het geld komt nu binnen, de gast komt later</div>
           <div><i>02</i>Wie de bon krijgt, is vaak een nieuwe gast</div>
           <div><i>03</i>Online verkopen loopt door, ook als jij dicht bent</div>
-          <div><i>04</i>Ook gewild bij salons: een behandeling cadeau</div>
+          <div><i>04</i>Een behandeling, een diner of een sessie: alles kan een cadeaubon zijn</div>
         </div>` },
       { theme: 'photo', html: `
-        <img class="bg-photo" src="{{img:mw-home-lilou-interieur-1.jpg}}" style="height:860px;object-position:50% 45%"><div class="bg-fade" style="background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,0) 18%,rgba(0,0,0,0) 42%,#170a0b 64%)"></div>
+        <img class="bg-photo" src="{{img:mw-mockup-luvely-1-2.jpg}}" style="height:860px;object-position:50% 30%"><div class="bg-fade" style="background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,0) 18%,rgba(0,0,0,0) 42%,#170a0b 64%)"></div>
         <div class="bottom">
-          <div class="kicker">Websites voor horeca</div>
+          <div class="kicker">Voor salons & horeca</div>
           <h1 class="md">Cadeaubonnen met <em>aankooplink</em> op je eigen site.</h1>
-          <p class="lead">Eenmalig €149 (excl. btw) als uitbreiding. Bekijk alle opties op mediawow.nl/horeca.</p>
-          <span class="btn lime-btn">mediawow.nl/horeca</span>
+          <p class="lead">Eenmalig €149 (excl. btw) als uitbreiding op je MediaWow-website. Reageer CADEAU en ik vertel je hoe het werkt.</p>
+          <span class="btn lime-btn">Reageer: Cadeau</span>
         </div>` },
     ],
     caption: `Iemand zoekt nú een kadootje… 🎁
 Verkoop jij al cadeaubonnen online?
 
-Cadeaubonnen zijn omzet vooraf:
-✔️ het geld komt nu binnen, de gast komt later
-✔️ wie de bon krijgt, is vaak een nieuwe gast
+Een behandeling, een diner of een sessie: alles kan een cadeaubon zijn. En cadeaubonnen zijn omzet vooraf:
+✔️ het geld komt nu binnen, de klant komt later
+✔️ wie de bon krijgt, is vaak een nieuwe klant
 ✔️ online verkopen loopt door, ook als jij dicht bent
 
-Heb je een website van MediaWow? Cadeaubonnen met aankooplink zijn een uitbreiding van eenmalig €149 (excl. btw). Bekijk alle opties op mediawow.nl/horeca (link in bio).
+Heb je een website van MediaWow? Cadeaubonnen met aankooplink zijn een uitbreiding van eenmalig €149 (excl. btw).
 
-Of reageer CADEAU en ik vertel je hoe het werkt 🤍
+👇 Reageer CADEAU en ik vertel je hoe het werkt 🤍
 
-#horeca #salon #cadeaubon #december #ondernemen #websitelatenmaken #mediawow`,
+#salon #beautysalon #horeca #cadeaubon #december #ondernemen #mediawow`,
   },
 
-  // ───────────── WO 25: DECEMBER-DRUKTE ─────────────
+  // ───────────── WO 25: COACHES & GOEDE VOORNEMENS ─────────────
   {
-    id: '3-wo-december-druk',
+    id: '3-wo-coaches-januari',
     slides: [
       { theme: 'photo', html: `
         <img class="bg-photo" src="{{img:canva/foto-092.jpg}}" style="object-position:50% 100%;height:2100px;top:-750px">
         <div class="bg-fade" style="background:linear-gradient(180deg,rgba(0,0,0,.75) 0%,rgba(0,0,0,.55) 32%,rgba(0,0,0,0) 55%,rgba(0,0,0,.2) 100%)"></div>
         <div style="position:absolute;left:90px;right:90px;top:190px;z-index:2">
-          <div class="kicker">December check</div>
-          <h1 class="pf" style="font-size:96px;line-height:1;color:#fff">December is je drukste maand. <em>Kan je website het aan?</em></h1>
+          <div class="kicker">Voor coaches</div>
+          <h1 class="pf" style="font-size:100px;line-height:1;color:#fff">In januari zoeken ze een coach. <em>Vinden ze jóu?</em></h1>
         </div>
-        <div class="paper" style="left:520px;top:800px">
-          <b>check vandaag:</b>
-          <span>☐ openingstijden feestdagen</span>
-          <span>☐ kerstmenu bovenaan</span>
-          <span>☐ boekknop in 1 tik</span>
+        <div class="paper" style="left:500px;top:820px">
+          <b>voornemens 2027:</b>
+          <span>☐ meer rust</span>
+          <span>☐ eindelijk die stap zetten</span>
+          <span>☐ een coach zoeken</span>
         </div>` },
       { theme: 'dark', html: `
-        <div class="kicker">01 — Wat er misgaat</div>
-        <h1 class="lg">De drukste maand, <em>de meeste gemiste kansen.</em></h1>
-        <div class="list">
-          <div><i>01</i>Openingstijden rond de feestdagen kloppen niet</div>
-          <div><i>02</i>Het kerstmenu staat drie klikken diep</div>
-          <div><i>03</i>Je bent vol, maar je site laat het niet zien</div>
-        </div>` },
+        <div class="kicker">01 — Het zoekmoment</div>
+        <h1 class="lg">Goede voornemens beginnen <em>bij Google.</em></h1>
+        <p class="lead">Rond nieuwjaar zoeken mensen hulp: een coach, een traject, een nieuwe start. Dan beslist je website binnen een paar tellen of ze bij jóu verder kijken.</p>` },
       { theme: 'greige', html: `
-        <div class="kicker">02 — 10 minuten werk</div>
-        <h2>Zo maak je je site <em>december-proof.</em></h2>
+        <div class="kicker">02 — Wat een coachwebsite nodig heeft</div>
+        <h2>Vertrouwen <em>in één oogopslag.</em></h2>
         <div class="list">
-          <div><i>01</i>Zet aangepaste openingstijden bovenaan je homepage</div>
-          <div><i>02</i>Plaats een banner: ‘Kerstdiner? Reserveer hier’</div>
-          <div><i>03</i>Vol? Zet een wachtlijst of alternatieve datum neer</div>
-          <div><i>04</i>Check alles op je eigen telefoon</div>
+          <div><i>01</i>In één zin: voor wie je bent en wat je oplost</div>
+          <div><i>02</i>Een gratis kennismaking die je in één klik plant</div>
+          <div><i>03</i>Ervaringen van echte klanten</div>
+          <div><i>04</i>Jij, op een echte foto. Geen stockbeeld</div>
         </div>` },
       { theme: 'dark', html: `
-        <div class="kicker">Hulp nodig?</div>
-        <h1 class="lg">Twijfel je of jouw site <em>december-proof</em> is?</h1>
-        <p class="lead">Reageer TIPS en ik kijk gratis met je mee. Je krijgt 3 persoonlijke tips in je DM.</p>
+        <div class="kicker">Klaar voor januari?</div>
+        <h1 class="lg">Ik kijk vóór 1 januari <em>met je mee.</em></h1>
+        <p class="lead">Reageer TIPS en je krijgt 3 persoonlijke tips voor je coachwebsite in je DM. Gratis.</p>
         <span class="btn">Reageer: Tips</span>` },
     ],
-    caption: `December is je drukste maand. Kan je website het aan? 🎄
+    caption: `In januari zoeken ze een coach. Vinden ze jóu? 🗓️
 
-Wat er vaak misgaat:
-🔸 openingstijden rond de feestdagen kloppen niet
-🔸 het kerstmenu staat drie klikken diep
-🔸 je bent vol, maar je site laat het niet zien
+Goede voornemens beginnen bij Google. Rond nieuwjaar zoeken mensen hulp: een coach, een traject, een nieuwe start. Je website beslist dan binnen een paar tellen of ze bij jou verder kijken.
 
-In 10 minuten december-proof:
-✔️ aangepaste openingstijden bovenaan je homepage
-✔️ een banner: ‘Kerstdiner? Reserveer hier’
-✔️ vol? zet een wachtlijst of alternatieve datum neer
-✔️ check alles op je eigen telefoon
+Wat een coachwebsite nodig heeft:
+✔️ in één zin: voor wie je bent en wat je oplost
+✔️ een gratis kennismaking die je in één klik plant
+✔️ ervaringen van echte klanten
+✔️ jij, op een echte foto. Geen stockbeeld
 
-Bewaar deze post voor straks 📌
+👇 Reageer TIPS en ik kijk vóór 1 januari gratis met je mee.
 
-👇 Reageer TIPS en ik kijk gratis met je mee.
+Ken je een coach die dit moet zien? Tag ze even 🤍
 
-#horeca #salon #december #feestdagen #ondernemen #websitetips #mediawow`,
+#coach #lifecoach #coaching #ondernemen #websitelatenmaken #webdesign #mediawow`,
   },
 
   // ───────────── DO 26: BLACK FRIDAY OPINIE ─────────────
@@ -218,8 +211,8 @@ Eens of oneens? Ik ben benieuwd 👇
         <div class="notepad">
           <div class="np-h">to do · december</div>
           <div class="np-i"><span class="cb"></span>feestdagen-openingstijden</div>
-          <div class="np-i"><span class="cb"></span>menu / prijzen als tekst</div>
-          <div class="np-i"><span class="cb"></span>boeken in 1 tik</div>
+          <div class="np-i"><span class="cb"></span>prijzen & aanbod als tekst</div>
+          <div class="np-i"><span class="cb"></span>boeken / plannen in 1 tik</div>
           <div class="np-i"><span class="cb"></span>cadeaubonnen online</div>
           <div class="np-i"><span class="cb"></span>snel op mobiel</div>
         </div>` },
@@ -227,8 +220,8 @@ Eens of oneens? Ik ben benieuwd 👇
         <div class="kicker">01 — 03</div>
         <div class="list">
           <div><i>01</i><b>Feestdagen-openingstijden.</b> Bovenaan, niet verstopt in je footer.</div>
-          <div><i>02</i><b>Menu en prijzen als tekst.</b> Geen pdf, geen ‘vraag naar de mogelijkheden’.</div>
-          <div><i>03</i><b>Boeken in 1 tik.</b> Reserveer- of boekknop op élke pagina.</div>
+          <div><i>02</i><b>Prijzen en aanbod als tekst.</b> Geen pdf, geen ‘vraag naar de mogelijkheden’.</div>
+          <div><i>03</i><b>Boeken in 1 tik.</b> Reserveren, afspraak of kennismaking: de knop staat op élke pagina.</div>
         </div>` },
       { theme: 'greige', html: `
         <div class="kicker">04 — 05</div>
@@ -249,8 +242,8 @@ Eens of oneens? Ik ben benieuwd 👇
 (bewaar deze post 📌)
 
 1️⃣ Feestdagen-openingstijden: bovenaan, niet in je footer
-2️⃣ Menu en prijzen als tekst: geen pdf
-3️⃣ Boeken in 1 tik: reserveer- of boekknop op élke pagina
+2️⃣ Prijzen en aanbod als tekst: geen pdf
+3️⃣ Boeken in 1 tik: reserveren, afspraak of kennismaking, op élke pagina
 4️⃣ Cadeaubonnen online: de makkelijkste extra omzet van december
 5️⃣ Snel op mobiel: langer dan 3 tellen laden? Dan zijn ze weg
 
@@ -258,7 +251,7 @@ Hoeveel vinkjes zet jij? Zet je score in de comments 👇
 
 Minder dan 5? Reageer TIPS voor een gratis website-check, of plan een kennismaking via mediawow.nl (link in bio).
 
-#blackfriday #ondernemen #horeca #salon #websitetips #checklist #mediawow`,
+#blackfriday #ondernemen #horeca #salon #coach #websitetips #checklist #mediawow`,
   },
 
   // ───────────── ZO 29: BEGIN NU ─────────────

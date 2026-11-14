@@ -3,18 +3,18 @@ const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const DIR = __dirname, TMP = path.join(DIR, 'tmp'), FPS = 30;
 const DEMOS = [
-  ['maison', 'Maison Ambre', 'Luxe en intiem · fine dining'],
-  ['bistro', 'Bistro De Linde', 'Warm en klassiek · bistro'],
-  ['wijnbar', 'VOLK', 'Strak en grafisch · wijnbar'],
-  ['lunchroom', 'Lunchroom Zondag', 'Licht en vrolijk · lunchroom'],
-  ['finedining', 'Restaurant Saffier', 'Donker en chic · restaurant'],
+  ['maison', 'Maison Ambre', 'Restaurant · fine dining'],
+  ['beauty/sereen', 'Huidstudio Sereen', 'Huidzorg · met webshop'],
+  ['wijnbar', 'VOLK', 'Wijnbar · strak en grafisch'],
+  ['beauty/loods12', 'Loods 12 Hair', 'Kapsalon'],
+  ['beauty/noor', 'Atelier Noor', 'Luxe salon & wellness'],
 ];
 const INTRO = 2.2, PER = 3.2, OUTRO = 3.6, DFR = Math.round(PER * FPS);
 const LOGO = 'file://' + path.join(DIR, '..', 'assets', 'logo-zwart.png');
 
 async function capture(b) {
   for (const [slug] of DEMOS) {
-    const d = path.join(TMP, slug); fs.mkdirSync(d, { recursive: true });
+    const d = path.join(TMP, slug.replace('/', '-')); fs.mkdirSync(d, { recursive: true });
     const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     const p = await ctx.newPage();
     await p.goto(`https://mediawow.nl/demo/${slug}/`, { waitUntil: 'networkidle', timeout: 60000 });
@@ -63,11 +63,11 @@ h1 em{color:#E9D6C8}
 .hand{font-family:Caveat;font-weight:600;font-size:56px;color:#E8F27A;margin-top:40px}
 </style></head><body>
 <div class="logo"></div>
-<div class="scene intro" id="s0"><div class="k">Voor horeca</div><h1>5 horecawebsites. <em>Welke past bij jouw zaak?</em></h1><div class="nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div></div>
+<div class="scene intro" id="s0"><div class="k">Voor horeca & salons</div><h1>5 websites. <em>Welke past bij jouw zaak?</em></h1><div class="nums"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div></div>
 ${DEMOS.map((d, i) => `<div class="scene demo" id="s${i + 1}"><div class="num">${i + 1}</div><div class="name"><h1>${d[1]}</h1><div class="k">${d[2]}</div></div><div class="phone"><div class="scr"><div class="isl"></div><img id="img${i + 1}"></div></div></div>`).join('')}
 <div class="scene outro" id="s6"><div class="k">Jouw keuze?</div><h1>Welke past bij <em>jouw zaak?</em></h1>
 <div class="cc"><div class="av"></div><span class="ty">3</span><span class="po">Plaatsen</span></div>
-<div class="hand">zet je nummer in de comments ↓</div><div class="btn">mediawow.nl/horeca</div></div>
+<div class="hand">zet je nummer in de comments ↓</div><div class="btn">mediawow.nl</div></div>
 <script>
 window.show=(i,o)=>{for(let k=0;k<7;k++){const e=document.getElementById('s'+k);e.style.opacity=k===i?o:0;e.style.transform=k===i?'translateY('+(30*(1-o))+'px)':''}};
 window.setImg=(i,src)=>new Promise(r=>{const im=document.getElementById('img'+i);if(im.src.endsWith(src)){r();return}im.onload=()=>r();im.src=src});
@@ -84,13 +84,13 @@ window.setImg=(i,src)=>new Promise(r=>{const im=document.getElementById('img'+i)
   for (let f = 0; f < INTRO * FPS; f++) { await p.evaluate(o => show(0, o), Math.min(1, f / 12)); await shot(); }
   for (let i = 0; i < DEMOS.length; i++) {
     for (let f = 0; f < DFR; f++) {
-      await p.evaluate(([i, src]) => setImg(i, src), [i + 1, 'file://' + path.join(TMP, DEMOS[i][0], String(f).padStart(3, '0') + '.jpg')]);
+      await p.evaluate(([i, src]) => setImg(i, src), [i + 1, 'file://' + path.join(TMP, DEMOS[i][0].replace('/', '-'), String(f).padStart(3, '0') + '.jpg')]);
       await p.evaluate(([i, o]) => show(i, o), [i + 1, Math.min(1, f / 8)]); await shot();
     }
   }
   for (let f = 0; f < OUTRO * FPS; f++) { await p.evaluate(o => show(6, o), Math.min(1, f / 12)); await shot(); }
   await b.close();
-  execSync(`ffmpeg -y -loglevel error -framerate ${FPS} -i ${FR}/%04d.jpg -c:v libx264 -pix_fmt yuv420p -crf 19 -movflags +faststart ${path.join(DIR, 'reel-5-horecawebsites.mp4')}`);
+  execSync(`ffmpeg -y -loglevel error -framerate ${FPS} -i ${FR}/%04d.jpg -c:v libx264 -pix_fmt yuv420p -crf 19 -movflags +faststart ${path.join(DIR, 'reel-5-websites.mp4')}`);
   fs.copyFileSync(path.join(FR, String(Math.round(INTRO * FPS) + 40).padStart(4, '0') + '.jpg'), path.join(DIR, 'cover-frame.jpg'));
   fs.rmSync(TMP, { recursive: true, force: true }); console.log('done');
 })();

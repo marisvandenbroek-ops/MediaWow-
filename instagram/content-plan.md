@@ -155,3 +155,20 @@ In posts kun je niet klikken op een link. Daarom:
 | Zo 22/11 | 19:30 | Unpopular opinion | Je hebt geen ~~mooiere~~ website nodig. | laptop op sokkel | eens/oneens |
 
 Geen content over AI/Claude-tools (wens Mariska).
+
+
+---
+
+## Week 2 (23–29 nov) · dambord loopt door
+
+Sectoren afwisselen: horeca, salons, coaches én algemeen.
+
+| Dag | Stijl | Sector | Hook | CTA |
+|---|---|---|---|---|
+| Ma 23 · 19:30 | Beige | Horeca | Je kerstmenu staat in een pdf. Je gasten scrollen door. | TIPS |
+| Di 24 · 19:30 | Rood | Salons + horeca | Iemand zoekt nú een kadootje. Verkoop jij cadeaubonnen online? | CADEAU |
+| Wo 25 · 19:30 | Foto | Coaches | In januari zoeken ze een coach. Vinden ze jóu? | TIPS |
+| Do 26 · 19:30 | Rood | Algemeen | Black Friday-korting op je website? Liever niet. | eens/oneens |
+| Vr 27 · 19:30 | Beige | Algemeen | 5 dingen die je website moet kunnen vóór 1 december. | bewaren + TIPS |
+| Za 28 · Reel | Rood | Horeca + beauty | 5 websites. Welke past bij jouw zaak? (demo's, zonder De Linde) | nummer 1–5 |
+| Zo 29 · 19:30 | Foto | Algemeen | Begin niet in januari. Begin nu. | kennismaking |
