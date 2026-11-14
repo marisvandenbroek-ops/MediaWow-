@@ -354,33 +354,36 @@ function demoStore() {
       if (c.id) Object.assign(db.checklists.find(x => x.id === c.id), c); else db.checklists.push({ active: true, ...c, id: uid() });
       save();
     },
-    async deleteChecklist(id) { db.checklists = db.checklists.filter(x => x.id !== id); db.ticks = db.ticks.filter(t => t.checklist_id !== id); save(); },
-    async ticks(periods) { return clone(db.ticks.filter(t => periods.includes(t.period))); },
-    async ticksSince(from) { return clone(db.ticks.filter(t => t.at.slice(0, 10) >= from)); },
+    async ticks(periods) { return clone(db.ticks.filter(t => !t.removed_at && periods.includes(t.period))); },
+    async ticksSince(from) { return clone(db.ticks.filter(t => !t.removed_at && t.at.slice(0, 10) >= from)); },
     async tick(t) {
-      const l = db.checklists.find(x => x.id === t.checklist_id), it = l?.items.find(x => x.id === t.item_id);
+      const l = db.checklists.find(x => x.id === t.checklist_id), it = l?.items.find(x => x.id === t.item_id && !x.removed);
+      if (!l || l.active === false) throw new Error('Deze lijst is niet actief.');
       if (!it) throw new Error('Onbekend onderdeel van de lijst.');
-      if (db.ticks.some(x => x.checklist_id === t.checklist_id && x.period === t.period && x.item_id === t.item_id)) throw Object.assign(new Error('duplicate'), { code: '23505' });
+      t = { ...t, period: periodOf(l.moment, bizToday()) };   // zoals de server: altijd de huidige periode
+      if (db.ticks.some(x => !x.removed_at && x.checklist_id === t.checklist_id && x.period === t.period && x.item_id === t.item_id)) throw Object.assign(new Error('duplicate'), { code: '23505' });
       let flagged = false;
       if (l.kind === 'temp') {
         if (t.value == null) throw new Error('Vul een temperatuur in.');
         flagged = (it.max != null && t.value > it.max) || (it.min != null && t.value < it.min);
-        if (flagged) leads().forEach(e => notify(e.id, '🌡️ Temperatuur te hoog', `${it.label}: ${t.value} °C (norm max ${it.max} °C), gemeten door ${fname(mem)}.`, 'lijsten'));
+        if (flagged) leads().filter(e => e.id !== mem).forEach(e => notify(e.id, it.max != null && t.value > it.max ? '🌡️ Temperatuur te hoog' : '🌡️ Temperatuur te laag', `${it.label}: ${t.value} °C (norm ${it.max != null ? 'max ' + it.max : 'min ' + it.min} °C), gemeten door ${fname(mem)}${t.note ? '. Actie: ' + t.note : '.'}`, 'lijsten'));
       }
-      db.ticks.push({ ...t, id: uid(), employee_id: mem, at: new Date().toISOString(), flagged, value: t.value ?? null });
+      db.ticks.push({ ...t, id: uid(), employee_id: mem, at: new Date().toISOString(), flagged, value: t.value ?? null, note: t.note || null, removed_at: null, removed_by: null });
       save();
     },
     async untick(id) {
-      const t = db.ticks.find(x => x.id === id); if (!t) return;
-      if (t.employee_id !== mem && !canPlan()) throw new Error('Alleen wie het afvinkte of de leiding kan dit ongedaan maken');
-      db.ticks = db.ticks.filter(x => x.id !== id); save();
+      const t = db.ticks.find(x => x.id === id && !x.removed_at); if (!t) throw new Error('Dit vinkje bestaat niet (meer).');
+      const l = db.checklists.find(x => x.id === t.checklist_id);
+      if (!canPlan() && (t.employee_id !== mem || t.flagged || t.period !== periodOf(l.moment, bizToday()))) throw new Error('Dit vinkje kan alleen de leiding nog weghalen.');
+      Object.assign(t, { removed_at: new Date().toISOString(), removed_by: mem }); save();
     },
     async logs(from, to, openOnly) {
-      return clone(db.logs.filter(x => (canPlan() || x.employee_id === mem) && x.at.slice(0, 10) >= from && x.at.slice(0, 10) <= to && (!openOnly || (x.kind === 'melding' && !x.resolved_at)))).sort((a, b) => b.at.localeCompare(a.at));
+      return clone(db.logs.filter(x => (canPlan() || x.employee_id === mem) && iso(new Date(x.at)) >= from && iso(new Date(x.at)) <= to && (!openOnly || (x.kind === 'melding' && !x.resolved_at)))).sort((a, b) => b.at.localeCompare(a.at));
     },
     async addLog(kind, data) {
       const t = data.temp === '' || data.temp == null ? null : Number(data.temp);
-      const flagged = kind === 'melding' || (kind === 'ontvangst' && (data.ok === false || (t != null && t > (data.max === '' || data.max == null ? 7 : Number(data.max))))) || (kind === 'kern' && t != null && t < 75);
+      const mx = { vis: 2, vlees: 4, diepvries: -15, droog: null }[data.cat] ?? (data.cat === 'droog' ? null : 7), tr = data.terug === '' || data.terug == null ? null : Number(data.terug);
+      const flagged = kind === 'melding' || (kind === 'ontvangst' && (data.ok === false || (t != null && mx != null && t > mx))) || (kind === 'kern' && ((t != null && t < 75) || (tr != null && tr > 7)));
       db.logs.push({ id: uid(), kind, data, employee_id: mem, at: new Date().toISOString(), flagged, resolved_at: null, resolved_by: null, resolution: null });
       const title = kind === 'melding' ? ({ incident: '⚠️ Incident gemeld', klacht: '💬 Klacht gemeld' }[data.soort] || '🔧 Gebrek gemeld') : kind === 'kern' ? '🌡️ Kerntemperatuur te laag' : '📦 Levering afgekeurd of te warm';
       if (flagged) leads().filter(e => e.id !== mem).forEach(e => notify(e.id, title, `${kind === 'melding' ? (data.tekst || '').slice(0, 120) : (data.product || data.leverancier || '')} (${fname(mem)})`, 'lijsten'));
@@ -388,7 +391,8 @@ function demoStore() {
     },
     async resolveLog(id, resolution) {
       if (!canPlan()) throw new Error('Geen rechten');
-      Object.assign(db.logs.find(x => x.id === id), { resolved_at: new Date().toISOString(), resolved_by: mem, resolution }); save();
+      const x = db.logs.find(y => y.id === id); if (!x || x.resolved_at) return;
+      Object.assign(x, { resolved_at: new Date().toISOString(), resolved_by: mem, resolution }); save();
     },
     async sickRecover(id) {
       const r = db.requests.find(x => x.id === id && x.employee_id === mem && x.type === 'ziek'); if (!r) throw new Error('Ziekmelding niet gevonden');
@@ -718,22 +722,21 @@ async function supabaseStore() {
       if (c.id) { const { id, ...rest } = c; ok(await sb.from('checklists').update(rest).eq('id', id)); }
       else ok(await sb.from('checklists').insert(c));
     },
-    async deleteChecklist(id) { ok(await sb.from('checklists').delete().eq('id', id)); },
-    async ticks(periods) { return periods.length ? ok(await sb.from('checklist_ticks').select('*').in('period', periods)) : []; },
+    async ticks(periods) { return periods.length ? ok(await sb.from('checklist_ticks').select('*').in('period', periods).is('removed_at', null)) : []; },
     async ticksSince(from) {
       const out = [];
-      for (let i = 0; ; i += 1000) { const part = ok(await sb.from('checklist_ticks').select('employee_id, at, flagged').gte('at', from).order('at').range(i, i + 999)); out.push(...part); if (part.length < 1000) break; }
+      for (let i = 0; ; i += 1000) { const part = ok(await sb.from('checklist_ticks').select('employee_id, at, flagged, value, note, checklist_id, item_id').is('removed_at', null).gte('at', from).order('at').range(i, i + 999)); out.push(...part); if (part.length < 1000) break; }
       return out;
     },
     async tick(t) { ok(await sb.from('checklist_ticks').insert({ ...t, employee_id: S.me.id })); },
-    async untick(id) { ok(await sb.from('checklist_ticks').delete().eq('id', id)); },
+    async untick(id) { const { error } = await sb.rpc('untick', { p_id: id }); if (error) throw error; },
     async logs(from, to, openOnly) {
       let q = sb.from('log_entries').select('*').order('at', { ascending: false }).limit(300);
       if (openOnly) q = q.eq('kind', 'melding').is('resolved_at', null);
       return ok(await q.gte('at', new Date(from + 'T00:00:00').toISOString()).lt('at', new Date(iso(addDays(parse(to), 1)) + 'T00:00:00').toISOString()));
     },
     async addLog(kind, data) { ok(await sb.from('log_entries').insert({ kind, data, employee_id: S.me.id })); },
-    async resolveLog(id, resolution) { ok(await sb.from('log_entries').update({ resolved_at: new Date().toISOString(), resolution }).eq('id', id)); },
+    async resolveLog(id, resolution) { ok(await sb.from('log_entries').update({ resolved_at: new Date().toISOString(), resolution }).eq('id', id).is('resolved_at', null)); },
     async decideRequest(id, status, note, hours) {
       const u = { status, manager_note: note || null, decided_at: new Date().toISOString() };
       if (hours !== undefined) u.leave_hours = hours;
@@ -996,7 +999,7 @@ async function handleSession(r) {
 function tabsFor() {
   return isMgr()
     ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['lijsten', 'Lijsten'], ['aanvragen', 'Aanvragen'], ['team', 'Team'], ['uren', 'Uren & export']]
-    : [['mijn', 'Mijn rooster'], ['planning', canPlan() ? 'Planning' : 'Team'], ['diensten', 'Diensten'], ['beschikbaar', 'Beschikbaar'], ['aanvragen', 'Verlof']];
+    : [['mijn', 'Mijn rooster'], ['planning', canPlan() ? 'Planning' : 'Team'], ['diensten', 'Diensten'], ['lijsten', 'Lijsten'], ['beschikbaar', 'Beschikbaar'], ['aanvragen', 'Verlof']];
 }
 
 function renderShell() {
@@ -1832,12 +1835,12 @@ async function viewDashboard(el) {
   const staffing = st.staffing || {};
   let short = 0;
   days.forEach(d => { if (specialDay(d)?.kind === 'gesloten') return; const base = staffing[dayIdx(parse(d))] || {}; Object.entries(base).forEach(([p, n]) => { const h = shifts.filter(x => x.date === d && x.employee_id && x.position === p).length; if (h < Number(n)) short++; }); });
-  const yest = iso(addDays(new Date(), -1));
+  const yest = iso(addDays(parse(bizToday()), -1));
   let listMiss = 0, openMeld = 0;
   try {
     const cls = (await store.checklists()).filter(l => l.active !== false && ['opening', 'sluiting', 'dag'].includes(l.moment));
     const tky = await store.ticks([yest]);
-    listMiss = cls.filter(l => (l.items || []).some(it => !tky.some(t => t.checklist_id === l.id && t.item_id === it.id))).length;
+    listMiss = specialDay(yest)?.kind === 'gesloten' ? 0 : cls.filter(l => itemsOn(l, yest).some(it => !tky.some(t => t.checklist_id === l.id && t.item_id === it.id))).length;
     openMeld = (await store.logs(iso(addDays(new Date(), -180)), todayIso(), true)).length;
   } catch (e) { /* lijsten nog niet ingesteld */ }
   const att = [
@@ -1920,7 +1923,7 @@ async function viewDashboard(el) {
     const g = ev.target.closest('[data-goto2]');
     if (g) {
       let v = g.dataset.goto2;
-      if (v === 'lijsten-gisteren') { S.lDate = iso(addDays(new Date(), -1)); v = 'lijsten'; }
+      if (v === 'lijsten-gisteren') { S.lDate = iso(addDays(parse(bizToday()), -1)); v = 'lijsten'; }
       if (v === 'planning' || v === 'klokken') S.week = S.dashWeek;
       if (v === 'planning-later') { const c = ahead.filter(x => !x.published && x.date > to).sort((a, b) => a.date.localeCompare(b.date))[0]; S.week = c ? mondayOf(parse(c.date)) : S.dashWeek; v = 'planning'; }
       return openView(v);
@@ -1962,6 +1965,9 @@ async function resolveConflicts(c0, how) {
 }
 
 /* ================= Lijsten (afvinken met naam en tijd, temperaturen, registraties) ================= */
+const bizToday = () => iso(new Date(Date.now() - 5 * 3600e3));   // sluiten na middernacht telt voor die avond
+const itemsOn = (l, ds) => (l.items || []).filter(it => (!it.from || it.from <= ds) && (!it.removed || it.removed > ds));
+const ONT = { gekoeld: ['Gekoeld (max 7 °C)', 7], vis: ['Verse vis en schaaldieren (max 2 °C)', 2], vlees: ['Vlees en gevogelte (max 4 °C)', 4], diepvries: ['Diepvries (max −15 °C)', -15], droog: ['Droog / niet gekoeld', null] };
 const MOMENT = { opening: 'Opening', sluiting: 'Sluiting', dag: 'Vandaag', week: 'Deze week', maand: 'Deze maand' };
 const periodOf = (moment, ds) => moment === 'week' ? iso(mondayOf(parse(ds))) : moment === 'maand' ? ds.slice(0, 7) : ds;
 const tTime = ts => new Date(ts).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
@@ -1971,7 +1977,7 @@ const MELD = { gebrek: 'Technisch gebrek', incident: 'Incident of ongeval', klac
 const myLists = (lists, dep) => lists.filter(l => l.active !== false && (dep === 'alle' ? true : dep ? (!l.department || l.department === dep) : (canPlan() || !l.department || l.department === S.me.position)));
 
 async function viewLijsten(el) {
-  const today = todayIso();
+  const today = bizToday();
   if (!canPlan() || !S.lDate) S.lDate = today;
   const ds = S.lDate, lead = canPlan();
   S.lDep ??= lead ? 'alle' : '';
@@ -1983,23 +1989,25 @@ async function viewLijsten(el) {
   const byId = Object.fromEntries(emps.map(e => [e.id, e]));
   const fn = id => (byId[id]?.name || '?').split(' ')[0];
   const tk = (l, it) => ticks.find(t => t.checklist_id === l.id && t.period === periodOf(l.moment, ds) && t.item_id === it.id);
-  const past = ds < today;
+  const past = ds < today, closed = specialDay(ds)?.kind === 'gesloten';
   const card = l => {
-    const items = l.items || [], done = items.filter(it => tk(l, it)).length, full = items.length && done === items.length;
+    const items = itemsOn(l, ds), done = items.filter(it => tk(l, it)).length, full = items.length && done === items.length;
     const flagged = items.some(it => tk(l, it)?.flagged);
-    const stat = full ? `<span class="pill ok">Klaar ✓</span>` : past && l.moment !== 'week' && l.moment !== 'maand' ? `<span class="pill bad">Niet afgemaakt</span>` : `<span class="pill">${done}/${items.length}</span>`;
+    const stat = full ? `<span class="pill ok">Klaar ✓</span>` : closed && !done ? '<span class="pill">Gesloten</span>' : past && l.moment !== 'week' && l.moment !== 'maand' ? `<span class="pill bad">Niet afgemaakt</span>` : `<span class="pill">${done}/${items.length}</span>`;
     const rows = items.map(it => {
       const t = tk(l, it), mine = t && t.employee_id === S.me.id;
-      const undo = t && !past && (mine || lead) ? `<button type="button" class="linkbtn small" data-untick="${t.id}" aria-label="Vinkje weghalen">ongedaan</button>` : '';
-      const who = t ? `<span class="who">${esc(fn(t.employee_id))} · ${tTime(t.at)}</span>` : '';
+      const undo = t && (lead || (mine && !past && !t.flagged)) ? `<button type="button" class="linkbtn small" data-untick="${t.id}" aria-label="Vinkje weghalen">ongedaan</button>` : '';
+      const tday = t ? iso(new Date(new Date(t.at).getTime() - 5 * 3600e3)) : '';
+      const who = t ? `<span class="who">${esc(fn(t.employee_id))} · ${tday !== ds && l.moment !== 'week' && l.moment !== 'maand' ? esc(fmtShort(tday)) + ' ' : ''}${tTime(t.at)}</span>${t.note ? `<span class="tnote">Actie: ${esc(t.note)}</span>` : ''}` : '';
+      const miss = closed ? '' : past ? `<span class="missed">${l.kind === 'temp' ? 'niet gemeten' : 'niet gedaan'}</span>` : '';
       if (l.kind === 'temp') {
-        const norm = it.max != null && it.max !== '' ? `max ${it.max} °C` : it.min != null && it.min !== '' ? `min ${it.min} °C` : '';
+        const norm = it.max != null && it.max !== '' ? `max ${esc(String(it.max))} °C` : it.min != null && it.min !== '' ? `min ${esc(String(it.min))} °C` : '';
         return `<div class="lrow temp ${t ? 'done' : ''} ${t?.flagged ? 'flag' : ''}"><span class="lbl">${esc(it.label)}<small>${norm}</small></span>
           ${t ? `<span class="tval">${String(t.value).replace('.', ',')} °C${t.flagged ? ' ⚠' : ''}</span>${who}${undo}`
-              : past ? '<span class="missed">niet gemeten</span>' : `<form class="tform" data-temp="${l.id}|${it.id}"><input name="v" type="text" inputmode="decimal" placeholder="°C" aria-label="Temperatuur ${esc(it.label)}" required><button class="btn sm primary">Opslaan</button></form>`}</div>`;
+              : past ? miss : `<form class="tform" data-temp="${l.id}|${it.id}"><button type="button" class="btn sm pm" data-neg aria-label="Min-teken">±</button><input name="v" type="text" inputmode="decimal" placeholder="°C" aria-label="Temperatuur ${esc(it.label)}" required><button class="btn sm primary">Opslaan</button></form>`}</div>`;
       }
-      return `<div class="lrow ${t ? 'done' : ''}">${t || past ? `<span class="box ${t ? 'on' : 'miss'}" aria-hidden="true">${t ? '✓' : ''}</span>` : `<button type="button" class="box" data-tick="${l.id}|${it.id}" aria-label="Afvinken: ${esc(it.label)}"></button>`}
-        <span class="lbl" ${!t && !past ? `data-tick="${l.id}|${it.id}"` : ''}>${esc(it.label)}</span>${t ? who + undo : past ? '<span class="missed">niet gedaan</span>' : ''}</div>`;
+      return `<div class="lrow ${t ? 'done' : ''}">${t || past ? `<span class="box ${t ? 'on' : closed ? '' : 'miss'}" aria-hidden="true">${t ? '✓' : ''}</span>` : `<button type="button" class="box" data-tick="${l.id}|${it.id}" aria-label="Afvinken: ${esc(it.label)}"></button>`}
+        <span class="lbl" ${!t && !past ? `data-tick="${l.id}|${it.id}"` : ''}>${esc(it.label)}</span>${t ? who + undo : miss}</div>`;
     }).join('');
     const isOpen = S.lOpen ? S.lOpen.has(l.id) : (!lead && l.id === firstOpen);
     return `<details class="card lcard ${full ? 'full' : ''} ${flagged ? 'flag' : ''}" ${isOpen ? 'open' : ''} data-list="${l.id}">
@@ -2008,7 +2016,7 @@ async function viewLijsten(el) {
   };
   // medewerkers: alleen de eerste lijst die nog niet af is staat open; de rest ingeklapt (blijft zo bij het afvinken)
   const firstOpen = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).sort((a, b) => (['opening', 'dag', 'sluiting'].indexOf(a.moment) - ['opening', 'dag', 'sluiting'].indexOf(b.moment)) || a.sort - b.sort)
-    .find(l => (l.items || []).some(it => !tk(l, it)))?.id;
+    .find(l => itemsOn(l, ds).some(it => !tk(l, it)))?.id;
   const group = (title, ls) => ls.length ? `<section class="lgroup"><h2>${title}</h2>${ls.map(card).join('')}</section>` : '';
   const dayLists = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).sort((a, b) => (['opening', 'dag', 'sluiting'].indexOf(a.moment) - ['opening', 'dag', 'sluiting'].indexOf(b.moment)) || a.sort - b.sort);
   const logRow = x => `<li class="logrow ${x.flagged && !x.resolved_at ? 'flag' : ''}"><strong>${LOGK[x.kind]}</strong> · ${tTime(x.at)} · ${esc(fn(x.employee_id))}<br>${logText(x)}${x.resolved_at ? `<br><span class="muted small">✓ Afgehandeld door ${esc(fn(x.resolved_by))}${x.resolution ? `: ${esc(x.resolution)}` : ''}</span>` : lead && x.kind === 'melding' ? ` <button type="button" class="btn sm" data-resolve="${x.id}">Afhandelen</button>` : ''}</li>`;
@@ -2017,7 +2025,7 @@ async function viewLijsten(el) {
     <div class="page-head"><div><h1>Lijsten</h1><p>${lead ? 'Wie wat afvinkt, met tijd. Rood = niet gedaan of buiten de norm.' : 'Vink af wat je gedaan hebt. Je naam en de tijd worden bewaard.'}</p></div>
       ${lead ? `<div class="weeknav"><button class="btn icon" data-lday="-1" aria-label="Vorige dag">‹</button><div class="label"><strong>${ds === today ? 'Vandaag' : esc(fmtLong(ds))}</strong><span>${ds === today ? esc(fmtLong(ds)) : ''}</span></div><button class="btn icon" data-lday="1" aria-label="Volgende dag" ${ds >= today ? 'disabled' : ''}>›</button></div>` : ''}</div>
     ${lead ? `<div class="filters ldeps">${deps.map(d => `<button type="button" class="${S.lDep === d ? 'active' : ''}" data-ldep="${esc(d)}">${d === 'alle' ? 'Alles' : esc(d)}</button>`).join('')}</div>` : ''}
-    <div class="logbtns"><button class="btn" data-newlog="ontvangst">📦 Ontvangst goederen</button><button class="btn" data-newlog="kern">🌡️ Kerntemperatuur</button><button class="btn" data-newlog="melding">⚠️ Melding maken</button></div>
+    ${past ? '' : `<div class="logbtns"><button class="btn" data-newlog="ontvangst">📦 Ontvangst goederen</button><button class="btn" data-newlog="kern">🌡️ Kerntemperatuur</button><button class="btn" data-newlog="melding">⚠️ Melding maken</button></div>`}
     ${group(ds === today ? 'Vandaag' : 'Deze dag', dayLists)}
     ${group('Deze week', lists.filter(l => l.moment === 'week'))}
     ${group('Deze maand', lists.filter(l => l.moment === 'maand'))}
@@ -2026,16 +2034,25 @@ async function viewLijsten(el) {
     ${lead ? '<section class="lgroup" data-lopen></section><section class="lgroup" data-lstats></section>' : ''}`;
   if (lead) fillLeadPanels(el, byId, fn).catch(() => {});
 
-  const tickIt = async (cid, iid, value) => {
-    const l = lists.find(x => x.id === cid);
-    try { await store.tick({ checklist_id: cid, period: periodOf(l.moment, ds), item_id: iid, ...(value != null ? { value } : {}) }); }
-    catch (e) { return toast(/duplicate|unique|23505/i.test(errMsg(e) + (e.code || '')) ? 'Iemand anders heeft dit net afgevinkt' : errMsg(e), 'error'); }
+  const tickIt = async (cid, iid, value, note) => {
+    const l = lists.find(x => x.id === cid), it = (l.items || []).find(x => x.id === iid);
+    if (value != null && note == null && it && ((it.max != null && it.max !== '' && value > Number(it.max)) || (it.min != null && it.min !== '' && value < Number(it.min)))) {
+      return openDialog('Buiten de norm', `<p style="margin:0"><strong>${esc(it.label)}: ${String(value).replace('.', ',')} °C</strong> (norm ${it.max != null && it.max !== '' ? 'max ' + esc(String(it.max)) : 'min ' + esc(String(it.min))} °C).</p>
+        <label class="field">Wat heb je gedaan?<textarea name="note" required maxlength="300" rows="3" placeholder="bv. deur stond open, dichtgedaan; producten gecontroleerd en over naar K2; over 1 uur opnieuw meten"></textarea></label>
+        <p class="hint" style="margin:0">De directie en shiftleaders krijgen een melding.</p>
+        <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
+        async onSubmit(fd) { await tickIt(cid, iid, value, String(fd.get('note') || '').trim()); },
+      });
+    }
+    try { await store.tick({ checklist_id: cid, period: periodOf(l.moment, ds), item_id: iid, ...(value != null ? { value } : {}), ...(note ? { note } : {}) }); }
+    catch (e) { toast(/duplicate|unique|23505/i.test(errMsg(e) + (e.code || '')) ? 'Iemand anders heeft dit net afgevinkt' : errMsg(e), 'error'); }
     rerender();
   };
   if (!el.dataset.lToggle) { el.dataset.lToggle = '1'; el.addEventListener('toggle', ev => { if (S.view === 'lijsten' && ev.target.matches('details.lcard')) S.lOpen = new Set($$('details.lcard[open]', el).map(d => d.dataset.list)); }, true); }
   el.onclick = async ev => {
     const t = ev.target.closest('[data-tick]'); if (t) { const [c, i] = t.dataset.tick.split('|'); return tickIt(c, i); }
-    const u = ev.target.closest('[data-untick]'); if (u) { try { await store.untick(u.dataset.untick); } catch (e) { return toast(errMsg(e), 'error'); } return rerender(); }
+    const ng = ev.target.closest('[data-neg]'); if (ng) { const inp = ng.parentNode.querySelector('input'); inp.value = inp.value.trim().startsWith('-') ? inp.value.trim().slice(1) : '-' + inp.value.trim(); inp.focus(); return; }
+    const u = ev.target.closest('[data-untick]'); if (u) { try { await store.untick(u.dataset.untick); } catch (e) { toast(errMsg(e), 'error'); } return rerender(); }
     const d = ev.target.closest('[data-lday]'); if (d) { S.lDate = iso(addDays(parse(ds), Number(d.dataset.lday))); if (S.lDate > today) S.lDate = today; return rerender(); }
     const dp = ev.target.closest('[data-ldep]'); if (dp) { S.lDep = dp.dataset.ldep; return rerender(); }
     const nl = ev.target.closest('[data-newlog]'); if (nl) return logDialog(nl.dataset.newlog);
@@ -2052,15 +2069,22 @@ async function viewLijsten(el) {
 }
 const logText = x => {
   const d = x.data || {};
-  if (x.kind === 'ontvangst') return `${esc(d.leverancier || '')}${d.product ? ' · ' + esc(d.product) : ''}${d.temp !== '' && d.temp != null ? ` · ${esc(String(d.temp).replace('.', ','))} °C` : ''} · ${d.ok === false || d.ok === 'false' ? `<b class="bad">afgekeurd</b>${d.reden ? ': ' + esc(d.reden) : ''}` : 'goedgekeurd'}`;
-  if (x.kind === 'kern') return `${esc(d.product || '')} · ${esc(String(d.temp ?? '').replace('.', ','))} °C${x.flagged ? ' <b class="bad">te laag (min. 75 °C)</b>' : ''}${d.terug ? ` · terugkoelen: ${esc(String(d.terug).replace('.', ','))} °C na 5 uur` : ''}`;
+  const act = d.actie ? `<br><span class="tnote">Actie: ${esc(d.actie)}</span>` : '';
+  if (x.kind === 'ontvangst') return `${esc(d.leverancier || '')}${d.product ? ' · ' + esc(d.product) : ''}${d.temp !== '' && d.temp != null ? ` · ${esc(String(d.temp).replace('.', ','))} °C` : ''} · ${d.ok === false || d.ok === 'false' ? `<b class="bad">afgekeurd</b>${d.reden ? ': ' + esc(d.reden) : ''}` : x.flagged ? '<b class="bad">te warm</b>' : 'goedgekeurd'}${act}`;
+  if (x.kind === 'kern') return `${esc(d.product || '')} · ${esc(String(d.temp ?? '').replace('.', ','))} °C${d.terug !== '' && d.terug != null ? ` · na 5 uur ${esc(String(d.terug).replace('.', ','))} °C` : ''}${x.flagged ? ' <b class="bad">buiten de norm</b>' : ''}${act}`;
   return `<b>${esc(MELD[d.soort] || 'Melding')}</b>: ${esc(d.tekst || '')}`;
 };
 async function fillLeadPanels(el, byId, fn) {
   const since = iso(addDays(new Date(), -30));
-  const [open, recent, lists] = await Promise.all([store.logs(iso(addDays(new Date(), -180)), todayIso(), true), store.ticksSince(since), store.checklists()]);
+  const [open, recent, lists, flagLogs] = await Promise.all([store.logs(iso(addDays(new Date(), -180)), todayIso(), true), store.ticksSince(since), store.checklists(), store.logs(iso(addDays(new Date(), -7)), todayIso())]);
   const op = $('[data-lopen]', el), st = $('[data-lstats]', el); if (!op || !st) return;
   op.innerHTML = open.length ? `<h2>Openstaande meldingen <span class="muted">(${open.length})</span></h2><ul class="card loglist">${open.map(x => `<li class="logrow flag"><strong>${LOGK[x.kind]}</strong> · ${esc(fmtShort(iso(new Date(x.at))))} ${tTime(x.at)} · ${esc(fn(x.employee_id))}<br>${logText(x)} <button type="button" class="btn sm" data-resolve="${x.id}">Afhandelen</button></li>`).join('')}</ul>` : '';
+  const lById = Object.fromEntries(lists.map(l => [l.id, l])), wk = iso(addDays(new Date(), -7));
+  const flags = [
+    ...recent.filter(t => t.flagged && t.at.slice(0, 10) >= wk).map(t => ({ at: t.at, who: t.employee_id, html: `<strong>🌡️ ${esc((lById[t.checklist_id]?.items || []).find(i => i.id === t.item_id)?.label || 'Temperatuur')}</strong>: ${String(t.value).replace('.', ',')} °C${t.note ? `<br><span class="tnote">Actie: ${esc(t.note)}</span>` : ' <b class="bad">geen actie ingevuld</b>'}` })),
+    ...flagLogs.filter(x => x.flagged && x.kind !== 'melding').map(x => ({ at: x.at, who: x.employee_id, html: `<strong>${LOGK[x.kind]}</strong>: ${logText(x)}` })),
+  ].sort((a, b) => b.at.localeCompare(a.at));
+  op.insertAdjacentHTML('beforeend', flags.length ? `<h2 style="margin-top:16px">Buiten de norm <span class="muted">(laatste 7 dagen)</span></h2><ul class="card loglist">${flags.map(x => `<li class="logrow flag">${esc(fmtShort(iso(new Date(x.at))))} ${tTime(x.at)} · ${esc(fn(x.who))}<br>${x.html}</li>`).join('')}</ul>` : '');
   const per = {};
   recent.forEach(t => { const p = (per[t.employee_id] ||= { n: 0, flag: 0, last: '' }); p.n++; if (t.flagged) p.flag++; if (t.at > p.last) p.last = t.at; });
   const rows = Object.entries(per).sort((a, b) => b[1].n - a[1].n);
@@ -2071,14 +2095,17 @@ function logDialog(kind) {
   const body = kind === 'ontvangst' ? `
       <label class="field">Leverancier<input name="leverancier" required maxlength="60" placeholder="bv. Sligro"></label>
       <label class="field">Product(en)<input name="product" maxlength="120" placeholder="bv. vis, zuivel"></label>
-      <div class="row keep"><label class="field">Temperatuur (°C)<input name="temp" inputmode="decimal" placeholder="bv. 3"></label><label class="field">Norm max (°C)<input name="max" inputmode="decimal" value="7"></label></div>
+      <label class="field">Soort product<select name="cat">${Object.entries(ONT).map(([k, [v]]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
+      <label class="field">Temperatuur (°C)<input name="temp" inputmode="text" placeholder="bv. 3 of -18"></label>
       <label class="check"><input type="checkbox" name="tht" checked> Houdbaarheid en verpakking in orde</label>
       <fieldset class="choice"><legend>Oordeel</legend><label class="check"><input type="radio" name="ok" value="true" checked> Goedgekeurd</label><label class="check"><input type="radio" name="ok" value="false"> Afgekeurd</label></fieldset>
-      <label class="field">Reden bij afkeuren<input name="reden" maxlength="160"></label>`
+      <label class="field">Reden bij afkeuren<input name="reden" maxlength="160"></label>
+      <label class="field">Wat heb je gedaan? (bij afkeuren of te warm)<input name="actie" maxlength="200" placeholder="bv. teruggegeven aan de chauffeur, leverancier gebeld"></label>`
     : kind === 'kern' ? `
       <label class="field">Product<input name="product" required maxlength="80" placeholder="bv. kippendij"></label>
       <label class="field">Kerntemperatuur (°C)<input name="temp" required inputmode="decimal" placeholder="minimaal 75"></label>
-      <label class="field">Terugkoelen: temperatuur na 5 uur (°C, optioneel)<input name="terug" inputmode="decimal" placeholder="maximaal 7"></label>`
+      <label class="field">Terugkoelen: temperatuur na 5 uur (°C, optioneel)<input name="terug" inputmode="decimal" placeholder="maximaal 7"></label>
+      <label class="field">Wat heb je gedaan? (verplicht onder 75 °C of boven 7 °C na terugkoelen)<input name="actie" maxlength="200" placeholder="bv. langer doorverhit tot 80 °C"></label>`
     : `<label class="field">Soort<select name="soort">${Object.entries(MELD).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
       <label class="field">Wat is er aan de hand?<textarea name="tekst" required maxlength="600" rows="4" placeholder="Wat, waar en wanneer. Bij een klacht: tafel en wat de gast zei."></textarea></label>
       <p class="hint" style="margin:0">De directie en shiftleaders krijgen meteen een melding.</p>`;
@@ -2086,8 +2113,15 @@ function logDialog(kind) {
     async onSubmit(fd) {
       const num = k => { const v = String(fd.get(k) || '').replace(',', '.').trim(); if (v === '') return ''; const n = Number(v); if (Number.isNaN(n)) throw new Error('Vul bij temperatuur alleen een getal in'); return n; };
       let data;
-      if (kind === 'ontvangst') data = { leverancier: fd.get('leverancier').trim(), product: fd.get('product').trim(), temp: num('temp'), max: num('max'), tht: fd.get('tht') === 'on', ok: fd.get('ok') === 'true' && fd.get('tht') === 'on', reden: fd.get('reden').trim() || (fd.get('tht') !== 'on' ? 'houdbaarheid of verpakking niet in orde' : '') };
-      else if (kind === 'kern') data = { product: fd.get('product').trim(), temp: num('temp'), terug: num('terug') };
+      const actie = String(fd.get('actie') || '').trim();
+      if (kind === 'ontvangst') {
+        const cat = fd.get('cat'), mx = ONT[cat]?.[1], t = num('temp');
+        data = { leverancier: fd.get('leverancier').trim(), product: fd.get('product').trim(), cat, temp: t, tht: fd.get('tht') === 'on', ok: fd.get('ok') === 'true' && fd.get('tht') === 'on', reden: fd.get('reden').trim() || (fd.get('tht') !== 'on' ? 'houdbaarheid of verpakking niet in orde' : ''), actie };
+        if ((!data.ok || (t !== '' && mx != null && t > mx)) && !actie) throw new Error('Vul in wat je gedaan hebt (afgekeurd of te warm).');
+      } else if (kind === 'kern') {
+        data = { product: fd.get('product').trim(), temp: num('temp'), terug: num('terug'), actie };
+        if (((data.temp !== '' && data.temp < 75) || (data.terug !== '' && data.terug > 7)) && !actie) throw new Error('Vul in wat je gedaan hebt (temperatuur buiten de norm).');
+      }
       else data = { soort: fd.get('soort'), tekst: fd.get('tekst').trim() };
       await store.addLog(kind, data);
       toast('Opgeslagen'); rerender();
@@ -2103,17 +2137,17 @@ function resolveDialog(id) {
 // kaartje op Mijn rooster: wat staat er vandaag voor mij open
 async function listsHomeHTML() {
   try {
-    const today = todayIso(), lists = myLists(await store.checklists(), '');
+    const today = bizToday(), lists = myLists(await store.checklists(), '');
     if (!lists.length) return '';
     const ticks = await store.ticks([...new Set(lists.map(l => periodOf(l.moment, today)))]);
-    const st = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).map(l => { const n = (l.items || []).length, d = (l.items || []).filter(it => ticks.some(t => t.checklist_id === l.id && t.period === today && t.item_id === it.id)).length; return { l, n, d }; });
+    const st = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).map(l => { const its = itemsOn(l, today), n = its.length, d = its.filter(it => ticks.some(t => t.checklist_id === l.id && t.period === today && t.item_id === it.id)).length; return { l, n, d }; });
     const open = st.filter(x => x.d < x.n);
     return `<button type="button" class="card lhome" data-golists><span><strong>📋 Lijsten vandaag</strong><small>${open.length ? open.slice(0, 3).map(x => `${esc(x.l.name)} ${x.d}/${x.n}`).join(' · ') : 'Alles afgevinkt ✓'}</small></span><span class="chev">›</span></button>`;
   } catch (e) { return ''; }
 }
 // lijst bewerken (directie)
 function listDialog(l = {}) {
-  const isNew = !l.id, items = l.items || [];
+  const isNew = !l.id, all = l.items || [], items = all.filter(it => !it.removed);
   const lines = items.map(it => l.kind === 'temp' ? `${it.label} | ${it.max ?? ''}` : it.label).join('\n');
   openDialog(isNew ? 'Nieuwe lijst' : 'Lijst bewerken', `
     <label class="field">Naam<input name="name" required maxlength="80" value="${esc(l.name || '')}" placeholder="bv. Opening bediening"></label>
@@ -2124,21 +2158,32 @@ function listDialog(l = {}) {
     <label class="field">Soort<select name="kind"><option value="check" ${l.kind !== 'temp' ? 'selected' : ''}>Afvinken</option><option value="temp" ${l.kind === 'temp' ? 'selected' : ''}>Temperaturen meten</option></select></label>
     <label class="field">Onderdelen (één per regel)<textarea name="items" rows="10" required placeholder="Afvinken: één taak per regel.\nTemperaturen: naam | max, bv.\nK1 Koelcel | 7\nV1 Vriezer | -18">${esc(lines)}</textarea></label>
     <p class="hint" style="margin:0">Bij temperaturen: zet na een | de hoogst toegestane temperatuur. Daarboven krijgen directie en shiftleaders een melding.</p>
-    <label class="check"><input type="checkbox" name="active" ${l.active !== false ? 'checked' : ''}> Actief</label>
-    <div class="dlg-foot">${isNew ? '' : '<button class="btn danger" value="delete" formnovalidate>Verwijderen</button>'}<span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
+    <label class="check"><input type="checkbox" name="active" ${l.active !== false ? 'checked' : ''}> Actief (uitzetten in plaats van verwijderen: de geschiedenis blijft bewaard)</label>
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
     async onSubmit(fd, action) {
-      if (action === 'delete') { if (!await ask(`Lijst "${l.name}" verwijderen? Ook alle vinkjes van deze lijst verdwijnen. Tip: zet hem liever op niet actief.`, 'Verwijderen')) throw 'cancel'; await store.deleteChecklist(l.id); toast('Lijst verwijderd'); return rerender(); }
       const kind = fd.get('kind');
-      const old = Object.fromEntries(items.map(it => [it.label.toLowerCase(), it.id]));
-      const parsed = String(fd.get('items')).split('\n').map(x => x.trim()).filter(Boolean).slice(0, 80).map(x => {
+      const today = bizToday();
+      const rows = String(fd.get('items')).split('\n').map(x => x.trim()).filter(Boolean).slice(0, 80).map(x => {
         const [lab, mx] = kind === 'temp' ? x.split('|').map(y => y.trim()) : [x];
-        const label = lab.slice(0, 120), id = old[label.toLowerCase()] || 'i' + uid().replace(/-/g, '').slice(0, 10);
-        if (kind !== 'temp') return { id, label };
-        const m = String(mx ?? '').replace(',', '.'); if (m !== '' && Number.isNaN(Number(m))) throw new Error(`Bij "${label}" staat na de | geen getal`);
-        return { id, label, max: m === '' ? null : Number(m) };
+        const label = lab.slice(0, 120), m = String(mx ?? '').replace(',', '.').replace('−', '-');
+        if (kind === 'temp' && m !== '' && Number.isNaN(Number(m))) throw new Error(`Bij "${label}" staat na de | geen getal`);
+        return { label, max: kind === 'temp' && m !== '' ? Number(m) : null };
       });
-      if (!parsed.length) throw new Error('Zet minstens één onderdeel in de lijst');
-      await store.saveChecklist({ ...(l.id ? { id: l.id } : { sort: 999 }), name: fd.get('name').trim(), department: fd.get('department'), moment: fd.get('moment'), kind, items: parsed, active: fd.get('active') === 'on' });
+      if (!rows.length) throw new Error('Zet minstens één onderdeel in de lijst');
+      // 1) zelfde tekst = zelfde onderdeel; 2) een verbeterde tekst op dezelfde plek houdt zijn id (vinkjes blijven kloppen)
+      const free = [...items], used = new Set();
+      const take = it => { used.add(it.id); free.splice(free.indexOf(it), 1); return it; };
+      const matched = rows.map(r => { const m = free.find(it => it.label.toLowerCase() === r.label.toLowerCase()); return m ? take(m) : null; });
+      const parsed = rows.map((r, i) => {
+        let it = matched[i];
+        if (!it) { const pos = items[i]; it = pos && !used.has(pos.id) && free.includes(pos) ? take(pos) : null; }
+        const base = it ? { ...it, label: r.label } : { id: 'i' + uid().replace(/-/g, '').slice(0, 10), label: r.label, from: today };
+        if (kind === 'temp') { base.max = r.max; } else { delete base.max; delete base.min; }
+        return base;
+      });
+      // weggehaalde onderdelen blijven bewaard voor de geschiedenis (tot vandaag zichtbaar)
+      const gone = [...free.map(it => ({ ...it, removed: today })), ...all.filter(it => it.removed)];
+      await store.saveChecklist({ ...(l.id ? { id: l.id } : { sort: 999 }), name: fd.get('name').trim(), department: fd.get('department'), moment: fd.get('moment'), kind, items: [...parsed, ...gone], active: fd.get('active') === 'on' });
       toast('Lijst opgeslagen'); rerender();
     },
   });

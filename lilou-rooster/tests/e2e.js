@@ -556,8 +556,19 @@ async function test(name, fn) {
     assert.ok(await p.$('details.lcard[open]'), 'lijst klapte dicht na het afvinken');
     await p.click('details.lcard:has-text("Temperaturen opening") summary');
     await p.fill('details.lcard:has-text("Temperaturen opening") .tform input >> nth=0', '9,5');
-    await p.click('details.lcard:has-text("Temperaturen opening") .tform button >> nth=0');
-    await p.waitForSelector('details.lcard:has-text("Temperaturen opening") .lrow.flag');
+    await p.click('details.lcard:has-text("Temperaturen opening") .tform button.primary >> nth=0');
+    // buiten de norm: eerst invullen wat je gedaan hebt
+    await p.waitForSelector('dialog:has-text("Buiten de norm") [name=note]');
+    await p.fill('dialog [name=note]', 'Deur stond open, dichtgedaan');
+    await p.click('dialog:has-text("Buiten de norm") button[value=save]');
+    await p.waitForSelector('details.lcard:has-text("Temperaturen opening") .lrow.flag .tnote:has-text("Deur stond open")');
+    // medewerker kan een afwijkende meting niet zelf weghalen
+    assert.ok(!(await p.$('details.lcard:has-text("Temperaturen opening") .lrow.flag [data-untick]')), 'afwijkende meting kan zelf weggehaald worden');
+    // vriezer met min-teken via de ±-knop
+    await p.click('details.lcard:has-text("Temperaturen opening") .lrow:has-text("V1") [data-neg]');
+    await p.type('details.lcard:has-text("Temperaturen opening") .lrow:has-text("V1") input', '20');
+    await p.click('details.lcard:has-text("Temperaturen opening") .lrow:has-text("V1") button.primary');
+    await p.waitForSelector('details.lcard:has-text("Temperaturen opening") .lrow:has-text("V1") .tval:has-text("-20")');
     let { db } = await demoDb(p);
     const mark = db.employees.find(e => e.name.startsWith('Mark'));
     assert.ok(db.notifications.some(n => n.employee_id === mark.id && /Temperatuur te hoog/.test(n.title)), 'directie kreeg geen temperatuurmelding');

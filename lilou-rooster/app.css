@@ -885,3 +885,7 @@ dialog.dlg { overflow-x: hidden; }
 @media (max-width: 760px) { .lrow .who { grid-column: 2 / -1; } .lrow.temp .who { grid-column: 1 / -1; } }
 .ldeps { flex-wrap: wrap; }
 .page-head .weeknav { flex-wrap: nowrap; max-width: 100%; }
+.tnote { display: block; grid-column: 2 / -1; font-size: 12.5px; color: var(--warn); }
+.tform .pm { min-width: 40px; padding: 0 8px; }
+@media (max-width: 400px) { .tform { grid-column: 1 / -1; justify-self: stretch; } .tform input { flex: 1; width: auto; } }
+@media (max-width: 400px) { .lrow.temp { grid-template-columns: minmax(0, 1fr) auto; } .lrow.temp .tform { grid-column: 1 / -1; min-width: 0; } .tform input { min-width: 0; } }

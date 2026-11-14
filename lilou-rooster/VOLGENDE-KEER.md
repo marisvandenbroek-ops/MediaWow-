@@ -11,6 +11,9 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Update 20: bijlagen (pdf/foto) openen in de app zelf (pdf.js in vendor/pdfjs), Instellingen/Aanvragen passen op telefoon,
   knop 'Komende diensten uit het rooster halen' bij medewerker + bulk met één melding (shifts_bulk staat LIVE in Supabase).
 
+- Lijsten (afvinken met naam+tijd, temperaturen, ontvangst, kerntemp, meldingen) staan LIVE in Supabase; app in update 22.
+  Werkdag loopt tot 05:00. Vinkjes nooit echt weg (spoor). Koelingen K1-K3/V1 zijn voorbeeldnamen: in Instellingen aanpassen.
+
 ## Te doen
 1. KLAAR: Prikbord: gelezen mededelingen blijven altijd staan (ingeklapt, met ✓), alleen directie verwijdert. Knop "Gelezen" blijft.
    Ziekmelden beter vindbaar maken: aparte knop "Ik ben ziek" (nu verstopt onder Verlof › Soort › Ziekmelding).

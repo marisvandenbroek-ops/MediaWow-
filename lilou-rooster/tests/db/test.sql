@@ -343,9 +343,16 @@ select t_ok((select employee_id from checklist_ticks where item_id = 'i1' limit 
 select t_ok((select at > now() - interval '1 minute' from checklist_ticks where item_id = 'i1' limit 1), 'tijdstip zet de server (niet achteraf invullen)');
 set role authenticated; select as_user(3);
 select t_ok(t_count('select * from checklist_ticks') = 1, 'collega ziet wat er al is afgevinkt');
-delete from checklist_ticks where item_id = 'i1';
+select t_fails($q$select untick((select id from checklist_ticks limit 1))$q$, 'collega kan andermans vinkje niet weghalen');
+select t_fails($q$delete from checklist_ticks$q$, 'vinkjes kun je niet echt verwijderen');
 reset role;
-select t_ok(t_count('select * from checklist_ticks') = 1, 'collega kan andermans vinkje niet weghalen');
+select t_ok((select period from checklist_ticks where item_id = 'i1' limit 1) = business_day()::text, 'periode bepaalt de server (niet terugdateren)');
+set role authenticated; select as_user(2);
+select untick((select id from checklist_ticks where item_id = 'i1' limit 1));
+insert into checklist_ticks (checklist_id, period, item_id, employee_id) select id, '2020-01-01', 'i1', 'a0000000-0000-0000-0000-000000000002' from checklists where name = 'Opening bediening';
+reset role;
+select t_ok(t_count('select * from checklist_ticks where removed_at is not null and removed_by is not null') = 1, 'ongedaan maken laat een spoor achter');
+select t_ok(t_count('select * from checklist_ticks where removed_at is null') = 1, 'na ongedaan maken opnieuw afvinken kan');
 set role authenticated; select as_user(2);
 update checklists set name = 'x';
 reset role;
@@ -354,6 +361,7 @@ set role authenticated; select as_user(2);
 select t_fails($q$insert into checklist_ticks (checklist_id, period, item_id, employee_id) select id, today_nl()::text, 'i1', 'a0000000-0000-0000-0000-000000000002' from checklists where name = 'Temperaturen opening'$q$, 'temperatuur is verplicht');
 insert into checklist_ticks (checklist_id, period, item_id, employee_id, value)
   select id, today_nl()::text, 'i1', 'a0000000-0000-0000-0000-000000000002', 9.5 from checklists where name = 'Temperaturen opening';
+select t_fails($q$select untick((select id from checklist_ticks where value = 9.5))$q$, 'afwijkende meting kan de medewerker niet zelf weghalen');
 reset role;
 select t_ok((select flagged from checklist_ticks where value = 9.5), 'te warme koeling wordt gemarkeerd');
 select t_ok(t_count($q$select * from notifications where title like '%Temperatuur te hoog%' and employee_id = 'a0000000-0000-0000-0000-000000000001'$q$) = 1, 'directie krijgt melding bij te hoge temperatuur');

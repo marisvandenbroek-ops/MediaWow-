@@ -1331,6 +1331,126 @@ grant usage on schema public to service_role;
 grant all on all tables in schema public to service_role;
 grant usage, select on all sequences in schema public to service_role;
 
+-- ---------- Lijsten: controleerbaar maken (controleronde) ----------
+-- Werkdag: tot 05:00 hoort nog bij de dag ervoor (sluiten na middernacht telt voor die avond)
+create or replace function public.business_day() returns date
+language sql stable set search_path = public as $$ select ((now() at time zone 'Europe/Amsterdam') - interval '5 hours')::date $$;
+
+-- Vinkjes worden nooit echt verwijderd: 'ongedaan' laat een spoor achter (wie, wanneer)
+alter table public.checklist_ticks add column if not exists removed_at timestamptz;
+alter table public.checklist_ticks add column if not exists removed_by uuid references public.employees(id) on delete set null;
+alter table public.checklist_ticks drop constraint if exists checklist_ticks_checklist_id_period_item_id_key;
+create unique index if not exists checklist_ticks_live_uq on public.checklist_ticks (checklist_id, period, item_id) where removed_at is null;
+drop policy if exists tick_update on public.checklist_ticks;
+drop policy if exists tick_delete on public.checklist_ticks;
+revoke update, delete on public.checklist_ticks from authenticated;
+
+-- Lijsten worden niet verwijderd maar op 'niet actief' gezet (de geschiedenis blijft)
+drop policy if exists cl_write on public.checklists;
+drop policy if exists cl_insert on public.checklists;
+create policy cl_insert on public.checklists for insert to authenticated with check (public.is_manager());
+drop policy if exists cl_update on public.checklists;
+create policy cl_update on public.checklists for update to authenticated using (public.is_manager()) with check (public.is_manager());
+revoke delete on public.checklists from authenticated;
+drop trigger if exists audit_checklists on public.checklists;
+create trigger audit_checklists after insert or update on public.checklists for each row execute function public.trg_audit();
+
+create or replace function public.list_period(p_moment text, p_day date) returns text
+language sql immutable set search_path = public as $$
+  select case p_moment when 'week' then (p_day - (extract(isodow from p_day)::int - 1))::text
+                       when 'maand' then to_char(p_day, 'YYYY-MM') else p_day::text end
+$$;
+
+create or replace function public.trg_tick_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare it jsonb; cl public.checklists; mx numeric; mn numeric;
+begin
+  new.at := now();
+  new.employee_id := coalesce(public.my_employee_id(), new.employee_id);
+  new.removed_at := null; new.removed_by := null;
+  select * into cl from public.checklists where id = new.checklist_id;
+  if not found or not cl.active then raise exception 'Deze lijst is niet actief.'; end if;
+  -- de periode bepaalt de server: niemand kan een vinkje op een eerdere dag zetten
+  new.period := public.list_period(cl.moment, public.business_day());
+  select e into it from jsonb_array_elements(cl.items) e where e->>'id' = new.item_id and coalesce(e->>'removed', '') = '' limit 1;
+  if it is null then raise exception 'Onbekend onderdeel van de lijst.'; end if;
+  new.flagged := false;
+  if cl.kind = 'temp' then
+    if new.value is null then raise exception 'Vul een temperatuur in.'; end if;
+    mx := case when it->>'max' ~ '^-?[0-9]+([.][0-9]+)?$' then (it->>'max')::numeric end;
+    mn := case when it->>'min' ~ '^-?[0-9]+([.][0-9]+)?$' then (it->>'min')::numeric end;
+    if (mx is not null and new.value > mx) or (mn is not null and new.value < mn) then
+      new.flagged := true;
+      insert into public.notifications (employee_id, title, body, view)
+      select id, case when mx is not null and new.value > mx then '🌡️ Temperatuur te hoog' else '🌡️ Temperatuur te laag' end,
+             (it->>'label') || ': ' || new.value || ' °C (norm ' || coalesce('max ' || (it->>'max'), 'min ' || (it->>'min')) || ' °C), gemeten door '
+             || public.first_name(new.employee_id) || coalesce('. Actie: ' || nullif(new.note, ''), '.'), 'lijsten'
+        from public.employees where role in ('manager', 'planner') and active and id <> new.employee_id;
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists checklist_ticks_guard on public.checklist_ticks;
+create trigger checklist_ticks_guard before insert on public.checklist_ticks
+  for each row execute function public.trg_tick_guard();
+
+-- Ongedaan maken: zelf alleen in de huidige periode en niet bij een afwijkende meting; de leiding altijd. Altijd met spoor.
+create or replace function public.untick(p_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare me uuid := public.my_employee_id(); t public.checklist_ticks; cl public.checklists;
+begin
+  select * into t from public.checklist_ticks where id = p_id and removed_at is null;
+  if not found then raise exception 'Dit vinkje bestaat niet (meer).'; end if;
+  select * into cl from public.checklists where id = t.checklist_id;
+  if not public.is_planner() and (t.employee_id is distinct from me or t.flagged or t.period <> public.list_period(cl.moment, public.business_day())) then
+    raise exception 'Dit vinkje kan alleen de leiding nog weghalen.';
+  end if;
+  update public.checklist_ticks set removed_at = now(), removed_by = me where id = p_id;
+end $$;
+revoke execute on function public.untick(uuid) from public, anon;
+grant execute on function public.untick(uuid) to authenticated;
+
+create or replace function public.trg_log_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare t numeric; tr numeric; mx numeric; who text; title text; body text;
+begin
+  if tg_op = 'UPDATE' then
+    -- alleen afhandelen, en maar één keer; de invoer zelf blijft zoals hij was
+    new.kind := old.kind; new.employee_id := old.employee_id; new.at := old.at; new.data := old.data; new.flagged := old.flagged;
+    if old.resolved_at is not null then new.resolved_at := old.resolved_at; new.resolved_by := old.resolved_by; new.resolution := old.resolution;
+    elsif new.resolved_at is not null then new.resolved_by := public.my_employee_id(); new.resolved_at := now(); end if;
+    return new;
+  end if;
+  new.at := now();
+  new.employee_id := coalesce(public.my_employee_id(), new.employee_id);
+  new.resolved_at := null; new.resolved_by := null; new.resolution := null;
+  who := public.first_name(new.employee_id);
+  t := case when new.data->>'temp' ~ '^-?[0-9]+([.][0-9]+)?$' then (new.data->>'temp')::numeric end;
+  tr := case when new.data->>'terug' ~ '^-?[0-9]+([.][0-9]+)?$' then (new.data->>'terug')::numeric end;
+  if new.kind = 'ontvangst' then
+    -- de norm volgt uit de soort product; wat de invuller als norm meestuurt telt niet
+    mx := case new.data->>'cat' when 'vis' then 2 when 'vlees' then 4 when 'diepvries' then -15 when 'droog' then null else 7 end;
+    new.flagged := coalesce((new.data->>'ok') = 'false', false) or coalesce(t > mx, false);
+    if new.flagged then title := '📦 Levering afgekeurd of te warm';
+      body := coalesce(new.data->>'leverancier', '') || ': ' || coalesce(nullif(new.data->>'reden', ''), t || ' °C (max ' || mx || ')') || coalesce('. Actie: ' || nullif(new.data->>'actie', ''), '') || ' (' || who || ')'; end if;
+  elsif new.kind = 'kern' then
+    new.flagged := (t is not null and t < 75) or (tr is not null and tr > 7);
+    if new.flagged then title := '🌡️ Kerntemperatuur of terugkoelen buiten de norm';
+      body := coalesce(new.data->>'product', '') || ': ' || coalesce(t || ' °C', '') || coalesce(', na 5 uur ' || tr || ' °C', '') || coalesce('. Actie: ' || nullif(new.data->>'actie', ''), '') || ' (' || who || ')'; end if;
+  else
+    new.flagged := true;
+    title := case new.data->>'soort' when 'incident' then '⚠️ Incident gemeld' when 'klacht' then '💬 Klacht gemeld' when 'ongedierte' then '🐭 Ongedierte gemeld' else '🔧 Gebrek gemeld' end;
+    body := left(coalesce(new.data->>'tekst', ''), 120) || ' (' || who || ')';
+  end if;
+  if title is not null then
+    insert into public.notifications (employee_id, title, body, view)
+    select id, title, body, 'lijsten' from public.employees where role in ('manager', 'planner') and active and id <> new.employee_id;
+  end if;
+  return new;
+end $$;
+revoke execute on function public.trg_tick_guard() from public, anon, authenticated;
+revoke execute on function public.trg_log_guard() from public, anon, authenticated;
+
 -- =====================================================================
 --  EXTRA AFSCHERMING (uit de beveiligingscontrole van Supabase)
 -- =====================================================================
