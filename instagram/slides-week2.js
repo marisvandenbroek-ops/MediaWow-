@@ -319,14 +319,14 @@ Of reageer TIPS en ik check je hele website gratis.
   {
     id: '7-zo-begin-nu',
     slides: [
-      { theme: 'photo', html: `
-        <img class="bg-photo" src="{{img:canva/foto-060.jpg}}">
-        <div class="bg-fade" style="background:rgba(15,10,10,.35)"></div>
-        <div class="ghost" style="left:-30px;bottom:120px;font-size:330px;color:rgba(255,255,255,.22)">januari</div>
-        <div style="position:absolute;left:90px;right:90px;top:300px;z-index:2;text-align:center">
-          <div class="kicker">Daily reminder</div>
-          <h1 class="pf" style="font-size:120px;line-height:1;color:#fff">Begin niet in januari. <em><span class="mark">Begin nu.</span></em></h1>
-        </div>` },
+      { theme: 'photo', light: true, html: `
+        <img class="bg-photo" src="{{img:canva/foto-094.jpg}}" style="object-position:50% 60%">
+        <div class="bg-fade" style="background:linear-gradient(180deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.75) 34%,rgba(255,255,255,0) 55%)"></div>
+        <div style="position:absolute;left:90px;right:90px;top:200px;z-index:2;text-align:center;color:#141414">
+          <div class="kicker" style="color:#6b6258">Daily reminder</div>
+          <h1 class="pf" style="font-size:120px;line-height:1">Begin niet in januari. <em style="color:#141414"><span class="mark" style="background:linear-gradient(transparent 55%,#E8F27A 55%,#E8F27A 92%,transparent 92%)">Begin nu.</span></em></h1>
+        </div>
+        <div class="note" style="right:60px;bottom:120px;z-index:3">je website staat er in januari al ✓</div>` },
       { theme: 'dark', html: `
         <div class="kicker">Waarom nu?</div>
         <h1 class="lg">In januari wil iedereen tegelijk <em>een nieuwe website.</em></h1>

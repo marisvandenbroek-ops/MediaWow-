@@ -345,15 +345,16 @@ em{font-style:italic}
 .btnlist div{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 30px;border:1px solid rgba(250,244,237,.15);border-radius:8px;background:rgba(250,244,237,.05)}
 .btnlist .sec{font-size:24px;letter-spacing:.3em;text-transform:uppercase;color:rgba(250,244,237,.6)}
 .btnlist .b2{background:#E8F27A;color:#141414;font-weight:600;font-size:30px;padding:16px 30px;border-radius:100px}
+.lightphoto .hdr .h,.lightphoto .ftr{color:#141414}
 `;
 
 function slideHTML(sl, i, n) {
   const html = sl.html.replace(/\{\{img:([^}]+)\}\}/g, (_, f) => dataURI(f));
   const onDark = sl.theme === 'dark' || sl.theme === 'photo';
-  const logoColor = onDark ? '#fff' : (sl.theme === 'greige' ? '#141414' : 'var(--bordeaux)');
+  const logoColor = sl.light ? '#141414' : onDark ? '#fff' : (sl.theme === 'greige' ? '#141414' : 'var(--bordeaux)');
   const counter = n > 1 ? (i === 0 ? 'Swipe →' : `${String(i + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}`) : 'mediawow.nl';
   return `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONTS}"><style>${CSS}</style></head>
-<body><div class="s ${sl.theme} ${sl.cls || ''}">${html}
+<body><div class="s ${sl.theme} ${sl.cls || ''} ${sl.light ? 'lightphoto' : ''}">${html}
 <div class="hdr"><div class="logo-mask" style="background:${logoColor}"></div><span class="h">@media.wow</span></div>
 <div class="ftr"><span>mediawow.nl</span><span>${counter}</span></div></div></body></html>`;
 }
