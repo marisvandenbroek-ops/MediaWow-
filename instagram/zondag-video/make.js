@@ -29,7 +29,7 @@ h1{position:absolute;top:255px;left:90px;right:90px;font-family:'Instrument Seri
 <div class="laptop"><div class="lid"><video id="d" src="lilou-desktop.mp4" muted playsinline preload="auto"></video></div><div class="base"></div></div>
 <div class="phone"><div class="isl"></div><video id="m" src="lilou-mobiel.mp4" muted playsinline preload="auto"></video></div>
 <div class="badge">mooi + het werkt ✓</div>
-<div class="f"><span>mediawow.nl</span><span>Swipe →</span></div>
+<div class="f"><span>mediawow.nl</span><span>${process.env.REEL ? "lilou-ede.nl" : "Swipe →"}</span></div>
 <script>
 const seek=(v,t)=>new Promise(r=>{if(Math.abs(v.currentTime-t)<1e-4){r();return}v.addEventListener('seeked',()=>r(),{once:true});v.currentTime=t});
 window.setT=async t=>{await Promise.all([seek(document.getElementById('d'),t),seek(document.getElementById('m'),t)])};
@@ -43,7 +43,7 @@ window.ready=()=>Promise.all([...document.querySelectorAll('video')].map(v=>v.re
   await p.evaluate(() => document.fonts.ready); await p.evaluate(() => window.ready());
   for (let f = 0; f < DUR * FPS; f++) { await p.evaluate(t => window.setT(t), f / FPS + 0.05); await p.screenshot({ path: path.join(FR, String(f).padStart(4, '0') + '.png') }); }
   await b.close();
-  execSync(`ffmpeg -y -loglevel error -framerate ${FPS} -i ${FR}/%04d.png -c:v libx264 -pix_fmt yuv420p -crf 18 -movflags +faststart ${path.join(DIR, 'zondag-cover-lilou.mp4')}`);
+  execSync(`ffmpeg -y -loglevel error -framerate ${FPS} -i ${FR}/%04d.png -c:v libx264 -pix_fmt yuv420p -crf 18 -movflags +faststart ${path.join(DIR, process.env.REEL ? 'zondag-reel-4x5.mp4' : 'zondag-cover-lilou.mp4')}`);
   fs.copyFileSync(path.join(FR, '0060.png'), path.join(DIR, 'cover-still.png'));
   fs.rmSync(FR, { recursive: true, force: true }); console.log('done');
 })();
