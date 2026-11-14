@@ -13,13 +13,13 @@ module.exports = [
         <div class="bg-fade"></div>
         <div class="bottom">
           <div class="kicker">Gratis website-check</div>
-          <h1 class="xl">Stuur me je website.<br><em>Ik geef je 3 tips.</em></h1>
-          <span class="btn">Reageer: Tips</span>
+          <h1 class="hero">Je website verliest klanten.<br><em>Ik laat je zien waar.</em></h1>
         </div>` },
       { theme: 'cream', html: `
         <div class="kicker">01 — Waarom</div>
         <div class="count">3<span>·</span>2<span>·</span>1</div>
-        <h2>Zo lang krijgt je website. <em>Ik help je die tellen goed te gebruiken.</em></h2>` },
+        <h2>Zo lang krijgt je website. <em>Daarna haken ze af.</em></h2>
+        <p class="lead">Swipe: zo help ik je die paar tellen te winnen.</p>` },
       { theme: 'cream', html: `
         <div class="split">
           <div class="split-txt">
@@ -57,7 +57,9 @@ module.exports = [
         </div>
         <span class="btn">Reageer: Tips</span>` },
     ],
-    caption: `Je website moet het in een paar tellen doen. Ik help je graag op weg 🤍
+    caption: `Je website verliest klanten. En vaak zie je zelf niet waar. 👀
+
+Ik help je graag op weg 🤍
 
 Gratis website-check:
 1️⃣ Reageer TIPS
@@ -77,7 +79,7 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
     slides: [
       { theme: 'cream', html: `
         <div class="kicker">Voor salons</div>
-        <h1 class="lg">Herken je <em>deze appjes?</em></h1>
+        <h1 class="hero">Krijg jij deze appjes ook?<br><em>Dan mist je website iets.</em></h1>
         ${phone(`
           <div class="dm-head"><div class="av-user"></div><div><b>Nieuwe klant</b><small>online</small></div></div>
           <div class="chat">
@@ -130,9 +132,16 @@ Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
     id: '3-wo-red-flags',
     slides: [
       { theme: 'dark', html: `
-        <div class="kicker">Gespot door een webdesigner</div>
-        <h1 class="xl">Webdesigner<br><em>red flags</em></h1>
-        <p class="lead">Vier dingen waar ik altijd even van schrik. Herken jij er één?</p>` },
+        <div class="kicker">4 red flags bij je webdesigner</div>
+        <h1 class="hero">Van wie is jouw website <em>eigenlijk?</em></h1>
+        <div class="doc">
+          <div class="doc-h">Domeinregistratie</div>
+          <div class="doc-r"><span>Domein</span><b>jouwzaak.nl</b></div>
+          <div class="doc-r"><span>Betaald door</span><b>jij</b></div>
+          <div class="doc-r flagged"><span>Eigenaar</span><b>Webbureau B.V.</b></div>
+          <div class="doc-stamp">Niet van jou</div>
+        </div>
+        <p class="lead">Red flag nr. 1 ziet bijna niemand. Swipe →</p>` },
       { theme: 'cream', html: `
         <div class="kicker">01 — 02</div>
         <div class="flag"><span class="flagmark"></span><div><h3>Je domeinnaam staat op <em>hún</em> naam.</h3><p>Stap je over? Dan ben je je eigen adres kwijt.</p></div></div>
@@ -157,7 +166,10 @@ Welk appje krijg jij het vaakst? Zet ‘m in de comments 👇
         <p class="lead">Stuur me een DM. Ik denk graag met je mee over je opties.</p>
         <span class="btn">Stuur een DM</span>` },
     ],
-    caption: `🚩 Webdesigner red flags, gespot door… een webdesigner 🙋
+    caption: `Van wie is jouw website eigenlijk? 🤔
+Red flag nr. 1 ziet bijna niemand.
+
+🚩 Webdesigner red flags, gespot door… een webdesigner 🙋
 
 🚩 Je domeinnaam staat op hún naam
 🚩 Je zit jaren vast aan hun hosting
@@ -180,7 +192,7 @@ Welke red flag mist er nog? 👇
     slides: [
       { theme: 'cream', html: `
         <div class="kicker center-t">Voor horeca · Kies maar</div>
-        <h1 class="md center-t">Welke krijgt <em>de reservering?</em></h1>
+        <h1 class="lg center-t">Welke krijgt <em>de reservering?</em></h1>
         <div class="ab">
           <div class="ab-col"><div class="ab-tag">A</div>${phone(`
             <div class="site-a">
@@ -239,7 +251,7 @@ Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe web
     slides: [
       { theme: 'dark', html: `
         <div class="kicker">Even afrekenen</div>
-        <h1 class="md">Je <em>‘goedkope’</em> website.</h1>
+        <h1 class="lg">Je <em>‘goedkope’</em> website.</h1>
         <div class="receipt" style="transform:rotate(-2.5deg)">
           <div class="r-title">BONNETJE</div><div class="r-sub">doe-het-zelf-website</div>
           <div class="r-line"><span>Websitebouwer-abonnement</span><span>✓</span></div>
@@ -340,8 +352,8 @@ Wil jij meer van die meldingen? Reageer PREVIEW 🤍
     slides: [
       { theme: 'dark', html: `
         <div class="kicker">Unpopular opinion</div>
-        <h1 class="xl">Je hebt geen <em>mooiere</em> website nodig.</h1>
-        <p class="lead">Ja, dat zegt een webdesigner.</p>` },
+        <h1 class="hero">Je hebt geen <span class="strike">mooiere</span> website nodig.</h1>
+        <p class="lead">Ja, dat zegt een webdesigner. Swipe →</p>` },
       { theme: 'cream', html: `
         <h1 class="xl">Je hebt een website nodig die iets <em>dóét.</em></h1>
         <div class="words"><span>Boekt</span><span>Antwoordt</span><span>Verkoopt</span></div>

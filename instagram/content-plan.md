@@ -48,14 +48,16 @@ Gebaseerd op de analyse van @media.wow (stap 1) en mediawow.nl. Alle feiten in d
 
 ## 2. Hooks: prikkelen, niet uitleggen
 
+Covercheck vóór je post: (1) is de hook leesbaar op thumbnail-formaat? (2) zit er spanning in (verlies, vraag, open lus)? (3) staat er een beeld op dat in één tel te snappen is? (4) maakt slide 2 de belofte meteen waar?
+
 Regels voor elke hook:
 - **Iets om op te reageren:** een vraag, een keuze (A/B) of iets waar je het mee oneens kunt zijn.
 - **Herkenning vóór uitleg:** laat eerst hún situatie zien (appjes, lege lockscreen), pas daarna de tip.
 - **Visueel in één tel te snappen:** een chat, een bonnetje, een telefoon of een vlag, in plaats van een lap tekst.
 
-1. Stuur me je website. Ik geef je 3 tips.
-2. Herken je deze appjes?
-3. Webdesigner red flags (gespot door een webdesigner)
+1. Je website verliest klanten. Ik laat je zien waar.
+2. Krijg jij deze appjes ook? Dan mist je website iets.
+3. Van wie is jouw website eigenlijk? (red flag nr. 1 ziet bijna niemand)
 4. Welke krijgt de reservering: A of B?
 5. Je ‘goedkope’ website. Even afrekenen.
 6. Zo hoort je zaterdag te beginnen. (lockscreen vol meldingen)
@@ -82,13 +84,13 @@ Verdeling: **4× ontdekking, 1× vertrouwen, 2× verkoop.** Elke post heeft een 
 
 | Dag | Doel | Hook | Format | Kernpunten | CTA |
 |---|---|---|---|---|---|
-| **Ma 16/11** | Ontdekking + leads | Stuur me je website. Ik geef je 3 tips. | Carousel, 5 slides (cover met jouw foto) | 3-2-1 · hoe het werkt (DM-mockup) · waar ik naar kijk | Reageer TIPS |
-| **Di 17/11** | Ontdekking | Herken je deze appjes? | Carousel, chat-mockup | Elk appje = vraag die je site moet beantwoorden · vraag → oplossing | Reageer TIPS + welk appje krijg jij? |
-| **Wo 18/11** | Vertrouwen | Webdesigner red flags 🚩 | Carousel, 5 slides | 4 red flags · green flags (jouw werkwijze) | DM + tag iemand |
+| **Ma 16/11** | Ontdekking + leads | Je website verliest klanten. Ik laat je zien waar. | Carousel, 5 slides (cover met jouw foto) | 3-2-1 · hoe het werkt (DM-mockup) · waar ik naar kijk | Reageer TIPS |
+| **Di 17/11** | Ontdekking | Krijg jij deze appjes ook? Dan mist je website iets. | Carousel, chat-mockup | Elk appje = vraag die je site moet beantwoorden · vraag → oplossing | Reageer TIPS + welk appje krijg jij? |
+| **Wo 18/11** | Vertrouwen | Van wie is jouw website eigenlijk? (4 red flags) | Carousel, 5 slides | 4 red flags · green flags (jouw werkwijze) | DM + tag iemand |
 | **Do 19/11** | Ontdekking | Welke krijgt de reservering? A of B | Carousel, quiz | 2 telefoon-mockups · antwoord + waarom · lijkt jouw site op A? | Comment A/B + PREVIEW |
 | **Vr 20/11** | Verkoop | Je ‘goedkope’ website. Even afrekenen. | Carousel, bonnetjes | DIY-bonnetje vs MediaWow-bonnetje met prijzen | Kennismaking / PREVIEW |
 | **Za 21/11** | Ontdekking + verkoop | Zo hoort je zaterdag te beginnen. | Carousel, lockscreen | Vol vs leeg · verschil zit in je website | Reageer PREVIEW |
-| **Zo 22/11** | Ontdekking (gesprek) | Unpopular opinion: je hebt geen mooiere website nodig. | Carousel, 3 slides | Een website moet iets dóén · mooi is de basis, niet het doel | Eens of oneens? |
+| **Zo 22/11** | Ontdekking (gesprek) | Je hebt geen ~~mooiere~~ website nodig. | Carousel, 3 slides | Een website moet iets dóén · mooi is de basis, niet het doel | Eens of oneens? |
 
 Afbeeldingen en captions staan klaar in `week-1/<dag>/` (slide-01.png …, caption.txt).
 

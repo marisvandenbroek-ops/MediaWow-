@@ -22,6 +22,18 @@ html,body{width:1080px;height:1350px}
 h1,h2,h3{font-family:'Instrument Serif',serif;font-weight:400;letter-spacing:-.01em}
 h1.xl{font-size:140px;line-height:.95} h1.lg{font-size:112px;line-height:.98} h1.md{font-size:92px;line-height:1}
 h2{font-size:92px;line-height:1}
+h1.hero{font-size:154px;line-height:.92;letter-spacing:-.02em}
+.s:has(.phone-low) h1.hero{font-size:100px}
+.s:has(.phone-low) .phone-low{bottom:-300px}
+.s:has(.doc) h1.hero{font-size:128px}
+.strike{position:relative;font-style:italic;color:#E9D6C8;white-space:nowrap}
+.strike:after{content:'';position:absolute;left:-10px;right:-10px;top:52%;height:9px;background:#E9D6C8;transform:rotate(-4deg);border-radius:6px}
+.doc{margin-top:54px;background:#FAF4ED;color:var(--ink);padding:40px 46px;position:relative;transform:rotate(-1.5deg);box-shadow:0 30px 60px rgba(0,0,0,.35)}
+.doc-h{font-size:22px;letter-spacing:.4em;text-transform:uppercase;color:var(--mauve);padding-bottom:22px;border-bottom:1.5px solid var(--line)}
+.doc-r{display:flex;justify-content:space-between;font-size:34px;padding:22px 0;border-bottom:1.5px solid var(--line)}
+.doc-r span{font-weight:300;color:var(--mauve)} .doc-r b{font-weight:600}
+.doc-r.flagged b{color:#B3261E;text-decoration:underline wavy #B3261E;text-underline-offset:10px}
+.doc-stamp{position:absolute;right:30px;bottom:-34px;border:4px solid #B3261E;color:#B3261E;font-size:26px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;padding:14px 22px;transform:rotate(-8deg);background:rgba(250,244,237,.92)}
 em{font-style:italic}
 .cream em,.white em{color:var(--wine)}
 .kicker{font-size:23px;letter-spacing:.42em;text-transform:uppercase;font-weight:400;margin-bottom:38px;color:var(--mauve)}
