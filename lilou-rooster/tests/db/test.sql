@@ -269,7 +269,6 @@ select t_ok(t_count('select * from announcements') = 1, 'medewerker ziet de mede
 select t_fails($q$insert into announcements (title) values ('nep')$q$, 'medewerker kan geen mededeling plaatsen');
 insert into announcement_reads (announcement_id, employee_id) values ('80000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002');
 select t_fails($q$insert into announcement_reads (announcement_id, employee_id) values ('80000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003')$q$, 'medewerker kan niet namens een ander "gelezen" zetten');
-insert into storage.objects (bucket_id, name) select 'mededelingen', 'x.pdf' where false;
 select t_fails($q$insert into storage.objects (bucket_id, name) values ('mededelingen', 'nep.pdf')$q$, 'medewerker kan geen bijlage uploaden');
 select as_user(1);
 select t_ok(t_count('select * from announcement_reads') = 1, 'directie ziet wie het gelezen heeft');
@@ -332,6 +331,49 @@ select sick_recover('60000000-0000-0000-0000-000000000001');
 reset role;
 select t_ok((select end_date from requests where id = '60000000-0000-0000-0000-000000000001') = today_nl(), 'ziekmelding stopt vandaag');
 select t_ok(t_count($q$select * from notifications where title = '💪 Weer beter'$q$) >= 1, 'directie hoort dat iemand weer beter is');
+
+\echo '== Lijsten: afvinken met naam en tijd'
+reset role; delete from notifications;
+select t_ok(t_count('select * from checklists') >= 8, 'startlijsten aangemaakt');
+set role authenticated; select as_user(2);
+insert into checklist_ticks (checklist_id, period, item_id, employee_id, at)
+  select id, today_nl()::text, 'i1', 'a0000000-0000-0000-0000-000000000003', now() - interval '3 days' from checklists where name = 'Opening bediening';
+reset role;
+select t_ok((select employee_id from checklist_ticks where item_id = 'i1' limit 1) = 'a0000000-0000-0000-0000-000000000002', 'vinkje staat altijd op naam van wie het zet');
+select t_ok((select at > now() - interval '1 minute' from checklist_ticks where item_id = 'i1' limit 1), 'tijdstip zet de server (niet achteraf invullen)');
+set role authenticated; select as_user(3);
+select t_ok(t_count('select * from checklist_ticks') = 1, 'collega ziet wat er al is afgevinkt');
+delete from checklist_ticks where item_id = 'i1';
+reset role;
+select t_ok(t_count('select * from checklist_ticks') = 1, 'collega kan andermans vinkje niet weghalen');
+set role authenticated; select as_user(2);
+update checklists set name = 'x';
+reset role;
+select t_ok(t_count($q$select * from checklists where name = 'x'$q$) = 0, 'medewerker kan lijsten niet aanpassen');
+set role authenticated; select as_user(2);
+select t_fails($q$insert into checklist_ticks (checklist_id, period, item_id, employee_id) select id, today_nl()::text, 'i1', 'a0000000-0000-0000-0000-000000000002' from checklists where name = 'Temperaturen opening'$q$, 'temperatuur is verplicht');
+insert into checklist_ticks (checklist_id, period, item_id, employee_id, value)
+  select id, today_nl()::text, 'i1', 'a0000000-0000-0000-0000-000000000002', 9.5 from checklists where name = 'Temperaturen opening';
+reset role;
+select t_ok((select flagged from checklist_ticks where value = 9.5), 'te warme koeling wordt gemarkeerd');
+select t_ok(t_count($q$select * from notifications where title like '%Temperatuur te hoog%' and employee_id = 'a0000000-0000-0000-0000-000000000001'$q$) = 1, 'directie krijgt melding bij te hoge temperatuur');
+
+\echo '== Registraties en meldingen'
+delete from notifications;
+set role authenticated; select as_user(2);
+insert into log_entries (kind, employee_id, data) values ('melding', 'a0000000-0000-0000-0000-000000000002', '{"soort":"gebrek","tekst":"Vaatwasser lekt"}');
+insert into log_entries (kind, employee_id, data) values ('kern', 'a0000000-0000-0000-0000-000000000002', '{"product":"Kip","temp":"68"}');
+select as_user(3);
+select t_ok(t_count('select * from log_entries') = 0, 'medewerker ziet geen registraties van een ander');
+update log_entries set resolved_at = now();
+reset role;
+select t_ok(t_count('select * from log_entries where resolved_at is not null') = 0, 'medewerker kan niets afhandelen');
+select t_ok(t_count($q$select * from notifications where title like '%Gebrek gemeld%' and employee_id = 'a0000000-0000-0000-0000-000000000001'$q$) = 1, 'directie krijgt melding van een gebrek');
+select t_ok((select flagged from log_entries where kind = 'kern'), 'te lage kerntemperatuur wordt gemarkeerd');
+set role authenticated; select as_user(1);
+update log_entries set resolved_at = now(), resolution = 'Monteur gebeld', data = '{}' where kind = 'melding';
+reset role;
+select t_ok((select resolved_by = 'a0000000-0000-0000-0000-000000000001' and data->>'tekst' = 'Vaatwasser lekt' from log_entries where kind = 'melding'), 'afgehandeld met naam; de melding zelf blijft ongewijzigd');
 
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

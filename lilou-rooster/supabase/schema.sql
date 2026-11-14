@@ -1114,6 +1114,199 @@ exception when others then
 end $$;
 
 -- =====================================================================
+--  LIJSTEN: opening/sluiting per afdeling, temperaturen, schoonmaak, registraties en meldingen
+--  Elk vinkje bewaart wie het deed en hoe laat (verantwoordelijkheid en HACCP-bewijs).
+-- =====================================================================
+create table if not exists public.checklists (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null check (length(name) between 1 and 80),
+  department  text not null default '',          -- functie (Bediening, Bar, Keuken, Afwas) of '' = iedereen
+  moment      text not null default 'dag' check (moment in ('opening', 'sluiting', 'dag', 'week', 'maand')),
+  kind        text not null default 'check' check (kind in ('check', 'temp')),
+  items       jsonb not null default '[]'::jsonb,   -- [{id, label, max?, min?}]
+  active      boolean not null default true,
+  sort        int not null default 0,
+  created_at  timestamptz not null default now()
+);
+create table if not exists public.checklist_ticks (
+  id           uuid primary key default gen_random_uuid(),
+  checklist_id uuid not null references public.checklists(id) on delete cascade,
+  period       text not null,                      -- dag: 2026-11-14 · week: maandag · maand: 2026-11
+  item_id      text not null,
+  employee_id  uuid not null references public.employees(id) on delete restrict,
+  at           timestamptz not null default now(),
+  value        numeric(6, 1),                      -- temperatuur
+  flagged      boolean not null default false,     -- buiten de norm
+  note         text check (note is null or length(note) <= 300),
+  unique (checklist_id, period, item_id)
+);
+create index if not exists checklist_ticks_period_idx on public.checklist_ticks (period);
+create index if not exists checklist_ticks_emp_idx on public.checklist_ticks (employee_id, at);
+create table if not exists public.log_entries (
+  id           uuid primary key default gen_random_uuid(),
+  kind         text not null check (kind in ('ontvangst', 'kern', 'melding')),
+  employee_id  uuid not null references public.employees(id) on delete restrict,
+  at           timestamptz not null default now(),
+  data         jsonb not null default '{}'::jsonb,
+  flagged      boolean not null default false,
+  resolved_at  timestamptz,
+  resolved_by  uuid references public.employees(id) on delete set null,
+  resolution   text check (resolution is null or length(resolution) <= 300)
+);
+create index if not exists log_entries_at_idx on public.log_entries (kind, at desc);
+
+alter table public.checklists enable row level security;
+alter table public.checklist_ticks enable row level security;
+alter table public.log_entries enable row level security;
+
+drop policy if exists cl_select on public.checklists;
+create policy cl_select on public.checklists for select to authenticated using (public.my_employee_id() is not null or public.is_manager());
+drop policy if exists cl_write on public.checklists;
+create policy cl_write on public.checklists for all to authenticated using (public.is_manager()) with check (public.is_manager());
+
+-- vinkjes: iedereen in het team ziet wat er af is; je vinkt alleen voor jezelf; terugdraaien: jijzelf (zelfde dag) of leiding
+drop policy if exists tick_select on public.checklist_ticks;
+create policy tick_select on public.checklist_ticks for select to authenticated using (public.my_employee_id() is not null);
+drop policy if exists tick_insert on public.checklist_ticks;
+create policy tick_insert on public.checklist_ticks for insert to authenticated with check (employee_id = public.my_employee_id());
+drop policy if exists tick_update on public.checklist_ticks;
+create policy tick_update on public.checklist_ticks for update to authenticated
+  using (employee_id = public.my_employee_id() and at > now() - interval '18 hours') with check (employee_id = public.my_employee_id());
+drop policy if exists tick_delete on public.checklist_ticks;
+create policy tick_delete on public.checklist_ticks for delete to authenticated
+  using ((employee_id = public.my_employee_id() and at > now() - interval '18 hours') or public.is_planner());
+
+-- registraties: eigen invoer + leiding ziet alles; afhandelen alleen leiding
+drop policy if exists log_select on public.log_entries;
+create policy log_select on public.log_entries for select to authenticated using (employee_id = public.my_employee_id() or public.is_planner());
+drop policy if exists log_insert on public.log_entries;
+create policy log_insert on public.log_entries for insert to authenticated
+  with check (employee_id = public.my_employee_id() and resolved_at is null and resolved_by is null);
+drop policy if exists log_update on public.log_entries;
+create policy log_update on public.log_entries for update to authenticated using (public.is_planner()) with check (public.is_planner());
+
+-- tijd en persoon altijd door de server: niemand kan achteraf iets op een ander tijdstip of namens een ander invullen
+create or replace function public.trg_tick_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare it jsonb; cl public.checklists; mx numeric; mn numeric;
+begin
+  new.at := now();
+  new.employee_id := coalesce(public.my_employee_id(), new.employee_id);
+  select * into cl from public.checklists where id = new.checklist_id;
+  select e into it from jsonb_array_elements(cl.items) e where e->>'id' = new.item_id limit 1;
+  if it is null then raise exception 'Onbekend onderdeel van de lijst.'; end if;
+  new.flagged := false;
+  if cl.kind = 'temp' then
+    if new.value is null then raise exception 'Vul een temperatuur in.'; end if;
+    mx := nullif(it->>'max', '')::numeric; mn := nullif(it->>'min', '')::numeric;
+    if (mx is not null and new.value > mx) or (mn is not null and new.value < mn) then
+      new.flagged := true;
+      insert into public.notifications (employee_id, title, body, view)
+      select id, '🌡️ Temperatuur te hoog', (it->>'label') || ': ' || new.value || ' °C (norm ' || coalesce('max ' || (it->>'max'), 'min ' || (it->>'min')) || ' °C), gemeten door ' || public.first_name(new.employee_id) || '.', 'lijsten'
+        from public.employees where role in ('manager', 'planner') and active;
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists checklist_ticks_guard on public.checklist_ticks;
+create trigger checklist_ticks_guard before insert or update on public.checklist_ticks
+  for each row execute function public.trg_tick_guard();
+
+create or replace function public.trg_log_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare t numeric; who text; title text; body text;
+begin
+  if tg_op = 'UPDATE' then
+    -- alleen afhandelen; de invoer zelf blijft zoals hij was
+    new.kind := old.kind; new.employee_id := old.employee_id; new.at := old.at; new.data := old.data; new.flagged := old.flagged;
+    if new.resolved_at is not null and old.resolved_at is null then new.resolved_by := public.my_employee_id(); new.resolved_at := now(); end if;
+    return new;
+  end if;
+  new.at := now();
+  new.employee_id := coalesce(public.my_employee_id(), new.employee_id);
+  who := public.first_name(new.employee_id);
+  t := nullif(new.data->>'temp', '')::numeric;
+  if new.kind = 'ontvangst' then
+    new.flagged := (new.data->>'ok') = 'false' or (t is not null and t > coalesce(nullif(new.data->>'max', '')::numeric, 7));
+    if new.flagged then title := '📦 Levering afgekeurd of te warm'; body := coalesce(new.data->>'leverancier', '') || ': ' || coalesce(new.data->>'reden', t || ' °C') || ' (' || who || ')'; end if;
+  elsif new.kind = 'kern' then
+    new.flagged := t is not null and t < 75;
+    if new.flagged then title := '🌡️ Kerntemperatuur te laag'; body := coalesce(new.data->>'product', '') || ': ' || t || ' °C (minimaal 75 °C), gemeten door ' || who; end if;
+  else
+    new.flagged := true;
+    title := case new.data->>'soort' when 'incident' then '⚠️ Incident gemeld' when 'klacht' then '💬 Klacht gemeld' else '🔧 Gebrek gemeld' end;
+    body := left(coalesce(new.data->>'tekst', ''), 120) || ' (' || who || ')';
+  end if;
+  if title is not null then
+    insert into public.notifications (employee_id, title, body, view)
+    select id, title, body, 'lijsten' from public.employees where role in ('manager', 'planner') and active and id <> new.employee_id;
+  end if;
+  return new;
+end $$;
+drop trigger if exists log_entries_guard on public.log_entries;
+create trigger log_entries_guard before insert or update on public.log_entries
+  for each row execute function public.trg_log_guard();
+revoke execute on function public.trg_tick_guard() from public, anon, authenticated;
+revoke execute on function public.trg_log_guard() from public, anon, authenticated;
+
+-- Startlijsten (uit de Operations Library); alleen als er nog geen lijsten zijn. Aan te passen in Instellingen.
+do $$
+declare mk text;
+begin
+  if exists (select 1 from public.checklists) then return; end if;
+  insert into public.checklists (name, department, moment, kind, sort, items)
+  select v.name, v.dep, v.mom, v.kind, v.sort,
+         (select jsonb_agg(case when v.kind = 'temp' then jsonb_build_object('id', 'i' || o, 'label', split_part(x, '|', 1), 'max', nullif(trim(split_part(x, '|', 2)), ''))
+                                else jsonb_build_object('id', 'i' || o, 'label', x) end order by o)
+            from unnest(v.items) with ordinality as u(x, o))
+  from (values
+    ('Opening bediening', 'Bediening', 'opening', 'check', 10, array[
+      'Alarm uit, rondje gelopen, geen bijzonderheden', 'Lichten en muziek aan (juiste volume)', 'Zaal op temperatuur, ventilatie aan',
+      'Entree, ramen en terras toonbaar', 'Vloer schoon, niets onder de tafels', 'Tafels ingedekt; bestek en glazen tegen het licht gecontroleerd',
+      'Tafels recht en wiebelen niet', 'Tafelindeling klopt met de reserveringen', 'Kaarsen, bloemen en decoratie verzorgd',
+      'Menukaarten en wijnkaart schoon en actueel', 'Servicestations aangevuld (bestek, servetten, borden)', 'Water, karaffen en ijs klaar',
+      'Allergeenprikkers, bonnen en pennen aanwezig', 'Reserveringslijst doorgenomen, bijzonderheden gemarkeerd', 'Kassa aan, bonrol vol, pinautomaten getest',
+      'Kasgeld geteld', 'Telefoon opneembaar, voicemail afgeluisterd', 'Toiletten schoon en aangevuld']),
+    ('Sluiting bediening', 'Bediening', 'sluiting', 'check', 20, array[
+      'Laatste gasten weg; toiletten en terras gecontroleerd', 'Tafels afgeruimd, afgenomen en ingedekt', 'Vloer geveegd en gedweild',
+      'Kaarsen uit, bloemen water gegeven', 'Menukaarten afgenomen en opgeborgen', 'Servicestations leeg, schoon en aangevuld',
+      'Karaffen en koelers schoon, omgekeerd drogen', 'Vuile was in de waszak', 'Alle tafels afgesloten, geen open bonnen',
+      'Dagafsluiting (Z-rapport) gedraaid', 'Kas geteld, verschil doorgegeven', 'Pinautomaten aan de lader', 'Toiletten eindschoonmaak en aangevuld',
+      'Terrasmeubilair opgeborgen', 'Ramen en deuren op slot, nooduitgangen dicht', 'Muziek en lichten uit', 'Gevonden voorwerpen opgeborgen']),
+    ('Opening keuken', 'Keuken', 'opening', 'check', 30, array[
+      'Afzuiging aan vóór het aansteken van gas', 'Apparatuur opgestart en werkt (oven, fornuis, plancha, friteuse, vaatwasser)',
+      'Nooduitgang en blusdeken vrij', 'Houdbaarheid koelingen gecontroleerd, verlopen weg (waste)', 'Prikthermometer schoon en werkt',
+      'Handenwasplaats: zeep, papier, desinfectie', 'Werkbanken, planken en messen schoon en gedesinfecteerd',
+      'Iedereen in schone keukenkleding, haar bedekt, geen sieraden', 'Gezondheidscheck: niemand met diarree, braken, koorts of open wond',
+      'Reserveringen en allergieën doorgenomen', 'Mise-en-place-lijsten per partie klaar', 'Leveringen van vandaag bekend']),
+    ('Sluiting keuken', 'Keuken', 'sluiting', 'check', 40, array[
+      'Mise-en-place afgedekt, gelabeld en in de koeling', 'Terugkoelen gestart en geregistreerd', 'Niets buiten de koeling', 'Waste van vandaag geregistreerd',
+      'Werkbanken, koelwerkbanken en planken schoon en gedesinfecteerd', 'Fornuis, plancha en salamander ontvet', 'Oven/combisteamer reinigingsprogramma gedraaid',
+      'Friteuse: olie gecontroleerd/gefilterd, afgedekt', 'Vloer geveegd, gedweild, putjes leeg', 'Afval en glas weg, bakken schoon',
+      'Vaatwasser leeg, filters schoon, deur open', 'Gas dicht, apparatuur uit (behalve koeling)', 'Koelingen en vriezers goed dicht',
+      'Afzuiging uit', 'Achterdeur op slot', 'Bestellingen verstuurd', 'Overdracht naar de volgende dienst doorgegeven']),
+    ('Opening bar', 'Bar', 'opening', 'check', 50, array[
+      'Koelingen aangevuld (FIFO)', 'Open flessen gecontroleerd op datum en geproefd', 'Garnituren vers gesneden, afgedekt, gelabeld',
+      'IJsbak vol, schone schep in de bak', 'Glaswerk gepoetst en op de vaste plek', 'Eerste bier getapt en geproefd, lekbak schoon',
+      'Koffiemachine warm, eerste espresso geproefd', 'Melk, thee, suiker aangevuld', 'Kassa en pin aan de bar werken', 'Werkblad schoon en leeg']),
+    ('Sluiting bar', 'Bar', 'sluiting', 'check', 60, array[
+      'Open flessen afgesloten en gelabeld met openingsdatum', 'Garnituren weg of afgedekt en gelabeld', 'Koelingen aangevuld voor morgen',
+      'Koffiemachine gereinigd (backflush, stoompijpje, bakjes)', 'Glazenspoelmachine leeg en schoon', 'Tapkranen afgenomen, lekbak schoon, kranen dicht',
+      'IJsbak leeg en schoon', 'Werkblad, spoelbak en vloer achter de bar schoon', 'Breuk en derving geregistreerd', 'Bestellijst bar bijgewerkt']),
+    ('Temperaturen opening', '', 'opening', 'temp', 70, array[
+      'K1 Koelcel | 7', 'K2 Koelwerkbank keuken | 7', 'K3 Koeling bar | 7', 'V1 Vriezer | -18']),
+    ('Temperaturen sluiting', '', 'sluiting', 'temp', 80, array[
+      'K1 Koelcel | 7', 'K2 Koelwerkbank keuken | 7', 'K3 Koeling bar | 7', 'V1 Vriezer | -18']),
+    ('Weekschoonmaak', '', 'week', 'check', 90, array[
+      'Koelcellen en koelwerkbanken leeg en grondig schoon', 'Oven/combisteamer grondig', 'Filters afzuigkap in de vaatwasser', 'Wanden en tegels keuken',
+      'Afvalbakken uitgespoten', 'Droge opslag: schappen en vloer', 'Barkoelingen uitgenomen en schoon', 'IJsmachine gereinigd',
+      'Flessen en spiritrekken stofvrij', 'Ramen en deuren volledig', 'Lampen, lijsten en vensterbanken stofvrij']),
+    ('Maandschoonmaak', '', 'maand', 'check', 100, array[
+      'Vriezers ontdooid en schoon', 'Afzuigkap afgenomen', 'Vaatwasser ontkalkt', 'IJsmachine gedesinfecteerd'])
+  ) as v(name, dep, mom, kind, sort, items);
+end $$;
+
+-- =====================================================================
 --  TOEGANG PER TABEL
 --  Werkt ook als "Automatically expose new tables" in Supabase UIT staat.
 --  Welke rijen iemand ziet of wijzigt, bepalen daarna de beveiligingsregels (RLS) hierboven.
@@ -1123,7 +1316,8 @@ revoke truncate, references, trigger on all tables in schema public from authent
 grant select, insert, update, delete on
   public.employees, public.shifts, public.requests, public.settings, public.time_entries,
   public.shift_applications, public.swaps, public.availability, public.push_subscriptions,
-  public.employee_private, public.day_info, public.revenue, public.announcements
+  public.employee_private, public.day_info, public.revenue, public.announcements,
+  public.checklists, public.checklist_ticks, public.log_entries
   to authenticated;
 grant select, insert on public.announcement_reads to authenticated;
 grant select on public.notifications, public.audit_log to authenticated;
