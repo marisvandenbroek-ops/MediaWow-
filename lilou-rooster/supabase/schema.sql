@@ -1012,6 +1012,12 @@ begin
    where clock_in < now() - interval '90 days' and (in_lat is not null or out_lat is not null);
   delete from public.notifications where created_at < now() - interval '180 days';
   delete from public.reminder_log where at < now() - interval '30 days';
+  -- Lijsten en registraties: 2 jaar bewaren (HACCP), meldingen (incidenten) 5 jaar; zie privacyverklaring
+  if to_regclass('public.checklist_ticks') is not null then
+    delete from public.checklist_ticks where at < now() - interval '2 years';
+    delete from public.log_entries where kind <> 'melding' and at < now() - interval '2 years';
+    delete from public.log_entries where kind = 'melding' and at < now() - interval '5 years';
+  end if;
   return n;
 end $$;
 revoke execute on function public.run_jobs() from public, anon;
