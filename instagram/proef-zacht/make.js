@@ -11,26 +11,32 @@ const css = `*{margin:0;padding:0;box-sizing:border-box}body{width:1080px;height
 .handle{position:absolute;top:64px;left:70px;font-size:20px;letter-spacing:.18em;text-transform:uppercase;opacity:.85}
 .mid{position:absolute;left:80px;right:80px;top:50%;transform:translateY(-50%);text-align:center}
 h1{font-family:'Instrument Serif';font-weight:400;font-size:104px;line-height:.98;letter-spacing:-.02em}
-h1 em{font-style:italic}
+h1 em{font-style:italic;color:#F0DCD0}
 .sub{margin-top:26px;font-size:24px;font-weight:300;opacity:.9}
 .foot{position:absolute;left:70px;right:70px;bottom:56px;display:flex;justify-content:space-between;font-size:20px;letter-spacing:.2em;text-transform:uppercase;opacity:.85}
 .foot span:before{display:inline-block;margin-right:10px}
 .share:before{content:'➤'}.save:before{content:'⌑'}
 .logo{aspect-ratio:1058/244;-webkit-mask:url(${LOGO}) no-repeat center/contain}
-.sticker{position:absolute;left:50%;top:50%;width:330px;height:330px;margin:-165px 0 0 -165px;border-radius:50%;background:#F2EFEA;box-shadow:0 30px 60px rgba(0,0,0,.18),inset 0 0 0 1px rgba(0,0,0,.04);display:flex;align-items:center;justify-content:center}
-.sticker .logo{width:230px;background:#3A1011}`;
+.sticker{position:absolute;left:50%;top:50%;width:330px;height:330px;margin:-165px 0 0 -165px;border-radius:50%;background:#3A1011;box-shadow:0 30px 60px rgba(0,0,0,.18),inset 0 0 0 1px rgba(0,0,0,.04);display:flex;align-items:center;justify-content:center}
+.sticker .logo{width:230px;background:#FAF4ED}`;
 const pages = {
   'zacht-1-quote': `<div class="s" style="color:#fff">
     <img class="bg" src="${img('canva/foto-157.jpg')}" style="object-position:50% 35%">
-    <div class="veil" style="background:rgba(60,55,50,.42)"></div>
+    <div class="veil" style="background:linear-gradient(180deg,rgba(58,16,17,.38),rgba(27,4,5,.55))"></div>
     <div class="handle">@media.wow</div>
     <div class="mid"><h1>Mooi is fijn. <em>Werken</em><br>is beter.</h1><div class="sub">— In de caption leg ik uit waarom je website allebei moet zijn</div></div>
     <div class="foot"><span class="share">Share</span><span class="save">Save</span></div></div>`,
   'zacht-2-quote-donker': `<div class="s" style="color:#fff">
     <img class="bg" src="${img('canva/foto-067.jpg')}" style="object-position:50% 50%">
-    <div class="veil" style="background:rgba(45,40,38,.5)"></div>
+    <div class="veil" style="background:linear-gradient(180deg,rgba(58,16,17,.45),rgba(27,4,5,.62))"></div>
     <div class="handle">@media.wow</div>
     <div class="mid"><h1>Een lege tafel <em>begint</em><br>op je website.</h1><div class="sub">— In de caption: 3 dingen die gasten zoeken vóór ze reserveren</div></div>
+    <div class="foot"><span class="share">Share</span><span class="save">Save</span></div></div>`,
+  'zacht-4-licht-bordeaux': `<div class="s" style="color:#3A1011">
+    <img class="bg" src="${img('canva/foto-094.jpg')}" style="object-position:50% 70%;filter:saturate(.2) brightness(1.08)">
+    <div class="veil" style="background:rgba(250,244,237,.55)"></div>
+    <div class="handle">@media.wow</div>
+    <div class="mid"><h1>Je klanten lezen niet. <em style="color:#8E1F27">Ze scannen.</em></h1><div class="sub">— In de caption: zo zet je het belangrijkste op de juiste plek</div></div>
     <div class="foot"><span class="share">Share</span><span class="save">Save</span></div></div>`,
   'zacht-3-adempauze': `<div class="s">
     <img class="bg" src="${img('canva/foto-094.jpg')}" style="object-position:50% 60%;filter:saturate(.25) brightness(1.05)">
