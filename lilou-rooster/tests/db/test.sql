@@ -383,5 +383,23 @@ update log_entries set resolved_at = now(), resolution = 'Monteur gebeld', data 
 reset role;
 select t_ok((select resolved_by = 'a0000000-0000-0000-0000-000000000001' and data->>'tekst' = 'Vaatwasser lekt' from log_entries where kind = 'melding'), 'afgehandeld met naam; de melding zelf blijft ongewijzigd');
 
+\echo '== Afspraken gelezen en akkoord'
+delete from notifications;
+set role authenticated; select as_user(2);
+select ack_rules(); select ack_rules();
+select t_fails($q$insert into rules_acks (employee_id, version) values ('a0000000-0000-0000-0000-000000000003', 1)$q$, 'niet tekenen namens een ander');
+select as_user(3);
+select t_ok(t_count('select * from rules_acks') = 0, 'medewerker ziet niet wie er getekend heeft');
+update settings set rules_version = 5;
+select as_user(1);
+select t_ok(t_count('select * from rules_acks where version = 1') = 1, 'directie ziet wie getekend heeft (één keer per versie)');
+update settings set rules_version = rules_version + 1;
+reset role;
+select t_ok((select rules_version from settings) = 2, 'alleen de directie verhoogt de versie');
+select t_ok(t_count($q$select * from notifications where title like '%Afspraken bijgewerkt%'$q$) > 0
+  and t_count($q$select * from notifications n join employees e on e.id = n.employee_id where n.title like '%Afspraken bijgewerkt%' and e.role = 'manager'$q$) = 0, 'team krijgt melding bij nieuwe afspraken, directie niet');
+set role authenticated; select as_user(2); select ack_rules(); reset role;
+select t_ok(t_count('select * from rules_acks where version = 2') = 1, 'na wijziging opnieuw tekenen voor de nieuwe versie');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

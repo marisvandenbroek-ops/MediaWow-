@@ -622,6 +622,32 @@ async function test(name, fn) {
     assert.ok(days.size >= 35, 'niet 5 weken ingevuld: ' + days.size);
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('afspraken: medewerker leest en tekent in de app, directie ziet wie en laat opnieuw tekenen', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne');
+    await p.click('[data-nood]'); await p.waitForSelector('dialog .nood[href="tel:112"]');
+    await p.click('dialog[open] [data-close]');
+    await p.waitForSelector('.rulesbanner'); await p.click('[data-rulesread]');
+    await p.waitForSelector('dialog.rulesview iframe');
+    const fr = await (await p.$('dialog.rulesview iframe')).contentFrame(); await fr.waitForSelector('#allergenen');
+    assert.ok(await fr.evaluate(() => document.documentElement.classList.contains('framed') && getComputedStyle(document.querySelector('.back')).display === 'none'), 'terug-link zichtbaar in de app');
+    await p.click('[data-rulesok]'); await p.waitForSelector('.toast:has-text("getekend")');
+    await p.waitForSelector('.rulesbanner', { state: 'detached' });
+    let { db } = await demoDb(p); const sanne = db.employees.find(e => e.name.startsWith('Sanne'));
+    assert.ok(db.rulesAcks.some(r => r.employee_id === sanne.id && r.version === 1), 'tekenen niet opgeslagen');
+    const m = watch(await ctx.newPage()); await m.goto(URL + '#directie'); await m.waitForSelector('[data-demo]'); await login(m, 'Mark');
+    await m.click('[data-goto2=afspraken]'); await m.waitForSelector('dialog .acklist li:has-text("Sanne")');
+    await m.click('dialog [data-rulesbump]'); await m.click('dialog[open]:last-of-type button[value=save]');
+    await m.waitForSelector('.toast:has-text("opnieuw te tekenen")');
+    ({ db } = await demoDb(m));
+    assert.strictEqual(db.settings.rules_version, 2);
+    assert.ok(db.notifications.some(n => n.employee_id === sanne.id && n.title.includes('Afspraken bijgewerkt')), 'geen melding naar het team');
+    assert.ok(!db.notifications.some(n => db.employees.find(e => e.id === n.employee_id)?.role === 'manager' && n.title.includes('Afspraken bijgewerkt')), 'directie kreeg melding');
+    await p.reload(); await p.waitForSelector('[data-demo], #view > *', { state: 'attached' });
+    if (await p.$('[data-demo]')) await login(p, 'Sanne');
+    await p.waitForSelector('.rulesbanner:has-text("bijgewerkt")');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1); pages.splice(pages.indexOf(m), 1);
+  });
   await test('telefoon: geen enkel scherm loopt rechts van het scherm af', async () => {
     // elk element binnen #view moet binnen de schermbreedte blijven (behalve in bewust scrollende tabellen)
     const outside = p => p.evaluate(() => { const W = document.documentElement.clientWidth, out = [];

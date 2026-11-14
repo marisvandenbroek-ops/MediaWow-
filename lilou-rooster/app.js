@@ -394,6 +394,18 @@ function demoStore() {
       const x = db.logs.find(y => y.id === id); if (!x || x.resolved_at) return;
       Object.assign(x, { resolved_at: new Date().toISOString(), resolved_by: mem, resolution }); save();
     },
+    async rulesAcks() { db.rulesAcks ||= []; return clone(db.rulesAcks.filter(r => isMgr() || r.employee_id === mem)); },
+    async ackRules() {
+      db.rulesAcks ||= []; const v = db.settings.rules_version || 1;
+      if (!db.rulesAcks.some(r => r.employee_id === mem && r.version === v)) db.rulesAcks.push({ employee_id: mem, version: v, at: new Date().toISOString() });
+      save();
+    },
+    async bumpRules(v) {
+      if (!isMgr()) throw new Error('Alleen de directie kan dit');
+      db.settings.rules_version = v + 1;
+      db.employees.filter(e => e.active !== false && e.role !== 'manager').forEach(e => notify(e.id, '📘 Afspraken bijgewerkt', 'Lees de nieuwe afspraken en tik op Gelezen en akkoord.', 'mijn'));
+      save();
+    },
     async sickRecover(id) {
       const r = db.requests.find(x => x.id === id && x.employee_id === mem && x.type === 'ziek'); if (!r) throw new Error('Ziekmelding niet gevonden');
       const t = todayIso(); if (r.end_date > t) r.end_date = r.start_date > t ? r.start_date : t;
@@ -716,6 +728,9 @@ async function supabaseStore() {
     async requests() { return ok(await sb.from('requests').select('*').order('created_at', { ascending: false })); },
     async saveRequest(r) { ok(await sb.from('requests').insert(r)); },
     async sickRecover(id) { const { error } = await sb.rpc('sick_recover', { p_id: id }); if (error) throw error; },
+    async rulesAcks() { return ok(await sb.from('rules_acks').select('*')) || []; },
+    async ackRules() { const { error } = await sb.rpc('ack_rules'); if (error) throw error; },
+    async bumpRules(v) { ok(await sb.from('settings').update({ rules_version: v + 1, updated_at: new Date().toISOString() }).eq('id', 1)); },
     // --- lijsten
     async checklists() { return ok(await sb.from('checklists').select('*').order('sort').order('name')); },
     async saveChecklist(c) {
@@ -1605,6 +1620,66 @@ async function publishWeek(from, to, weekShifts, quiet = false) {
   } catch (x) { toast('Gepubliceerd, maar niet gemaild: ' + errMsg(x), 'error'); }
 }
 
+/* ================= Afspraken en noodnummers ================= */
+const NOOD = [['112', 'Brand, ambulance, politie', '112'], ['0800 - 9009', 'Gaslucht', '08009009'], ['0318 - 200 800', 'Huisartsenpost', '0318200800'], ['0900 - 8844', 'Politie, geen spoed', '09008844']];
+function noodDialog() {
+  const sick = CFG.sickPhone ? [[CFG.sickPhone, `Ziek melden${CFG.sickName ? ' · ' + CFG.sickName : ''}`, CFG.sickPhone.replace(/[^\d+]/g, '')]] : [];
+  openDialog('🚨 Noodnummers', `<div class="noodlist">${[...NOOD, ...sick].map(([n, l, t]) => `<a class="nood" href="tel:${esc(t)}"><span>${esc(l)}</span><strong>${esc(n)}</strong></a>`).join('')}</div>
+    <div class="noodtips"><p><strong>Brand:</strong> alarm slaan, gasten rustig naar buiten, deuren dicht, verzamelen buiten. Nooit terug naar binnen.</p>
+    <p><strong>Gaslucht:</strong> geen schakelaars of vuur, ramen open, gaskraan dicht, iedereen naar buiten, dan bellen.</p>
+    <p><strong>Allergische reactie:</strong> bel 112, help met de adrenalinepen, haal de BHV'er en bewaar het gerecht en de bon.</p></div>
+    <div class="dlg-foot"><button type="button" class="btn" data-noodrules>Alle afspraken</button><button type="button" class="btn primary" data-close>Sluiten</button></div>`,
+  { onReady: dlg => { $('[data-noodrules]', dlg).onclick = () => { dlg.close(); rulesViewer({ hash: 'veiligheid' }); }; } });
+}
+// De afspraken in de app zelf openen; medewerkers tekenen onderaan voor gelezen en akkoord
+function rulesViewer({ ack = false, hash = '' } = {}) {
+  if (document.querySelector('dialog.viewer[open]')) return;
+  const dlg = document.createElement('dialog');
+  dlg.className = 'viewer rulesview';
+  dlg.setAttribute('aria-labelledby', 'viewer-name');
+  dlg.innerHTML = `<div class="viewer-bar"><strong class="viewer-name" id="viewer-name">Afspraken van ${esc(CFG.bedrijf || 'Lilou')}</strong><button type="button" class="x" data-vclose aria-label="Sluiten">×</button></div>
+    <div class="rules-frame"><iframe src="afspraken.html${hash ? '#' + esc(hash) : ''}" title="Afspraken"></iframe></div>
+    ${ack ? '<div class="rules-ack"><p>Gelezen? Dan bevestig je dat je je aan deze afspraken houdt.</p><button type="button" class="btn primary" data-rulesok>Gelezen en akkoord</button></div>' : ''}`;
+  document.body.append(dlg);
+  dlg.addEventListener('close', () => { if (dlg.parentNode) dlg.parentNode.removeChild(dlg); });
+  $('[data-vclose]', dlg).onclick = () => dlg.close();
+  const okb = $('[data-rulesok]', dlg);
+  if (okb) okb.onclick = async () => {
+    okb.disabled = true;
+    try { await store.ackRules(); dlg.close(); toast('Dank je! Je hebt de afspraken getekend.'); rerender(); }
+    catch (x) { okb.disabled = false; toast(errMsg(x), 'error'); }
+  };
+  dlg.showModal();
+}
+async function rulesBannerHTML() {
+  if (isMgr()) return '';
+  try {
+    const [st, acks] = await Promise.all([store.settings(), store.rulesAcks()]);
+    const v = st.rules_version || 1;
+    if (acks.some(r => r.employee_id === S.me.id && r.version === v)) return '';
+    return `<div class="sickbanner rulesbanner"><div><strong>📘 ${v > 1 ? 'De afspraken zijn bijgewerkt' : 'Lees de afspraken van Lilou'}</strong><span>Lees ze rustig door en tik onderaan op Gelezen en akkoord.</span></div><button class="btn primary" data-rulesread>Lezen</button></div>`;
+  } catch (x) { return ''; }
+}
+const rulesTeam = emps => sortEmps(emps).filter(e => e.active !== false && e.role !== 'manager');
+async function rulesDialog() {
+  const [st, acks, emps] = await Promise.all([store.settings(), store.rulesAcks(), store.employees()]);
+  const v = st.rules_version || 1, team = rulesTeam(emps);
+  const at = Object.fromEntries(acks.filter(r => r.version === v).map(r => [r.employee_id, r.at]));
+  const yes = team.filter(e => at[e.id]), no = team.filter(e => !at[e.id]);
+  const when = t => { const d = new Date(t); return `${fmtShort(iso(d))} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  openDialog('Afspraken: gelezen en akkoord', `<p class="hint" style="margin:0">Iedereen behalve de directie tekent in de app voor de afspraken. Na een wijziging tekent iedereen opnieuw. Versie ${v}.</p>
+    <div><h3 class="small-h">Nog niet getekend (${no.length})</h3><p style="margin:0">${no.map(e => esc(e.name)).join(', ') || '<span class="muted">Iedereen heeft getekend 🎉</span>'}</p></div>
+    <div><h3 class="small-h">Getekend (${yes.length})</h3>${yes.length ? `<ul class="acklist">${yes.sort((a, b) => at[b.id].localeCompare(at[a.id])).map(e => `<li><span>${esc(e.name)}</span><small class="muted">${esc(when(at[e.id]))}</small></li>`).join('')}</ul>` : '<p class="muted" style="margin:0">Nog niemand</p>'}</div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-rulesview>Afspraken bekijken</button><button type="button" class="btn" data-rulesbump>Afspraken gewijzigd</button><button type="button" class="btn primary" data-close>Sluiten</button></div>`,
+  { onReady: dlg => {
+    $('[data-rulesview]', dlg).onclick = () => rulesViewer();
+    $('[data-rulesbump]', dlg).onclick = async () => {
+      if (!await ask('Zijn de afspraken gewijzigd? Dan moet iedereen opnieuw lezen en tekenen. Het team krijgt een melding.', 'Iedereen opnieuw laten tekenen')) return;
+      try { await store.bumpRules(v); dlg.close(); toast('Iedereen krijgt een melding om opnieuw te tekenen'); rerender(); } catch (x) { toast(errMsg(x), 'error'); }
+    };
+  } });
+}
+
 /* ================= Prikbord ================= */
 const annBody = t => esc(t || '').replace(/(https?:\/\/[^\s<]+)/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`).replace(/\n/g, '<br>');
 // wie telt mee voor "gelezen door": actieve medewerkers en shiftleaders, niet de directie (die ziet het prikbord in het Overzicht)
@@ -1844,7 +1919,10 @@ async function viewDashboard(el) {
     listMiss = specialDay(yest)?.kind === 'gesloten' ? 0 : cls.filter(l => itemsOn(l, yest).some(it => !tky.some(t => t.checklist_id === l.id && t.item_id === it.id))).length;
     openMeld = (await store.logs(iso(addDays(new Date(), -180)), todayIso(), true)).length;
   } catch (e) { /* lijsten nog niet ingesteld */ }
+  let rulesMiss = 0;
+  try { const acks = await store.rulesAcks(), v = st.rules_version || 1; rulesMiss = rulesTeam(emps).filter(e => !acks.some(r => r.employee_id === e.id && r.version === v)).length; } catch (e) { /* nog niet ingesteld */ }
   const att = [
+    rulesMiss && [`${rulesMiss} ${rulesMiss === 1 ? 'medewerker heeft' : 'medewerkers hebben'} de afspraken nog niet getekend`, 'afspraken'],
     openMeld && [`${openMeld} open ${openMeld === 1 ? 'melding' : 'meldingen'} (gebrek, incident of klacht)`, 'lijsten'],
     listMiss && [`${listMiss} ${listMiss === 1 ? 'lijst' : 'lijsten'} gisteren niet helemaal afgevinkt`, 'lijsten-gisteren'],
     pendReq && [`${pendReq} ${pendReq === 1 ? 'aanvraag wacht' : 'aanvragen wachten'} op je beslissing`, 'aanvragen:verlof'],
@@ -1857,7 +1935,7 @@ async function viewDashboard(el) {
     noWageN && [`${noWageN} ${noWageN === 1 ? 'dienst' : 'diensten'} zonder uurloon: vul het uurloon in bij Team`, 'team'],
   ].filter(Boolean);
   el.innerHTML = `
-    <div class="page-head"><div><h1>Overzicht</h1><p>Personeelskosten, omzet en wat er aandacht nodig heeft.</p></div><button class="btn" data-myagenda>📅 Mijn diensten in agenda</button></div>
+    <div class="page-head"><div><h1>Overzicht</h1><p>Personeelskosten, omzet en wat er aandacht nodig heeft.</p></div><div class="head-actions"><button class="btn" data-rulesmgr>📘 Afspraken</button><button class="btn" data-nood>🚨 Noodnummers</button><button class="btn" data-myagenda>📅 Mijn diensten in agenda</button></div></div>
     <div class="toolbar"><div class="weeknav">
       <button class="btn icon" data-dw="-1" aria-label="Vorige week">‹</button>
       <div class="label"><strong>${wl.title}</strong><span>${wl.sub}</span></div>
@@ -1924,12 +2002,15 @@ async function viewDashboard(el) {
     const g = ev.target.closest('[data-goto2]');
     if (g) {
       let v = g.dataset.goto2;
+      if (v === 'afspraken') return rulesDialog();
       if (v === 'lijsten-gisteren') { S.lDate = iso(addDays(parse(bizToday()), -1)); v = 'lijsten'; }
       if (v === 'planning' || v === 'klokken') S.week = S.dashWeek;
       if (v === 'planning-later') { const c = ahead.filter(x => !x.published && x.date > to).sort((a, b) => a.date.localeCompare(b.date))[0]; S.week = c ? mondayOf(parse(c.date)) : S.dashWeek; v = 'planning'; }
       return openView(v);
     }
     if (ev.target.closest('[data-myagenda]')) return agendaDialog(shifts.filter(x => x.employee_id === S.me.id && x.published));
+    if (ev.target.closest('[data-rulesmgr]')) return rulesDialog();
+    if (ev.target.closest('[data-nood]')) return noodDialog();
   };
   el.onkeydown = ev => { if (ev.target.matches('.revin')) S.lastKey = ev.key; };
   el.onchange = async ev => {
@@ -2407,7 +2488,7 @@ async function viewMine(el) {
   const today = todayIso();
   const nowHM = `${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
   const next = mine.find(s => s.date > today || (s.date === today && hm(s.end_time) > nowHM) || (s.date === today && mins(s.end_time) <= mins(s.start_time)));
-  const [clockHTML, boardH] = await Promise.all([clockCard(mine.find(s => s.date === today)), boardHTML().catch(() => '')]);
+  const [clockHTML, boardH, rulesH] = await Promise.all([clockCard(mine.find(s => s.date === today)), boardHTML().catch(() => ''), sel ? '' : rulesBannerHTML()]);
   let workedHTML = '';
   if (sel) {
     const [ents0, stM] = await Promise.all([store.entries(iso(sel), iso(addDays(sel, 6))), store.settings()]);
@@ -2463,9 +2544,11 @@ async function viewMine(el) {
     <div class="page-head"><div><h1>Hoi ${esc(S.me.name.split(' ')[0])}</h1><p>Je rooster${sel ? ' per week' : ' voor de komende weken'}.</p></div>
       <div class="head-actions"><button class="btn" data-ics>📅 Zet in mijn agenda</button>${sickNow ? '' : '<button class="btn" data-sick>🤒 Ik ben ziek</button>'}</div></div>
     ${sickNow ? `<div class="sickbanner"><div><strong>🤒 Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap!</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
+    ${rulesH}
     ${clockHTML}
     ${sel ? '' : await listsHomeHTML()}
     ${sel ? '' : '<button type="button" class="card lhome" data-gohours><span><strong>⏱️ Mijn gewerkte uren</strong><small>Per week, met je kloktijden en wat is goedgekeurd</small></span><span class="chev">›</span></button>'}
+    ${sel ? '' : `<div class="homepair"><button type="button" class="card lhome" data-nood><span><strong>🚨 Noodnummers</strong><small>112, gaslucht, huisartsenpost${CFG.sickPhone ? ', ziek melden' : ''}</small></span><span class="chev">›</span></button><button type="button" class="card lhome" data-rulesview><span><strong>📘 Afspraken</strong><small>Alle regels: service, allergenen, hygiëne en meer</small></span><span class="chev">›</span></button></div>`}
     ${next && !sel ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
     ${boardH}
     <div class="filters mine-filter"><button data-mf="all" class="${sel ? '' : 'active'}">Komende weken</button><button data-mf="week" class="${sel ? 'active' : ''}">Per week</button></div>
@@ -2481,6 +2564,9 @@ async function viewMine(el) {
     if (ev.target.closest('[data-sick]')) return sickDialog();
     if (ev.target.closest('[data-golists]')) return go('lijsten');
     if (ev.target.closest('[data-gohours]')) return go('mijnuren');
+    if (ev.target.closest('[data-nood]')) return noodDialog();
+    if (ev.target.closest('[data-rulesread]')) return rulesViewer({ ack: true });
+    if (ev.target.closest('[data-rulesview]')) return rulesViewer();
     const bt = ev.target.closest('[data-better]');
     if (bt) { if (!await ask('Ben je weer beter? De directie krijgt een melding en je ziekmelding stopt vandaag.', 'Ik ben weer beter')) return; try { await store.sickRecover(bt.dataset.better); toast('Fijn dat je weer beter bent!'); rerender(); } catch (x) { toast(errMsg(x), 'error'); } return; }
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
