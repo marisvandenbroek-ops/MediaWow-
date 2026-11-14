@@ -48,7 +48,7 @@ h1 em{color:#E9D6C8}
 <div class="date">zaterdag 21 november</div><div class="time">08:30</div>
 <div class="list" id="list">${NOTIFS.map((n, i) => `<div class="n" id="n${i}"><div class="ic">🍽️</div><div class="nb"><div class="nt"><b>Zenchef</b><small>nu</small></div><p>Nieuwe reservering · ${n[2]}</p></div></div>`).join('')}
 <div class="more" id="more"></div></div></div></div>
-<div class="end" id="end"><div class="lg"></div><h2>Wil jij dit <em>ook?</em></h2><p>Reageer PREVIEW en ik stuur je een gratis preview van je nieuwe website.</p><div class="btn">Reageer: Preview</div></div>
+<div class="end" id="end"><div class="lg"></div><h2>Wil jij dit <em>ook?</em></h2><p>Bekijk 5 ontwerpen voor horeca. Binnen drie weken online, vanaf €89 per maand.</p><div class="btn">mediawow.nl/horeca</div><p style="font-size:30px;margin-top:34px">Link in bio · of reageer HORECA</p></div>
 <script>
 const T=${JSON.stringify(NOTIFS.map(n => n[0]))}, H=132;
 const cl=x=>Math.max(0,Math.min(1,x)), ease=x=>1-Math.pow(1-cl(x),3);

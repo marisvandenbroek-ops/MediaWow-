@@ -223,10 +223,10 @@ Welke red flag mist er nog? 👇
         <p class="lead">Geen schaamte. Het gebeurt de beste.</p>` },
       { theme: 'dark', html: `
         <img class="card-img" src="{{img:mw-sneak-banner.jpg}}" style="height:420px">
-        <div class="kicker" style="margin-top:56px">Gratis sneak preview</div>
-        <h1 class="md">Van A naar B? <em>Daar ben ik voor.</em></h1>
-        <p class="lead">Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.</p>
-        <span class="btn">Reageer: Preview</span>` },
+        <div class="kicker" style="margin-top:56px">Websites voor horeca</div>
+        <h1 class="md">Van A naar B? <em>Binnen drie weken online.</em></h1>
+        <p class="lead">Bekijk 5 ontwerpen voor horeca en klik rond in de live demo's. Vanaf €89 per maand.</p>
+        <span class="btn">mediawow.nl/horeca</span>` },
     ],
     caption: `Welke krijgt de reservering: A of B? 🤔
 Zeg het in de comments 👇
@@ -240,7 +240,10 @@ Wat B anders doet:
 ✔️ Sfeer in plaats van een lap tekst
 
 Lijkt jouw site meer op A? Geen schaamte, gebeurt de beste 😅
-Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.
+
+Van A naar B kan binnen drie weken. Bekijk 5 ontwerpen voor horeca en klik rond in de live demo's op mediawow.nl/horeca (link in bio). Vanaf €89 per maand.
+
+Of reageer HORECA en ik stuur je de link 🤍
 
 #horeca #restaurant #horecaondernemer #restaurantwebsite #webdesign #mediawow`,
   },
@@ -330,10 +333,10 @@ Bonnetje bewaren? Plan een vrijblijvende kennismaking via mediawow.nl (link in b
         </div>` },
       { theme: 'dark', html: `
         <img class="card-img" src="{{img:mw-mockup-lilou-1-7.jpg}}" style="height:420px;object-position:50% 62%">
-        <div class="kicker" style="margin-top:56px">Gratis sneak preview</div>
+        <div class="kicker" style="margin-top:56px">Websites voor horeca</div>
         <h1 class="md">Meer van die <em>meldingen?</em></h1>
-        <p class="lead">Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website.</p>
-        <span class="btn">Reageer: Preview</span>` },
+        <p class="lead">Een website die je tafels vult, met Zenchef of Guestplan erin. Bekijk de 5 horeca-ontwerpen.</p>
+        <span class="btn">mediawow.nl/horeca</span>` },
     ],
     caption: `Zo zou jouw zaterdag eruit moeten zien. ☕️📲
 Koffie, telefoon erbij… en de ene na de andere reservering via Zenchef.
@@ -342,10 +345,13 @@ Of zie jij vooral “Geen meldingen”?
 
 Het verschil zit vaak niet in je zaak, maar in je website:
 ✔️ een reserveerknop die je direct ziet
-✔️ Zenchef netjes op je eigen website, in jouw stijl
+✔️ Zenchef (of Guestplan) netjes op je eigen website, in jouw stijl
 ✔️ menu, openingstijden en route zonder zoeken
 
-Wil jij meer van die meldingen? Reageer PREVIEW en ik stuur je de link voor een gratis preview van je nieuwe website 🤍
+Wil jij meer van die meldingen? 📲
+Bekijk de 5 horeca-ontwerpen en klik rond in de live demo's op mediawow.nl/horeca (link in bio). Binnen drie weken online, vanaf €89 per maand.
+
+Of reageer HORECA en ik stuur je de link 🤍
 
 #horeca #restaurant #horecaondernemer #zenchef #restaurantwebsite #webdesign #mediawow`,
   },

@@ -87,9 +87,9 @@ Verdeling: **4× ontdekking, 1× vertrouwen, 2× verkoop.** Elke post heeft een 
 | **Ma 16/11** | Ontdekking + leads | Je website verliest klanten. Ik laat je zien waar. | Carousel, 5 slides (cover met jouw foto) | 3-2-1 · hoe het werkt (DM-mockup) · waar ik naar kijk | Reageer TIPS |
 | **Di 17/11** | Ontdekking | Krijg jij deze appjes ook? Dan mist je website iets. | Carousel, chat-mockup | Elk appje = vraag die je site moet beantwoorden · vraag → oplossing | Reageer TIPS + welk appje krijg jij? |
 | **Wo 18/11** | Vertrouwen | Van wie is jouw website eigenlijk? (4 red flags) | Carousel, 5 slides | 4 red flags · green flags (jouw werkwijze) | DM + tag iemand |
-| **Do 19/11** | Ontdekking | Welke krijgt de reservering? A of B | Carousel, quiz | 2 telefoon-mockups · antwoord + waarom · lijkt jouw site op A? | Comment A/B + PREVIEW |
+| **Do 19/11** | Ontdekking | Welke krijgt de reservering? A of B | Carousel, quiz | 2 telefoon-mockups · antwoord + waarom · lijkt jouw site op A? | Comment A/B + mediawow.nl/horeca (link in bio) / reageer HORECA |
 | **Vr 20/11** | Verkoop | Je ‘goedkope’ website. Even afrekenen. | Carousel, bonnetjes | DIY-bonnetje vs MediaWow-bonnetje met prijzen | Kennismaking / PREVIEW |
-| **Za 21/11** | Ontdekking + verkoop | Zo zou jouw zaterdag eruit moeten zien. (lockscreen vol Zenchef-reserveringen) | Carousel, lockscreen | Vol vs leeg · verschil zit in je website | Reageer PREVIEW |
+| **Za 21/11** | Ontdekking + verkoop | Zo zou jouw zaterdag eruit moeten zien. (lockscreen vol Zenchef-reserveringen) | Carousel, lockscreen | Vol vs leeg · verschil zit in je website | mediawow.nl/horeca (link in bio) / reageer HORECA |
 | **Zo 22/11** | Ontdekking (gesprek) | Je hebt geen ~~mooiere~~ website nodig. | Carousel, 3 slides | Een website moet iets dóén · mooi is de basis, niet het doel | Eens of oneens? |
 
 Afbeeldingen en captions staan klaar in `week-1/<dag>/` (slide-01.png …, caption.txt).
@@ -127,3 +127,13 @@ Tip: gebruik voor dinsdag en zondag een **foto van jezelf als eerste slide** en 
 - **Stoppen:** de post scoort 2 weken achter elkaar onder je gemiddelde op het eigen doel. Schrap het format of onderwerp.
 
 Vergelijk posts alleen met **posts met hetzelfde doel**. Een prijzenpost hoeft geen 5.000 weergaven te halen; hij moet gesprekken opleveren.
+
+
+---
+
+## Links op Instagram
+
+In posts kun je niet klikken op een link. Daarom:
+- **Bio-link** op mediawow.nl/horeca zetten in de week met horeca-posts (of een linklijst met horeca, salons en gratis preview).
+- **Reageer HORECA** → stuur de link in een DM (binnen 24 uur).
+- **Story** met link-sticker naar mediawow.nl/horeca op de dag dat de horeca-post of Reel live gaat.
