@@ -5,14 +5,14 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 
 ## Stand van zaken
 - Update 17 staat live (schema, mail-rooster, agenda-functie, app-bestanden). Wachtwoord minimaal 8 tekens.
-- Update 19 (prikbord blijft staan + knop 'Ik ben ziek') klaar als zip; invite-employee met voornaam is live (via Supabase-koppeling).
+- Update 19 (prikbord blijft staan + knop 'Ik ben ziek') staat LIVE; uitnodigingsmail-template opgeslagen in Supabase; invite-employee met voornaam is live (via Supabase-koppeling).
 - Werkwijze: Supabase doe ik zelf via de Supabase-koppeling (Mariska klikt Toestaan); Mariska uploadt alleen de zip in DirectAdmin.
 
 ## Te doen
-1. Prikbord: gelezen mededelingen blijven altijd staan (ingeklapt, met ✓), alleen directie verwijdert. Knop "Gelezen" blijft.
+1. KLAAR: Prikbord: gelezen mededelingen blijven altijd staan (ingeklapt, met ✓), alleen directie verwijdert. Knop "Gelezen" blijft.
    Ziekmelden beter vindbaar maken: aparte knop "Ik ben ziek" (nu verstopt onder Verlof › Soort › Ziekmelding).
    Daarna één update uploaden (app.js + sw.js).
-1b. Uitnodigingsmail met uitleg: Supabase › Authentication › Emails › Invite user: onderwerp + inhoud van
+1b. KLAAR: Uitnodigingsmail met uitleg: Supabase › Authentication › Emails › Invite user: onderwerp + inhoud van
    supabase/email/uitnodiging.html plakken; daarna invite-employee opnieuw deployen (geeft de voornaam mee).
 2. App doorlopen: Instellingen deel 2 (gesloten dagen, toeslagen via Boomloon, doelen, werklocatie in het restaurant),
    daarna deel 3 Team (uurlonen, contracttypes, rollen, verlof "meegenomen uit vorig jaar").
