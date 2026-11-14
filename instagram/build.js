@@ -385,6 +385,17 @@ em{font-style:italic}
 .tl .dot.lime{background:#E8F27A;box-shadow:0 0 0 4px #141414}
 .tl b{font-family:'Playfair Display';font-weight:400;font-size:52px;line-height:1}
 .tl small{font-size:28px;color:#6b6258;margin-top:8px}
+/* ===== SYSTEEM: één letter, drie sjablonen, één actie ===== */
+.sys h1,.sys h2,.sys h3,.sys .count,.sys .big-stat,.sys .clock,.sys .qa .q,.sys .list i,.sys .nums i,.sys .openers p,.sys .soft-mid h1,.sys .tc-n,.sys .gc-v,.sys .pt-off,.sys .tl b,.sys .gb-tag b,.sys .ab-tag,.sys .big-a{font-family:'Playfair Display',serif!important;letter-spacing:-.02em}
+.sys.dark h1.hero,.sys.photo h1.hero{font-size:104px;line-height:1}
+.sys.dark h1.lg,.sys.photo h1.lg{font-size:92px;line-height:1.02}
+.sys.dark h2{font-size:78px;line-height:1.04}
+.sys.dark h1.xl{font-size:118px}
+.sys.rest .hand{display:none}
+.sys .dark em,.sys.dark em,.sys.photo em{color:#E9D6C8}
+.sys .btn{border-radius:0}
+.sys .kicker{letter-spacing:.34em}
+.sys:not(.soft) .ftr span:first-child{font-weight:600}
 `;
 
 function slideHTML(sl, i, n) {
@@ -393,9 +404,9 @@ function slideHTML(sl, i, n) {
   const logoColor = sl.light ? '#141414' : onDark ? '#fff' : (sl.theme === 'greige' ? '#141414' : 'var(--bordeaux)');
   const counter = n > 1 ? (i === 0 ? 'Swipe →' : `${String(i + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}`) : 'mediawow.nl';
   return `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONTS}"><style>${CSS}</style></head>
-<body><div class="s ${sl.theme} ${sl.cls || ''} ${sl.light ? 'lightphoto' : ''}">${html}
+<body><div class="s ${sl.theme} ${sl.cls || ''} ${sl.light ? 'lightphoto' : ''} ${i === 0 ? 'first' : 'rest'} ${process.env.SYSTEM ? 'sys' : ''}">${html}
 <div class="hdr"><div class="logo-mask" style="background:${logoColor}"></div><span class="h">@media.wow</span></div>
-<div class="ftr"><span>mediawow.nl</span><span>${counter}</span></div></div></body></html>`;
+<div class="ftr"><span>${process.env.SYSTEM ? 'Website Check · MediaWow' : 'mediawow.nl'}</span><span>${counter}</span></div></div></body></html>`;
 }
 
 (async () => {

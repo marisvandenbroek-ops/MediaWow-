@@ -81,8 +81,8 @@ Check het vandaag in 5 minuten:
         <div class="bottom">
           <div class="kicker">Websites voor salons</div>
           <h1 class="md">Een website die <em>je agenda vult.</em></h1>
-          <p class="lead">Bekijk 5 ontwerpen voor salons op mediawow.nl/beauty. Of reageer TIPS voor een gratis check.</p>
-          <span class="btn lime-btn">mediawow.nl/beauty</span>
+          <p class="lead">Reageer TIPS voor een gratis website-check. Ontwerpen bekijken? mediawow.nl/beauty</p>
+          <span class="btn lime-btn">Reageer: Tips</span>
         </div>` },
     ],
     caption: `Ze belden. Jij stond te knippen. 📱✂️
@@ -123,8 +123,8 @@ Bekijk 5 ontwerpen voor salons op mediawow.nl/beauty (link in bio), of reageer T
       { theme: 'dark', html: `
         <div class="kicker">De formule</div>
         <h1 class="lg">Wat je doet + <em>wat ze nu moeten doen.</em></h1>
-        <p class="lead">Wat staat er bovenaan jóuw website? Zet het in de comments, dan geef ik je een betere versie.</p>
-        <span class="btn">Zet ’m in de comments</span>` },
+        <p class="lead">Twijfel je over de eerste zin van jóuw website? Reageer TIPS, dan schrijf ik er een betere voor je.</p>
+        <span class="btn lime-btn">Reageer: Tips</span>` },
     ],
     caption: `Stop met ‘Welkom op onze website’. 🙅
 
@@ -137,7 +137,7 @@ De formule: wat je doet + wat ze nu moeten doen.
 🧭 “Voor ondernemers die vastlopen. Plan een gratis kennismaking.”
 🔨 “Verbouwen zonder stress. Vraag vandaag een offerte aan.”
 
-Wat staat er bovenaan jóuw website? Zet het in de comments 👇 dan geef ik je een betere versie.
+👇 Twijfel je over de eerste zin van jóuw website? Reageer TIPS, dan schrijf ik er een betere voor je.
 
 #webdesign #copywriting #websitetips #ondernemen #horeca #salon #coach #mediawow`,
   },
@@ -165,8 +165,8 @@ Wat staat er bovenaan jóuw website? Zet het in de comments 👇 dan geef ik je 
         <div class="bottom">
           <div class="kicker">Websites voor horeca</div>
           <h1 class="md">Volle tafels, <em>ook om 23:14.</em></h1>
-          <p class="lead">Bekijk de horeca-ontwerpen op mediawow.nl/horeca. Of reageer TIPS voor een gratis check.</p>
-          <span class="btn lime-btn">mediawow.nl/horeca</span>
+          <p class="lead">Reageer TIPS voor een gratis website-check. Ontwerpen bekijken? mediawow.nl/horeca</p>
+          <span class="btn lime-btn">Reageer: Tips</span>
         </div>` },
     ],
     caption: `Reserveren? Alleen telefonisch. ☎️
@@ -190,7 +190,7 @@ Bekijk de horeca-ontwerpen op mediawow.nl/horeca (link in bio), of reageer TIPS 
     slides: [
       { theme: 'dark', html: `
         <div class="kicker">Pakjesavond · 5 december</div>
-        <h1 class="hero">Wat zit er in jouw <em>‘Over mij’?</em></h1>
+        <h1 class="hero">Ze klikken op je ‘Over mij’. <em>Wat vinden ze?</em></h1>
         <div class="giftbox">
           <div class="gb-lid"></div><div class="gb-body"></div>
           <div class="gb-ribbon-v"></div><div class="gb-bow"></div>
@@ -212,12 +212,12 @@ Bekijk de horeca-ontwerpen op mediawow.nl/horeca (link in bio), of reageer TIPS 
       { theme: 'photo', html: `
         <img class="bg-photo" src="{{img:story/stoel-plaid.jpg}}" style="object-position:50% 40%"><div class="bg-fade" style="background:linear-gradient(180deg,rgba(58,16,17,.4),rgba(27,4,5,.7))"></div>
         <div class="fg">
-        <div class="kicker">Fijne pakjesavond 🎁</div>
+        <div class="kicker">Fijne pakjesavond</div>
         <h1 class="lg">Zin in een cadeautje? <em>Een gratis website-check.</em></h1>
         <p class="lead">Reageer TIPS en ik kijk ook naar je ‘Over mij’. Je krijgt 3 persoonlijke tips in je DM.</p>
         <div class="pill"><div class="av-user"></div><b>TIPS</b><span>Plaatsen</span></div></div>` },
     ],
-    caption: `Wat zit er in jouw ‘Over mij’? 🎁
+    caption: `Ze klikken op je ‘Over mij’. Wat vinden ze? 🎁
 
 Het is de pagina die bezoekers stiekem het vaakst openen. Mensen kopen van mensen: daar beslissen ze of ze jou vertrouwen.
 
@@ -252,7 +252,7 @@ Fijne pakjesavond alvast! Zin in een cadeautje? 👇 Reageer TIPS voor een grati
         <div class="kicker">Klaar voor januari?</div>
         <h1 class="lg">Ik kijk <em>gratis</em> mee.</h1>
         <p class="lead">Reageer TIPS en je krijgt 3 persoonlijke tips voor je coachwebsite in je DM.</p>
-        <span class="btn">Reageer: Tips</span>` },
+        <span class="btn lime-btn">Reageer: Tips</span>` },
     ],
     caption: `Je agenda is leeg. Je website ook? 🪑
 
@@ -274,7 +274,7 @@ Ze lezen je site… en boeken niet. Vaak niet omdat je niet goed bent, maar omda
     slides: [
       { theme: 'greige', html: `
         <div class="kicker">Achter de schermen</div>
-        <h1 class="hero">Van eerste koffie tot <em><span class="mark">livegang.</span></em></h1>
+        <h1 class="hero">Een nieuwe website. <em><span class="mark">Zonder gedoe.</span></em></h1>
         <div class="tl">
           <div><span class="dot"></span><b>Kennismaking</b><small>we drinken koffie (of bellen)</small></div>
           <div><span class="dot"></span><b>Moodboard & ontwerp</b><small>jij kijkt mee, ik ontwerp</small></div>
@@ -288,10 +288,10 @@ Ze lezen je site… en boeken niet. Vaak niet omdat je niet goed bent, maar omda
       { theme: 'greige', html: `
         <div class="kicker">Zin om te beginnen?</div>
         <h1 class="lg">Laten we <em>vrijblijvend</em> kennismaken.</h1>
-        <p class="lead">Plan een kennismaking via mediawow.nl, of reageer TIPS voor een gratis website-check.</p>
-        <span class="btn">Plan een kennismaking</span>` },
+        <p class="lead">Reageer TIPS voor een gratis website-check. Daarna kunnen we altijd vrijblijvend kennismaken.</p>
+        <span class="btn lime-btn">Reageer: Tips</span>` },
     ],
-    caption: `Van eerste koffie tot livegang ☕️ → 🚀
+    caption: `Een nieuwe website, zonder gedoe. Zo gaat het ☕️
 
 Zo gaat het bij MediaWow:
 1️⃣ Kennismaking: we drinken koffie (of bellen)

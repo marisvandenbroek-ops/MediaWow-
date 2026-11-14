@@ -70,7 +70,7 @@ Zo doe je het wél (kijk maar naar het kerstmenu van @lilou_ede op slide 3):
     slides: [
       { theme: 'dark', html: `
         <div class="kicker">Voor salons, horeca & meer · december</div>
-        <h1 class="hero" style="font-size:96px">Iemand zoekt nú een kadootje. <em>Verkoop jij cadeaubonnen online?</em></h1>
+        <h1 class="hero" style="font-size:100px">Je klant zoekt nú een cadeau. <em>Alleen niet bij jou.</em></h1>
         <div class="giftwrap">
           <div class="gnotif"><div class="n-ic">🎁</div><div class="n-b"><div class="n-top"><b>Webshop</b><small>nu</small></div><p>Nieuwe bestelling · Cadeaubon €50</p></div></div>
           <div class="giftcard">
@@ -94,11 +94,11 @@ Zo doe je het wél (kijk maar naar het kerstmenu van @lilou_ede op slide 3):
         <div class="bottom">
           <div class="kicker">Voor salons & horeca</div>
           <h1 class="md">Cadeaubonnen met <em>aankooplink</em> op je eigen site.</h1>
-          <p class="lead">Eenmalig €149 (excl. btw) als uitbreiding op je MediaWow-website. Reageer CADEAU en ik vertel je hoe het werkt.</p>
-          <span class="btn lime-btn">Reageer: Cadeau</span>
+          <p class="lead">Eenmalig €149 (excl. btw) als uitbreiding. Reageer TIPS en ik check gratis wat jouw website nog mist.</p>
+          <span class="btn lime-btn">Reageer: Tips</span>
         </div>` },
     ],
-    caption: `Iemand zoekt nú een kadootje… 🎁
+    caption: `Je klant zoekt nú een cadeau. Alleen niet bij jou. 🎁
 Verkoop jij al cadeaubonnen online?
 
 Een behandeling, een diner of een sessie: alles kan een cadeaubon zijn. En cadeaubonnen zijn omzet vooraf:
@@ -108,7 +108,7 @@ Een behandeling, een diner of een sessie: alles kan een cadeaubon zijn. En cadea
 
 Heb je een website van MediaWow? Cadeaubonnen met aankooplink zijn een uitbreiding van eenmalig €149 (excl. btw).
 
-👇 Reageer CADEAU en ik vertel je hoe het werkt 🤍
+👇 Reageer TIPS en ik check gratis wat jouw website nog mist.
 
 #salon #beautysalon #horeca #cadeaubon #december #ondernemen #mediawow`,
   },
@@ -147,7 +147,7 @@ Heb je een website van MediaWow? Cadeaubonnen met aankooplink zijn een uitbreidi
         <div class="kicker">Klaar voor januari?</div>
         <h1 class="lg">Ik kijk vóór 1 januari <em>met je mee.</em></h1>
         <p class="lead">Reageer TIPS en je krijgt 3 persoonlijke tips voor je coachwebsite in je DM. Gratis.</p>
-        <span class="btn">Reageer: Tips</span>` },
+        <span class="btn lime-btn">Reageer: Tips</span>` },
     ],
     caption: `In januari zoeken ze een coach. Vinden ze jóu? 🗓️
 
@@ -172,7 +172,7 @@ Ken je een coach die dit moet zien? Tag ze even 🤍
     slides: [
       { theme: 'dark', html: `
         <div class="kicker">Morgen is het Black Friday</div>
-        <h1 class="hero" style="font-size:104px">Black Friday-korting op je website? <em>Liever niet.</em></h1>
+        <h1 class="hero" style="font-size:104px">Ik doe niet mee aan Black Friday. <em>Dit is waarom.</em></h1>
         <div class="tagwrap">
           <div class="pricetag">
             <div class="pt-hole"></div>
@@ -196,9 +196,9 @@ Ken je een coach die dit moet zien? Tag ze even 🤍
         <div class="kicker">Wat ik wél doe</div>
         <h1 class="lg">Het hele jaar door: <em>een gratis website-check.</em></h1>
         <p class="lead">Geen deadline, geen afteltimer. Gewoon eerlijk advies.</p>
-        <div class="hand" style="margin-top:30px">eens of oneens? zeg het in de comments ↓</div></div>` },
+        <div class="pill"><div class="av-user"></div><b>TIPS</b><span>Plaatsen</span></div></div>` },
     ],
-    caption: `Unpopular opinion: Black Friday-korting op je website? Liever niet. 🙃
+    caption: `Ik doe niet mee aan Black Friday. Dit is waarom.
 
 Een website is geen impulsaankoop:
 🔸 je kiest hem voor jaren, niet voor één dag
@@ -207,7 +207,7 @@ Een website is geen impulsaankoop:
 
 Wat ik wél doe: het hele jaar door een gratis website-check. Geen deadline, geen afteltimer. Gewoon eerlijk advies.
 
-Eens of oneens? Ik ben benieuwd 👇
+👇 Reageer TIPS en ik check jouw website gratis. Eerlijk advies, zonder afteltimer.
 
 #blackfriday #webdesign #ondernemen #websitelatenmaken #unpopularopinion #mediawow`,
   },
@@ -217,7 +217,7 @@ Eens of oneens? Ik ben benieuwd 👇
     id: '5-vr-checklist',
     slides: [
       { theme: 'greige', html: `
-        <div class="kicker">Bewaar deze post 📌</div>
+        <div class="kicker">Bewaar deze post</div>
         <h1 class="hero">5 dingen die je website moet kunnen <em><span class="mark">vóór 1 december.</span></em></h1>
         <div class="notepad">
           <div class="np-h">to do · december</div>
@@ -296,7 +296,7 @@ Minder dan 5? Reageer TIPS voor een gratis website-check, of plan een kennismaki
         <div class="fg">
         <div class="kicker">Gratis website-check</div>
         <h1 class="lg">Hoe heet <em>jouw</em> knop?</h1>
-        <p class="lead">Zet hem in de comments. Of reageer TIPS en ik check je hele website gratis.</p>
+        <p class="lead">Reageer TIPS en ik check je knoppen, en de rest van je website, gratis.</p>
         <div class="pill"><div class="av-user"></div><b>TIPS</b><span>Plaatsen</span></div></div>` },
     ],
     caption: `De duurste knop van je website? ‘Neem contact op.’ 💸
@@ -309,8 +309,7 @@ Zeg liever wat ze krijgen:
 🧭 Coach: Plan een gratis kennismaking
 🔨 Aannemer: Vraag een offerte aan
 
-Hoe heet jouw knop? Zet hem in de comments 👇
-Of reageer TIPS en ik check je hele website gratis.
+👇 Reageer TIPS en ik check je knoppen, en de rest van je website, gratis.
 
 #webdesign #ondernemen #websitetips #conversie #salon #horeca #coach #mediawow`,
   },
@@ -334,8 +333,8 @@ Of reageer TIPS en ik check je hele website gratis.
       { theme: 'greige', html: `
         <div class="kicker">Zin om te beginnen?</div>
         <h1 class="lg">Laten we <em>vrijblijvend</em> kennismaken.</h1>
-        <p class="lead">Plan een kennismaking via mediawow.nl, of reageer TIPS voor een gratis website-check.</p>
-        <span class="btn">Plan een kennismaking</span>` },
+        <p class="lead">Reageer TIPS voor een gratis website-check. Daarna kunnen we altijd vrijblijvend kennismaken.</p>
+        <span class="btn lime-btn">Reageer: Tips</span>` },
     ],
     caption: `Begin niet in januari. Begin nu. ☕️
 
