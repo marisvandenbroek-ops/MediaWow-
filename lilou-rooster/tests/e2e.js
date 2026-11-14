@@ -545,12 +545,58 @@ async function test(name, fn) {
     assert.strictEqual(db.notifications.filter(x => x.employee_id === e.id).length, 1, 'Noor krijgt meer dan één melding');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('lijsten: medewerker vinkt af, directie ziet wie en hoe laat; te warme koeling geeft melding', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne');
+    await p.click('[data-golists]'); await p.waitForSelector('details.lcard[open] [data-tick]');
+    const first = (await p.textContent('details.lcard[open] .lrow .lbl')).trim();
+    await p.click('details.lcard[open] button[data-tick] >> nth=0');
+    await p.waitForSelector('details.lcard[open] .lrow.done .who:has-text("Sanne")');
+    // het open-dicht blijft staan na het afvinken
+    assert.ok(await p.$('details.lcard[open]'), 'lijst klapte dicht na het afvinken');
+    await p.click('details.lcard:has-text("Temperaturen opening") summary');
+    await p.fill('details.lcard:has-text("Temperaturen opening") .tform input >> nth=0', '9,5');
+    await p.click('details.lcard:has-text("Temperaturen opening") .tform button >> nth=0');
+    await p.waitForSelector('details.lcard:has-text("Temperaturen opening") .lrow.flag');
+    let { db } = await demoDb(p);
+    const mark = db.employees.find(e => e.name.startsWith('Mark'));
+    assert.ok(db.notifications.some(n => n.employee_id === mark.id && /Temperatuur te hoog/.test(n.title)), 'directie kreeg geen temperatuurmelding');
+    const sanne = db.employees.find(e => e.name.startsWith('Sanne'));
+    assert.ok(db.ticks.every(t => t.employee_id === sanne.id && t.at), 'vinkje zonder naam of tijd');
+    // melding maken
+    await p.click('[data-newlog=melding]'); await p.fill('dialog [name=tekst]', 'Vaatwasser lekt'); await p.click('dialog button[value=save]');
+    await p.waitForSelector('.logrow:has-text("Vaatwasser lekt")');
+    // directie: zelfde opslag, ziet naam bij het vinkje en kan de melding afhandelen
+    await logout(p, '#directie'); await login(p, 'Mark'); await p.click('[data-tab=lijsten]');
+    await p.click(`details.lcard:has-text("Opening bediening") summary`);
+    await p.waitForSelector('details.lcard[open]:has-text("Opening bediening") .lrow.done .who:has-text("Sanne")');
+    assert.ok((await p.textContent('details.lcard[open]:has-text("Opening bediening") .lrow.done')).includes(first.slice(0, 15)), 'verkeerd onderdeel afgevinkt');
+    await p.waitForSelector('[data-lstats] td:has-text("Sanne")');
+    await p.click('[data-lopen] [data-resolve]'); await p.fill('dialog [name=r]', 'Monteur gebeld'); await p.click('dialog button[value=save]');
+    await p.waitForSelector('.logrow:has-text("Afgehandeld door Mark")');
+    ({ db } = await demoDb(p));
+    assert.ok(db.logs[0].resolved_by === mark.id, 'afhandeling niet op naam');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
+  await test('lijsten: directie past een lijst aan in Instellingen', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await p.click('[data-gosettings]'); await p.click('[data-ledit]:has-text("Opening bar")');
+    await p.waitForSelector('dialog [name=items]');
+    const v = await p.inputValue('dialog [name=items]');
+    await p.fill('dialog [name=items]', v + '\nMuntblaadjes klaar');
+    await p.click('dialog button[value=save]'); await p.waitForSelector('.toast:has-text("Lijst opgeslagen")');
+    const { db } = await demoDb(p); const l = db.checklists.find(x => x.name === 'Opening bar');
+    assert.ok(l.items.some(it => it.label === 'Muntblaadjes klaar'), 'onderdeel niet toegevoegd');
+    assert.strictEqual(l.items[0].id, 'i1', 'bestaande onderdelen kregen een nieuw id (vinkjes zouden verdwijnen)');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('telefoon: geen enkel scherm loopt rechts van het scherm af', async () => {
     // elk element binnen #view moet binnen de schermbreedte blijven (behalve in bewust scrollende tabellen)
     const outside = p => p.evaluate(() => { const W = document.documentElement.clientWidth, out = [];
       document.querySelectorAll('#view *').forEach(e => { if (e.closest('.table-wrap')) return; const r = e.getBoundingClientRect(); if (r.width && r.right > W + 1) out.push(e.tagName + '.' + String(e.className).slice(0, 30)); });
       return out.slice(0, 3); });
-    for (const [who, hash, tabs] of [['Mark', '#directie', ['overzicht', 'planning', 'klokken', 'aanvragen', 'team', 'uren', 'instellingen']], ['Sanne', '#personeel', ['mijn', 'planning', 'diensten', 'beschikbaar', 'aanvragen']]]) {
+    for (const [who, hash, tabs] of [['Mark', '#directie', ['overzicht', 'planning', 'klokken', 'lijsten', 'aanvragen', 'team', 'uren', 'instellingen']], ['Sanne', '#personeel', ['mijn', 'planning', 'diensten', 'beschikbaar', 'aanvragen']]]) {
       const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } }); const p = watch(await ctx.newPage());
       await fresh(p, hash); await login(p, who);
       for (const t of tabs) {

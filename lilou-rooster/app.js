@@ -25,6 +25,7 @@ const mins = t => { const [h, m] = hm(t).split(':').map(Number); return h * 60 +
 const shiftHours = s => { let m = mins(s.end_time) - mins(s.start_time); if (m <= 0) m += 1440; return Math.max(0, (m - (Number(s.break_minutes) || 0)) / 60); };
 const fmtH = h => { const m = Math.round(Math.abs(Number(h) || 0) * 60), H = Math.floor(m / 60), M = m % 60; return (h < 0 && m ? '−' : '') + (M ? `${H}:${String(M).padStart(2, '0')}` : `${H}`); };   // 7,67 → 7:40
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const DEFAULT_LISTS = [{"name": "Opening bediening", "department": "Bediening", "moment": "opening", "kind": "check", "sort": 10, "items": [{"id": "i1", "label": "Alarm uit, rondje gelopen, geen bijzonderheden"}, {"id": "i2", "label": "Lichten en muziek aan (juiste volume)"}, {"id": "i3", "label": "Zaal op temperatuur, ventilatie aan"}, {"id": "i4", "label": "Entree, ramen en terras toonbaar"}, {"id": "i5", "label": "Vloer schoon, niets onder de tafels"}, {"id": "i6", "label": "Tafels ingedekt; bestek en glazen tegen het licht gecontroleerd"}, {"id": "i7", "label": "Tafels recht en wiebelen niet"}, {"id": "i8", "label": "Tafelindeling klopt met de reserveringen"}, {"id": "i9", "label": "Kaarsen, bloemen en decoratie verzorgd"}, {"id": "i10", "label": "Menukaarten en wijnkaart schoon en actueel"}, {"id": "i11", "label": "Servicestations aangevuld (bestek, servetten, borden)"}, {"id": "i12", "label": "Water, karaffen en ijs klaar"}, {"id": "i13", "label": "Allergeenprikkers, bonnen en pennen aanwezig"}, {"id": "i14", "label": "Reserveringslijst doorgenomen, bijzonderheden gemarkeerd"}, {"id": "i15", "label": "Kassa aan, bonrol vol, pinautomaten getest"}, {"id": "i16", "label": "Kasgeld geteld"}, {"id": "i17", "label": "Telefoon opneembaar, voicemail afgeluisterd"}, {"id": "i18", "label": "Toiletten schoon en aangevuld"}], "active": true}, {"name": "Sluiting bediening", "department": "Bediening", "moment": "sluiting", "kind": "check", "sort": 20, "items": [{"id": "i1", "label": "Laatste gasten weg; toiletten en terras gecontroleerd"}, {"id": "i2", "label": "Tafels afgeruimd, afgenomen en ingedekt"}, {"id": "i3", "label": "Vloer geveegd en gedweild"}, {"id": "i4", "label": "Kaarsen uit, bloemen water gegeven"}, {"id": "i5", "label": "Menukaarten afgenomen en opgeborgen"}, {"id": "i6", "label": "Servicestations leeg, schoon en aangevuld"}, {"id": "i7", "label": "Karaffen en koelers schoon, omgekeerd drogen"}, {"id": "i8", "label": "Vuile was in de waszak"}, {"id": "i9", "label": "Alle tafels afgesloten, geen open bonnen"}, {"id": "i10", "label": "Dagafsluiting (Z-rapport) gedraaid"}, {"id": "i11", "label": "Kas geteld, verschil doorgegeven"}, {"id": "i12", "label": "Pinautomaten aan de lader"}, {"id": "i13", "label": "Toiletten eindschoonmaak en aangevuld"}, {"id": "i14", "label": "Terrasmeubilair opgeborgen"}, {"id": "i15", "label": "Ramen en deuren op slot, nooduitgangen dicht"}, {"id": "i16", "label": "Muziek en lichten uit"}, {"id": "i17", "label": "Gevonden voorwerpen opgeborgen"}], "active": true}, {"name": "Opening keuken", "department": "Keuken", "moment": "opening", "kind": "check", "sort": 30, "items": [{"id": "i1", "label": "Afzuiging aan vóór het aansteken van gas"}, {"id": "i2", "label": "Apparatuur opgestart en werkt (oven, fornuis, plancha, friteuse, vaatwasser)"}, {"id": "i3", "label": "Nooduitgang en blusdeken vrij"}, {"id": "i4", "label": "Houdbaarheid koelingen gecontroleerd, verlopen weg (waste)"}, {"id": "i5", "label": "Prikthermometer schoon en werkt"}, {"id": "i6", "label": "Handenwasplaats: zeep, papier, desinfectie"}, {"id": "i7", "label": "Werkbanken, planken en messen schoon en gedesinfecteerd"}, {"id": "i8", "label": "Iedereen in schone keukenkleding, haar bedekt, geen sieraden"}, {"id": "i9", "label": "Gezondheidscheck: niemand met diarree, braken, koorts of open wond"}, {"id": "i10", "label": "Reserveringen en allergieën doorgenomen"}, {"id": "i11", "label": "Mise-en-place-lijsten per partie klaar"}, {"id": "i12", "label": "Leveringen van vandaag bekend"}], "active": true}, {"name": "Sluiting keuken", "department": "Keuken", "moment": "sluiting", "kind": "check", "sort": 40, "items": [{"id": "i1", "label": "Mise-en-place afgedekt, gelabeld en in de koeling"}, {"id": "i2", "label": "Terugkoelen gestart en geregistreerd"}, {"id": "i3", "label": "Niets buiten de koeling"}, {"id": "i4", "label": "Waste van vandaag geregistreerd"}, {"id": "i5", "label": "Werkbanken, koelwerkbanken en planken schoon en gedesinfecteerd"}, {"id": "i6", "label": "Fornuis, plancha en salamander ontvet"}, {"id": "i7", "label": "Oven/combisteamer reinigingsprogramma gedraaid"}, {"id": "i8", "label": "Friteuse: olie gecontroleerd/gefilterd, afgedekt"}, {"id": "i9", "label": "Vloer geveegd, gedweild, putjes leeg"}, {"id": "i10", "label": "Afval en glas weg, bakken schoon"}, {"id": "i11", "label": "Vaatwasser leeg, filters schoon, deur open"}, {"id": "i12", "label": "Gas dicht, apparatuur uit (behalve koeling)"}, {"id": "i13", "label": "Koelingen en vriezers goed dicht"}, {"id": "i14", "label": "Afzuiging uit"}, {"id": "i15", "label": "Achterdeur op slot"}, {"id": "i16", "label": "Bestellingen verstuurd"}, {"id": "i17", "label": "Overdracht naar de volgende dienst doorgegeven"}], "active": true}, {"name": "Opening bar", "department": "Bar", "moment": "opening", "kind": "check", "sort": 50, "items": [{"id": "i1", "label": "Koelingen aangevuld (FIFO)"}, {"id": "i2", "label": "Open flessen gecontroleerd op datum en geproefd"}, {"id": "i3", "label": "Garnituren vers gesneden, afgedekt, gelabeld"}, {"id": "i4", "label": "IJsbak vol, schone schep in de bak"}, {"id": "i5", "label": "Glaswerk gepoetst en op de vaste plek"}, {"id": "i6", "label": "Eerste bier getapt en geproefd, lekbak schoon"}, {"id": "i7", "label": "Koffiemachine warm, eerste espresso geproefd"}, {"id": "i8", "label": "Melk, thee, suiker aangevuld"}, {"id": "i9", "label": "Kassa en pin aan de bar werken"}, {"id": "i10", "label": "Werkblad schoon en leeg"}], "active": true}, {"name": "Sluiting bar", "department": "Bar", "moment": "sluiting", "kind": "check", "sort": 60, "items": [{"id": "i1", "label": "Open flessen afgesloten en gelabeld met openingsdatum"}, {"id": "i2", "label": "Garnituren weg of afgedekt en gelabeld"}, {"id": "i3", "label": "Koelingen aangevuld voor morgen"}, {"id": "i4", "label": "Koffiemachine gereinigd (backflush, stoompijpje, bakjes)"}, {"id": "i5", "label": "Glazenspoelmachine leeg en schoon"}, {"id": "i6", "label": "Tapkranen afgenomen, lekbak schoon, kranen dicht"}, {"id": "i7", "label": "IJsbak leeg en schoon"}, {"id": "i8", "label": "Werkblad, spoelbak en vloer achter de bar schoon"}, {"id": "i9", "label": "Breuk en derving geregistreerd"}, {"id": "i10", "label": "Bestellijst bar bijgewerkt"}], "active": true}, {"name": "Temperaturen opening", "department": "", "moment": "opening", "kind": "temp", "sort": 70, "items": [{"id": "i1", "label": "K1 Koelcel", "max": 7.0}, {"id": "i2", "label": "K2 Koelwerkbank keuken", "max": 7.0}, {"id": "i3", "label": "K3 Koeling bar", "max": 7.0}, {"id": "i4", "label": "V1 Vriezer", "max": -18.0}], "active": true}, {"name": "Temperaturen sluiting", "department": "", "moment": "sluiting", "kind": "temp", "sort": 80, "items": [{"id": "i1", "label": "K1 Koelcel", "max": 7.0}, {"id": "i2", "label": "K2 Koelwerkbank keuken", "max": 7.0}, {"id": "i3", "label": "K3 Koeling bar", "max": 7.0}, {"id": "i4", "label": "V1 Vriezer", "max": -18.0}], "active": true}, {"name": "Weekschoonmaak", "department": "", "moment": "week", "kind": "check", "sort": 90, "items": [{"id": "i1", "label": "Koelcellen en koelwerkbanken leeg en grondig schoon"}, {"id": "i2", "label": "Oven/combisteamer grondig"}, {"id": "i3", "label": "Filters afzuigkap in de vaatwasser"}, {"id": "i4", "label": "Wanden en tegels keuken"}, {"id": "i5", "label": "Afvalbakken uitgespoten"}, {"id": "i6", "label": "Droge opslag: schappen en vloer"}, {"id": "i7", "label": "Barkoelingen uitgenomen en schoon"}, {"id": "i8", "label": "IJsmachine gereinigd"}, {"id": "i9", "label": "Flessen en spiritrekken stofvrij"}, {"id": "i10", "label": "Ramen en deuren volledig"}, {"id": "i11", "label": "Lampen, lijsten en vensterbanken stofvrij"}], "active": true}, {"name": "Maandschoonmaak", "department": "", "moment": "maand", "kind": "check", "sort": 100, "items": [{"id": "i1", "label": "Vriezers ontdooid en schoon"}, {"id": "i2", "label": "Afzuigkap afgenomen"}, {"id": "i3", "label": "Vaatwasser ontkalkt"}, {"id": "i4", "label": "IJsmachine gedesinfecteerd"}], "active": true}];
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36));
 const clone = o => JSON.parse(JSON.stringify(o));
 const weekNr = d => {
@@ -73,6 +74,7 @@ const ICON = {
   mijn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
   team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9.5" r="2.5"/><path d="M16.5 14.6c2.3.2 4 1.7 4.5 4.4"/></svg>',
   aanvragen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20.5V5a1.5 1.5 0 0 1 1.5-1.5h11A1.5 1.5 0 0 1 19 5v15.5l-3.5-2-3.5 2-3.5-2z"/><path d="M9 9h6M9 12.5h4"/></svg>',
+  lijsten: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="18" rx="2"/><path d="M9 3.5h6v2.5H9zM8.5 11l1.5 1.5 3-3M8.5 16.5h7"/></svg>',
   uren: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>',
   overzicht: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19a8 8 0 1 1 16 0"/><path d="M12 19l4-6"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></svg>',
   settings: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
@@ -182,6 +184,9 @@ function demoStore() {
   const notifyTeam = (t, b, v, except) => db.employees.filter(e => e.active !== false && e.id !== except).forEach(e => notify(e.id, t, b, v));
   const shiftById = id => db.shifts.find(s => s.id === id);
   db.audit ||= [];
+  db.checklists ||= DEFAULT_LISTS.map(l => ({ ...l, id: uid(), items: l.items.map(it => ({ ...it })) }));
+  db.ticks ||= []; db.logs ||= [];
+  const leads = () => db.employees.filter(e => ['manager', 'planner'].includes(e.role) && e.active !== false);
   const audit = (tbl, rowId, action, oldObj, newObj) => {
     let o = oldObj ? { ...oldObj } : null, n = newObj ? { ...newObj } : null;
     if (action === 'update') {
@@ -341,6 +346,49 @@ function demoStore() {
     async resetCalendarToken() { return uid(); },
     async requests() {
       return clone(db.requests.filter(r => canPlan() || r.employee_id === mem)).sort((a, b) => b.created_at.localeCompare(a.created_at));
+    },
+    // --- lijsten
+    async checklists() { return clone(db.checklists).sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name)); },
+    async saveChecklist(c) {
+      if (!isMgr()) throw new Error('Geen rechten');
+      if (c.id) Object.assign(db.checklists.find(x => x.id === c.id), c); else db.checklists.push({ active: true, ...c, id: uid() });
+      save();
+    },
+    async deleteChecklist(id) { db.checklists = db.checklists.filter(x => x.id !== id); db.ticks = db.ticks.filter(t => t.checklist_id !== id); save(); },
+    async ticks(periods) { return clone(db.ticks.filter(t => periods.includes(t.period))); },
+    async ticksSince(from) { return clone(db.ticks.filter(t => t.at.slice(0, 10) >= from)); },
+    async tick(t) {
+      const l = db.checklists.find(x => x.id === t.checklist_id), it = l?.items.find(x => x.id === t.item_id);
+      if (!it) throw new Error('Onbekend onderdeel van de lijst.');
+      if (db.ticks.some(x => x.checklist_id === t.checklist_id && x.period === t.period && x.item_id === t.item_id)) throw Object.assign(new Error('duplicate'), { code: '23505' });
+      let flagged = false;
+      if (l.kind === 'temp') {
+        if (t.value == null) throw new Error('Vul een temperatuur in.');
+        flagged = (it.max != null && t.value > it.max) || (it.min != null && t.value < it.min);
+        if (flagged) leads().forEach(e => notify(e.id, '🌡️ Temperatuur te hoog', `${it.label}: ${t.value} °C (norm max ${it.max} °C), gemeten door ${fname(mem)}.`, 'lijsten'));
+      }
+      db.ticks.push({ ...t, id: uid(), employee_id: mem, at: new Date().toISOString(), flagged, value: t.value ?? null });
+      save();
+    },
+    async untick(id) {
+      const t = db.ticks.find(x => x.id === id); if (!t) return;
+      if (t.employee_id !== mem && !canPlan()) throw new Error('Alleen wie het afvinkte of de leiding kan dit ongedaan maken');
+      db.ticks = db.ticks.filter(x => x.id !== id); save();
+    },
+    async logs(from, to, openOnly) {
+      return clone(db.logs.filter(x => (canPlan() || x.employee_id === mem) && x.at.slice(0, 10) >= from && x.at.slice(0, 10) <= to && (!openOnly || (x.kind === 'melding' && !x.resolved_at)))).sort((a, b) => b.at.localeCompare(a.at));
+    },
+    async addLog(kind, data) {
+      const t = data.temp === '' || data.temp == null ? null : Number(data.temp);
+      const flagged = kind === 'melding' || (kind === 'ontvangst' && (data.ok === false || (t != null && t > (data.max === '' || data.max == null ? 7 : Number(data.max))))) || (kind === 'kern' && t != null && t < 75);
+      db.logs.push({ id: uid(), kind, data, employee_id: mem, at: new Date().toISOString(), flagged, resolved_at: null, resolved_by: null, resolution: null });
+      const title = kind === 'melding' ? ({ incident: '⚠️ Incident gemeld', klacht: '💬 Klacht gemeld' }[data.soort] || '🔧 Gebrek gemeld') : kind === 'kern' ? '🌡️ Kerntemperatuur te laag' : '📦 Levering afgekeurd of te warm';
+      if (flagged) leads().filter(e => e.id !== mem).forEach(e => notify(e.id, title, `${kind === 'melding' ? (data.tekst || '').slice(0, 120) : (data.product || data.leverancier || '')} (${fname(mem)})`, 'lijsten'));
+      save();
+    },
+    async resolveLog(id, resolution) {
+      if (!canPlan()) throw new Error('Geen rechten');
+      Object.assign(db.logs.find(x => x.id === id), { resolved_at: new Date().toISOString(), resolved_by: mem, resolution }); save();
     },
     async sickRecover(id) {
       const r = db.requests.find(x => x.id === id && x.employee_id === mem && x.type === 'ziek'); if (!r) throw new Error('Ziekmelding niet gevonden');
@@ -664,6 +712,28 @@ async function supabaseStore() {
     async requests() { return ok(await sb.from('requests').select('*').order('created_at', { ascending: false })); },
     async saveRequest(r) { ok(await sb.from('requests').insert(r)); },
     async sickRecover(id) { const { error } = await sb.rpc('sick_recover', { p_id: id }); if (error) throw error; },
+    // --- lijsten
+    async checklists() { return ok(await sb.from('checklists').select('*').order('sort').order('name')); },
+    async saveChecklist(c) {
+      if (c.id) { const { id, ...rest } = c; ok(await sb.from('checklists').update(rest).eq('id', id)); }
+      else ok(await sb.from('checklists').insert(c));
+    },
+    async deleteChecklist(id) { ok(await sb.from('checklists').delete().eq('id', id)); },
+    async ticks(periods) { return periods.length ? ok(await sb.from('checklist_ticks').select('*').in('period', periods)) : []; },
+    async ticksSince(from) {
+      const out = [];
+      for (let i = 0; ; i += 1000) { const part = ok(await sb.from('checklist_ticks').select('employee_id, at, flagged').gte('at', from).order('at').range(i, i + 999)); out.push(...part); if (part.length < 1000) break; }
+      return out;
+    },
+    async tick(t) { ok(await sb.from('checklist_ticks').insert({ ...t, employee_id: S.me.id })); },
+    async untick(id) { ok(await sb.from('checklist_ticks').delete().eq('id', id)); },
+    async logs(from, to, openOnly) {
+      let q = sb.from('log_entries').select('*').order('at', { ascending: false }).limit(300);
+      if (openOnly) q = q.eq('kind', 'melding').is('resolved_at', null);
+      return ok(await q.gte('at', new Date(from + 'T00:00:00').toISOString()).lt('at', new Date(iso(addDays(parse(to), 1)) + 'T00:00:00').toISOString()));
+    },
+    async addLog(kind, data) { ok(await sb.from('log_entries').insert({ kind, data, employee_id: S.me.id })); },
+    async resolveLog(id, resolution) { ok(await sb.from('log_entries').update({ resolved_at: new Date().toISOString(), resolution }).eq('id', id)); },
     async decideRequest(id, status, note, hours) {
       const u = { status, manager_note: note || null, decided_at: new Date().toISOString() };
       if (hours !== undefined) u.leave_hours = hours;
@@ -880,7 +950,7 @@ function renderUnlinked(email) {
   $('[data-out]').onclick = signOut;
 }
 
-async function signOut() { clearInterval(S.poll); await store.signOut(); S.me = null; renderAuth(); }
+async function signOut() { clearInterval(S.poll); await store.signOut(); S.me = null; S.lDate = S.lDep = S.lOpen = S.lKey = null; renderAuth(); }
 
 // Controleert of de eigen rol of status is gewijzigd (bv. shiftleader → medewerker, of uit dienst).
 // De database weigert ongeoorloofde acties al direct; dit zorgt dat ook het scherm meteen klopt.
@@ -918,14 +988,14 @@ async function handleSession(r) {
   try { applySettings(await store.settings()); } catch (e) { /* standaardwaarden blijven gelden */ }
   S.view = isMgr() ? 'overzicht' : canPlan() ? 'planning' : 'mijn';
   const hv = location.hash.slice(1).split(':');
-  if (tabsFor().some(([k]) => k === hv[0]) || (isMgr() && hv[0] === 'instellingen')) { S.view = hv[0]; if (hv[1]) S.reqTab = hv[1]; }
+  if (tabsFor().some(([k]) => k === hv[0]) || hv[0] === 'lijsten' || (isMgr() && hv[0] === 'instellingen')) { S.view = hv[0]; if (hv[1]) S.reqTab = hv[1]; }
   renderShell();
 }
 
 /* ================= Shell ================= */
 function tabsFor() {
   return isMgr()
-    ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['aanvragen', 'Aanvragen'], ['team', 'Team'], ['uren', 'Uren & export']]
+    ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['lijsten', 'Lijsten'], ['aanvragen', 'Aanvragen'], ['team', 'Team'], ['uren', 'Uren & export']]
     : [['mijn', 'Mijn rooster'], ['planning', canPlan() ? 'Planning' : 'Team'], ['diensten', 'Diensten'], ['beschikbaar', 'Beschikbaar'], ['aanvragen', 'Verlof']];
 }
 
@@ -998,6 +1068,7 @@ async function go(view) {
     else if (view === 'klokken') await viewClockMgr(el);
     else if (view === 'diensten') await viewDiensten(el);
     else if (view === 'beschikbaar') await viewBeschikbaar(el);
+    else if (view === 'lijsten') await viewLijsten(el);
     else if (view === 'instellingen' && isMgr()) await viewSettings(el);
     else if (view === 'overzicht' && isMgr()) await viewDashboard(el);
   } catch (e) {
@@ -1761,7 +1832,17 @@ async function viewDashboard(el) {
   const staffing = st.staffing || {};
   let short = 0;
   days.forEach(d => { if (specialDay(d)?.kind === 'gesloten') return; const base = staffing[dayIdx(parse(d))] || {}; Object.entries(base).forEach(([p, n]) => { const h = shifts.filter(x => x.date === d && x.employee_id && x.position === p).length; if (h < Number(n)) short++; }); });
+  const yest = iso(addDays(new Date(), -1));
+  let listMiss = 0, openMeld = 0;
+  try {
+    const cls = (await store.checklists()).filter(l => l.active !== false && ['opening', 'sluiting', 'dag'].includes(l.moment));
+    const tky = await store.ticks([yest]);
+    listMiss = cls.filter(l => (l.items || []).some(it => !tky.some(t => t.checklist_id === l.id && t.item_id === it.id))).length;
+    openMeld = (await store.logs(iso(addDays(new Date(), -180)), todayIso(), true)).length;
+  } catch (e) { /* lijsten nog niet ingesteld */ }
   const att = [
+    openMeld && [`${openMeld} open ${openMeld === 1 ? 'melding' : 'meldingen'} (gebrek, incident of klacht)`, 'lijsten'],
+    listMiss && [`${listMiss} ${listMiss === 1 ? 'lijst' : 'lijsten'} gisteren niet helemaal afgevinkt`, 'lijsten-gisteren'],
     pendReq && [`${pendReq} ${pendReq === 1 ? 'aanvraag wacht' : 'aanvragen wachten'} op je beslissing`, 'aanvragen:verlof'],
     swapsWait && [`${swapsWait} ${swapsWait === 1 ? 'ruil wacht' : 'ruilen wachten'} op goedkeuring`, 'aanvragen:ruilen'],
     openShifts.length && [`${openShifts.length} open ${openShifts.length === 1 ? 'dienst' : 'diensten'}${openApps ? ` · ${openApps} aanmelding${openApps === 1 ? '' : 'en'}` : ''}`, 'aanvragen:open'],
@@ -1839,6 +1920,7 @@ async function viewDashboard(el) {
     const g = ev.target.closest('[data-goto2]');
     if (g) {
       let v = g.dataset.goto2;
+      if (v === 'lijsten-gisteren') { S.lDate = iso(addDays(new Date(), -1)); v = 'lijsten'; }
       if (v === 'planning' || v === 'klokken') S.week = S.dashWeek;
       if (v === 'planning-later') { const c = ahead.filter(x => !x.published && x.date > to).sort((a, b) => a.date.localeCompare(b.date))[0]; S.week = c ? mondayOf(parse(c.date)) : S.dashWeek; v = 'planning'; }
       return openView(v);
@@ -1879,6 +1961,189 @@ async function resolveConflicts(c0, how) {
   return how === 'delete' ? ` · ${c.length} dienst${c.length > 1 ? 'en' : ''} verwijderd` : ` · ${c.length} open dienst${c.length > 1 ? 'en' : ''} gemaakt`;
 }
 
+/* ================= Lijsten (afvinken met naam en tijd, temperaturen, registraties) ================= */
+const MOMENT = { opening: 'Opening', sluiting: 'Sluiting', dag: 'Vandaag', week: 'Deze week', maand: 'Deze maand' };
+const periodOf = (moment, ds) => moment === 'week' ? iso(mondayOf(parse(ds))) : moment === 'maand' ? ds.slice(0, 7) : ds;
+const tTime = ts => new Date(ts).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+const LOGK = { ontvangst: '📦 Ontvangst goederen', kern: '🌡️ Kerntemperatuur', melding: '⚠️ Melding' };
+const MELD = { gebrek: 'Technisch gebrek', incident: 'Incident of ongeval', klacht: 'Klacht van een gast', ongedierte: 'Ongedierte' };
+// welke lijsten horen bij mij: mijn functie + lijsten voor iedereen; leiding ziet alles
+const myLists = (lists, dep) => lists.filter(l => l.active !== false && (dep === 'alle' ? true : dep ? (!l.department || l.department === dep) : (canPlan() || !l.department || l.department === S.me.position)));
+
+async function viewLijsten(el) {
+  const today = todayIso();
+  if (!canPlan() || !S.lDate) S.lDate = today;
+  const ds = S.lDate, lead = canPlan();
+  S.lDep ??= lead ? 'alle' : '';
+  if (S.lKey !== ds + S.lDep) { S.lKey = ds + S.lDep; S.lOpen = null; }   // andere dag of afdeling: standaard open/dicht
+  const [lists0, emps] = await Promise.all([store.checklists(), store.employees()]);
+  const lists = myLists(lists0, lead ? S.lDep : '');
+  const periods = [...new Set(lists.map(l => periodOf(l.moment, ds)))];
+  const [ticks, logs] = await Promise.all([store.ticks(periods), store.logs(ds, ds)]);
+  const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+  const fn = id => (byId[id]?.name || '?').split(' ')[0];
+  const tk = (l, it) => ticks.find(t => t.checklist_id === l.id && t.period === periodOf(l.moment, ds) && t.item_id === it.id);
+  const past = ds < today;
+  const card = l => {
+    const items = l.items || [], done = items.filter(it => tk(l, it)).length, full = items.length && done === items.length;
+    const flagged = items.some(it => tk(l, it)?.flagged);
+    const stat = full ? `<span class="pill ok">Klaar ✓</span>` : past && l.moment !== 'week' && l.moment !== 'maand' ? `<span class="pill bad">Niet afgemaakt</span>` : `<span class="pill">${done}/${items.length}</span>`;
+    const rows = items.map(it => {
+      const t = tk(l, it), mine = t && t.employee_id === S.me.id;
+      const undo = t && !past && (mine || lead) ? `<button type="button" class="linkbtn small" data-untick="${t.id}" aria-label="Vinkje weghalen">ongedaan</button>` : '';
+      const who = t ? `<span class="who">${esc(fn(t.employee_id))} · ${tTime(t.at)}</span>` : '';
+      if (l.kind === 'temp') {
+        const norm = it.max != null && it.max !== '' ? `max ${it.max} °C` : it.min != null && it.min !== '' ? `min ${it.min} °C` : '';
+        return `<div class="lrow temp ${t ? 'done' : ''} ${t?.flagged ? 'flag' : ''}"><span class="lbl">${esc(it.label)}<small>${norm}</small></span>
+          ${t ? `<span class="tval">${String(t.value).replace('.', ',')} °C${t.flagged ? ' ⚠' : ''}</span>${who}${undo}`
+              : past ? '<span class="missed">niet gemeten</span>' : `<form class="tform" data-temp="${l.id}|${it.id}"><input name="v" type="text" inputmode="decimal" placeholder="°C" aria-label="Temperatuur ${esc(it.label)}" required><button class="btn sm primary">Opslaan</button></form>`}</div>`;
+      }
+      return `<div class="lrow ${t ? 'done' : ''}">${t || past ? `<span class="box ${t ? 'on' : 'miss'}" aria-hidden="true">${t ? '✓' : ''}</span>` : `<button type="button" class="box" data-tick="${l.id}|${it.id}" aria-label="Afvinken: ${esc(it.label)}"></button>`}
+        <span class="lbl" ${!t && !past ? `data-tick="${l.id}|${it.id}"` : ''}>${esc(it.label)}</span>${t ? who + undo : past ? '<span class="missed">niet gedaan</span>' : ''}</div>`;
+    }).join('');
+    const isOpen = S.lOpen ? S.lOpen.has(l.id) : (!lead && l.id === firstOpen);
+    return `<details class="card lcard ${full ? 'full' : ''} ${flagged ? 'flag' : ''}" ${isOpen ? 'open' : ''} data-list="${l.id}">
+      <summary><span class="lname">${esc(l.name)}${l.department ? ` <small>${esc(l.department)}</small>` : ''}</span>${stat}</summary>
+      <div class="lrows">${rows || '<p class="hint">Nog geen onderdelen. Voeg ze toe bij Instellingen.</p>'}</div></details>`;
+  };
+  // medewerkers: alleen de eerste lijst die nog niet af is staat open; de rest ingeklapt (blijft zo bij het afvinken)
+  const firstOpen = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).sort((a, b) => (['opening', 'dag', 'sluiting'].indexOf(a.moment) - ['opening', 'dag', 'sluiting'].indexOf(b.moment)) || a.sort - b.sort)
+    .find(l => (l.items || []).some(it => !tk(l, it)))?.id;
+  const group = (title, ls) => ls.length ? `<section class="lgroup"><h2>${title}</h2>${ls.map(card).join('')}</section>` : '';
+  const dayLists = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).sort((a, b) => (['opening', 'dag', 'sluiting'].indexOf(a.moment) - ['opening', 'dag', 'sluiting'].indexOf(b.moment)) || a.sort - b.sort);
+  const logRow = x => `<li class="logrow ${x.flagged && !x.resolved_at ? 'flag' : ''}"><strong>${LOGK[x.kind]}</strong> · ${tTime(x.at)} · ${esc(fn(x.employee_id))}<br>${logText(x)}${x.resolved_at ? `<br><span class="muted small">✓ Afgehandeld door ${esc(fn(x.resolved_by))}${x.resolution ? `: ${esc(x.resolution)}` : ''}</span>` : lead && x.kind === 'melding' ? ` <button type="button" class="btn sm" data-resolve="${x.id}">Afhandelen</button>` : ''}</li>`;
+  const deps = ['alle', ...CFG.posities];
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Lijsten</h1><p>${lead ? 'Wie wat afvinkt, met tijd. Rood = niet gedaan of buiten de norm.' : 'Vink af wat je gedaan hebt. Je naam en de tijd worden bewaard.'}</p></div>
+      ${lead ? `<div class="weeknav"><button class="btn icon" data-lday="-1" aria-label="Vorige dag">‹</button><div class="label"><strong>${ds === today ? 'Vandaag' : esc(fmtLong(ds))}</strong><span>${ds === today ? esc(fmtLong(ds)) : ''}</span></div><button class="btn icon" data-lday="1" aria-label="Volgende dag" ${ds >= today ? 'disabled' : ''}>›</button></div>` : ''}</div>
+    ${lead ? `<div class="filters ldeps">${deps.map(d => `<button type="button" class="${S.lDep === d ? 'active' : ''}" data-ldep="${esc(d)}">${d === 'alle' ? 'Alles' : esc(d)}</button>`).join('')}</div>` : ''}
+    <div class="logbtns"><button class="btn" data-newlog="ontvangst">📦 Ontvangst goederen</button><button class="btn" data-newlog="kern">🌡️ Kerntemperatuur</button><button class="btn" data-newlog="melding">⚠️ Melding maken</button></div>
+    ${group(ds === today ? 'Vandaag' : 'Deze dag', dayLists)}
+    ${group('Deze week', lists.filter(l => l.moment === 'week'))}
+    ${group('Deze maand', lists.filter(l => l.moment === 'maand'))}
+    ${!lists.length ? '<div class="card empty">Er zijn nog geen lijsten voor jouw functie.</div>' : ''}
+    <section class="lgroup"><h2>Registraties ${ds === today ? 'vandaag' : 'deze dag'}</h2>${logs.length ? `<ul class="card loglist">${logs.map(logRow).join('')}</ul>` : '<p class="hint">Nog niets geregistreerd.</p>'}</section>
+    ${lead ? '<section class="lgroup" data-lopen></section><section class="lgroup" data-lstats></section>' : ''}`;
+  if (lead) fillLeadPanels(el, byId, fn).catch(() => {});
+
+  const tickIt = async (cid, iid, value) => {
+    const l = lists.find(x => x.id === cid);
+    try { await store.tick({ checklist_id: cid, period: periodOf(l.moment, ds), item_id: iid, ...(value != null ? { value } : {}) }); }
+    catch (e) { return toast(/duplicate|unique|23505/i.test(errMsg(e) + (e.code || '')) ? 'Iemand anders heeft dit net afgevinkt' : errMsg(e), 'error'); }
+    rerender();
+  };
+  if (!el.dataset.lToggle) { el.dataset.lToggle = '1'; el.addEventListener('toggle', ev => { if (S.view === 'lijsten' && ev.target.matches('details.lcard')) S.lOpen = new Set($$('details.lcard[open]', el).map(d => d.dataset.list)); }, true); }
+  el.onclick = async ev => {
+    const t = ev.target.closest('[data-tick]'); if (t) { const [c, i] = t.dataset.tick.split('|'); return tickIt(c, i); }
+    const u = ev.target.closest('[data-untick]'); if (u) { try { await store.untick(u.dataset.untick); } catch (e) { return toast(errMsg(e), 'error'); } return rerender(); }
+    const d = ev.target.closest('[data-lday]'); if (d) { S.lDate = iso(addDays(parse(ds), Number(d.dataset.lday))); if (S.lDate > today) S.lDate = today; return rerender(); }
+    const dp = ev.target.closest('[data-ldep]'); if (dp) { S.lDep = dp.dataset.ldep; return rerender(); }
+    const nl = ev.target.closest('[data-newlog]'); if (nl) return logDialog(nl.dataset.newlog);
+    const r = ev.target.closest('[data-resolve]'); if (r) return resolveDialog(r.dataset.resolve);
+    if (ev.target.closest('[data-gosettings2]')) return go('instellingen');
+  };
+  el.onsubmit = ev => {
+    const f = ev.target.closest('[data-temp]'); if (!f) return;
+    ev.preventDefault();
+    const v = Number(String(f.v.value).replace(',', '.').trim());
+    if (!f.v.value.trim() || Number.isNaN(v) || v < -40 || v > 120) return toast('Vul een geldige temperatuur in, bijvoorbeeld 4 of -18', 'error');
+    const [c, i] = f.dataset.temp.split('|'); tickIt(c, i, v);
+  };
+}
+const logText = x => {
+  const d = x.data || {};
+  if (x.kind === 'ontvangst') return `${esc(d.leverancier || '')}${d.product ? ' · ' + esc(d.product) : ''}${d.temp !== '' && d.temp != null ? ` · ${esc(String(d.temp).replace('.', ','))} °C` : ''} · ${d.ok === false || d.ok === 'false' ? `<b class="bad">afgekeurd</b>${d.reden ? ': ' + esc(d.reden) : ''}` : 'goedgekeurd'}`;
+  if (x.kind === 'kern') return `${esc(d.product || '')} · ${esc(String(d.temp ?? '').replace('.', ','))} °C${x.flagged ? ' <b class="bad">te laag (min. 75 °C)</b>' : ''}${d.terug ? ` · terugkoelen: ${esc(String(d.terug).replace('.', ','))} °C na 5 uur` : ''}`;
+  return `<b>${esc(MELD[d.soort] || 'Melding')}</b>: ${esc(d.tekst || '')}`;
+};
+async function fillLeadPanels(el, byId, fn) {
+  const since = iso(addDays(new Date(), -30));
+  const [open, recent, lists] = await Promise.all([store.logs(iso(addDays(new Date(), -180)), todayIso(), true), store.ticksSince(since), store.checklists()]);
+  const op = $('[data-lopen]', el), st = $('[data-lstats]', el); if (!op || !st) return;
+  op.innerHTML = open.length ? `<h2>Openstaande meldingen <span class="muted">(${open.length})</span></h2><ul class="card loglist">${open.map(x => `<li class="logrow flag"><strong>${LOGK[x.kind]}</strong> · ${esc(fmtShort(iso(new Date(x.at))))} ${tTime(x.at)} · ${esc(fn(x.employee_id))}<br>${logText(x)} <button type="button" class="btn sm" data-resolve="${x.id}">Afhandelen</button></li>`).join('')}</ul>` : '';
+  const per = {};
+  recent.forEach(t => { const p = (per[t.employee_id] ||= { n: 0, flag: 0, last: '' }); p.n++; if (t.flagged) p.flag++; if (t.at > p.last) p.last = t.at; });
+  const rows = Object.entries(per).sort((a, b) => b[1].n - a[1].n);
+  st.innerHTML = `<h2>Wie vinkt af <span class="muted">(laatste 30 dagen)</span></h2>${rows.length ? `<div class="table-wrap card"><table class="table"><thead><tr><th>Medewerker</th><th class="num">Vinkjes</th><th class="num">Buiten de norm</th><th class="num hide-sm">Laatst</th></tr></thead><tbody>${rows.map(([id, p]) => `<tr><td>${esc(byId[id]?.name || '?')}</td><td class="num">${p.n}</td><td class="num">${p.flag || '—'}</td><td class="num hide-sm">${esc(fmtShort(iso(new Date(p.last))))} ${tTime(p.last)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="hint">Nog niets afgevinkt.</p>'}
+    <p class="hint">Lijsten aanpassen (taken, koelingen, afdeling) doe je bij <button class="linkbtn" data-gosettings2>Instellingen</button>. ${lists.filter(l => l.active !== false).length} actieve lijsten.</p>`;
+}
+function logDialog(kind) {
+  const body = kind === 'ontvangst' ? `
+      <label class="field">Leverancier<input name="leverancier" required maxlength="60" placeholder="bv. Sligro"></label>
+      <label class="field">Product(en)<input name="product" maxlength="120" placeholder="bv. vis, zuivel"></label>
+      <div class="row keep"><label class="field">Temperatuur (°C)<input name="temp" inputmode="decimal" placeholder="bv. 3"></label><label class="field">Norm max (°C)<input name="max" inputmode="decimal" value="7"></label></div>
+      <label class="check"><input type="checkbox" name="tht" checked> Houdbaarheid en verpakking in orde</label>
+      <fieldset class="choice"><legend>Oordeel</legend><label class="check"><input type="radio" name="ok" value="true" checked> Goedgekeurd</label><label class="check"><input type="radio" name="ok" value="false"> Afgekeurd</label></fieldset>
+      <label class="field">Reden bij afkeuren<input name="reden" maxlength="160"></label>`
+    : kind === 'kern' ? `
+      <label class="field">Product<input name="product" required maxlength="80" placeholder="bv. kippendij"></label>
+      <label class="field">Kerntemperatuur (°C)<input name="temp" required inputmode="decimal" placeholder="minimaal 75"></label>
+      <label class="field">Terugkoelen: temperatuur na 5 uur (°C, optioneel)<input name="terug" inputmode="decimal" placeholder="maximaal 7"></label>`
+    : `<label class="field">Soort<select name="soort">${Object.entries(MELD).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
+      <label class="field">Wat is er aan de hand?<textarea name="tekst" required maxlength="600" rows="4" placeholder="Wat, waar en wanneer. Bij een klacht: tafel en wat de gast zei."></textarea></label>
+      <p class="hint" style="margin:0">De directie en shiftleaders krijgen meteen een melding.</p>`;
+  openDialog(LOGK[kind], body + `<div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
+    async onSubmit(fd) {
+      const num = k => { const v = String(fd.get(k) || '').replace(',', '.').trim(); if (v === '') return ''; const n = Number(v); if (Number.isNaN(n)) throw new Error('Vul bij temperatuur alleen een getal in'); return n; };
+      let data;
+      if (kind === 'ontvangst') data = { leverancier: fd.get('leverancier').trim(), product: fd.get('product').trim(), temp: num('temp'), max: num('max'), tht: fd.get('tht') === 'on', ok: fd.get('ok') === 'true' && fd.get('tht') === 'on', reden: fd.get('reden').trim() || (fd.get('tht') !== 'on' ? 'houdbaarheid of verpakking niet in orde' : '') };
+      else if (kind === 'kern') data = { product: fd.get('product').trim(), temp: num('temp'), terug: num('terug') };
+      else data = { soort: fd.get('soort'), tekst: fd.get('tekst').trim() };
+      await store.addLog(kind, data);
+      toast('Opgeslagen'); rerender();
+    },
+  });
+}
+function resolveDialog(id) {
+  openDialog('Melding afhandelen', `<label class="field">Wat is er gedaan?<input name="r" maxlength="200" placeholder="bv. Monteur komt dinsdag"></label>
+    <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Afgehandeld</button></div>`, {
+    async onSubmit(fd) { await store.resolveLog(id, String(fd.get('r') || '').trim() || null); toast('Afgehandeld'); rerender(); },
+  });
+}
+// kaartje op Mijn rooster: wat staat er vandaag voor mij open
+async function listsHomeHTML() {
+  try {
+    const today = todayIso(), lists = myLists(await store.checklists(), '');
+    if (!lists.length) return '';
+    const ticks = await store.ticks([...new Set(lists.map(l => periodOf(l.moment, today)))]);
+    const st = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).map(l => { const n = (l.items || []).length, d = (l.items || []).filter(it => ticks.some(t => t.checklist_id === l.id && t.period === today && t.item_id === it.id)).length; return { l, n, d }; });
+    const open = st.filter(x => x.d < x.n);
+    return `<button type="button" class="card lhome" data-golists><span><strong>📋 Lijsten vandaag</strong><small>${open.length ? open.slice(0, 3).map(x => `${esc(x.l.name)} ${x.d}/${x.n}`).join(' · ') : 'Alles afgevinkt ✓'}</small></span><span class="chev">›</span></button>`;
+  } catch (e) { return ''; }
+}
+// lijst bewerken (directie)
+function listDialog(l = {}) {
+  const isNew = !l.id, items = l.items || [];
+  const lines = items.map(it => l.kind === 'temp' ? `${it.label} | ${it.max ?? ''}` : it.label).join('\n');
+  openDialog(isNew ? 'Nieuwe lijst' : 'Lijst bewerken', `
+    <label class="field">Naam<input name="name" required maxlength="80" value="${esc(l.name || '')}" placeholder="bv. Opening bediening"></label>
+    <div class="row keep">
+      <label class="field">Voor wie<select name="department"><option value="">Iedereen</option>${CFG.posities.map(p => `<option ${l.department === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></label>
+      <label class="field">Wanneer<select name="moment">${Object.entries({ opening: 'Bij opening', sluiting: 'Bij sluiting', dag: 'Elke dag', week: 'Elke week', maand: 'Elke maand' }).map(([k, v]) => `<option value="${k}" ${(l.moment || 'opening') === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+    </div>
+    <label class="field">Soort<select name="kind"><option value="check" ${l.kind !== 'temp' ? 'selected' : ''}>Afvinken</option><option value="temp" ${l.kind === 'temp' ? 'selected' : ''}>Temperaturen meten</option></select></label>
+    <label class="field">Onderdelen (één per regel)<textarea name="items" rows="10" required placeholder="Afvinken: één taak per regel.\nTemperaturen: naam | max, bv.\nK1 Koelcel | 7\nV1 Vriezer | -18">${esc(lines)}</textarea></label>
+    <p class="hint" style="margin:0">Bij temperaturen: zet na een | de hoogst toegestane temperatuur. Daarboven krijgen directie en shiftleaders een melding.</p>
+    <label class="check"><input type="checkbox" name="active" ${l.active !== false ? 'checked' : ''}> Actief</label>
+    <div class="dlg-foot">${isNew ? '' : '<button class="btn danger" value="delete" formnovalidate>Verwijderen</button>'}<span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
+    async onSubmit(fd, action) {
+      if (action === 'delete') { if (!await ask(`Lijst "${l.name}" verwijderen? Ook alle vinkjes van deze lijst verdwijnen. Tip: zet hem liever op niet actief.`, 'Verwijderen')) throw 'cancel'; await store.deleteChecklist(l.id); toast('Lijst verwijderd'); return rerender(); }
+      const kind = fd.get('kind');
+      const old = Object.fromEntries(items.map(it => [it.label.toLowerCase(), it.id]));
+      const parsed = String(fd.get('items')).split('\n').map(x => x.trim()).filter(Boolean).slice(0, 80).map(x => {
+        const [lab, mx] = kind === 'temp' ? x.split('|').map(y => y.trim()) : [x];
+        const label = lab.slice(0, 120), id = old[label.toLowerCase()] || 'i' + uid().replace(/-/g, '').slice(0, 10);
+        if (kind !== 'temp') return { id, label };
+        const m = String(mx ?? '').replace(',', '.'); if (m !== '' && Number.isNaN(Number(m))) throw new Error(`Bij "${label}" staat na de | geen getal`);
+        return { id, label, max: m === '' ? null : Number(m) };
+      });
+      if (!parsed.length) throw new Error('Zet minstens één onderdeel in de lijst');
+      await store.saveChecklist({ ...(l.id ? { id: l.id } : { sort: 999 }), name: fd.get('name').trim(), department: fd.get('department'), moment: fd.get('moment'), kind, items: parsed, active: fd.get('active') === 'on' });
+      toast('Lijst opgeslagen'); rerender();
+    },
+  });
+}
+
 /* ================= Instellingen (directie) ================= */
 async function viewSettings(el) {
   const st = await store.settings();
@@ -1898,6 +2163,13 @@ async function viewSettings(el) {
         <p class="hint">De functies waarvoor je inplant, zoals Bediening, Keuken of Afwas. Bestaande diensten en medewerkers houden hun functie als je er een weghaalt.</p>
         <div class="poslist">${pos.map((p, i) => `<span class="pill">${esc(p)} <button type="button" class="linkbtn small" data-posdel="${i}" aria-label="${esc(p)} verwijderen">✕</button></span>`).join('') || '<span class="muted small">Nog geen functies.</span>'}</div>
         <form class="addrow" data-posadd><input class="input" name="pos" placeholder="Nieuwe functie, bv. Afwas" maxlength="30" required><button class="btn">Toevoegen</button></form>
+      </section>
+
+      <section class="card pad">
+        <h2>Lijsten</h2>
+        <p class="hint">Opening- en sluitlijsten, temperaturen en schoonmaak. Medewerkers zien de lijsten van hun eigen functie; elk vinkje bewaart naam en tijd.</p>
+        <div class="lsetlist">${(await store.checklists()).map(l => `<button type="button" class="lsetrow ${l.active === false ? 'off' : ''}" data-ledit="${l.id}"><span><strong>${esc(l.name)}</strong><small>${esc(l.department || 'Iedereen')} · ${esc({ opening: 'bij opening', sluiting: 'bij sluiting', dag: 'elke dag', week: 'elke week', maand: 'elke maand' }[l.moment])} · ${(l.items || []).length} onderdelen${l.active === false ? ' · niet actief' : ''}</small></span><span class="chev">›</span></button>`).join('')}</div>
+        <div class="actions" style="margin-top:10px"><button type="button" class="btn" data-lnew>+ Nieuwe lijst</button></div>
       </section>
 
       <section class="card pad">
@@ -1979,6 +2251,8 @@ async function viewSettings(el) {
     if (ev.target.closest('[data-dayadd]')) { $('.daylist2', el).insertAdjacentHTML('beforeend', dayRow({ date: '', label: '', kind: 'gesloten' })); $$('.spdrow', el).pop().querySelector('[name=date]').focus(); return; }
     const sd = ev.target.closest('[data-spddel]'); if (sd) { sd.closest('.spdrow').remove(); return; }
     if (ev.target.closest('[data-clockset]')) return settingsDialog(st);
+    const le = ev.target.closest('[data-ledit]'); if (le) { const l = (await store.checklists()).find(x => x.id === le.dataset.ledit); if (l) listDialog(l); return; }
+    if (ev.target.closest('[data-lnew]')) return listDialog({});
   };
   el.onchange = async ev => {
     const k = ev.target.dataset.set; if (!k) return;
@@ -2104,6 +2378,7 @@ async function viewMine(el) {
       <div class="head-actions"><button class="btn" data-ics>📅 Zet in mijn agenda</button>${sickNow ? '' : '<button class="btn" data-sick>🤒 Ik ben ziek</button>'}</div></div>
     ${sickNow ? `<div class="sickbanner"><div><strong>🤒 Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap!</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     ${clockHTML}
+    ${sel ? '' : await listsHomeHTML()}
     ${next && !sel ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
     ${boardH}
     <div class="filters mine-filter"><button data-mf="all" class="${sel ? '' : 'active'}">Komende weken</button><button data-mf="week" class="${sel ? 'active' : ''}">Per week</button></div>
@@ -2117,6 +2392,7 @@ async function viewMine(el) {
     const sw = ev.target.closest('[data-swap]'); if (sw) return swapDialog(mine, emps, all, sw.dataset.swap, swaps);
     if (ev.target.closest('[data-ics]')) agendaDialog(mine);
     if (ev.target.closest('[data-sick]')) return sickDialog();
+    if (ev.target.closest('[data-golists]')) return go('lijsten');
     const bt = ev.target.closest('[data-better]');
     if (bt) { if (!await ask('Ben je weer beter? De directie krijgt een melding en je ziekmelding stopt vandaag.', 'Ik ben weer beter')) return; try { await store.sickRecover(bt.dataset.better); toast('Fijn dat je weer beter bent!'); rerender(); } catch (x) { toast(errMsg(x), 'error'); } return; }
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);

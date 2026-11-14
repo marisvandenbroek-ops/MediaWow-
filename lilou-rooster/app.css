@@ -843,3 +843,45 @@ dialog.dlg { overflow-x: hidden; }
 .callbtn { text-decoration: none; justify-content: center; }
 .sickset { display: grid; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
 .sickset .hint { margin: 0; }
+
+/* ===== Lijsten ===== */
+.logbtns { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.ldeps { margin-bottom: 12px; }
+.lgroup { margin-bottom: 20px; }
+.lgroup > h2 { font-size: 17px; margin: 0 0 8px; }
+.lcard { padding: 0; margin-bottom: 10px; overflow: hidden; }
+.lcard > summary { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer; list-style: none; min-height: 52px; }
+.lcard > summary::-webkit-details-marker { display: none; }
+.lcard .lname { font-weight: 700; }
+.lcard .lname small { font-weight: 400; color: var(--muted); margin-left: 6px; }
+.lcard.flag { border-color: var(--bad); }
+.lrows { border-top: 1px solid var(--line); }
+.lrow { display: grid; grid-template-columns: 36px 1fr auto auto; gap: 4px 10px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--line); min-height: 52px; }
+.lrow:last-child { border-bottom: 0; }
+.lrow .box { width: 30px; height: 30px; border-radius: 8px; border: 2px solid var(--line-strong); background: var(--surface); display: grid; place-items: center; font-weight: 700; color: var(--accent-ink); cursor: pointer; padding: 0; }
+.lrow .box.on { background: var(--ok); border-color: var(--ok); color: #fff; cursor: default; }
+.lrow .box.miss { border-color: var(--bad); cursor: default; }
+.lrow .lbl { cursor: pointer; }
+.lrow.done .lbl { color: var(--muted); cursor: default; }
+.lrow .lbl small { display: block; color: var(--muted); font-size: 12px; }
+.lrow .who { font-size: 12.5px; color: var(--ok); font-weight: 600; white-space: nowrap; }
+.lrow .missed { font-size: 12.5px; color: var(--bad); font-weight: 600; }
+.lrow.temp { grid-template-columns: 1fr auto auto auto; }
+.lrow .tval { font-weight: 700; font-variant-numeric: tabular-nums; }
+.lrow.flag .tval { color: var(--bad); }
+.tform { display: flex; gap: 6px; align-items: center; grid-column: span 3; justify-self: end; }
+.tform input { width: 80px; padding: 8px; border: 1px solid var(--line-strong); border-radius: 8px; font-size: 16px; text-align: center; }
+.loglist { list-style: none; margin: 0; padding: 0; }
+.logrow { padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: 14px; line-height: 1.5; }
+.logrow:last-child { border-bottom: 0; }
+.logrow.flag { border-left: 3px solid var(--bad); }
+.bad { color: var(--bad); }
+.lhome { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 14px 16px; margin-bottom: 16px; font: inherit; cursor: pointer; }
+.lhome small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.lsetlist { display: grid; gap: 6px; }
+.lsetrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font: inherit; cursor: pointer; }
+.lsetrow small { display: block; color: var(--muted); font-size: 12.5px; }
+.lsetrow.off { opacity: .55; }
+@media (max-width: 760px) { .lrow .who { grid-column: 2 / -1; } .lrow.temp .who { grid-column: 1 / -1; } }
+.ldeps { flex-wrap: wrap; }
+.page-head .weeknav { flex-wrap: nowrap; max-width: 100%; }
