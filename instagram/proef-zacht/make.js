@@ -20,27 +20,36 @@ h1 em{font-style:italic;color:#F0DCD0}
 .sticker{position:absolute;left:50%;top:50%;width:330px;height:330px;margin:-165px 0 0 -165px;border-radius:50%;background:#3A1011;box-shadow:0 30px 60px rgba(0,0,0,.18),inset 0 0 0 1px rgba(0,0,0,.04);display:flex;align-items:center;justify-content:center}
 .sticker .logo{width:230px;background:#FAF4ED}`;
 const pages = {
-  'zacht-1-quote': `<div class="s" style="color:#fff">
-    <img class="bg" src="${img('canva/foto-157.jpg')}" style="object-position:50% 35%">
-    <div class="veil" style="background:linear-gradient(180deg,rgba(58,16,17,.38),rgba(27,4,5,.55))"></div>
-    <div class="handle">@media.wow</div>
-    <div class="mid"><h1>Mooi is fijn. <em>Werken</em><br>is beter.</h1><div class="sub">— In de caption leg ik uit waarom je website allebei moet zijn</div></div>
-    <div class="foot"><span class="share">Share</span><span class="save">Save</span></div></div>`,
-  'zacht-2-quote-donker': `<div class="s" style="color:#fff">
+  'zacht-tafel': `<div class="s" style="color:#fff">
     <img class="bg" src="${img('canva/foto-067.jpg')}" style="object-position:50% 50%">
     <div class="veil" style="background:linear-gradient(180deg,rgba(58,16,17,.45),rgba(27,4,5,.62))"></div>
     <div class="handle">@media.wow</div>
     <div class="mid"><h1>Een lege tafel <em>begint</em><br>op je website.</h1><div class="sub">— In de caption: 3 dingen die gasten zoeken vóór ze reserveren</div></div>
     <div class="foot"><span class="share">Share</span><span class="save">Save</span></div></div>`,
-  'zacht-4-licht-bordeaux': `<div class="s" style="color:#3A1011">
-    <img class="bg" src="${img('canva/foto-094.jpg')}" style="object-position:50% 70%;filter:saturate(.2) brightness(1.08)">
-    <div class="veil" style="background:rgba(250,244,237,.55)"></div>
+  'zacht-stoel': `<div class="s" style="color:#fff">
+    <img class="bg" src="${img('story/lege-stoel-leer.jpg')}" style="object-position:50% 50%">
+    <div class="veil" style="background:linear-gradient(180deg,rgba(58,16,17,.45),rgba(27,4,5,.62))"></div>
     <div class="handle">@media.wow</div>
-    <div class="mid"><h1>Je klanten lezen niet. <em style="color:#8E1F27">Ze scannen.</em></h1><div class="sub">— In de caption: zo zet je het belangrijkste op de juiste plek</div></div>
+    <div class="mid"><h1>Een lege stoel <em>begint</em><br>op je website.</h1><div class="sub">— In de caption: waarom klanten liever online boeken</div></div>
     <div class="foot"><span class="share">Share</span><span class="save">Save</span></div></div>`,
-  'zacht-3-adempauze': `<div class="s">
-    <img class="bg" src="${img('canva/foto-094.jpg')}" style="object-position:50% 60%;filter:saturate(.25) brightness(1.05)">
-    <div class="sticker"><div class="logo"></div></div></div>`,
+  'zacht-gemist': `<div class="s" style="color:#fff">
+    <img class="bg" src="${img('story/telefoon-gemist.jpg')}" style="object-position:50% 50%">
+    <div class="veil" style="background:linear-gradient(180deg,rgba(58,16,17,.45),rgba(27,4,5,.62))"></div>
+    <div class="handle">@media.wow</div>
+    <div class="mid"><h1>Ze belden. <em>Jij stond<br>te knippen.</em></h1><div class="sub">— In de caption: zo boeken ze, terwijl jij gewoon werkt</div></div>
+    <div class="foot"><span class="share">Share</span><span class="save">Save</span></div></div>`,
+  'zacht-telefonisch': `<div class="s" style="color:#fff">
+    <img class="bg" src="${img('story/telefoon-vintage.jpg')}" style="object-position:50% 50%">
+    <div class="veil" style="background:linear-gradient(180deg,rgba(58,16,17,.45),rgba(27,4,5,.62))"></div>
+    <div class="handle">@media.wow</div>
+    <div class="mid"><h1>Reserveren? <em>Alleen<br>telefonisch.</em></h1><div class="sub">— En dan vragen waarom de tafels leeg blijven</div></div>
+    <div class="foot"><span class="share">Share</span><span class="save">Save</span></div></div>`,
+  'zacht-agenda': `<div class="s" style="color:#fff">
+    <img class="bg" src="${img('story/lege-stoel-donker.jpg')}" style="object-position:50% 50%">
+    <div class="veil" style="background:linear-gradient(180deg,rgba(58,16,17,.45),rgba(27,4,5,.62))"></div>
+    <div class="handle">@media.wow</div>
+    <div class="mid"><h1>Je agenda is leeg. <em>Je website ook?</em></h1><div class="sub">— Voor coaches: in de caption 3 dingen die vertrouwen geven</div></div>
+    <div class="foot"><span class="share">Share</span><span class="save">Save</span></div></div>`,
 };
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1080, height: 1350 } });
