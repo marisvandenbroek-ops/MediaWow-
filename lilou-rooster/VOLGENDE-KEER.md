@@ -8,6 +8,9 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Update 19 (prikbord blijft staan + knop 'Ik ben ziek') staat LIVE; uitnodigingsmail-template opgeslagen in Supabase; invite-employee met voornaam is live (via Supabase-koppeling).
 - Werkwijze: Supabase doe ik zelf via de Supabase-koppeling (Mariska klikt Toestaan); Mariska uploadt alleen de zip in DirectAdmin.
 
+- Update 20: bijlagen (pdf/foto) openen in de app zelf (pdf.js in vendor/pdfjs), Instellingen/Aanvragen passen op telefoon,
+  knop 'Komende diensten uit het rooster halen' bij medewerker + bulk met één melding (shifts_bulk staat LIVE in Supabase).
+
 ## Te doen
 1. KLAAR: Prikbord: gelezen mededelingen blijven altijd staan (ingeklapt, met ✓), alleen directie verwijdert. Knop "Gelezen" blijft.
    Ziekmelden beter vindbaar maken: aparte knop "Ik ben ziek" (nu verstopt onder Verlof › Soort › Ziekmelding).

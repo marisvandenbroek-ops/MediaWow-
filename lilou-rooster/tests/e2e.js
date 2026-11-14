@@ -8,7 +8,7 @@ const assert = require('assert');
 const { chromium, devices } = require('playwright');
 
 const ROOT = path.resolve(__dirname, '..');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer((req, res) => {
   const p = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]).replace(/\/$/, '/index.html'));
   if (!p.startsWith(ROOT) || !fs.existsSync(p)) { res.writeHead(404); return res.end(); }
@@ -501,6 +501,60 @@ async function test(name, fn) {
     await p.click('[data-annnew]'); await p.fill('dialog [name=title]', 'Menukaart online'); await p.fill('dialog [name=body]', 'Zie https://www.lilou-ede.nl/' + 'menukaart-najaar-'.repeat(8) + 'definitief.pdf');
     await p.click('dialog button[value=save]'); await p.waitForSelector('.annlist .ann:has-text("Menukaart online") a[href^="https://www.lilou-ede.nl/"]');
     assert.ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'pagina wordt breder dan het scherm');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
+  await test('alle komende diensten van één medewerker in één keer verwijderen, met één melding', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    // een jaar vooruit plannen voor Eva
+    await setDemoDb(p, `const e = db.employees.find(x => x.name.startsWith('Eva')); const p2 = n => String(n).padStart(2, '0');
+      for (let i = 1; i <= 120; i++) { const d = new Date(Date.now() + i * 3 * 864e5); db.shifts.push({ id: 'jaar-' + i, employee_id: e.id, date: d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()), start_time: '12:00', end_time: '18:00', break_minutes: 0, position: 'Bediening', note: '', published: true }); }
+      db.notifications = [];`);
+    await p.reload(); await p.waitForSelector('[data-tab=team]');
+    await p.click('[data-tab=team]'); await p.click('tr:has-text("Eva") >> nth=0'); await p.waitForSelector('dialog [data-futshifts]');
+    await p.click('dialog [data-futshifts]'); await p.waitForSelector('dialog:has-text("Komende diensten van Eva") .warnbox');
+    assert.match(await p.textContent('dialog:has-text("Komende diensten van Eva") .warnbox'), /en nog \d+ meer/);
+    await p.check('dialog:has-text("Komende diensten van Eva") input[name=conflict][value=delete]');
+    await p.click('dialog:has-text("Komende diensten van Eva") button[value=save]');
+    await p.click('dialog:has-text("Weet je het zeker") button[value=save]');
+    await p.waitForSelector('.toast:has-text("verwijderd")');
+    const { db } = await demoDb(p);
+    const eva = db.employees.find(x => x.name.startsWith('Eva'));
+    assert.strictEqual(db.shifts.filter(x => x.employee_id === eva.id && x.date >= new Date().toISOString().slice(0, 10) && x.id.startsWith('jaar-')).length, 0, 'diensten staan er nog');
+    assert.strictEqual(db.notifications.filter(n => n.employee_id === eva.id).length, 1, 'Eva krijgt meer dan één melding');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
+  await test('telefoon: geen enkel scherm loopt rechts van het scherm af', async () => {
+    // elk element binnen #view moet binnen de schermbreedte blijven (behalve in bewust scrollende tabellen)
+    const outside = p => p.evaluate(() => { const W = document.documentElement.clientWidth, out = [];
+      document.querySelectorAll('#view *').forEach(e => { if (e.closest('.table-wrap')) return; const r = e.getBoundingClientRect(); if (r.width && r.right > W + 1) out.push(e.tagName + '.' + String(e.className).slice(0, 30)); });
+      return out.slice(0, 3); });
+    for (const [who, hash, tabs] of [['Mark', '#directie', ['overzicht', 'planning', 'klokken', 'aanvragen', 'team', 'uren', 'instellingen']], ['Sanne', '#personeel', ['mijn', 'planning', 'diensten', 'beschikbaar', 'aanvragen']]]) {
+      const ctx = await browser.newContext({ viewport: { width: 360, height: 780 } }); const p = watch(await ctx.newPage());
+      await fresh(p, hash); await login(p, who);
+      for (const t of tabs) {
+        if (t === 'instellingen') await p.click('[data-gosettings]'); else await p.click(`[data-tab=${t}]`);
+        await p.waitForTimeout(350);
+        const o = await outside(p); assert.deepStrictEqual(o, [], `${who} › ${t} is te breed: ${o.join(', ')}`);
+      }
+      await ctx.close(); pages.splice(pages.indexOf(p), 1);
+    }
+  });
+  await test('bijlage (pdf) opent in de app zelf, niet in een los tabblad', async () => {
+    const ctx = await browser.newContext({ ...devices['iPhone 13'] }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    // klein maar geldig pdf-bestand met één pagina
+    const pdf = '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 400]/Contents 4 0 R/Resources<<>>>>endobj\n4 0 obj<</Length 33>>stream\n0.57 0.15 0.03 rg 20 20 260 360 re f\nendstream endobj\ntrailer<</Root 1 0 R>>\n%%EOF';
+    await p.click('[data-annnew]'); await p.fill('dialog [name=title]', 'Wijnkaart');
+    await p.setInputFiles('dialog [name=file]', { name: 'wijnkaart.pdf', mimeType: 'application/pdf', buffer: Buffer.from(pdf) });
+    await p.click('dialog button[value=save]'); await p.waitForSelector('.annlist .ann:has-text("Wijnkaart") [data-annview]');
+    const before = ctx.pages().length;
+    await p.click('.annlist .ann:has-text("Wijnkaart") [data-annview]');
+    await p.waitForSelector('dialog.viewer[open] canvas.viewer-page', { timeout: 15000 });
+    assert.strictEqual(ctx.pages().length, before, 'er ging een los tabblad open');
+    const painted = await p.evaluate(() => { const c = document.querySelector('canvas.viewer-page'); const d = c.getContext('2d').getImageData(Math.floor(c.width / 2), Math.floor(c.height / 2), 1, 1).data; return d[0] > 100 && d[1] < 80; });
+    assert.ok(painted, 'pdf-pagina is niet getekend');
+    await p.click('dialog.viewer [data-vclose]'); await p.waitForSelector('dialog.viewer', { state: 'detached' });
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
   await test('iPhone: medewerkervenster scrolt binnen het venster tot de knoppen', async () => {

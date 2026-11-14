@@ -406,7 +406,7 @@ button.chip:hover { filter: brightness(.97); }
   .avrow { grid-template-columns: 44px 1fr; padding: 12px 14px; }
   .avrow .avnote { grid-column: 2; }
   .avopt span { padding: 7px 9px; font-size: 12.5px; }
-  .subtabs { overflow-x: auto; flex-wrap: nowrap; }
+  .subtabs { flex-wrap: wrap; row-gap: 0; }   /* op de telefoon onder elkaar, zodat elk tabblad zichtbaar is */
   .subtabs button { white-space: nowrap; }
   .userbox { gap: 2px; }
 }
@@ -484,7 +484,12 @@ dialog.dlg:has(.exportprev) { width: min(900px, calc(100vw - 32px)); }
 .guests input { width: 58px; padding: 3px 6px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); }
 .mcov { margin: -2px 0 10px; }
 .mcov .covp { font-size: 13px; padding: 3px 9px; }
-.stafftable { border-collapse: collapse; width: 100%; min-width: 420px; font-size: 14px; }
+.settings > * { min-width: 0; }   /* een brede tabel mag de pagina nooit breder maken dan het scherm */
+.settings .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.stafftable { border-collapse: collapse; width: 100%; font-size: 14px; }
+.stafftable thead th { overflow-wrap: anywhere; hyphens: auto; line-height: 1.2; }
+.stafftable tfoot th { white-space: normal !important; max-width: 70px; line-height: 1.2; }
+@media (max-width: 520px) { .stafftable th, .stafftable td { padding: 3px 2px; } .stafftable thead th { font-size: 11px; } .stafftable input { padding: 6px 2px; min-width: 34px; } }
 .stafftable th, .stafftable td { padding: 4px; text-align: center; }
 .stafftable thead th { font-size: 12px; color: var(--muted); font-weight: 600; }
 .stafftable tbody th, .stafftable tfoot th { text-align: left; font-weight: 600; white-space: nowrap; }
@@ -775,3 +780,20 @@ code { font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-r
   .row { grid-template-columns: 1fr; }
   .row.keep { grid-template-columns: 1fr 1fr; }
 }
+
+/* ===== Bijlage-viewer (foto's en pdf's in de app) ===== */
+dialog.viewer { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: #2b1611; color: #f9efe6; display: flex; flex-direction: column; }
+dialog.viewer:not([open]) { display: none; }
+dialog.viewer::backdrop { background: #2b1611; }
+html:has(dialog.viewer[open]), html:has(dialog.viewer[open]) body { overflow: hidden; }
+.viewer-bar { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; background: #912508; }
+.viewer-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.viewer-bar .x { color: #f9efe6; font-size: 28px; line-height: 1; background: none; border: 0; padding: 0 6px; cursor: pointer; }
+.viewer-bar .btn { background: #f9efe6; color: #912508; border-color: #f9efe6; }
+.viewer-body { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; padding: 8px 8px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.viewer-page { display: block; max-width: 100%; height: auto; background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, .35); }
+.viewer-img { max-width: 100%; height: auto; }
+.viewer-msg { margin: 40px 16px; text-align: center; color: #f5d9cc; }
+button.ann-img { display: block; padding: 0; border: 0; background: none; cursor: zoom-in; width: 100%; text-align: left; }
+.futbox { display: grid; gap: 4px; justify-items: start; }
+.futbox .hint { margin: 0; }

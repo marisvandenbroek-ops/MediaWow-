@@ -575,6 +575,39 @@ begin
   end loop;
 end $$;
 
+-- ---------- Veel diensten tegelijk verwijderen of open zetten (één samenvattende melding) ----------
+create or replace function public.shifts_bulk(p_ids uuid[], p_action text) returns int
+language plpgsql security definer set search_path = public as $$
+declare r record; n int; n_open int := 0; v_except uuid;
+begin
+  if not public.is_planner() then raise exception 'Alleen de directie of een shiftleader kan diensten aanpassen.'; end if;
+  if p_action not in ('delete', 'open') then raise exception 'Onbekende actie.'; end if;
+  if p_ids is null or array_length(p_ids, 1) is null then return 0; end if;
+  -- eerst de meldingen bepalen (één per actieve medewerker, alleen gepubliceerde komende diensten)
+  for r in select s.employee_id, count(*) c, min(public.shift_label(s.date, s.start_time, s.end_time)) one
+             from public.shifts s join public.employees e on e.id = s.employee_id and e.active
+            where s.id = any(p_ids) and s.published and s.date >= public.today_nl() group by s.employee_id loop
+    perform public.notify(r.employee_id, case when r.c = 1 then 'Dienst vervallen' else r.c || ' diensten vervallen' end,
+      case when r.c = 1 then r.one else 'Er zijn ' || r.c || ' diensten van je uit het rooster gehaald. Tik om je rooster te bekijken.' end, 'mijn');
+    n_open := n_open + r.c;
+  end loop;
+  -- gaat het om één medewerker, dan krijgt die zelf geen 'open diensten'-melding over zijn eigen diensten
+  select case when count(distinct employee_id) = 1 then (array_agg(employee_id))[1] end into v_except
+    from public.shifts where id = any(p_ids) and employee_id is not null;
+  perform set_config('rooster.skip_notify', '1', true);
+  if p_action = 'delete' then
+    delete from public.shifts where id = any(p_ids);
+  else
+    update public.shifts set employee_id = null where id = any(p_ids) and employee_id is not null;
+  end if;
+  get diagnostics n = row_count;
+  if p_action = 'open' and n_open > 0 then
+    perform public.notify_team('Open dienst' || case when n_open > 1 then 'en' else '' end || ' beschikbaar',
+      n_open || ' open dienst' || case when n_open > 1 then 'en' else '' end || ' in het rooster. Meld je aan!', 'diensten', v_except);
+  end if;
+  return n;
+end $$;
+
 -- ---------- Ruilen en overdragen ----------
 create or replace function public.swap_execute(p_id uuid) returns void
 language plpgsql security definer set search_path = public as $$
@@ -702,6 +735,8 @@ revoke execute on function public.swap_cancel(uuid) from public, anon;
 grant execute on function public.publish_week(date, date), public.open_apply(uuid), public.open_withdraw(uuid),
   public.open_assign(uuid, uuid), public.swap_offer(uuid, uuid, uuid, text), public.swap_respond(uuid, boolean),
   public.swap_decide(uuid, boolean, text), public.swap_cancel(uuid) to authenticated;
+revoke execute on function public.shifts_bulk(uuid[], text) from public, anon;
+grant execute on function public.shifts_bulk(uuid[], text) to authenticated;
 
 -- =====================================================================
 --  LOONGEGEVENS, VERLOFSALDO, LOGBOEK en AUTOMATISCHE TAKEN

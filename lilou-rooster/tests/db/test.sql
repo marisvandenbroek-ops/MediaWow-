@@ -282,5 +282,27 @@ insert into storage.objects (bucket_id, name) values ('mededelingen', 'menu.pdf'
 select t_ok(t_count($q$select * from storage.objects where bucket_id = 'mededelingen'$q$) = 1, 'directie kan een bijlage uploaden');
 reset role;
 
+\echo '== Veel diensten tegelijk (shifts_bulk)'
+reset role;
+delete from notifications;
+insert into shifts (id, employee_id, date, start_time, end_time, published)
+  select ('51000000-0000-0000-0000-' || lpad(g::text, 12, '0'))::uuid, 'a0000000-0000-0000-0000-000000000004', today_nl() + g, '12:00', '18:00', true
+    from generate_series(1, 40) g;
+set role authenticated; select as_user(2);
+select t_fails($q$select shifts_bulk(array['51000000-0000-0000-0000-000000000001']::uuid[], 'delete')$q$, 'medewerker kan niet in bulk verwijderen');
+select as_user(1);
+select t_ok(shifts_bulk((select array_agg(id) from shifts where id::text like '51000000%' and date <= today_nl() + 20), 'open') = 20, '20 diensten open gezet');
+reset role;
+select t_ok(t_count($q$select * from shifts where id::text like '51000000%' and employee_id is null$q$) = 20, 'diensten zijn echt open');
+select t_ok(t_count($q$select * from notifications where employee_id = 'a0000000-0000-0000-0000-000000000004'$q$) = 1, 'medewerker krijgt één melding, niet twintig');
+select t_ok(t_count($q$select * from notifications where title like 'Open dienst%' and employee_id = 'a0000000-0000-0000-0000-000000000002'$q$) = 1, 'collega krijgt één melding over de open diensten');
+delete from notifications;
+set role authenticated; select as_user(1);
+select t_ok(shifts_bulk((select array_agg(id) from shifts where id::text like '51000000%' and employee_id is not null), 'delete') = 20, '20 diensten in één keer verwijderd');
+select t_fails($q$select shifts_bulk(array[]::uuid[], 'iets')$q$, 'onbekende actie wordt geweigerd');
+reset role;
+select t_ok(t_count($q$select * from notifications$q$) = 1, 'bij verwijderen: één melding in totaal');
+select t_ok((select title from notifications limit 1) = '20 diensten vervallen', 'melding noemt het aantal');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

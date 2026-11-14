@@ -272,6 +272,22 @@ function demoStore() {
       db.swaps = db.swaps.filter(w => w.shift_id !== id && w.swap_shift_id !== id);
       save();
     },
+    async bulkShifts(ids, action) {
+      const set = new Set(ids), hit = db.shifts.filter(s => set.has(s.id)), t = todayIso();
+      const per = {};
+      hit.filter(s => s.published && s.employee_id && s.date >= t && db.employees.find(e => e.id === s.employee_id)?.active !== false).forEach(s => (per[s.employee_id] ||= []).push(s));
+      if (action === 'delete') {
+        db.shifts = db.shifts.filter(s => !set.has(s.id));
+        db.applications = db.applications.filter(a => !set.has(a.shift_id));
+        db.swaps = db.swaps.filter(w => !set.has(w.shift_id) && !set.has(w.swap_shift_id));
+      } else {
+        hit.forEach(s => { db.swaps.filter(w => ['open', 'accepted'].includes(w.status) && (w.shift_id === s.id || w.swap_shift_id === s.id)).forEach(w => (w.status = 'cancelled')); s.employee_id = null; });
+      }
+      Object.entries(per).forEach(([emp, l]) => notify(emp, l.length === 1 ? 'Dienst vervallen' : `${l.length} diensten vervallen`, l.length === 1 ? lbl(l[0]) : `Er zijn ${l.length} diensten van je uit het rooster gehaald. Tik om je rooster te bekijken.`, 'mijn'));
+      const o = Object.values(per).reduce((n, l) => n + l.length, 0);
+      if (action === 'open' && o) notifyTeam(`Open dienst${o > 1 ? 'en' : ''} beschikbaar`, `${o} open dienst${o > 1 ? 'en' : ''} in het rooster. Meld je aan!`, 'diensten');
+      save(); return hit.length;
+    },
     async publish(from, to) {
       const upd = db.shifts.filter(s => s.date >= from && s.date <= to && !s.published);
       upd.forEach(s => (s.published = true));
@@ -303,6 +319,7 @@ function demoStore() {
       return { path, name: file.name, type: file.type };
     },
     async attachmentUrl(path) { return (db.files || {})[path] || ''; },
+    async attachmentBlob(path) { const d = (db.files || {})[path]; if (!d) throw new Error('Bestand niet gevonden'); return (await fetch(d)).blob(); },
     async deleteAttachment(path) { if (db.files) { delete db.files[path]; save(); } },
     async renotifyAnnouncement(id) {
       const a = db.announcements.find(x => x.id === id); db.annReads = (db.annReads || []).filter(r => r.announcement_id !== id);
@@ -560,6 +577,7 @@ async function supabaseStore() {
     },
     async deleteShift(id) { ok(await sb.from('shifts').delete().eq('id', id)); },
     async publish(from, to) { ok(await sb.rpc('publish_week', { p_from: from, p_to: to })); },
+    async bulkShifts(ids, action) { const { data, error } = await sb.rpc('shifts_bulk', { p_ids: ids, p_action: action }); if (error) throw error; return data; },
     // --- prikbord
     async announcements() {
       const [list, reads] = await Promise.all([
@@ -589,6 +607,7 @@ async function supabaseStore() {
       return { path, name: file.name, type: file.type };
     },
     async attachmentUrl(path) { const { data } = await sb.storage.from('mededelingen').createSignedUrl(path, 3600); return data?.signedUrl || ''; },
+    async attachmentBlob(path) { const { data, error } = await sb.storage.from('mededelingen').download(path); if (error) throw new Error('Bestand niet gevonden'); return data; },
     async deleteAttachment(path) { await sb.storage.from('mededelingen').remove([path]); },
     async renotifyAnnouncement(id) { const { error } = await sb.rpc('renotify_announcement', { p_id: id }); if (error) throw error; },
     async revenue(from, to) { if (!isMgr()) return []; return ok(await sb.from('revenue').select('*').gte('date', from).lte('date', to)); },
@@ -1217,8 +1236,8 @@ async function viewWeek(el, editable) {
       if (ev.target.closest('[data-seldel]')) {
         const ids = [...S.sel].filter(id => shifts.some(x => x.id === id)); if (!ids.length) return;
         const pubN = shifts.filter(x => ids.includes(x.id) && x.published && x.employee_id).length;
-        if (!await ask(`${ids.length} dienst${ids.length > 1 ? 'en' : ''} verwijderen?${pubN ? ` ${pubN} daarvan ${pubN > 1 ? 'zijn' : 'is'} al gepubliceerd; die medewerkers krijgen een melding.` : ''}`, 'Verwijderen')) return;
-        for (const id of ids) await store.deleteShift(id);
+        if (!await ask(`${ids.length} dienst${ids.length > 1 ? 'en' : ''} verwijderen?${pubN ? ` ${pubN} daarvan ${pubN > 1 ? 'zijn' : 'is'} al gepubliceerd; die medewerkers krijgen één melding.` : ''}`, 'Verwijderen')) return;
+        try { await store.bulkShifts(ids, 'delete'); } catch (x) { return toast(errMsg(x), 'error'); }
         S.sel = new Set(); S.selMode = false; toast(`${ids.length} dienst${ids.length > 1 ? 'en' : ''} verwijderd`); return rerender();
       }
       if (ev.target.closest('[data-act]')) { /* weeknavigatie e.d. hieronder */ } else return;
@@ -1497,19 +1516,78 @@ function annCard(a, { read, mgr, readInfo } = {}) {
     <div class="ann-head"><div><h3>${a.pinned ? '<span title="Vastgezet">📌</span> ' : ''}${esc(a.title)}</h3><small class="muted">${esc(fmtShort(iso(new Date(a.created_at))))}${a.updated_at && new Date(a.updated_at) - new Date(a.created_at) > 60000 ? ` · bijgewerkt ${esc(fmtShort(iso(new Date(a.updated_at))))}` : ''}</small></div>
       ${mgr ? `<div class="ann-tools"><button type="button" class="btn sm ghost" data-annedit="${a.id}">Bewerken</button></div>` : ''}</div>
     ${a.body ? `<p class="ann-body">${annBody(a.body)}</p>` : ''}
-    ${a.attachment_path ? (img ? `<a class="ann-img" data-annlink="${esc(a.attachment_path)}" target="_blank" rel="noopener"><img data-annimg="${esc(a.attachment_path)}" alt="${esc(a.attachment_name || 'Afbeelding')}"></a>`
-      : `<a class="btn sm ann-file" data-annlink="${esc(a.attachment_path)}" target="_blank" rel="noopener">📄 ${esc(a.attachment_name || 'Bijlage openen')}</a>`) : ''}
+    ${a.attachment_path ? (img ? `<button type="button" class="ann-img" data-annview="${esc(a.attachment_path)}" data-annname="${esc(a.attachment_name || 'Afbeelding')}" data-anntype="${esc(a.attachment_type || '')}" aria-label="${esc(a.attachment_name || 'Afbeelding')} openen"><img data-annimg="${esc(a.attachment_path)}" alt="${esc(a.attachment_name || 'Afbeelding')}"></button>`
+      : `<button type="button" class="btn sm ann-file" data-annview="${esc(a.attachment_path)}" data-annname="${esc(a.attachment_name || 'Bijlage')}" data-anntype="${esc(a.attachment_type || '')}">📄 ${esc(a.attachment_name || 'Bijlage openen')}</button>`) : ''}
     <div class="ann-foot">${mgr ? `<button type="button" class="linkbtn" data-annreads="${a.id}">${readInfo}</button>` : read ? '<span class="muted small">✓ Gelezen</span>' : `<button type="button" class="btn sm primary" data-annread="${a.id}">👍 Gelezen</button>`}</div>
   </article>`;
 }
 // bijlagen pas na het tekenen ophalen (beveiligde links zijn tijdelijk)
 async function fillAnnFiles(el) {
-  for (const n of $$('[data-annimg], [data-annlink]', el)) {
-    const p = n.dataset.annimg || n.dataset.annlink; if (!p) continue;
-    const u = await store.attachmentUrl(p); if (!u) continue;
-    if (n.dataset.annimg) n.src = u; else n.href = u;
+  for (const n of $$('[data-annimg]', el)) {
+    const u = await store.attachmentUrl(n.dataset.annimg); if (u) n.src = u;
   }
 }
+
+// Bijlagen openen in de app zelf (geen los tabblad met een Supabase-adres): foto's als afbeelding, pdf's pagina voor pagina
+let pdfjsLib = null;
+async function loadPdfjs() {
+  if (pdfjsLib) return pdfjsLib;
+  const base = new URL('vendor/pdfjs/', location.href).href;
+  const lib = await import(base + 'pdf.min.mjs');
+  lib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.mjs';
+  return (pdfjsLib = lib);
+}
+async function fileViewer(path, name, type) {
+  const dlg = document.createElement('dialog');
+  dlg.className = 'viewer';
+  dlg.innerHTML = `<div class="viewer-bar"><strong class="viewer-name">${esc(name || 'Bijlage')}</strong><button type="button" class="btn sm" data-vsave disabled>Bewaren</button><button type="button" class="x" data-vclose aria-label="Sluiten">×</button></div>
+    <div class="viewer-body"><p class="viewer-msg">Bezig met openen…</p></div>`;
+  document.body.append(dlg);
+  const urls = [];
+  let closed = false;
+  dlg.addEventListener('close', () => { closed = true; urls.forEach(u => URL.revokeObjectURL(u)); dlg.parentNode && dlg.parentNode.removeChild(dlg); });
+  $('[data-vclose]', dlg).onclick = () => dlg.close();
+  dlg.showModal();
+  const body = $('.viewer-body', dlg);
+  try {
+    const blob = await store.attachmentBlob(path);
+    if (closed) return;
+    const kind = /pdf/i.test(type || blob.type) || /\.pdf$/i.test(name || '') ? 'pdf' : /^image\//.test(type || blob.type) ? 'img' : 'other';
+    const url = URL.createObjectURL(blob); urls.push(url);
+    const save = $('[data-vsave]', dlg); save.disabled = false;
+    save.onclick = async () => {
+      const file = new File([blob], name || 'bijlage', { type: blob.type || type || 'application/octet-stream' });
+      try { if (navigator.canShare && navigator.canShare({ files: [file] })) return await navigator.share({ files: [file] }); } catch (x) { if (x && x.name === 'AbortError') return; }
+      const a = document.createElement('a'); a.href = url; a.download = name || 'bijlage'; document.body.append(a); a.click(); a.parentNode.removeChild(a);
+    };
+    if (kind === 'img') { body.innerHTML = `<img class="viewer-img" src="${url}" alt="${esc(name || 'Afbeelding')}">`; return; }
+    if (kind === 'other') { body.innerHTML = '<p class="viewer-msg">Dit bestand kan niet in de app getoond worden. Tik op Bewaren om het op je telefoon te openen.</p>'; return; }
+    const lib = await loadPdfjs();
+    const doc = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
+    if (closed) return;
+    body.innerHTML = '';
+    const width = Math.min(body.clientWidth - 16, 1000), ratio = Math.min(window.devicePixelRatio || 1, 2);
+    for (let i = 1; i <= doc.numPages && !closed; i++) {
+      const page = await doc.getPage(i);
+      const vp1 = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: (width / vp1.width) * ratio });
+      const c = document.createElement('canvas');
+      c.className = 'viewer-page'; c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+      c.style.width = width + 'px'; c.setAttribute('aria-label', `Pagina ${i} van ${doc.numPages}`);
+      body.append(c);
+      await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    }
+    doc.destroy();
+  } catch (e) {
+    if (!closed) body.innerHTML = `<p class="viewer-msg">Openen lukt niet: ${esc(errMsg(e))}. Tik op Bewaren om het bestand op je telefoon te openen.</p>`;
+  }
+}
+// één luisteraar voor alle bijlageknoppen (prikbord, overzicht, 'alle mededelingen')
+document.addEventListener('click', ev => {
+  const v = ev.target.closest('[data-annview]'); if (!v) return;
+  ev.preventDefault(); ev.stopPropagation();
+  fileViewer(v.dataset.annview, v.dataset.annname, v.dataset.anntype);
+}, true);
 function annDialog(a = {}) {
   const isNew = !a.id;
   openDialog(isNew ? 'Nieuwe mededeling' : 'Mededeling bewerken', `
@@ -1740,7 +1818,9 @@ async function viewDashboard(el) {
 // Keuze wat er met ingeplande diensten gebeurt als verlof wordt goedgekeurd
 function conflictChoice(c) {
   if (!c.length) return '';
-  return `<div class="warnbox">Staat nog ${c.length}× ingepland: ${c.map(s => `${esc(fmtShort(s.date))} ${hm(s.start_time)}–${hm(s.end_time)}`).join(', ')}.</div>
+  const sorted = c.slice().sort((a, b) => (a.date + a.start_time).localeCompare(b.date + b.start_time));
+  const show = sorted.slice(0, 6).map(s => `${esc(fmtShort(s.date))} ${hm(s.start_time)}–${hm(s.end_time)}`).join(', ');
+  return `<div class="warnbox">Staat nog ${c.length}× ingepland: ${show}${c.length > 6 ? ` en nog ${c.length - 6} meer, t/m ${esc(fmtShort(sorted[sorted.length - 1].date))}` : ''}.</div>
     <fieldset class="choice"><legend>Wat moet er met ${c.length > 1 ? 'deze diensten' : 'deze dienst'} gebeuren?</legend>
       <label class="check"><input type="radio" name="conflict" value="open" checked> <span><strong>Open dienst van maken</strong><br><span class="hint">Collega's kunnen zich aanmelden; jij kiest wie hem krijgt.</span></span></label>
       <label class="check"><input type="radio" name="conflict" value="delete"> <span><strong>Verwijderen</strong><br><span class="hint">De dienst vervalt helemaal.</span></span></label>
@@ -1749,9 +1829,8 @@ function conflictChoice(c) {
 }
 async function resolveConflicts(c, how) {
   if (!c.length || !how || how === 'keep') return c.length ? ' · diensten staan nog in het rooster' : '';
-  if (how === 'delete') { for (const x of c) await store.deleteShift(x.id); return ` · ${c.length} dienst${c.length > 1 ? 'en' : ''} verwijderd`; }
-  await store.saveShifts(c.map(x => ({ id: x.id, employee_id: null })));
-  return ` · ${c.length} open dienst${c.length > 1 ? 'en' : ''} gemaakt`;
+  await store.bulkShifts(c.map(x => x.id), how === 'delete' ? 'delete' : 'open');
+  return how === 'delete' ? ` · ${c.length} dienst${c.length > 1 ? 'en' : ''} verwijderd` : ` · ${c.length} open dienst${c.length > 1 ? 'en' : ''} gemaakt`;
 }
 
 /* ================= Instellingen (directie) ================= */
@@ -2285,6 +2364,7 @@ function employeeDialog(e, priv = {}, reqs = []) {
       ${isNew ? '' : `<p class="hint">Verlof ${bal.year}: ${fmtH(bal.opening)} meegenomen uit ${bal.year - 1} + ${fmtH(bal.entitlement)} recht − ${fmtH(bal.used)} opgenomen = <strong>${fmtH(bal.rest)} uur over</strong>${bal.pending ? ` · ${bal.pending} ${bal.pending === 1 ? 'aanvraag' : 'aanvragen'} open` : ''}</p>`}
       <p class="hint">De geboortedatum gebruikt de app voor de jongerenregels uit de Arbeidstijdenwet.</p>
     </fieldset>
+    ${isNew ? '' : `<div class="futbox"><button type="button" class="btn sm" data-futshifts>🗓️ Komende diensten uit het rooster halen…</button><span class="hint">Bijvoorbeeld als iemand stopt of langere tijd niet werkt. Alles vanaf een datum in één keer.</span></div>`}
     ${isNew ? '' : '<details class="history" data-history><summary>Geschiedenis van wijzigingen</summary><div class="hint">Laden…</div></details>'}
     ${isNew ? `<label class="check"><input type="checkbox" name="send_invite" checked> Stuur meteen een uitnodiging per e-mail</label>` : !e.user_id && e.active !== false ? `<div class="invitebox"><span class="hint">${e.invited_at ? `Uitgenodigd op ${esc(fmtShort(iso(new Date(e.invited_at))))} ${tHM(e.invited_at)}, nog niet geactiveerd.` : 'Nog niet uitgenodigd.'}</span>
       <div class="req-actions"><button type="button" class="btn sm primary" data-sendinvite>${e.invited_at ? 'Uitnodiging opnieuw sturen' : 'Uitnodiging sturen'}</button><button type="button" class="btn sm" data-invite>Kopieer bericht voor WhatsApp</button></div></div>` : ''}
@@ -2300,6 +2380,8 @@ function employeeDialog(e, priv = {}, reqs = []) {
       const h = $('[data-history]', dlg); if (h) h.addEventListener('toggle', () => { if (h.open && !h.dataset.loaded) { h.dataset.loaded = 1; historyHTML(e.id).then(x => { $('div', h).outerHTML = x; }); } });
       const b = $('[data-invite]', dlg);
       if (b) b.onclick = async () => { try { await navigator.clipboard.writeText(invite); toast('Bericht gekopieerd — plak het in WhatsApp of mail'); } catch (x) { prompt('Kopieer dit bericht:', invite); } };
+      const fb = $('[data-futshifts]', dlg);
+      if (fb) fb.onclick = () => futureShiftsDialog(e);
       const si = $('[data-sendinvite]', dlg);
       if (si) si.onclick = async () => {
         si.disabled = true; si.textContent = 'Versturen…';
@@ -2345,6 +2427,29 @@ function employeeDialog(e, priv = {}, reqs = []) {
           async onSubmit(fd2) { toast('Komende diensten afgehandeld' + await resolveConflicts(fut, fd2.get('conflict'))); rerender(); },
         }), 60);
       }
+    },
+  });
+}
+
+// Alle komende diensten van één medewerker vanaf een datum in één keer verwijderen of open zetten
+async function futureShiftsDialog(e) {
+  const now = new Date(), all = (await store.shifts(todayIso(), iso(addDays(now, 800)))).filter(x => x.employee_id === e.id && shiftWindow(x)[0] > now);
+  const first = e.name.split(' ')[0];
+  if (!all.length) return toast(`${first} heeft geen komende diensten`);
+  const pick = from => all.filter(x => x.date >= from);
+  openDialog(`Komende diensten van ${first}`, `
+    <label class="field">Vanaf welke datum?<input type="date" name="from" value="${todayIso()}" min="${todayIso()}" required></label>
+    <div data-futlist>${conflictChoice(all)}</div>
+    <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><span class="spacer"></span><button class="btn primary" value="save">Doorvoeren</button></div>`, {
+    onReady(dlg) {
+      const f = $('form', dlg), box = $('[data-futlist]', dlg);
+      f.from.onchange = () => { const how = (f.conflict && f.conflict.value) || 'open'; const l = pick(f.from.value || todayIso()); box.innerHTML = l.length ? conflictChoice(l) : '<p class="hint">Vanaf deze datum staan er geen diensten meer.</p>'; const r = $(`input[name=conflict][value=${how}]`, box); if (r) r.checked = true; };
+    },
+    async onSubmit(fd) {
+      const l = pick(fd.get('from') || todayIso()), how = fd.get('conflict');
+      if (!l.length || !how || how === 'keep') return;
+      if (!await ask(`${l.length} dienst${l.length > 1 ? 'en' : ''} van ${first} ${how === 'delete' ? 'verwijderen' : 'open zetten'}?`, how === 'delete' ? 'Verwijderen' : 'Open zetten')) throw 'cancel';
+      toast('Klaar' + await resolveConflicts(l, how)); rerender();
     },
   });
 }
