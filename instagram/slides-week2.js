@@ -13,12 +13,23 @@ module.exports = [
         <h1 class="hero">Je kerstmenu staat in een pdf. <em><span class="mark">Je gasten scrollen door.</span></em></h1>
         ${phone(`
           <div class="pdf-bar"><span>‹</span><b>kerstmenu_2026_DEF_v4.pdf</b><span>⋯</span></div>
-          <div class="pdf-page">
-            <div class="pdf-title">KERSTMENU</div>
-            <div class="pdf-lines">${tinyLines(26)}</div>
+          <div class="pdf-load"><div class="pl-bar"><i></i></div><span>Downloaden… 8,4 MB</span></div>
+          <div class="pdf-view">
+            <div class="menu-page">
+              <div class="mp-top">✦ Restaurant ✦</div>
+              <div class="mp-title">Kerstmenu</div>
+              <div class="mp-sub">24, 25 en 26 december · 5 gangen · € 79,50 p.p.</div>
+              <div class="mc"><b>Amuse</b><span>Huisgemaakte brioche met truffelboter en gerookte zeezout</span></div>
+              <div class="mc"><b>Voorgerecht</b><span>Carpaccio van rode biet, geitenkaas, walnoot en honing-tijm dressing</span></div>
+              <div class="mc"><b>Tussengerecht</b><span>Bisque van langoustines met venkel en een crouton van zuurdesem</span></div>
+              <div class="mc"><b>Hoofdgerecht</b><span>Hertenrug met knolselderij, bospaddenstoelen, rode kool en wildjus</span></div>
+              <div class="mc"><b>Dessert</b><span>Chocolade, sinaasappel en kaneel in drie bereidingen</span></div>
+              <div class="mp-foot">Allergieën? Meld het bij reservering. Reserveren uitsluitend telefonisch tussen 14:00 en 16:00 uur.</div>
+            </div>
+            <div class="menu-page faint"></div>
           </div>
-          <div class="pinch">🔍</div>`, 'phone-low')}
-        <div class="hand" style="position:absolute;left:110px;top:780px;transform:rotate(-5deg)">inzoomen… wachten… 😩</div>` },
+          <div class="pdf-pager">1 / 4</div>`, 'phone-pdf')}
+        <div class="hand" style="position:absolute;left:90px;top:900px;width:330px;transform:rotate(-6deg);line-height:1.15">inzoomen…<br>wachten…<br>wegklikken 😩</div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Wat er gebeurt</div>
         <h1 class="lg">Inzoomen. Wachten. Scrollen. <em>Wegklikken.</em></h1>
