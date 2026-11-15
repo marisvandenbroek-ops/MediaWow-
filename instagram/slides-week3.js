@@ -111,8 +111,8 @@ Bekijk 5 ontwerpen voor salons op mediawow.nl/beauty (link in bio), of reageer T
   {
     id: '3-wo-telefonisch',
     slides: [
-      { theme: 'photo', cls: 'mwc ', html: `
-        <img class="bg-photo" src="{{img:bordeaux/martini-gordijn.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
+      { theme: 'photo', cls: 'lwc', html: `
+        <img class="bg-photo" src="{{img:canva/foto-067.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
         <div class="mw-ttl"><h1>Reserveren? <em>Alleen telefonisch.</em></h1></div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Wanneer reserveren gasten?</div>
@@ -283,8 +283,8 @@ Zin om te beginnen? Plan een vrijblijvende kennismaking via mediawow.nl (link in
   {
     id: '7-zo-agenda-leeg',
     slides: [
-      { theme: 'photo', cls: 'mwc top', html: `
-        <img class="bg-photo" src="{{img:bordeaux/../story/lege-stoel-donker.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
+      { theme: 'photo', cls: 'lwc', html: `
+        <img class="bg-photo" src="{{img:story/stoel-plaid.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
         <div class="mw-ttl"><h1>Je agenda is leeg. <em>Je website ook?</em></h1></div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Voor coaches</div>

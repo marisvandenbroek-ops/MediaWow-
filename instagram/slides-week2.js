@@ -117,8 +117,8 @@ Heb je een website van MediaWow? Cadeaubonnen met aankooplink zijn een uitbreidi
   {
     id: '3-wo-coaches-januari',
     slides: [
-      { theme: 'photo', cls: 'mwc top', html: `
-        <img class="bg-photo" src="{{img:bordeaux/krant-stoel.jpg}}" style="object-position:50% 0%"><div class="bg-fade"></div>
+      { theme: 'photo', cls: 'lwc', html: `
+        <img class="bg-photo" src="{{img:canva/foto-083.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
         <div class="mw-ttl"><h1>In januari zoeken ze een coach. <em>Vinden ze jóu?</em></h1></div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Het zoekmoment</div>
@@ -308,8 +308,8 @@ Zeg liever wat ze krijgen:
   {
     id: '7-zo-begin-nu',
     slides: [
-      { theme: 'photo', cls: 'mwc top', html: `
-        <img class="bg-photo" src="{{img:bordeaux/laptop-bed.jpg}}" style="object-position:50% 62%"><div class="bg-fade"></div>
+      { theme: 'photo', cls: 'lwc', html: `
+        <img class="bg-photo" src="{{img:canva/foto-094.jpg}}" style="object-position:50% 60%"><div class="bg-fade"></div>
         <div class="mw-ttl"><h1>Begin niet in januari. <em>Begin nu.</em></h1></div>` },
       { theme: 'dark', html: `
         <div class="kicker">Waarom nu?</div>

@@ -451,6 +451,14 @@ em{font-style:italic}
 .edito.greige em,.edito.greige h1 em,.edito.greige h2 em,.edito.greige .mark,.edito.greige h3 em{color:#8A7967!important}
 .edito .openers.light p em{color:#8A7967!important}
 .edito .hand{color:#3A1011}
+/* ===== LICHT: stijl van de bestaande feed (licht, luchtig, echte foto's) ===== */
+.licht.greige{background:#EFEDEA}
+.lwc .bg-photo{filter:saturate(.85) brightness(1.02)}
+.lwc .bg-fade{background:linear-gradient(180deg,rgba(0,0,0,.28) 0%,rgba(0,0,0,0) 18%,rgba(0,0,0,0) 50%,rgba(0,0,0,.55) 100%)}
+.lwc .mw-ttl{position:absolute;left:80px;right:80px;bottom:140px;z-index:2;text-align:center}
+.lwc .mw-ttl h1{font-family:'Playfair Display',serif!important;font-weight:400;font-size:100px;line-height:1;letter-spacing:-.03em;color:#fff}
+.lwc .mw-ttl h1 em{color:#fff!important;font-style:italic}
+.lwc .ftr{z-index:3}
 /* ===== MediaWow fotocover (bordeaux-foto's, getemperd naar huisstijl) ===== */
 .mwc .bg-photo{filter:saturate(.32) sepia(.18) brightness(.72) contrast(1.1)}
 .mwc .bg-fade{background:linear-gradient(180deg,rgba(27,4,5,.55) 0%,rgba(27,4,5,0) 22%,rgba(27,4,5,0) 46%,rgba(27,4,5,.9) 100%)}
@@ -467,12 +475,13 @@ em{font-style:italic}
 `;
 
 function slideHTML(sl, i, n) {
+  if (process.env.LICHT && i === 0 && sl.theme === 'dark') sl = { ...sl, theme: 'greige' };
   const html = sl.html.replace(/\{\{img:([^}]+)\}\}/g, (_, f) => dataURI(f));
   const onDark = sl.theme === 'dark' || sl.theme === 'photo';
   const logoColor = sl.light ? '#141414' : onDark ? '#fff' : (sl.theme === 'greige' ? '#141414' : 'var(--bordeaux)');
   const counter = n > 1 ? (i === 0 ? 'Swipe →' : `${String(i + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}`) : 'mediawow.nl';
   return `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONTS}"><style>${CSS}</style></head>
-<body><div class="s ${sl.theme} ${sl.cls || ''} ${sl.light ? 'lightphoto' : ''} ${i === 0 ? 'first' : 'rest'} ${process.env.SYSTEM ? 'sys' : ''} ${process.env.CLEAN ? 'clean' : ''} ${process.env.EDITO ? 'edito' : ''}">${html}
+<body><div class="s ${sl.theme} ${sl.cls || ''} ${sl.light ? 'lightphoto' : ''} ${i === 0 ? 'first' : 'rest'} ${process.env.SYSTEM ? 'sys' : ''} ${process.env.CLEAN ? 'clean' : ''} ${process.env.EDITO ? 'edito' : ''} ${process.env.LICHT ? 'licht' : ''}">${html}
 <div class="hdr"><div class="logo-mask" style="background:${logoColor}"></div><span class="h">@media.wow</span></div>
 <div class="ftr"><span>${process.env.SYSTEM ? 'Website Check · MediaWow' : 'mediawow.nl'}</span><span>${counter}</span></div></div></body></html>`;
 }
