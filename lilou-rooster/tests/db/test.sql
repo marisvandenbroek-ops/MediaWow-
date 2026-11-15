@@ -401,5 +401,26 @@ select t_ok(t_count($q$select * from notifications where title like '%Afspraken 
 set role authenticated; select as_user(2); select ack_rules(); reset role;
 select t_ok(t_count('select * from rules_acks where version = 2') = 1, 'na wijziging opnieuw tekenen voor de nieuwe versie');
 
+\echo '== Controleronde: klokken, verlofuren, afspraken'
+-- Avonddienst zonder planning na een middagdienst: niet direct automatisch uitklokken
+insert into shifts (id, employee_id, date, start_time, end_time, published)
+select '50000000-0000-0000-0000-000000000031', 'a0000000-0000-0000-0000-000000000004', (now() at time zone 'Europe/Amsterdam')::date,
+       ((now() - interval '10 hours') at time zone 'Europe/Amsterdam')::time, ((now() - interval '7 hours') at time zone 'Europe/Amsterdam')::time, true
+ where ((now() - interval '10 hours') at time zone 'Europe/Amsterdam')::date = (now() at time zone 'Europe/Amsterdam')::date;
+delete from time_entries where employee_id = 'a0000000-0000-0000-0000-000000000004' and clock_out is null;
+insert into time_entries (id, employee_id, clock_in) values ('70000000-0000-0000-0000-000000000031', 'a0000000-0000-0000-0000-000000000004', now() - interval '1 hour');
+set role authenticated; select as_user(2); select run_jobs(); reset role;
+select t_ok((select clock_out is null from time_entries where id = '70000000-0000-0000-0000-000000000031'), 'inklokken na een eerdere dienst wordt niet aan die dienst gekoppeld en niet automatisch uitgeklokt');
+delete from time_entries where id = '70000000-0000-0000-0000-000000000031';
+delete from shifts where id = '50000000-0000-0000-0000-000000000031';
+set role authenticated; select as_user(2);
+select t_fails($q$insert into requests (employee_id, type, start_date, end_date, status, leave_hours) values ('a0000000-0000-0000-0000-000000000002', 'vrij', today_nl() + 30, today_nl() + 30, 'pending', -40)$q$, 'medewerker kan zelf geen verlofuren meesturen');
+select t_fails('select bump_rules()', 'medewerker kan afspraken niet opnieuw laten tekenen');
+select as_user(1);
+select bump_rules();
+select t_ok((select rules_version from settings) = 3, 'directie verhoogt de versie via de server');
+select t_fails('update settings set rules_version = 1', 'versie van de afspraken kan niet omlaag');
+reset role;
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

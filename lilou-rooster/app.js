@@ -401,9 +401,9 @@ function demoStore() {
       if (!db.rulesAcks.some(r => r.employee_id === mem && r.version === v)) db.rulesAcks.push({ employee_id: mem, version: v, at: new Date().toISOString() });
       save();
     },
-    async bumpRules(v) {
+    async bumpRules() {
       if (!isMgr()) throw new Error('Alleen de directie kan dit');
-      db.settings.rules_version = v + 1;
+      db.settings.rules_version = (db.settings.rules_version || 1) + 1;
       db.employees.filter(e => e.active !== false && e.role !== 'manager').forEach(e => notify(e.id, '📘 Afspraken bijgewerkt', 'Lees de nieuwe afspraken en tik op Gelezen en akkoord.', 'mijn'));
       save();
     },
@@ -602,14 +602,17 @@ function loadScript(src) {
 
 async function supabaseStore() {
   await loadScript('vendor/supabase.min.js');   // lokaal: geen verbinding met een externe CDN
-  const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+  // elk verzoek maximaal 25 seconden: een hangende verbinding mag het scherm niet leeg laten
+  const tfetch = (u, o = {}) => (o.signal || typeof AbortSignal === 'undefined' || !AbortSignal.timeout ? fetch(u, o) : fetch(u, { ...o, signal: AbortSignal.timeout(25000) }));
+  const sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { global: { fetch: tfetch } });
   const ok = ({ data, error }) => { if (error) throw error; return data; };
   const fixShift = s => ({ ...s, start_time: hm(s.start_time), end_time: hm(s.end_time) });
   const redirect = location.origin + location.pathname;
   return {
     demo: false, sb,
     async init() {
-      const { data: { session } } = await sb.auth.getSession();
+      const { data: { session }, error } = await sb.auth.getSession();
+      if (error) throw error;
       if (!session) return null;
       const emp = ok(await sb.from('employees').select('*').eq('user_id', session.user.id).maybeSingle());
       return emp ? { employee: emp } : { unlinked: true, email: session.user.email };
@@ -731,7 +734,7 @@ async function supabaseStore() {
     async sickRecover(id) { const { error } = await sb.rpc('sick_recover', { p_id: id }); if (error) throw error; },
     async rulesAcks() { return ok(await sb.from('rules_acks').select('*')) || []; },
     async ackRules() { const { error } = await sb.rpc('ack_rules'); if (error) throw error; },
-    async bumpRules(v) { ok(await sb.from('settings').update({ rules_version: v + 1, updated_at: new Date().toISOString() }).eq('id', 1)); },
+    async bumpRules() { return ok(await sb.rpc('bump_rules')); },
     // --- lijsten
     async checklists() { return ok(await sb.from('checklists').select('*').order('sort').order('name')); },
     async saveChecklist(c) {
@@ -761,7 +764,10 @@ async function supabaseStore() {
     async deleteRequest(id) { ok(await sb.from('requests').delete().eq('id', id)); },
     // --- klokken
     async settings() { return ok(await sb.from('settings').select('*').eq('id', 1).maybeSingle()) || {}; },
-    async saveSettings(st) { ok(await sb.from('settings').update({ ...st, updated_at: new Date().toISOString() }).eq('id', 1)); },
+    async saveSettings(st) {
+      const rows = ok(await sb.from('settings').update({ ...st, updated_at: new Date().toISOString() }).eq('id', 1).select('id'));
+      if (!rows || !rows.length) throw new Error('Opslaan is niet gelukt (geen rechten of geen verbinding).');
+    },
     async registerWifi() { return ok(await sb.rpc('register_wifi')); },
     // --- open diensten
     async applications() { return ok(await sb.from('shift_applications').select('*')); },
@@ -978,8 +984,11 @@ async function checkMe(force = false) {
   if (!S.me || (!force && Date.now() - meCheckedAt < 15000)) return true;
   meCheckedAt = Date.now();
   let r; try { r = await store.init(); } catch (e) { return true; }   // geen verbinding: niets doen
+  if (r === null) { if (!navigator.onLine) return true; await signOut(); toast('Je sessie is verlopen. Log opnieuw in.', 'error'); return false; }
   const emp = r && r.employee;
   if (!emp || emp.active === false) { await signOut(); toast('Je account is niet meer actief. Je bent uitgelogd.', 'error'); return false; }
+  // instellingen (gesloten dagen, functies) ook op andere toestellen actueel houden
+  if (Date.now() - (S.setAt || 0) > 60000) { S.setAt = Date.now(); store.settings().then(applySettings).catch(() => {}); }
   if (emp.role !== S.me.role) {
     S.me = emp; S.view = isMgr() ? 'overzicht' : canPlan() ? 'planning' : 'mijn';
     renderShell(); toast('Je rechten zijn gewijzigd'); return false;
@@ -1070,15 +1079,33 @@ async function maybeRunJobs() {
 
 async function go(view) {
   clearInterval(S.timer);
+  const tok = (S.renderTok = (S.renderTok || 0) + 1);
   if (!(await checkMe())) return;
-  await maybeRunJobs();
+  if (tok !== S.renderTok) return;   // intussen al naar een ander scherm gegaan
+  maybeRunJobs();   // niet op wachten: de database doet dit ook zelf
   if (S.view !== view) window.scrollTo(0, 0);
   S.view = view;
   $$('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === view));
   $('[data-gosettings]')?.classList.toggle('active', view === 'instellingen');
-  const el = $('#view');
-  el.onclick = null; el.onchange = null; el.ontouchstart = null; el.ontouchend = null;
+  // Nieuw element per keer: een tragere, oudere laadactie schrijft dan in een losgekoppeld element en niet over dit scherm
+  const old = $('#view');
+  if (!old) return;
+  const el = document.createElement('main'); el.id = 'view';
+  el.style.minHeight = old.offsetHeight + 'px';   // geen sprong naar boven tijdens het opnieuw laden
+  old.parentNode.replaceChild(el, old);
+  const slow = setTimeout(() => { if (el.isConnected && !el.childElementCount) el.innerHTML = '<p class="hint loading">Laden…</p>'; }, 400);
+  const show = html => { if (el.isConnected && tok === S.renderTok) el.innerHTML = html; };
   try {
+    await Promise.race([renderView(view, el), new Promise((_, rej) => setTimeout(() => rej(new Error('Het laden duurt te lang. Controleer je verbinding.')), 20000))]);
+  } catch (e) {
+    console.error(e);
+    show(`<div class="card pad"><p class="msg err">Er ging iets mis bij het laden: ${esc(errMsg(e))}</p><button class="btn" data-retry>Opnieuw proberen</button></div>`);
+    const r = $('[data-retry]', el); if (r) r.onclick = () => go(view);
+  } finally { clearTimeout(slow); el.style.minHeight = ''; }
+  if (tok === S.renderTok) refreshBadge();
+}
+async function renderView(view, el) {
+  {
     if (view === 'planning') await viewWeek(el, canPlan());
     else if (view === 'mijn') await viewMine(el);
     else if (view === 'aanvragen') await (isMgr() ? viewRequestsMgr(el) : viewRequestsStaff(el));
@@ -1091,11 +1118,7 @@ async function go(view) {
     else if (view === 'mijnuren') await viewMyHours(el);
     else if (view === 'instellingen' && isMgr()) await viewSettings(el);
     else if (view === 'overzicht' && isMgr()) await viewDashboard(el);
-  } catch (e) {
-    console.error(e);
-    el.innerHTML = `<div class="card pad"><p class="msg err">Er ging iets mis bij het laden: ${esc(errMsg(e))}</p><button class="btn" onclick="location.reload()">Opnieuw laden</button></div>`;
   }
-  refreshBadge();
 }
 const rerender = () => go(S.view);
 
@@ -1333,7 +1356,9 @@ async function viewWeek(el, editable) {
     const rv = ev.target.closest('[data-rev]');
     if (rv) {
       if (['Tab', 'Enter'].includes(S.lastKey)) S.refocus = { attr: 'data-rev', date: rv.dataset.rev }; S.lastKey = null;
-      const v = rv.value.trim(); await store.saveRevenue(rv.dataset.rev, { forecast: v === '' ? null : Math.max(0, Number(v) || 0) }); return rerender();
+      const v = rv.value.trim();
+      try { await store.saveRevenue(rv.dataset.rev, { forecast: v === '' ? null : Math.max(0, Number(v) || 0) }); } catch (x) { toast('Omzet niet opgeslagen: ' + errMsg(x), 'error'); }
+      return rerender();
     }
     const g = ev.target.closest('[data-guests]'); if (!g) return;
     const v = g.value.trim(); await store.saveDay(g.dataset.guests, v === '' ? null : Math.max(0, Math.round(Number(v)) || 0)); rerender();
@@ -1571,12 +1596,15 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
         const emp = fd.get('employee_id'), d0 = fd.get('date');
         const dts = isNew ? [...new Set([d0, ...fd.getAll('days').map(i => iso(addDays(mondayOf(parse(d0)), Number(i))))])] : [d0];
         const free = [];
-        dts.sort().forEach(ds => {
+        dts.sort();
+        // verlof en beschikbaarheid ophalen voor de gekozen dagen (die kunnen in een andere week liggen dan op het scherm)
+        const [lvAll, avAll] = await Promise.all([store.requests().catch(() => leaves), store.availability(dts[0], dts[dts.length - 1]).catch(() => avail)]);
+        dts.forEach(ds => {
           const sp = specialDay(ds); if (sp?.kind === 'gesloten') free.push(`${fmtShort(ds)}: ${CFG.bedrijf} is gesloten (${sp.label})`);
           if (!emp) return;
-          const lv = leaves.find(r => r.employee_id === emp && r.status !== 'rejected' && r.start_date <= ds && r.end_date >= ds);
+          const lv = lvAll.find(r => r.employee_id === emp && r.status !== 'rejected' && r.start_date <= ds && r.end_date >= ds);
           if (lv) free.push(`${fmtShort(ds)}: ${REQ[lv.type].toLowerCase()} ${lv.status === 'pending' ? 'aangevraagd' : 'goedgekeurd'}`);
-          const v = avail.find(a => a.employee_id === emp && a.date === ds && a.kind === 'niet');
+          const v = avAll.find(a => a.employee_id === emp && a.date === ds && a.kind === 'niet');
           if (v) free.push(`${fmtShort(ds)}: heeft "niet beschikbaar" doorgegeven`);
         });
         const changed = isNew || emp !== (s.employee_id || '') || d0 !== s.date;
@@ -1696,7 +1724,8 @@ async function rulesBannerHTML() {
 }
 const rulesTeam = emps => sortEmps(emps).filter(e => e.active !== false && e.role !== 'manager');
 async function rulesDialog() {
-  const [st, acks, emps] = await Promise.all([store.settings(), store.rulesAcks(), store.employees()]);
+  let st, acks, emps;
+  try { [st, acks, emps] = await Promise.all([store.settings(), store.rulesAcks(), store.employees()]); } catch (x) { return toast(errMsg(x), 'error'); }
   const v = st.rules_version || 1, team = rulesTeam(emps);
   const at = Object.fromEntries(acks.filter(r => r.version === v).map(r => [r.employee_id, r.at]));
   const yes = team.filter(e => at[e.id]), no = team.filter(e => !at[e.id]);
@@ -1709,7 +1738,7 @@ async function rulesDialog() {
     $('[data-rulesview]', dlg).onclick = () => rulesViewer();
     $('[data-rulesbump]', dlg).onclick = async () => {
       if (!await ask('Zijn de afspraken gewijzigd? Dan moet iedereen opnieuw lezen en tekenen. Het team krijgt een melding.', 'Iedereen opnieuw laten tekenen')) return;
-      try { await store.bumpRules(v); dlg.close(); toast('Iedereen krijgt een melding om opnieuw te tekenen'); rerender(); } catch (x) { toast(errMsg(x), 'error'); }
+      try { await store.bumpRules(); dlg.close(); toast('Iedereen krijgt een melding om opnieuw te tekenen'); rerender(); } catch (x) { toast(errMsg(x), 'error'); }
     };
   } });
 }
@@ -1897,10 +1926,12 @@ function bindBoard(el) {
 async function viewDashboard(el) {
   S.dashWeek ||= mondayOf(new Date());
   const from = iso(S.dashWeek), to = iso(addDays(S.dashWeek, 6)), today = todayIso();
+  const soft = (pr, fb) => pr.catch(e => { console.warn('overzicht: bron niet geladen', e); S.dashPartial = true; return fb; });
+  S.dashPartial = false;
   const [emps0, shifts, ents, privList, st, revRows, reqs, apps, openE, avail, board, ahead, swapsAll] = await Promise.all([
-    store.employees(), store.shifts(from, to), store.entries(from, to), store.privates(), store.settings(), store.revenue(from, to),
-    store.requests(), store.applications(), store.openEntries(), store.availability(from, to), store.announcements(),
-    store.shifts(todayIso(), iso(addDays(new Date(), 70))), store.swaps()]);
+    store.employees(), store.shifts(from, to), soft(store.entries(from, to), []), soft(store.privates(), []), store.settings(), soft(store.revenue(from, to), []),
+    soft(store.requests(), []), soft(store.applications(), []), soft(store.openEntries(), []), soft(store.availability(from, to), []), soft(store.announcements(), { list: [], reads: [] }),
+    soft(store.shifts(todayIso(), iso(addDays(new Date(), 70))), []), soft(store.swaps(), [])]);
   applySettings(st);
   const emps = sortEmps(emps0), byId = Object.fromEntries(emps.map(e => [e.id, e]));
   const privs = Object.fromEntries(privList.map(p => [p.employee_id, p]));
@@ -1946,15 +1977,12 @@ async function viewDashboard(el) {
   let short = 0;
   days.forEach(d => { if (specialDay(d)?.kind === 'gesloten') return; const base = staffing[dayIdx(parse(d))] || {}; Object.entries(base).forEach(([p, n]) => { const h = shifts.filter(x => x.date === d && x.employee_id && x.position === p).length; if (h < Number(n)) short++; }); });
   const yest = iso(addDays(parse(bizToday()), -1));
-  let listMiss = 0, openMeld = 0;
-  try {
-    const cls = (await store.checklists()).filter(l => l.active !== false && ['opening', 'sluiting', 'dag'].includes(l.moment));
-    const tky = await store.ticks([yest]);
-    listMiss = specialDay(yest)?.kind === 'gesloten' ? 0 : cls.filter(l => itemsOn(l, yest).some(it => !tky.some(t => t.checklist_id === l.id && t.item_id === it.id))).length;
-    openMeld = (await store.logs(iso(addDays(new Date(), -180)), todayIso(), true)).length;
-  } catch (e) { /* lijsten nog niet ingesteld */ }
-  let rulesMiss = 0;
-  try { const acks = await store.rulesAcks(), v = st.rules_version || 1; rulesMiss = rulesTeam(emps).filter(e => !acks.some(r => r.employee_id === e.id && r.version === v)).length; } catch (e) { /* nog niet ingesteld */ }
+  let listMiss = 0, openMeld = 0, rulesMiss = 0;
+  const [cls0, tky, mlog, acks] = await Promise.all([store.checklists().catch(() => []), store.ticks([yest]).catch(() => []), store.logs(iso(addDays(new Date(), -180)), todayIso(), true).catch(() => []), store.rulesAcks().catch(() => null)]);
+  const cls = cls0.filter(l => l.active !== false && ['opening', 'sluiting', 'dag'].includes(l.moment));
+  listMiss = specialDay(yest)?.kind === 'gesloten' ? 0 : cls.filter(l => itemsOn(l, yest).some(it => !tky.some(t => t.checklist_id === l.id && t.item_id === it.id))).length;
+  openMeld = mlog.length;
+  if (acks) { const v = st.rules_version || 1; rulesMiss = rulesTeam(emps).filter(e => !acks.some(r => r.employee_id === e.id && r.version === v)).length; }
   const att = [
     rulesMiss && [`${rulesMiss} ${rulesMiss === 1 ? 'medewerker heeft' : 'medewerkers hebben'} de afspraken nog niet getekend`, 'afspraken'],
     openMeld && [`${openMeld} open ${openMeld === 1 ? 'melding' : 'meldingen'} (gebrek, incident of klacht)`, 'lijsten'],
@@ -1969,6 +1997,7 @@ async function viewDashboard(el) {
     noWageN && [`${noWageN} ${noWageN === 1 ? 'dienst' : 'diensten'} zonder uurloon: vul het uurloon in bij Team`, 'team'],
   ].filter(Boolean);
   el.innerHTML = `
+    ${S.dashPartial ? '<p class="msg err">Niet alle gegevens konden worden geladen; sommige cijfers kunnen ontbreken. Trek omlaag of tik opnieuw op Overzicht.</p>' : ''}
     <div class="page-head"><div><h1>Overzicht</h1><p>Personeelskosten, omzet en wat er aandacht nodig heeft.</p></div><div class="head-actions"><button class="btn" data-rulesmgr>📘 Afspraken</button><button class="btn" data-nood>🚨 Noodnummers</button><button class="btn" data-myagenda>📅 Mijn diensten in agenda</button></div></div>
     <div class="toolbar"><div class="weeknav">
       <button class="btn icon" data-dw="-1" aria-label="Vorige week">‹</button>
@@ -2053,7 +2082,7 @@ async function viewDashboard(el) {
     if (['Tab', 'Enter'].includes(S.lastKey)) S.refocus = { attr: f2 ? 'data-revf' : 'data-reva', date: t.dataset.revf || t.dataset.reva, back: S.lastKey === 'Tab' && ev.shiftKey };
     S.lastKey = null;
     const v = t.value.trim(), val = v === '' ? null : Math.max(0, Number(v) || 0);
-    await store.saveRevenue(t.dataset.revf || t.dataset.reva, f2 ? { forecast: val } : { actual: val });
+    try { await store.saveRevenue(t.dataset.revf || t.dataset.reva, f2 ? { forecast: val } : { actual: val }); } catch (x) { toast('Omzet niet opgeslagen: ' + errMsg(x), 'error'); }
     rerender();
   };
 }
@@ -2118,7 +2147,12 @@ const tTime = ts => new Date(ts).toLocaleTimeString('nl-NL', { hour: '2-digit', 
 const LOGK = { ontvangst: '📦 Ontvangst goederen', kern: '🌡️ Kerntemperatuur', melding: '⚠️ Melding' };
 const MELD = { gebrek: 'Technisch gebrek', incident: 'Incident of ongeval', klacht: 'Klacht van een gast', ongedierte: 'Ongedierte' };
 // welke lijsten horen bij mij: mijn functie + lijsten voor iedereen; leiding ziet alles
-const myLists = (lists, dep) => lists.filter(l => l.active !== false && (dep === 'alle' ? true : dep ? (!l.department || l.department === dep) : (canPlan() || !l.department || l.department === S.me.position)));
+const myLists = (lists, dep) => lists.filter(l => l.active !== false && (dep === 'alle' ? true : dep ? (!l.department || l.department === dep) : (canPlan() || !l.department || (S.myDeps || [S.me.position]).includes(l.department))));
+// Medewerkers zien de lijsten van hun eigen functie én van de functies waarin ze vandaag zijn ingeroosterd (bv. bediening die vanavond achter de bar staat)
+async function loadMyDeps(ds) {
+  try { const sh = await store.shifts(ds, ds); S.myDeps = [...new Set([S.me.position, ...sh.filter(x => x.employee_id === S.me.id && x.position).map(x => x.position)].filter(Boolean))]; }
+  catch (e) { S.myDeps = [S.me.position]; }
+}
 
 async function viewLijsten(el) {
   const today = bizToday();
@@ -2126,7 +2160,7 @@ async function viewLijsten(el) {
   const ds = S.lDate, lead = canPlan();
   S.lDep ??= lead ? 'alle' : '';
   if (S.lKey !== ds + S.lDep) { S.lKey = ds + S.lDep; S.lOpen = null; }   // andere dag of afdeling: standaard open/dicht
-  const [lists0, emps] = await Promise.all([store.checklists(), store.employees()]);
+  const [lists0, emps] = await Promise.all([store.checklists(), store.employees(), lead ? null : loadMyDeps(ds)]);
   const lists = myLists(lists0, lead ? S.lDep : '');
   const periods = [...new Set(lists.map(l => periodOf(l.moment, ds)))];
   const [ticks, logs] = await Promise.all([store.ticks(periods), store.logs(ds, ds)]);
@@ -2303,7 +2337,9 @@ function resolveDialog(id) {
 // kaartje op Mijn rooster: wat staat er vandaag voor mij open
 async function listsHomeHTML() {
   try {
-    const today = bizToday(), lists = myLists(await store.checklists(), '');
+    const today = bizToday();
+    if (!canPlan()) await loadMyDeps(today);
+    const lists = myLists(await store.checklists(), '');
     if (!lists.length) return '';
     const ticks = await store.ticks([...new Set(lists.map(l => periodOf(l.moment, today)))]);
     const st = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).map(l => { const its = itemsOn(l, today), n = its.length, d = its.filter(it => ticks.some(t => t.checklist_id === l.id && t.period === today && t.item_id === it.id)).length; return { l, n, d }; });
@@ -2314,7 +2350,7 @@ async function listsHomeHTML() {
 // lijst bewerken (directie)
 // Alle lijsten (ook niet actieve) om te kiezen welke je aanpast
 async function listsManageDialog() {
-  const all = await store.checklists();
+  let all; try { all = await store.checklists(); } catch (x) { return toast(errMsg(x), 'error'); }
   const MOM = { opening: 'bij opening', sluiting: 'bij sluiting', dag: 'elke dag', week: 'elke week', maand: 'elke maand' };
   openDialog('Lijsten aanpassen', `<p class="hint" style="margin:0">Kies een lijst om onderdelen toe te voegen, te wijzigen of weg te halen. Wat al is afgevinkt blijft bewaard.</p>
     <div class="lsetlist">${all.map(l => `<button type="button" class="lsetrow ${l.active === false ? 'off' : ''}" data-lpick="${l.id}"><span><strong>${esc(l.name)}</strong><small>${esc(l.department || 'Iedereen')} · ${esc(MOM[l.moment] || '')} · ${(l.items || []).length} onderdelen${l.active === false ? ' · niet actief' : ''}</small></span><span class="chev">›</span></button>`).join('')}</div>
@@ -2530,6 +2566,8 @@ async function viewSettings(el) {
     const n = Math.round((parse(to) - parse(from)) / 864e5) + 1;
     if (n > 366) return toast('Kies een periode van maximaal een jaar', 'error');
     const add = [...Array(n)].map((_, i) => ({ date: iso(addDays(parse(from), i)), label, kind: 'gesloten' }));
+    const feest = (CFG.specialDays || []).filter(d => d.kind === 'feestdag' && d.date >= from && d.date <= to);
+    if (feest.length && !await ask(`In deze periode staan ${feest.length} extra feestdag${feest.length === 1 ? '' : 'en'} (${feest.map(d => d.label).join(', ')}). Die worden dan gesloten dagen en tellen niet meer mee voor de toeslag. Doorgaan?`, 'Doorgaan')) return;
     const keep = (CFG.specialDays || []).filter(d => d.date < from || d.date > to);
     await store.saveSettings({ special_days: [...keep, ...add].sort((a, b) => a.date.localeCompare(b.date)) });
     applySettings(await store.settings());
@@ -4215,6 +4253,8 @@ async function boot() {
 window.addEventListener('hashchange', () => { if (store && !S.me && store.demo) renderAuth(); });
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) { /* ignore */ }
+  // tik op een pushmelding: het juiste scherm openen
+  try { navigator.serviceWorker.addEventListener('message', ev => { if (ev.data && ev.data.type === 'open' && S.me && ev.data.view) openView(ev.data.view); }); } catch (e) { /* ignore */ }
 }
 // Alleen in de demo: haakje voor de automatische tests
 if (DEMO) window.__rooster = { S, CFG, get store() { return store; }, agendaDialog, kpiOf };

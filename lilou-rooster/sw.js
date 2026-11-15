@@ -1,5 +1,5 @@
 // Eenvoudige service worker: app-bestanden offline beschikbaar, data altijd live.
-const CACHE = 'rooster-v29';
+const CACHE = 'rooster-v30';
 const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'config.js', 'icon-192.png', 'brand/lilou-wordmark-rood.png', 'brand/lilou-wordmark-creme.png', 'manifest.webmanifest', 'vendor/fonts.css', 'vendor/supabase.min.js'];
 
 self.addEventListener('install', e => {
@@ -12,8 +12,8 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return; // API-verkeer niet cachen
   e.respondWith(
-    fetch(e.request)
-      .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return res; })
+    fetch(e.request, { cache: 'no-cache' })   // altijd de nieuwste versie van de server; de cache alleen als er geen verbinding is
+      .then(res => { if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); } return res; })
       .catch(() => caches.match(e.request))
   );
 });
@@ -35,7 +35,7 @@ self.addEventListener('notificationclick', e => {
   const view = (e.notification.data && e.notification.data.view) || '';
   const url = new URL('./' + (view ? '#' + view : ''), self.registration.scope).href;
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-    for (const c of list) { if ('focus' in c) { c.navigate(url); return c.focus(); } }
+    for (const c of list) { if ('focus' in c) { c.postMessage({ type: 'open', view }); return c.focus(); } }
     return self.clients.openWindow(url);
   }));
 });
