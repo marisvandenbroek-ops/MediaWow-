@@ -2420,7 +2420,7 @@ async function viewSettings(el) {
       <details class="card pad setsec" data-k="5"><summary><h2>Gesloten dagen en extra feestdagen</h2></summary>
         <p class="hint">Gesloten dagen zie je in de planning en het rooster van iedereen, met de melding "Gesloten". Een dienst op zo'n dag krijgt een waarschuwing. Extra feestdagen tellen mee voor de feestdagtoeslag, net als de wettelijke feestdagen.</p>
         <form data-periodform class="periodform">
-          <h3 class="small-h">Gesloten zetten: één dag, een week of langer</h3>
+          <h3 class="small-h">Een dag of periode gesloten</h3>
           <div class="pfrow"><label class="field">Van<input type="date" name="pfrom" required onchange="if(!this.form.pto.value||this.form.pto.value<this.value)this.form.pto.value=this.value"></label><label class="field">Tot en met<input type="date" name="pto" required></label><label class="field">Omschrijving<input name="plabel" maxlength="40" placeholder="bv. Zomervakantie" required></label></div>
           <div class="actions" style="margin-top:8px"><button type="button" class="btn" data-pday>Alleen die dag</button><button type="button" class="btn" data-pweek>Die hele week</button><button class="btn primary">Gesloten zetten</button></div>
         </form>
