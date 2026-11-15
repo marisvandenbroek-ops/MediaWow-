@@ -6,8 +6,8 @@ const LOGO_W = img('logo-wit.png'), LOGO_Z = img('logo-zwart.png');
 const FONTS = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500&display=swap';
 const css = `*{margin:0;padding:0;box-sizing:border-box}body{width:1080px;height:1350px;overflow:hidden;font-family:'DM Sans'}
 .s{position:relative;width:1080px;height:1350px;overflow:hidden;background:#1B0405;color:#FAF4ED}
-.ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.62) brightness(.74) contrast(1.08)}
-.tint{position:absolute;inset:0;background:#3A1011;mix-blend-mode:color;opacity:.45}
+.ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.32) sepia(.18) brightness(.72) contrast(1.1)}
+.tint{position:absolute;inset:0;background:#2B1614;mix-blend-mode:color;opacity:.18}
 .fb{position:absolute;inset:0;background:linear-gradient(180deg,rgba(27,4,5,0) 42%,rgba(27,4,5,.88) 100%)}
 .ft{position:absolute;inset:0;background:linear-gradient(0deg,rgba(27,4,5,0) 45%,rgba(27,4,5,.85) 100%)}
 .logo{position:absolute;left:50%;transform:translateX(-50%);bottom:54px;width:190px}
@@ -36,7 +36,7 @@ const tiles = [
   photo('bordeaux/laptop-bed.jpg', 'Ze boeken<br>om <em>23:00.</em>', { at: 'top', pos: '50% 60%' }),
   photo('bordeaux/typemachine.jpg', 'Jij runt je zaak.<br><i>Ik je website.</i>', { at: 'paper', st: 'top:318px;left:150px;right:150px;font-size:80px;color:#1B0405;text-align:center' }),
   card('mw-mockup-house-of-brave-leaders-1-8.jpg', 'Mooi is de basis.<br><em>Niet het doel.</em>', 'House of Brave Leaders', 'Coaching · website'),
-  photo('bordeaux/krant-stoel.jpg', '', { pos: '50% 55%' }),
+  `<div class="s" style="background:#FAF4ED;color:#3A1011"><img class="ph" src="${img('bordeaux/tas-bel.jpg')}" style="filter:saturate(.45) sepia(.12) brightness(1.02)"><div class="t top">Service begint<br><em style="color:#8A7967">online.</em></div>${logo()}</div>`,
 ];
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1080, height: 1350 } });
