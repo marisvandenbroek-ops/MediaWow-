@@ -246,7 +246,7 @@ Fijne pakjesavond alvast! Zin in een cadeautje? 👇 Reageer TIPS voor een grati
     slides: [
       { theme: 'greige', html: `
         <div class="kicker">Achter de schermen</div>
-        <h1 class="hero">Een nieuwe website. <em><span class="mark">Zonder gedoe.</span></em></h1>
+        <h1 class="hero">Jij runt je zaak. <em><span class="mark">Ik bouw je website.</span></em></h1>
         <div class="tl">
           <div><span class="dot"></span><b>Kennismaking</b><small>we drinken koffie (of bellen)</small></div>
           <div><span class="dot"></span><b>Moodboard & ontwerp</b><small>jij kijkt mee, ik ontwerp</small></div>
@@ -263,7 +263,7 @@ Fijne pakjesavond alvast! Zin in een cadeautje? 👇 Reageer TIPS voor een grati
         <p class="lead">Reageer TIPS voor een gratis website-check. Daarna kunnen we altijd vrijblijvend kennismaken.</p>
         <span class="btn lime-btn">Reageer: Tips</span>` },
     ],
-    caption: `Een nieuwe website, zonder gedoe. Zo gaat het ☕️
+    caption: `Jij runt je zaak. Ik bouw je website. Zo gaat het ☕️
 
 Zo gaat het bij MediaWow:
 1️⃣ Kennismaking: we drinken koffie (of bellen)
