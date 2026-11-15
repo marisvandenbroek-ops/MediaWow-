@@ -10,7 +10,18 @@ module.exports = [
     slides: [
       { theme: 'greige', html: `
         <div class="kicker">Voor horeca · december</div>
-        <h1 class="hero">Je kerstmenu staat in een pdf. <em><span class="mark">Je gasten scrollen door.</span></em></h1>
+        <h1 class="hero">Een kerstmenu <em><span class="mark">dat verkoopt.</span></em></h1>
+        <div class="duo-cover">
+          ${phone(`<img class="shot" src="{{img:lilou/kerst-top.png}}">`, 'phone-duo')}
+          ${phone(`<img class="shot" src="{{img:lilou/kerst-mid.png}}">`, 'phone-duo')}
+        </div>` },
+      { theme: 'dark', html: `
+        <div class="kicker">01 — Wat er gebeurt</div>
+        <h1 class="lg">Inzoomen. Wachten. Scrollen. <em>Wegklikken.</em></h1>
+        <p class="lead">Op een telefoon is een pdf-menu een afknapper. En in december zoeken gasten juist dáár naar jouw kerstdiner.</p>` },
+      { theme: 'greige', html: `
+        <div class="kicker">02 — Zo dus niet</div>
+        <h2>Zo dus <em><span class="mark">niet.</span></em></h2>
         ${phone(`
           <div class="pdf-bar"><span>‹</span><b>kerstmenu_2026_DEF_v4.pdf</b><span>⋯</span></div>
           <div class="pdf-load"><div class="pl-bar"><i></i></div><span>Downloaden… 8,4 MB</span></div>
@@ -30,18 +41,6 @@ module.exports = [
           </div>
           <div class="pdf-pager">1 / 4</div>`, 'phone-pdf')}
         <div class="hand" style="position:absolute;left:90px;top:900px;width:330px;transform:rotate(-6deg);line-height:1.15">inzoomen…<br>wachten…<br>wegklikken 😩</div>` },
-      { theme: 'dark', html: `
-        <div class="kicker">01 — Wat er gebeurt</div>
-        <h1 class="lg">Inzoomen. Wachten. Scrollen. <em>Wegklikken.</em></h1>
-        <p class="lead">Op een telefoon is een pdf-menu een afknapper. En in december zoeken gasten juist dáár naar jouw kerstdiner.</p>` },
-      { theme: 'greige', html: `
-        <div class="kicker">02 — Zo doe je het wél · Lilou in Ede</div>
-        <h2>Een kerstmenu <em><span class="mark">dat verkoopt.</span></em></h2>
-        <div class="duo">
-          <div class="duo-col">${phone(`<img class="shot" src="{{img:lilou/kerst-top.png}}">`, 'phone-duo')}<div class="duo-cap">Reserveerknop in beeld</div></div>
-          <div class="duo-col">${phone(`<img class="shot" src="{{img:lilou/kerst-mid.png}}">`, 'phone-duo')}<div class="duo-cap">Menu als tekst + prijzen</div></div>
-        </div>
-        <div class="hand" style="text-align:center;margin-top:34px;font-size:46px">gemaakt door MediaWow 🤍</div>` },
       { theme: 'photo', html: `
         <img class="bg-photo" src="{{img:canva/foto-015.jpg}}"><div class="bg-fade" style="background:rgba(15,10,10,.66)"></div>
         <div class="fg">
@@ -50,11 +49,12 @@ module.exports = [
         <p class="lead">Reageer TIPS en ik bekijk je website op mijn telefoon. Je krijgt 3 persoonlijke tips in je DM.</p>
         <div class="pill"><div class="av-user"></div><b>TIPS</b><span>Plaatsen</span></div></div>` },
     ],
-    caption: `Je kerstmenu staat in een pdf… en je gasten scrollen door. 🎄📱
+    caption: `Zo ziet een kerstmenu eruit dat verkoopt 🎄 (het kerstmenu van @lilou_ede)
+En zo dus niet: een pdf waar je gasten doorheen scrollen. Swipe →
 
 Op een telefoon is een pdf-menu een afknapper: inzoomen, wachten, scrollen. En juist in december zoeken gasten op hun telefoon naar een plek voor het kerstdiner.
 
-Zo doe je het wél (kijk maar naar het kerstmenu van @lilou_ede op slide 3):
+Zo doe je het wél:
 ✔️ menu als gewone tekst, goed leesbaar op mobiel
 ✔️ een opvallende ‘Reserveer je kerstdiner’-knop bovenaan
 ✔️ data, prijs per persoon en dieetwensen in één oogopslag

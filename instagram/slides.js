@@ -17,7 +17,7 @@ module.exports = [
             <div class="bub me">Hoi! Hier zijn je 3 tips 🤍</div>
             <div class="bub me"><b>1.</b> Zet je boekknop bovenaan, dan vinden klanten ‘m meteen.</div>
             <div class="bub me"><b>2.</b> Vertel in één zin wat je doet en voor wie.</div>
-          </div>`, 'phone-cover')}` },
+          </div>`, 'phone-full')}` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Waarom</div>
         <div class="count">3<span>·</span>2<span>·</span>1</div>
@@ -84,8 +84,8 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
     slides: [
       { theme: 'dark', html: `
         <div class="kicker">Voor salons</div>
-        <h1 class="hero">Krijg jij deze appjes ook?<br><em><span class="mark">Dan mist je website iets.</span></em></h1>
-        <div class="hand" style="position:absolute;left:110px;top:760px;transform:rotate(-5deg)">elke dag weer… 🙈</div>
+        <h1 class="hero">Krijg jij deze appjes <em>ook?</em></h1>
+        
         ${phone(`
           <div class="dm-head"><div class="av-user"></div><div><b>Nieuwe klant</b><small>online</small></div></div>
           <div class="chat">
@@ -94,7 +94,7 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
             <div class="bub">Kan ik ook gewoon online boeken?</div>
             <div class="bub">O ja, waar kan ik parkeren? 😅</div>
             <div class="typing"><i></i><i></i><i></i></div>
-          </div>`, 'phone-low')}` },
+          </div>`, 'phone-full')}` },
       { theme: 'greige', html: `
         <div class="kicker">Eerlijk is eerlijk</div>
         <h1 class="lg">Elk appje is een vraag die <em>je website</em> had moeten beantwoorden.</h1>

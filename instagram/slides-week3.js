@@ -71,7 +71,7 @@ Check het vandaag in 5 minuten:
             <div class="notif"><div class="n-ic">📞</div><div class="n-b"><div class="n-top"><b>Telefoon</b><small>nu</small></div><p>Gemiste oproep · 06 4…</p></div></div>
             <div class="notif"><div class="n-ic">📞</div><div class="n-b"><div class="n-top"><b>Telefoon</b><small>8 min</small></div><p>Gemiste oproep (2)</p></div></div>
             <div class="notif"><div class="n-ic">📞</div><div class="n-b"><div class="n-top"><b>Telefoon</b><small>23 min</small></div><p>Gemiste oproep · Nieuwe klant</p></div></div>
-          </div>`, 'phone-cover phone-lock')}` },
+          </div>`, 'phone-full phone-lock')}` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Wat er gebeurt</div>
         <h1 class="lg">Niet opgenomen? <em>Dan bellen ze de volgende salon.</em></h1>

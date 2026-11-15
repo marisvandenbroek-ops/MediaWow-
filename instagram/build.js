@@ -404,6 +404,21 @@ em{font-style:italic}
 .clean.rest .kicker{display:none}
 .clean.first.s:has(.phone-pdf) h1.hero{font-size:104px!important}
 .sys.dark .mark,.sys.photo .mark{background:none;padding:0;margin:0}
+.phone-full{position:absolute;left:50%;margin-left:-200px;bottom:70px;width:400px;height:790px;border-radius:58px;padding:12px}
+.phone-full .screen{border-radius:48px}
+.s:has(.phone-full){justify-content:flex-start;padding-top:190px}
+.s:has(.phone-full) .ftr{display:none}
+.phone-full .bub{font-size:22px;padding:16px 20px}
+.phone-full .dm-head{padding:56px 20px 16px}.phone-full .dm-head b{font-size:22px}.phone-full .dm-head small{font-size:16px}
+.phone-full .av-mw,.phone-full .av-user{flex:0 0 52px;height:52px}.phone-full .av-mw .logo-mask{width:42px}
+.phone-full .chat{padding:18px;gap:12px}
+.phone-full .lock{padding:70px 18px}.phone-full .l-date{font-size:20px}.phone-full .l-time{font-size:96px;margin-bottom:22px}
+.phone-full .notif{padding:14px 16px;border-radius:22px}.phone-full .notif p{font-size:19px}.phone-full .notif b{font-size:19px}.phone-full .n-ic{flex:0 0 40px;height:40px;font-size:22px}
+.duo-cover{position:absolute;left:0;right:0;bottom:70px;display:flex;justify-content:center;gap:34px}
+.duo-cover .phone-duo{width:360px;height:720px}
+.s:has(.duo-cover){justify-content:flex-start;padding-top:190px}
+.s:has(.duo-cover) .ftr{display:none}
+.clean.first.s:has(.phone-lock.phone-full) h1.hero{font-size:100px!important}
 `;
 
 function slideHTML(sl, i, n) {
