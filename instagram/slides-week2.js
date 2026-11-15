@@ -71,6 +71,18 @@ Zo doe je het wél:
       { theme: 'photo', cls: 'lwc lwct', light: true, html: `
         <img class="bg-photo" src="{{img:bordeaux/tas-bel.jpg}}" style="object-position:50% 22%"><div class="bg-fade"></div>
         <div class="mw-ttl"><h1>Ze zoeken een cadeau. <em>Niet bij jou.</em></h1></div>` },
+      { theme: 'dark', html: `
+        <div class="kicker">Voor salons, horeca & meer · december</div>
+        <h1 class="hero">Verkoop cadeaubonnen <em>online.</em></h1>
+        <div class="giftwrap">
+          <div class="gnotif"><div class="n-ic">🎁</div><div class="n-b"><div class="n-top"><b>Webshop</b><small>nu</small></div><p>Nieuwe bestelling · Cadeaubon €50</p></div></div>
+          <div class="giftcard">
+            <div class="gc-ribbon"></div><div class="gc-bow"></div>
+            <div class="gc-k">Cadeaubon</div>
+            <div class="gc-v">€50</div>
+            <div class="gc-s">voor een avond uit</div>
+          </div>
+        </div>` },
       { theme: 'greige', html: `
         <div class="kicker">01 — Waarom dit werkt</div>
         <h2>Cadeaubonnen zijn <em>omzet vooraf.</em></h2>

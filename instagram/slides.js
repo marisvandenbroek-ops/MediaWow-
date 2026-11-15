@@ -75,9 +75,12 @@ Ken je een ondernemer die hier blij van wordt? Tag ze even 👇
   {
     id: '2-di-de-appjes',
     slides: [
+      { theme: 'photo', cls: 'lwc', html: `
+        <img class="bg-photo" src="{{img:canva/foto-157.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
+        <div class="mw-ttl"><h1>Krijg jij deze appjes <em>ook?</em></h1></div>` },
       { theme: 'dark', html: `
         <div class="kicker">Voor salons</div>
-        <h1 class="hero">Krijg jij deze appjes <em>ook?</em></h1>
+        <h1 class="hero">Herkenbaar? <em>Elke dag weer.</em></h1>
         
         ${phone(`
           <div class="dm-head"><div class="av-user"></div><div><b>Nieuwe klant</b><small>online</small></div></div>
