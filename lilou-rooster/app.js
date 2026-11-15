@@ -144,7 +144,8 @@ function demoSeed() {
   const open2 = { id: uid(), employee_id: null, date: D(12), start_time: '12:00', end_time: '18:00', break_minutes: 30, position: 'Keuken', note: '', published: false };
   S.push(open1, open2);
   const A = [{ id: uid(), shift_id: open1.id, employee_id: eva.id, status: 'pending', created_at: now }];
-  const daanSat = S.find(s => s.employee_id === daan.id && s.date === D(5) && s.published && s.date > todayIso()) || S.filter(s => s.employee_id === daan.id && s.published && s.date > todayIso()).sort((x, y) => x.date.localeCompare(y.date))[0];   // altijd een komende dienst, ook op zondag
+  let daanSat = S.find(s => s.employee_id === daan.id && s.date === D(5) && s.published && s.date > todayIso()) || S.filter(s => s.employee_id === daan.id && s.published && s.date > todayIso()).sort((x, y) => x.date.localeCompare(y.date))[0];
+  if (!daanSat) { daanSat = { id: uid(), employee_id: daan.id, date: iso(addDays(new Date(), 2)), start_time: '17:00', end_time: '23:00', break_minutes: 30, position: 'Bar', note: '', published: true }; S.push(daanSat); }   // altijd een komende dienst om te ruilen, ook op zondag
   const W = daanSat ? [{ id: uid(), shift_id: daanSat.id, from_employee: daan.id, to_employee: null, swap_shift_id: null, taken_by: null, note: 'Verjaardag van mijn broer', manager_note: null, status: 'open', created_at: now }] : [];
   const V = [];
   const pat = { [sanne.id]: ['hele_dag', 'niet', 'middag', 'hele_dag', 'avond', 'hele_dag', 'niet'], [noor.id]: ['niet', 'hele_dag', 'hele_dag', 'hele_dag', 'hele_dag', 'hele_dag', 'niet'], [eva.id]: ['niet', 'niet', 'niet', 'niet', 'avond', 'hele_dag', 'hele_dag'], [daan.id]: ['avond', 'avond', 'niet', 'avond', 'avond', 'hele_dag', 'niet'] };
