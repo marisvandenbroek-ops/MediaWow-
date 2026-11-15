@@ -451,6 +451,19 @@ em{font-style:italic}
 .edito.greige em,.edito.greige h1 em,.edito.greige h2 em,.edito.greige .mark,.edito.greige h3 em{color:#8A7967!important}
 .edito .openers.light p em{color:#8A7967!important}
 .edito .hand{color:#3A1011}
+/* ===== MediaWow fotocover (bordeaux-foto's, getemperd naar huisstijl) ===== */
+.mwc .bg-photo{filter:saturate(.32) sepia(.18) brightness(.72) contrast(1.1)}
+.mwc .bg-fade{background:linear-gradient(180deg,rgba(27,4,5,.55) 0%,rgba(27,4,5,0) 22%,rgba(27,4,5,0) 46%,rgba(27,4,5,.9) 100%)}
+.mwc .mw-ttl{position:absolute;left:90px;right:90px;bottom:150px;z-index:2}
+.mwc .mw-ttl h1{font-family:'Playfair Display',serif!important;font-weight:400;font-size:112px;line-height:1;letter-spacing:-.02em;color:#FAF4ED}
+.mwc .mw-ttl h1 em{color:#E8F27A!important;font-style:italic}
+.mwc.top .mw-ttl{bottom:auto;top:210px}
+.mwc.top .bg-fade{background:linear-gradient(0deg,rgba(27,4,5,.35) 0%,rgba(27,4,5,0) 30%,rgba(27,4,5,0) 48%,rgba(27,4,5,.9) 100%)}
+.mwc.onpaper .bg-fade{background:linear-gradient(180deg,rgba(27,4,5,.55) 0%,rgba(27,4,5,0) 16%)}
+.mwc.onpaper .mw-ttl{top:300px;bottom:auto;left:150px;right:150px;text-align:center}
+.mwc.onpaper .mw-ttl h1{font-size:76px;color:#1B0405}
+.mwc.onpaper .mw-ttl h1 em{color:#1B0405!important}
+.mwc .ftr{z-index:3}
 `;
 
 function slideHTML(sl, i, n) {

@@ -8,18 +8,9 @@ module.exports = [
   {
     id: '1-ma-website-check',
     slides: [
-      { theme: 'greige', html: `
-        <div class="kicker">Gratis website-check</div>
-        <h1 class="hero">Ik check jouw website. <em><span class="mark">Gratis.</span></em></h1>
-        ${phone(`
-          <div class="dm-head">${avatarMW}<div><b>media.wow</b><small>MediaWow Webdesign</small></div></div>
-          <div class="chat">
-            <div class="bub me">Hoi! Hier zijn je 3 tips 🤍</div>
-            <div class="bub me"><b>1.</b> Zet je boekknop bovenaan, dan vinden klanten ‘m meteen.</div>
-            <div class="bub me"><b>2.</b> Vertel in één zin wat je doet en voor wie.</div>
-            <div class="bub me"><b>3.</b> Je foto's zijn prachtig. Laat ze groter zien!</div>
-            <div class="bub">Wauw, dankjewel! 😍</div>
-          </div>`, 'phone-full')}` },
+      { theme: 'photo', cls: 'mwc ', html: `
+        <img class="bg-photo" src="{{img:bordeaux/tas-telefoon.jpg}}" style="object-position:50% 40%"><div class="bg-fade"></div>
+        <div class="mw-ttl"><h1>Ik check jouw website. <em>Gratis.</em></h1></div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Waarom</div>
         <div class="count">3<span>·</span>2<span>·</span>1</div>
