@@ -311,15 +311,9 @@ Zeg liever wat ze krijgen:
   {
     id: '7-zo-begin-nu',
     slides: [
-      { theme: 'greige', html: `
-        <h1 class="hero">Begin niet in januari. <em><span class="mark">Begin nu.</span></em></h1>
-        <div class="doc" style="transform:rotate(-2deg)">
-          <div class="doc-h">Jouw nieuwe website · planning</div>
-          <div class="doc-r"><span>December</span><b>kennismaking & ontwerp</b></div>
-          <div class="doc-r"><span>Januari</span><b>live ✓</b></div>
-          <div class="doc-r flagged"><span>Concurrent</span><b>begint dan pas</b></div>
-          <div class="doc-stamp">Voorsprong</div>
-        </div>` },
+      { theme: 'photo', cls: 'lwc', html: `
+        <img class="bg-photo" src="{{img:canva/foto-015.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
+        <div class="mw-ttl"><h1>Begin niet in januari. <em>Begin nu.</em></h1></div>` },
       { theme: 'dark', html: `
         <div class="kicker">Waarom nu?</div>
         <h1 class="lg">In januari wil iedereen tegelijk <em>een nieuwe website.</em></h1>
