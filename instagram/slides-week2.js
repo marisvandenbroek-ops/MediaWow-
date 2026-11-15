@@ -160,7 +160,7 @@ Ken je een coach die dit moet zien? Tag ze even 🤍
   {
     id: '4-do-black-friday',
     slides: [
-      { theme: 'dark', html: `
+      { theme: 'dark', keep: true, html: `
         <div class="kicker">Morgen is het Black Friday</div>
         <h1 class="hero" style="font-size:104px">Ik doe niet mee aan Black Friday. <em>Dit is waarom.</em></h1>
         <div class="tagwrap">

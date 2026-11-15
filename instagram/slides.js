@@ -8,8 +8,8 @@ module.exports = [
   {
     id: '1-ma-website-check',
     slides: [
-      { theme: 'photo', cls: 'lwc', html: `
-        <img class="bg-photo" src="{{img:canva/foto-157.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
+      { theme: 'photo', cls: 'mwc', html: `
+        <img class="bg-photo" src="{{img:bordeaux/tas-telefoon.jpg}}" style="object-position:50% 40%"><div class="bg-fade"></div>
         <div class="mw-ttl"><h1>Ik check jouw website. <em>Gratis.</em></h1></div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Waarom</div>
@@ -192,7 +192,7 @@ Welke red flag mist er nog? 👇
   {
     id: '4-do-a-of-b',
     slides: [
-      { theme: 'dark', html: `
+      { theme: 'dark', keep: true, html: `
         <div class="fg">
         <div class="kicker center-t">Voor horeca · Kies maar</div>
         <h1 class="md center-t">Welke krijgt <em>de reservering?</em></h1>

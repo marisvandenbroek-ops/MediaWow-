@@ -12,7 +12,7 @@ module.exports = [
   {
     id: '1-ma-google',
     slides: [
-      { theme: 'dark', html: `
+      { theme: 'dark', keep: true, html: `
         <div class="kicker">Voor elke ondernemer</div>
         <h1 class="hero">Ik googelde je zaak. <em>Dit zag ik.</em></h1>
         <div class="gcard">
@@ -111,8 +111,8 @@ Bekijk 5 ontwerpen voor salons op mediawow.nl/beauty (link in bio), of reageer T
   {
     id: '3-wo-telefonisch',
     slides: [
-      { theme: 'photo', cls: 'lwc', html: `
-        <img class="bg-photo" src="{{img:canva/foto-067.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
+      { theme: 'photo', cls: 'mwc', html: `
+        <img class="bg-photo" src="{{img:bordeaux/martini-gordijn.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
         <div class="mw-ttl"><h1>Reserveren? <em>Alleen telefonisch.</em></h1></div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Wanneer reserveren gasten?</div>
@@ -198,7 +198,7 @@ De formule: wat je doet + wat ze nu moeten doen.
   {
     id: '5-vr-sinterklaas',
     slides: [
-      { theme: 'dark', html: `
+      { theme: 'dark', keep: true, html: `
         <div class="kicker">Pakjesavond · 5 december</div>
         <h1 class="hero">Ze klikken op je ‘Over mij’. <em>Wat vinden ze?</em></h1>
         <div class="giftbox">

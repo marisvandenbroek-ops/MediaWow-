@@ -475,7 +475,7 @@ em{font-style:italic}
 `;
 
 function slideHTML(sl, i, n) {
-  if (process.env.LICHT && i === 0 && sl.theme === 'dark') sl = { ...sl, theme: 'greige' };
+  if (process.env.LICHT && i === 0 && sl.theme === 'dark' && !sl.keep) sl = { ...sl, theme: 'greige' };
   const html = sl.html.replace(/\{\{img:([^}]+)\}\}/g, (_, f) => dataURI(f));
   const onDark = sl.theme === 'dark' || sl.theme === 'photo';
   const logoColor = sl.light ? '#141414' : onDark ? '#fff' : (sl.theme === 'greige' ? '#141414' : 'var(--bordeaux)');
