@@ -2422,7 +2422,7 @@ async function viewSettings(el) {
         <form data-periodform class="periodform">
           <h3 class="small-h">Een dag of periode gesloten</h3>
           <div class="pfrow"><label class="field">Van<input type="date" name="pfrom" required onchange="if(!this.form.pto.value||this.form.pto.value<this.value)this.form.pto.value=this.value"></label><label class="field">Tot en met<input type="date" name="pto" required></label><label class="field">Omschrijving<input name="plabel" maxlength="40" placeholder="bv. Zomervakantie" required></label></div>
-          <div class="actions" style="margin-top:8px"><button type="button" class="btn" data-pday>Alleen die dag</button><button type="button" class="btn" data-pweek>Die hele week</button><button class="btn primary">Gesloten zetten</button></div>
+          <div class="actions" style="margin-top:8px"><button type="button" class="btn" data-pday>Alleen die dag</button><button type="button" class="btn" data-pweek>Die hele week</button><button type="button" class="btn" data-pmonth>Die hele maand</button><button class="btn primary">Gesloten zetten</button></div>
         </form>
         <h3 class="small-h" style="margin-top:16px">Gesloten en feestdagen</h3>
         <form data-dayform><div class="daylist2">${spRuns.map(rangeRow).join('')}${spSingles.map(dayRow).join('')}</div>
@@ -2479,6 +2479,7 @@ async function viewSettings(el) {
     if (ev.target.closest('[data-dayadd]')) { $('.daylist2', el).insertAdjacentHTML('beforeend', dayRow({ date: '', label: '', kind: 'gesloten' })); $$('.spdrow', el).pop().querySelector('[name=date]').focus(); return; }
     const sd = ev.target.closest('[data-spddel]'); if (sd) { const row = sd.closest('.spdrow, .spdrange'); row.parentNode.removeChild(row); return; }
     if (ev.target.closest('[data-pday]')) { const f = $('[data-periodform]', el); f.pfrom.value ||= todayIso(); f.pto.value = f.pfrom.value; if (!f.plabel.value) f.plabel.focus(); return; }
+    if (ev.target.closest('[data-pmonth]')) { const f = $('[data-periodform]', el), v = parse(f.pfrom.value || todayIso()), m0 = new Date(v.getFullYear(), v.getMonth(), 1); f.pfrom.value = iso(m0); f.pto.value = iso(new Date(v.getFullYear(), v.getMonth() + 1, 0)); if (!f.plabel.value) f.plabel.focus(); return; }
     if (ev.target.closest('[data-pweek]')) {
       const f = $('[data-periodform]', el), v = f.pfrom.value || todayIso(), mon = mondayOf(parse(v));
       f.pfrom.value = iso(mon); f.pto.value = iso(addDays(mon, 6)); if (!f.plabel.value) f.plabel.focus(); return;
