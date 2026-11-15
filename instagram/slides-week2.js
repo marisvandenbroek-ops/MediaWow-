@@ -70,7 +70,7 @@ Zo doe je het wél:
     slides: [
       { theme: 'dark', html: `
         <div class="kicker">Voor salons, horeca & meer · december</div>
-        <h1 class="hero" style="font-size:100px">Je klant zoekt nú een cadeau. <em>Alleen niet bij jou.</em></h1>
+        <h1 class="hero">Ze zoeken een cadeau. <em>Niet bij jou.</em></h1>
         <div class="giftwrap">
           <div class="gnotif"><div class="n-ic">🎁</div><div class="n-b"><div class="n-top"><b>Webshop</b><small>nu</small></div><p>Nieuwe bestelling · Cadeaubon €50</p></div></div>
           <div class="giftcard">
@@ -98,7 +98,7 @@ Zo doe je het wél:
           <span class="btn lime-btn">Reageer: Tips</span>
         </div>` },
     ],
-    caption: `Je klant zoekt nú een cadeau. Alleen niet bij jou. 🎁
+    caption: `Ze zoeken een cadeau. Niet bij jou. 🎁
 Verkoop jij al cadeaubonnen online?
 
 Een behandeling, een diner of een sessie: alles kan een cadeaubon zijn. En cadeaubonnen zijn omzet vooraf:
@@ -119,7 +119,7 @@ Heb je een website van MediaWow? Cadeaubonnen met aankooplink zijn een uitbreidi
     slides: [
       { theme: 'photo', cls: 'lwc', html: `
         <img class="bg-photo" src="{{img:canva/foto-083.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
-        <div class="mw-ttl"><h1>In januari zoeken ze een coach. <em>Vinden ze jóu?</em></h1></div>` },
+        <div class="mw-ttl"><h1>Ze zoeken een coach. <em>Vinden ze jóu?</em></h1></div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Het zoekmoment</div>
         <h1 class="lg">Goede voornemens beginnen <em>bij Google.</em></h1>
@@ -139,7 +139,7 @@ Heb je een website van MediaWow? Cadeaubonnen met aankooplink zijn een uitbreidi
         <p class="lead">Reageer TIPS en je krijgt 3 persoonlijke tips voor je coachwebsite in je DM. Gratis.</p>
         <span class="btn lime-btn">Reageer: Tips</span>` },
     ],
-    caption: `In januari zoeken ze een coach. Vinden ze jóu? 🗓️
+    caption: `Ze zoeken een coach. Vinden ze jóu? 🗓️
 
 Goede voornemens beginnen bij Google. Rond nieuwjaar zoeken mensen hulp: een coach, een traject, een nieuwe start. Je website beslist dan binnen een paar tellen of ze bij jou verder kijken.
 
@@ -162,7 +162,7 @@ Ken je een coach die dit moet zien? Tag ze even 🤍
     slides: [
       { theme: 'dark', keep: true, html: `
         <div class="kicker">Morgen is het Black Friday</div>
-        <h1 class="hero" style="font-size:104px">Ik doe niet mee aan Black Friday. <em>Dit is waarom.</em></h1>
+        <h1 class="hero">Geen Black Friday. <em>Dit is waarom.</em></h1>
         <div class="tagwrap">
           <div class="pricetag">
             <div class="pt-hole"></div>
@@ -188,7 +188,7 @@ Ken je een coach die dit moet zien? Tag ze even 🤍
         <p class="lead">Geen deadline, geen afteltimer. Gewoon eerlijk advies.</p>
         <div class="pill"><div class="av-user"></div><b>TIPS</b><span>Plaatsen</span></div></div>` },
     ],
-    caption: `Ik doe niet mee aan Black Friday. Dit is waarom.
+    caption: `Geen Black Friday. Dit is waarom.
 
 Een website is geen impulsaankoop:
 🔸 je kiest hem voor jaren, niet voor één dag
@@ -208,7 +208,7 @@ Wat ik wél doe: het hele jaar door een gratis website-check. Geen deadline, gee
     slides: [
       { theme: 'greige', html: `
         <div class="kicker">Bewaar deze post</div>
-        <h1 class="hero">5 dingen die je website moet kunnen <em><span class="mark">vóór 1 december.</span></em></h1>
+        <h1 class="hero">5 dingen vóór <em><span class="mark">1 december.</span></em></h1>
         <div class="notepad">
           <div class="np-h">to do · december</div>
           <div class="np-i"><span class="cb"></span>feestdagen-openingstijden</div>
@@ -239,7 +239,7 @@ Wat ik wél doe: het hele jaar door een gratis website-check. Geen deadline, gee
         <p class="lead">Reageer TIPS voor een gratis website-check, of plan een kennismaking via mediawow.nl.</p>
         <div class="pill"><div class="av-user"></div><b>TIPS</b><span>Plaatsen</span></div></div>` },
     ],
-    caption: `5 dingen die je website moet kunnen vóór 1 december ✅
+    caption: `5 dingen vóór 1 december ✅
 (bewaar deze post 📌)
 
 1️⃣ Feestdagen-openingstijden: bovenaan, niet in je footer

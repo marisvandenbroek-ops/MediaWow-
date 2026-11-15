@@ -259,8 +259,8 @@ Of reageer HORECA en ik stuur je de link 🤍
     slides: [
       { theme: 'greige', html: `
         <div class="kicker" style="margin-top:40px">Dag van de Ondernemer · 20 november</div>
-        <h1 class="md">Je ‘goedkope’ website <em>kost je meer dan je denkt.</em></h1>
-        <div class="receipt" style="transform:rotate(-2.5deg) scale(.88);margin-top:20px">
+        <h1 class="hero">Je goedkope website. <em>De rekening.</em></h1>
+        <div class="receipt" style="transform:rotate(-2.5deg) scale(.8);margin-top:10px">
           <div class="r-title">BONNETJE</div><div class="r-sub">doe-het-zelf-website</div>
           <div class="r-line"><span>Websitebouwer-abonnement</span><span>✓</span></div>
           <div class="r-line"><span>Premium template</span><span>✓</span></div>
@@ -289,7 +289,7 @@ Of reageer HORECA en ik stuur je de link 🤍
         <p class="lead">Vrijblijvend, via mediawow.nl. Of reageer PREVIEW voor een gratis preview van je nieuwe website.</p>
         <span class="btn lime-btn">Plan een kennismaking</span></div>` }
     ],
-    caption: `Je ‘goedkope’ website kost je meer dan je denkt. Even afrekenen. 🧾
+    caption: `Je goedkope website. De rekening. 🧾
 
 (Fijne Dag van de Ondernemer trouwens! 🥂 Vandaag dus een eerlijk bonnetje.)
 

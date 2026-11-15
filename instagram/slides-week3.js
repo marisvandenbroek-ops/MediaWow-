@@ -200,7 +200,7 @@ De formule: wat je doet + wat ze nu moeten doen.
     slides: [
       { theme: 'dark', keep: true, html: `
         <div class="kicker">Pakjesavond · 5 december</div>
-        <h1 class="hero">Ze klikken op je ‘Over mij’. <em>Wat vinden ze?</em></h1>
+        <h1 class="hero">Je ‘Over mij’. <em>Nog leeg?</em></h1>
         <div class="giftbox">
           <div class="gb-lid"></div><div class="gb-body"></div>
           <div class="gb-ribbon-v"></div><div class="gb-bow"></div>
@@ -227,7 +227,7 @@ De formule: wat je doet + wat ze nu moeten doen.
         <p class="lead">Reageer TIPS en ik kijk ook naar je ‘Over mij’. Je krijgt 3 persoonlijke tips in je DM.</p>
         <div class="pill"><div class="av-user"></div><b>TIPS</b><span>Plaatsen</span></div></div>` },
     ],
-    caption: `Ze klikken op je ‘Over mij’. Wat vinden ze? 🎁
+    caption: `Je ‘Over mij’. Nog leeg? 🎁
 
 Het is de pagina die bezoekers stiekem het vaakst openen. Mensen kopen van mensen: daar beslissen ze of ze jou vertrouwen.
 

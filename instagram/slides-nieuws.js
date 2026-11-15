@@ -5,7 +5,7 @@ module.exports = [
     slides: [
       { theme: 'dark', html: `
         <div class="kicker">Nieuws</div>
-        <h1 class="hero">Instagram wilde in je website kijken. <em>Nu even niet.</em></h1>
+        <h1 class="hero">Instagram wilde meekijken. <em>Nu even niet.</em></h1>
         <div class="doc" style="transform:rotate(-2deg)">
           <div class="doc-h">Instagram & Facebook</div>
           <div class="doc-r flagged"><span>Wilde</span><b>meelezen op jouw website</b></div>
@@ -38,7 +38,7 @@ module.exports = [
         <p class="lead">Reageer TIPS en je krijgt 3 tips voor je website in je DM.</p>
         <span class="btn lime-btn">Reageer: Tips</span>` },
     ],
-    caption: `Instagram wilde in je website kijken. Nu even niet. 👀
+    caption: `Instagram wilde meekijken. Nu even niet. 👀
 
 In gewone taal:
 Meta (de baas van Instagram en Facebook) wilde de websites van bedrijven mogen lezen. Ook de jouwe, als die aan je Instagram gekoppeld is. Niet akkoord? Dan moest je stoppen met Instagram.
