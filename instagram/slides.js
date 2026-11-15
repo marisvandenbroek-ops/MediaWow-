@@ -17,6 +17,8 @@ module.exports = [
             <div class="bub me">Hoi! Hier zijn je 3 tips 🤍</div>
             <div class="bub me"><b>1.</b> Zet je boekknop bovenaan, dan vinden klanten ‘m meteen.</div>
             <div class="bub me"><b>2.</b> Vertel in één zin wat je doet en voor wie.</div>
+            <div class="bub me"><b>3.</b> Je foto's zijn prachtig. Laat ze groter zien!</div>
+            <div class="bub">Wauw, dankjewel! 😍</div>
           </div>`, 'phone-full')}` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Waarom</div>

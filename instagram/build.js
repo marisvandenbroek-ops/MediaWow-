@@ -419,6 +419,34 @@ em{font-style:italic}
 .s:has(.duo-cover){justify-content:flex-start;padding-top:190px}
 .s:has(.duo-cover) .ftr{display:none}
 .clean.first.s:has(.phone-lock.phone-full) h1.hero{font-size:100px!important}
+.phone-full .screen{display:flex;flex-direction:column}
+.phone-full .chat{flex:1;height:auto;justify-content:flex-start}
+.phone-full .screen:has(.lock){display:block}
+/* ===== EDITO: geen lime, bordeaux + crème + blush ===== */
+.edito.greige{background:#F3EDE6;color:#3A1011}
+.edito.greige h1,.edito.greige h2,.edito.greige h3{color:#3A1011}
+.edito.greige em,.edito.greige h1 em{color:#8E1F27}
+.edito .mark{background:none!important;padding:0;margin:0;color:inherit}
+.edito.greige .mark{color:#8E1F27}
+.edito .btn,.edito .lime-btn{background:#3A1011!important;color:#FAF4ED!important}
+.edito.dark .btn,.edito.dark .lime-btn,.edito.photo .btn,.edito.photo .lime-btn{background:#FAF4ED!important;color:#3A1011!important}
+.edito .note,.edito .g-stamp,.edito .pricetag2,.edito .gb-tag,.edito .duo-cap{background:#E9D6C8!important;color:#3A1011!important}
+.edito .paper b,.edito .greige .nums b,.edito .big-stat .to{background:linear-gradient(transparent 60%,#E9D6C8 60%)!important}
+.edito .cb{background:#E9D6C8}
+.edito .gc-ribbon{background:#8E1F27}.edito .gc-bow{background:#6e1820}
+.edito .mw-stamp{border-color:#E9D6C8;color:#E9D6C8}
+.edito .list div:first-child{box-shadow:inset 6px 0 0 #8E1F27!important}
+.edito .qa .a{border-left-color:#8E1F27}
+.edito .tl .dot.lime{background:#8E1F27;box-shadow:0 0 0 4px #3A1011}
+.edito .tl{border-left-color:#3A1011}.edito .tl .dot{background:#3A1011}
+.edito .hand{color:#8E1F27}.edito.dark .hand,.edito.photo .hand{color:#E9D6C8}
+.edito .r-total span:last-child{background:#3A1011;color:#FAF4ED}
+.edito .ab-tag,.edito .big-a{background:#3A1011!important;color:#FAF4ED!important}
+.edito .greige .ab-tag{background:#3A1011}
+.edito .btnlist .b2{background:#E9D6C8;color:#3A1011}
+.edito .openers .sec{color:#E9D6C8}.edito .openers.light p em{background:none;color:#8E1F27}
+.edito.greige .hdr .logo-mask{background:#3A1011!important}
+.edito.first.greige:after{content:'';position:absolute;left:90px;right:90px;bottom:70px;height:2px;background:#3A1011;opacity:.0}
 `;
 
 function slideHTML(sl, i, n) {
@@ -427,7 +455,7 @@ function slideHTML(sl, i, n) {
   const logoColor = sl.light ? '#141414' : onDark ? '#fff' : (sl.theme === 'greige' ? '#141414' : 'var(--bordeaux)');
   const counter = n > 1 ? (i === 0 ? 'Swipe →' : `${String(i + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}`) : 'mediawow.nl';
   return `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONTS}"><style>${CSS}</style></head>
-<body><div class="s ${sl.theme} ${sl.cls || ''} ${sl.light ? 'lightphoto' : ''} ${i === 0 ? 'first' : 'rest'} ${process.env.SYSTEM ? 'sys' : ''} ${process.env.CLEAN ? 'clean' : ''}">${html}
+<body><div class="s ${sl.theme} ${sl.cls || ''} ${sl.light ? 'lightphoto' : ''} ${i === 0 ? 'first' : 'rest'} ${process.env.SYSTEM ? 'sys' : ''} ${process.env.CLEAN ? 'clean' : ''} ${process.env.EDITO ? 'edito' : ''}">${html}
 <div class="hdr"><div class="logo-mask" style="background:${logoColor}"></div><span class="h">@media.wow</span></div>
 <div class="ftr"><span>${process.env.SYSTEM ? 'Website Check · MediaWow' : 'mediawow.nl'}</span><span>${counter}</span></div></div></body></html>`;
 }
