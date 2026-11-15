@@ -26,6 +26,7 @@ const errors = [];
 const pages = [];
 const SHOTS = process.env.E2E_SHOTS;   // map voor schermafbeeldingen bij fouten (optioneel)
 async function test(name, fn) {
+  if (process.env.ONLY && !process.env.ONLY.split('|').some(o => name.includes(o))) return;
   try { await fn(); passed++; console.log('  ok  ' + name); }
   catch (e) {
     console.log('  FOUT ' + name + '\n       ' + e.message.split('\n')[0]); process.exitCode = 1;
@@ -315,7 +316,7 @@ async function test(name, fn) {
   await test('hele week gesloten: één keer instellen, melding in planning en rooster van iedereen', async () => {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#directie'); await login(p, 'Mark');
-    await p.click('[data-gosettings]'); await p.waitForSelector('[data-periodform]'); await p.evaluate(() => document.querySelectorAll('details.setsec').forEach(d => (d.open = true)));
+    await p.click('[data-gosettings]'); await p.waitForSelector('[data-periodform]', { state: 'attached' }); await p.evaluate(() => document.querySelectorAll('details.setsec').forEach(d => (d.open = true)));
     const ds = await p.evaluate(() => { const d = new Date(); d.setDate(d.getDate() + 23); const q = x => String(x).padStart(2, '0'); return d.getFullYear() + '-' + q(d.getMonth() + 1) + '-' + q(d.getDate()); });
     await p.fill('[name=pfrom]', ds); await p.click('[data-pweek]'); await p.fill('[name=plabel]', 'Zomervakantie');
     await p.click('[data-periodform] button.primary'); await p.waitForSelector('.toast:has-text("gesloten gezet")');
@@ -335,7 +336,7 @@ async function test(name, fn) {
     for (let i = 0; i < 4 && !(await s2.$('.closedbar:has-text("Zomervakantie")')); i++) { await s2.click('[data-act=next]'); await s2.waitForTimeout(250); }
     await s2.waitForSelector('.closedbar:has-text("Zomervakantie")');
     // periode weer weghalen
-    await p.click('[data-gosettings]'); await p.waitForSelector('.spdrange'); await p.evaluate(() => document.querySelectorAll('details.setsec').forEach(d => (d.open = true)));
+    await p.click('[data-gosettings]'); await p.waitForSelector('.spdrange', { state: 'attached' }); await p.evaluate(() => document.querySelectorAll('details.setsec').forEach(d => (d.open = true)));
     await p.click('.spdrange:has-text("Zomervakantie") [data-spddel]'); await p.click('[data-dayform] button.primary'); await p.waitForSelector('.toast:has-text("Dagen opgeslagen")');
     ({ db } = await demoDb(p));
     assert.ok(!db.settings.special_days.some(d => d.label === 'Zomervakantie'), 'periode niet verwijderd');
@@ -403,7 +404,9 @@ async function test(name, fn) {
     const d1 = dt.getFullYear() + '-' + p(dt.getMonth() + 1) + '-' + p(dt.getDate());
     await shared.fill('dialog [name=date]', d1); await shared.dispatchEvent('dialog [name=date]', 'change');
     const before = (await demoDb(shared)).db.shifts.length;
-    await shared.click('dialog button[value=save]'); await shared.waitForTimeout(400);
+    await shared.click('dialog button[value=save]');
+    if (await shared.waitForSelector('dialog[open]:has-text("vrije dag")', { timeout: 1000 }).catch(() => null)) await shared.click('dialog[open]:has-text("vrije dag") button[value=save]');
+    await shared.waitForTimeout(400);
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
     const after = (await demoDb(shared)).db.shifts;
     assert.equal(after.length, before + 1, 'niet precies één dienst toegevoegd');
@@ -705,11 +708,12 @@ async function test(name, fn) {
     await p.waitForSelector('dialog[open]:has-text("vrije dag")');
     await p.click('dialog[open]:has-text("vrije dag") button[value=save]');
     await p.waitForSelector('.toast:has-text("ingepland")');
+    await p.click('dialog[open]:has-text("Nu publiceren") .dlg-foot button[data-close]').catch(() => {});
     const sh = (await demoDb(p)).db.shifts.find(x => x.employee_id === noor.id && x.date === ds);
     assert.ok(sh, 'dienst niet opgeslagen na "Toch inplannen"');
     await p.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
-    await p.click('[data-tab=overzicht]'); await p.click('[data-tab=planning]'); await p.click('[data-act=next]');
-    await p.waitForSelector(`[data-shift="${sh.id}"].atw`);
+    await p.click('[data-tab=overzicht]'); await p.click('[data-tab=planning]'); await p.click('[data-act=today]'); await p.click('[data-act=next]');
+    await p.waitForSelector(`[data-shift="${sh.id}"].atw`, { state: 'attached' });
     assert.match(await p.getAttribute(`[data-shift="${sh.id}"]`, 'title'), /niet beschikbaar/);
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
@@ -748,7 +752,7 @@ async function test(name, fn) {
     await p.click('.annlist .ann:has-text("Wijnkaart") [data-annview]');
     await p.waitForSelector('dialog.viewer[open] canvas.viewer-page', { timeout: 15000 });
     assert.strictEqual(ctx.pages().length, before, 'er ging een los tabblad open');
-    const painted = await p.evaluate(() => { const c = document.querySelector('canvas.viewer-page'); const d = c.getContext('2d').getImageData(Math.floor(c.width / 2), Math.floor(c.height / 2), 1, 1).data; return d[0] > 100 && d[1] < 80; });
+    const painted = await p.waitForFunction(() => { const c = document.querySelector('canvas.viewer-page'); if (!c || !c.width) return false; const d = c.getContext('2d').getImageData(Math.floor(c.width / 2), Math.floor(c.height / 2), 1, 1).data; return d[0] > 100 && d[1] < 80; }, null, { timeout: 10000 }).then(() => true, () => false);
     assert.ok(painted, 'pdf-pagina is niet getekend');
     await p.click('dialog.viewer [data-vclose]'); await p.waitForSelector('dialog.viewer', { state: 'detached' });
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
