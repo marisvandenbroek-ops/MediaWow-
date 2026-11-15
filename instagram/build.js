@@ -459,6 +459,11 @@ em{font-style:italic}
 .lwc .mw-ttl h1{font-family:'Playfair Display',serif!important;font-weight:400;font-size:100px;line-height:1;letter-spacing:-.03em;color:#fff}
 .lwc .mw-ttl h1 em{color:#fff!important;font-style:italic}
 .lwc .ftr{z-index:3}
+.lwct .bg-photo{filter:saturate(.55) sepia(.1) brightness(1.03)}
+.lwct .bg-fade{display:none}
+.lwct .mw-ttl{bottom:auto;top:170px;text-align:left;left:90px;right:90px}
+.lwct .mw-ttl h1{color:#3A1011;font-size:104px}
+.lwct .mw-ttl h1 em{color:#8A7967!important}
 /* ===== MediaWow fotocover (bordeaux-foto's, getemperd naar huisstijl) ===== */
 .mwc .bg-photo{filter:saturate(.32) sepia(.18) brightness(.72) contrast(1.1)}
 .mwc .bg-fade{background:linear-gradient(180deg,rgba(27,4,5,.55) 0%,rgba(27,4,5,0) 22%,rgba(27,4,5,0) 46%,rgba(27,4,5,.9) 100%)}
