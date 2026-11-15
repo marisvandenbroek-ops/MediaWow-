@@ -117,11 +117,9 @@ Heb je een website van MediaWow? Cadeaubonnen met aankooplink zijn een uitbreidi
   {
     id: '3-wo-coaches-januari',
     slides: [
-      { theme: 'greige', html: `
-        <div class="kicker">Voor coaches</div>
-        <h1 class="hero">In januari zoeken ze een coach. <em><span class="mark">Vinden ze jóu?</span></em></h1>
-        <div class="framed" style="height:470px;margin-top:40px"><img src="{{img:canva/foto-092.jpg}}" style="object-position:50% 70%">
-          <div class="paper" style="right:40px;top:60px;width:400px"><b>voornemens 2027:</b><span>☐ meer rust</span><span>☐ die stap zetten</span><span>☐ een coach zoeken</span></div></div>` },
+      { theme: 'photo', cls: 'mwc top', html: `
+        <img class="bg-photo" src="{{img:bordeaux/krant-stoel.jpg}}" style="object-position:50% 0%"><div class="bg-fade"></div>
+        <div class="mw-ttl"><h1>In januari zoeken ze een coach. <em>Vinden ze jóu?</em></h1></div>` },
       { theme: 'dark', html: `
         <div class="kicker">01 — Het zoekmoment</div>
         <h1 class="lg">Goede voornemens beginnen <em>bij Google.</em></h1>
