@@ -15,7 +15,7 @@ h1 em{font-style:italic}
 const ads = {
   // 1 · bordeaux-foto, tas met telefoon
   'ad1-website-check': (w, h) => `<div class="s" style="background:#1B0405;color:#FAF4ED">
-    <img class="ph" src="${img('bordeaux/tas-telefoon.jpg')}" style="object-position:50% 40%;filter:saturate(.32) sepia(.18) brightness(.72) contrast(1.1)">
+    <img class="ph" src="${img('bordeaux/tas-telefoon-site.jpg')}" style="object-position:50% 40%;filter:saturate(.32) sepia(.18) brightness(.72) contrast(1.1)">
     <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(27,4,5,.5) 0%,rgba(27,4,5,0) 22%,rgba(27,4,5,0) 40%,rgba(27,4,5,.92) 100%)"></div>
     <img class="logo" src="${LOGO_W}">
     <div style="position:absolute;left:84px;right:84px;bottom:${h > 1500 ? 330 : 120}px">
