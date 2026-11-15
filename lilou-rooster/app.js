@@ -144,7 +144,7 @@ function demoSeed() {
   const open2 = { id: uid(), employee_id: null, date: D(12), start_time: '12:00', end_time: '18:00', break_minutes: 30, position: 'Keuken', note: '', published: false };
   S.push(open1, open2);
   const A = [{ id: uid(), shift_id: open1.id, employee_id: eva.id, status: 'pending', created_at: now }];
-  const daanSat = S.find(s => s.employee_id === daan.id && s.date === D(5) && s.published);
+  const daanSat = S.find(s => s.employee_id === daan.id && s.date === D(5) && s.published && s.date > todayIso()) || S.filter(s => s.employee_id === daan.id && s.published && s.date > todayIso()).sort((x, y) => x.date.localeCompare(y.date))[0];   // altijd een komende dienst, ook op zondag
   const W = daanSat ? [{ id: uid(), shift_id: daanSat.id, from_employee: daan.id, to_employee: null, swap_shift_id: null, taken_by: null, note: 'Verjaardag van mijn broer', manager_note: null, status: 'open', created_at: now }] : [];
   const V = [];
   const pat = { [sanne.id]: ['hele_dag', 'niet', 'middag', 'hele_dag', 'avond', 'hele_dag', 'niet'], [noor.id]: ['niet', 'hele_dag', 'hele_dag', 'hele_dag', 'hele_dag', 'hele_dag', 'niet'], [eva.id]: ['niet', 'niet', 'niet', 'niet', 'avond', 'hele_dag', 'hele_dag'], [daan.id]: ['avond', 'avond', 'niet', 'avond', 'avond', 'hele_dag', 'niet'] };
@@ -1131,6 +1131,10 @@ async function viewWeek(el, editable) {
       else if (hm(x.end_time) <= hm(x.start_time) && hm(x.end_time) > '00:00') { const nx = specialDay(iso(addDays(parse(x.date), 1))); if (nx?.kind === 'gesloten') addW(x, `loopt door tot in een gesloten dag (${nx.label})`); }
       const lvA = reqs.find(r => r.status === 'approved' && r.employee_id === x.employee_id && r.start_date <= x.date && r.end_date >= x.date);
       if (lvA) addW(x, `heeft ${REQ[lvA.type].toLowerCase()} (goedgekeurd)`);
+      const lvP = !lvA && reqs.find(r => r.status === 'pending' && r.employee_id === x.employee_id && r.start_date <= x.date && r.end_date >= x.date);
+      if (lvP) addW(x, `heeft ${REQ[lvP.type].toLowerCase()} aangevraagd`);
+      const nv = avail.find(a => a.employee_id === x.employee_id && a.date === x.date && a.kind === 'niet');
+      if (nv) addW(x, `heeft "niet beschikbaar" doorgegeven${nv.note ? ' (' + nv.note + ')' : ''}`);
       if (!e) return;
       if (e.contract_end && x.date > e.contract_end) addW(x, `na einde contract (${fmtShort(e.contract_end)})`);
       if (isFlex(e)) {
@@ -1279,7 +1283,7 @@ async function viewWeek(el, editable) {
       <div class="mlist">${items || `<div class="card empty">${editable ? 'Nog niemand ingepland.' : 'Geen diensten op deze dag.'}</div>`}</div>
       ${availFree.length ? `<p class="hint mavail">Beschikbaar, nog niet ingepland: ${availFree.map(a => `<strong>${esc((byId[a.employee_id]?.name || '').split(' ')[0])}</strong> (${AVAIL[a.kind].toLowerCase()})`).join(', ')}</p>` : ''}
       ${editable ? '<button class="btn primary block madd" data-addday>+ Dienst toevoegen</button>' : ''}
-      <p class="hint swipehint">Veeg naar links of rechts voor een andere dag · week totaal ${fmtH(totalH)} u</p>`;
+      <p class="hint swipehint">Veeg naar links of rechts voor een andere dag, ook naar de volgende week · week totaal ${fmtH(totalH)} u</p>`;
   };
 
   el.innerHTML = `
@@ -1303,7 +1307,7 @@ async function viewWeek(el, editable) {
     ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : ''}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><button type="button" class="btn sm" data-personpick>👤 Diensten per persoon</button></div>` : ''}
     ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren${listView ? ', of kies "Hele dag selecteren" onder een dag' : ''}. Met "Hele week" in de balk onderin selecteer je alles van deze week.</p>` : ''}
     ${editable && !mobile && !listView ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span><span class="av av-avond">✓ avond</span> <span class="av av-niet">✕ niet</span> doorgegeven beschikbaarheid</span></div>` : ''}
-    ${people.length && listView ? listHTML() : ''}
+    ${people.length && listView ? listHTML() + '<p class="hint swipehint">Veeg naar links of rechts voor een andere week</p>' : ''}
     ${people.length && mobile && !listView ? mobileHTML() : ''}
     ${people.length && !mobile && !listView ? `<div class="grid-wrap"><table class="grid">
       <thead><tr><th class="who">Medewerker</th>${days.map(d => { const cl = specialDay(iso(d))?.kind === 'gesloten'; return `<th class="${iso(d) === today ? 'today' : ''} ${cl ? 'closedday' : ''}" ${feestdag(iso(d)) ? `title="${esc(feestdag(iso(d)))}"` : ''}>${DAG[dayIdx(d)]}<b>${d.getDate()}</b>${cl ? '<em class="fd cl">Gesloten</em>' : feestdag(iso(d)) ? `<em class="fd">${esc(feestdag(iso(d)))}</em>` : ''}</th>`; }).join('')}</tr></thead>
@@ -1399,13 +1403,22 @@ async function viewWeek(el, editable) {
       return shiftDialog({ employee_id: e?.id || null, date: cell.dataset.date, start_time: t.start, end_time: t.end, break_minutes: t.pauze || 0, position: e?.position || '', note: '' }, emps, shifts, leaves, avail, apps, privs, around);
     }
   };
-  if (mobile) {
+  {
+    // vegen: in de dagweergave (telefoon) naar de volgende dag en over de weekgrens heen; in lijst en agenda naar de volgende week
+    const dayMode = mobile && !listView;
     let x0 = null, y0 = null;
-    el.ontouchstart = ev => { if (ev.target.closest('dialog')) return; x0 = ev.touches[0].clientX; y0 = ev.touches[0].clientY; };
+    el.ontouchstart = ev => {
+      x0 = null;
+      if (ev.target.closest('dialog, input, select, textarea')) return;
+      const tw = ev.target.closest('.table-wrap');   // een agenda die zelf opzij scrolt: dat vegen is voor de tabel
+      if (tw && tw.scrollWidth > tw.clientWidth + 4) return;
+      x0 = ev.touches[0].clientX; y0 = ev.touches[0].clientY;
+    };
     el.ontouchend = ev => {
       if (x0 == null) return;
       const dx = ev.changedTouches[0].clientX - x0, dy = ev.changedTouches[0].clientY - y0; x0 = null;
       if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      if (!dayMode) { S.week = addDays(S.week, dx < 0 ? 7 : -7); toast(`Week ${weekNr(S.week)}`); return rerender(); }
       const dir = dx < 0 ? 1 : -1, n = S.dayI + dir;
       if (n < 0) { S.week = addDays(S.week, -7); S.dayNext = 6; }
       else if (n > 6) { S.week = addDays(S.week, 7); S.dayNext = 0; }
@@ -1552,6 +1565,25 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
         await store.deleteShift(s.id); toast('Dienst verwijderd'); return rerender();
       }
       if (fd.get('start_time') === fd.get('end_time')) throw new Error('Begin- en eindtijd zijn gelijk.');
+      // vrije dag? (verlof, ziek, niet beschikbaar of gesloten) dan eerst vragen
+      {
+        const emp = fd.get('employee_id'), d0 = fd.get('date');
+        const dts = isNew ? [...new Set([d0, ...fd.getAll('days').map(i => iso(addDays(mondayOf(parse(d0)), Number(i))))])] : [d0];
+        const free = [];
+        dts.sort().forEach(ds => {
+          const sp = specialDay(ds); if (sp?.kind === 'gesloten') free.push(`${fmtShort(ds)}: ${CFG.bedrijf} is gesloten (${sp.label})`);
+          if (!emp) return;
+          const lv = leaves.find(r => r.employee_id === emp && r.status !== 'rejected' && r.start_date <= ds && r.end_date >= ds);
+          if (lv) free.push(`${fmtShort(ds)}: ${REQ[lv.type].toLowerCase()} ${lv.status === 'pending' ? 'aangevraagd' : 'goedgekeurd'}`);
+          const v = avail.find(a => a.employee_id === emp && a.date === ds && a.kind === 'niet');
+          if (v) free.push(`${fmtShort(ds)}: heeft "niet beschikbaar" doorgegeven`);
+        });
+        const changed = isNew || emp !== (s.employee_id || '') || d0 !== s.date;
+        if (free.length && changed) {
+          const nm = (emps.find(e => e.id === emp)?.name || '').split(' ')[0];
+          if (!await ask(`Let op, dit is een vrije dag${nm ? ' voor ' + nm : ''}. ${free.join(' · ')}. Toch inplannen?`, 'Toch inplannen')) throw 'cancel';
+        }
+      }
       const base = {
         employee_id: fd.get('employee_id') || null, start_time: fd.get('start_time'), end_time: fd.get('end_time'),
         break_minutes: Number(fd.get('break_minutes')) || 0, position: fd.get('position') || null, note: fd.get('note').trim() || null,
@@ -2124,7 +2156,7 @@ async function viewLijsten(el) {
     const isOpen = S.lOpen ? S.lOpen.has(l.id) : (!lead && l.id === firstOpen);
     return `<details class="card lcard ${full ? 'full' : ''} ${flagged ? 'flag' : ''}" ${isOpen ? 'open' : ''} data-list="${l.id}">
       <summary><span class="lname">${esc(l.name)}${l.department ? ` <small>${esc(l.department)}</small>` : ''}</span>${stat}</summary>
-      <div class="lrows">${rows || '<p class="hint">Nog geen onderdelen. Voeg ze toe bij Instellingen.</p>'}</div></details>`;
+      <div class="lrows">${rows || '<p class="hint">Nog geen onderdelen.</p>'}${isMgr() ? `<div class="ledit"><button type="button" class="linkbtn small" data-ledit2="${l.id}">✏️ Deze lijst aanpassen</button></div>` : ''}</div></details>`;
   };
   // medewerkers: alleen de eerste lijst die nog niet af is staat open; de rest ingeklapt (blijft zo bij het afvinken)
   const firstOpen = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).sort((a, b) => (['opening', 'dag', 'sluiting'].indexOf(a.moment) - ['opening', 'dag', 'sluiting'].indexOf(b.moment)) || a.sort - b.sort)
@@ -2137,6 +2169,7 @@ async function viewLijsten(el) {
     <div class="page-head"><div><h1>Lijsten</h1><p>${lead ? 'Wie wat afvinkt, met tijd. Rood = niet gedaan of buiten de norm.' : 'Vink af wat je gedaan hebt. Je naam en de tijd worden bewaard.'}</p></div>
       ${lead ? `<div class="weeknav"><button class="btn icon" data-lday="-1" aria-label="Vorige dag">‹</button><div class="label"><strong>${ds === today ? 'Vandaag' : esc(fmtLong(ds))}</strong><span>${ds === today ? esc(fmtLong(ds)) : ''}</span></div><button class="btn icon" data-lday="1" aria-label="Volgende dag" ${ds >= today ? 'disabled' : ''}>›</button></div>` : ''}</div>
     ${lead ? `<div class="filters ldeps">${deps.map(d => `<button type="button" class="${S.lDep === d ? 'active' : ''}" data-ldep="${esc(d)}">${d === 'alle' ? 'Alles' : esc(d)}</button>`).join('')}</div>` : ''}
+    ${isMgr() ? '<div class="lmanage"><button type="button" class="btn" data-lmanage>✏️ Lijsten aanpassen</button><button type="button" class="btn" data-lnew2>+ Nieuwe lijst</button></div>' : ''}
     ${past ? '' : `<div class="logbtns"><button class="btn" data-newlog="ontvangst">📦 Ontvangst goederen</button><button class="btn" data-newlog="kern">🌡️ Kerntemperatuur</button><button class="btn" data-newlog="melding">⚠️ Melding maken</button></div>`}
     ${group(ds === today ? 'Vandaag' : 'Deze dag', dayLists)}
     ${group('Deze week', lists.filter(l => l.moment === 'week'))}
@@ -2170,6 +2203,9 @@ async function viewLijsten(el) {
     const nl = ev.target.closest('[data-newlog]'); if (nl) return logDialog(nl.dataset.newlog);
     const r = ev.target.closest('[data-resolve]'); if (r) return resolveDialog(r.dataset.resolve);
     if (ev.target.closest('[data-gosettings2]')) return go('instellingen');
+    const le2 = ev.target.closest('[data-ledit2]'); if (le2) { const l = lists0.find(x => x.id === le2.dataset.ledit2); if (l) listDialog(l); return; }
+    if (ev.target.closest('[data-lnew2]')) return listDialog({});
+    if (ev.target.closest('[data-lmanage]')) return listsManageDialog();
   };
   el.onsubmit = ev => {
     const f = ev.target.closest('[data-temp]'); if (!f) return;
@@ -2275,6 +2311,20 @@ async function listsHomeHTML() {
   } catch (e) { return ''; }
 }
 // lijst bewerken (directie)
+// Alle lijsten (ook niet actieve) om te kiezen welke je aanpast
+async function listsManageDialog() {
+  const all = await store.checklists();
+  const MOM = { opening: 'bij opening', sluiting: 'bij sluiting', dag: 'elke dag', week: 'elke week', maand: 'elke maand' };
+  openDialog('Lijsten aanpassen', `<p class="hint" style="margin:0">Kies een lijst om onderdelen toe te voegen, te wijzigen of weg te halen. Wat al is afgevinkt blijft bewaard.</p>
+    <div class="lsetlist">${all.map(l => `<button type="button" class="lsetrow ${l.active === false ? 'off' : ''}" data-lpick="${l.id}"><span><strong>${esc(l.name)}</strong><small>${esc(l.department || 'Iedereen')} · ${esc(MOM[l.moment] || '')} · ${(l.items || []).length} onderdelen${l.active === false ? ' · niet actief' : ''}</small></span><span class="chev">›</span></button>`).join('')}</div>
+    <div class="dlg-foot"><button type="button" class="btn" data-lpicknew>+ Nieuwe lijst</button><button type="button" class="btn primary" data-close>Sluiten</button></div>`,
+  { onReady: dlg => {
+    dlg.addEventListener('click', ev => {
+      const b = ev.target.closest('[data-lpick]'); if (b) { const l = all.find(x => x.id === b.dataset.lpick); dlg.close(); if (l) listDialog(l); return; }
+      if (ev.target.closest('[data-lpicknew]')) { dlg.close(); listDialog({}); }
+    });
+  } });
+}
 function listDialog(l = {}) {
   const isNew = !l.id, all = l.items || [], items = all.filter(it => !it.removed);
   const lines = items.map(it => l.kind === 'temp' ? `${it.label} | ${it.max ?? ''}` : it.label).join('\n');

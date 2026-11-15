@@ -677,6 +677,49 @@ async function test(name, fn) {
     await p.waitForSelector('.rulesbanner:has-text("bijgewerkt")');
     await ctx.close(); pages.splice(pages.indexOf(p), 1); pages.splice(pages.indexOf(m), 1);
   });
+  await test('planning: vegen gaat naar de volgende week (lijstweergave, telefoon)', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await p.click('[data-tab=planning]'); await p.click('[data-pv=list]'); await p.waitForSelector('.pday');
+    const before = await p.textContent('.weeknav .label strong');
+    await p.evaluate(() => { const t = document.querySelector('.pday'), v = document.getElementById('view');
+      const mk = x => new Touch({ identifier: 1, target: t, clientX: x, clientY: 400 });
+      v.dispatchEvent(new TouchEvent('touchstart', { touches: [mk(320)], changedTouches: [mk(320)], bubbles: true }));
+      v.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [mk(80)], bubbles: true })); });
+    await p.waitForFunction(b => document.querySelector('.weeknav .label strong')?.textContent !== b, before);
+    const after = await p.textContent('.weeknav .label strong');
+    assert.strictEqual(Number(after.replace(/\D/g, '')), Number(before.replace(/\D/g, '')) % 53 + 1, `${before} -> ${after}`);
+    await p.click('[data-pv=grid]');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
+  await test('dienst op een vrije dag: vraagt eerst, en waarschuwing in de planning', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    const ds = await p.evaluate(() => { const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 9); const q = x => String(x).padStart(2, '0'); return d.getFullYear() + '-' + q(d.getMonth() + 1) + '-' + q(d.getDate()); });
+    await setDemoDb(p, `const e = db.employees.find(x => x.name.startsWith('Noor')); db.shifts = db.shifts.filter(s => !(s.employee_id === e.id && s.date === a)); db.availability = db.availability.filter(v => !(v.employee_id === e.id && v.date === a)); db.availability.push({ id: 'nv1', employee_id: e.id, date: a, kind: 'niet', note: 'tandarts' });`, ds);
+    await p.reload(); await p.waitForSelector('[data-tab=planning]');
+    await p.click('[data-tab=planning]'); await p.click('[data-act=next]'); await p.waitForTimeout(300);
+    const noor = (await demoDb(p)).db.employees.find(x => x.name.startsWith('Noor'));
+    await p.click(`td.cell.editable[data-emp="${noor.id}"][data-date="${ds}"]`, { position: { x: 20, y: 40 } }); await p.waitForSelector('dialog [name=start_time]');
+    await p.click('dialog button[value=save]');
+    await p.waitForSelector('dialog[open]:has-text("vrije dag")');
+    await p.click('dialog[open]:has-text("vrije dag") button[value=save]');
+    await p.waitForSelector('.toast:has-text("ingepland")');
+    const sh = (await demoDb(p)).db.shifts.find(x => x.employee_id === noor.id && x.date === ds);
+    assert.ok(sh, 'dienst niet opgeslagen na "Toch inplannen"');
+    await p.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    await p.click('[data-tab=overzicht]'); await p.click('[data-tab=planning]'); await p.click('[data-act=next]');
+    await p.waitForSelector(`[data-shift="${sh.id}"].atw`);
+    assert.match(await p.getAttribute(`[data-shift="${sh.id}"]`, 'title'), /niet beschikbaar/);
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
+  await test('lijsten: directie past een schoonmaaklijst aan vanuit het tabblad Lijsten', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await p.click('[data-tab=lijsten]'); await p.click('[data-lmanage]');
+    await p.click('dialog [data-lpick]:has-text("Weekschoonmaak")'); await p.waitForSelector('dialog[open]:has-text("Lijst bewerken")');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('telefoon: geen enkel scherm loopt rechts van het scherm af', async () => {
     // elk element binnen #view moet binnen de schermbreedte blijven (behalve in bewust scrollende tabellen)
     const outside = p => p.evaluate(() => { const W = document.documentElement.clientWidth, out = [];
