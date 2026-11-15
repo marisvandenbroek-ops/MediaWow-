@@ -246,12 +246,9 @@ Fijne pakjesavond alvast! Zin in een cadeautje? 👇 Reageer TIPS voor een grati
   {
     id: '6-za-tijdlijn',
     slides: [
-      { theme: 'photo', cls: 'mwc onpaper', html: `
-        <img class="bg-photo" src="{{img:bordeaux/typemachine.jpg}}" style="object-position:50% 50%"><div class="bg-fade"></div>
-        <div class="mw-ttl"><h1>Jij runt je zaak.<br><em>Ik bouw je website.</em></h1></div>` },
       { theme: 'greige', html: `
         <div class="kicker">Achter de schermen</div>
-        <h1 class="hero">Zo gaat <em><span class="mark">het.</span></em></h1>
+        <h1 class="hero">Jij runt je zaak. <em><span class="mark">Ik bouw je website.</span></em></h1>
         <div class="tl">
           <div><span class="dot"></span><b>Kennismaking</b><small>we drinken koffie (of bellen)</small></div>
           <div><span class="dot"></span><b>Moodboard & ontwerp</b><small>jij kijkt mee, ik ontwerp</small></div>
