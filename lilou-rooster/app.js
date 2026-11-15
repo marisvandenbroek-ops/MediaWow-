@@ -2420,9 +2420,9 @@ async function viewSettings(el) {
       <details class="card pad setsec" data-k="5"><summary><h2>Gesloten dagen en extra feestdagen</h2></summary>
         <p class="hint">Gesloten dagen zie je in de planning en het rooster van iedereen, met de melding "Gesloten". Een dienst op zo'n dag krijgt een waarschuwing. Extra feestdagen tellen mee voor de feestdagtoeslag, net als de wettelijke feestdagen.</p>
         <form data-periodform class="periodform">
-          <h3 class="small-h">Een week of periode gesloten</h3>
-          <div class="pfrow"><label class="field">Van<input type="date" name="pfrom" required></label><label class="field">Tot en met<input type="date" name="pto" required></label><label class="field">Omschrijving<input name="plabel" maxlength="40" placeholder="bv. Zomervakantie" required></label></div>
-          <div class="actions" style="margin-top:8px"><button type="button" class="btn" data-pweek>Hele week van "Van"</button><button class="btn primary">Gesloten zetten</button></div>
+          <h3 class="small-h">Gesloten zetten: één dag, een week of langer</h3>
+          <div class="pfrow"><label class="field">Van<input type="date" name="pfrom" required onchange="if(!this.form.pto.value||this.form.pto.value<this.value)this.form.pto.value=this.value"></label><label class="field">Tot en met<input type="date" name="pto" required></label><label class="field">Omschrijving<input name="plabel" maxlength="40" placeholder="bv. Zomervakantie" required></label></div>
+          <div class="actions" style="margin-top:8px"><button type="button" class="btn" data-pday>Alleen die dag</button><button type="button" class="btn" data-pweek>Die hele week</button><button class="btn primary">Gesloten zetten</button></div>
         </form>
         <h3 class="small-h" style="margin-top:16px">Gesloten en feestdagen</h3>
         <form data-dayform><div class="daylist2">${spRuns.map(rangeRow).join('')}${spSingles.map(dayRow).join('')}</div>
@@ -2478,6 +2478,7 @@ async function viewSettings(el) {
     const td = ev.target.closest('[data-tpldel]'); if (td) { td.closest('.tplrow').remove(); return; }
     if (ev.target.closest('[data-dayadd]')) { $('.daylist2', el).insertAdjacentHTML('beforeend', dayRow({ date: '', label: '', kind: 'gesloten' })); $$('.spdrow', el).pop().querySelector('[name=date]').focus(); return; }
     const sd = ev.target.closest('[data-spddel]'); if (sd) { const row = sd.closest('.spdrow, .spdrange'); row.parentNode.removeChild(row); return; }
+    if (ev.target.closest('[data-pday]')) { const f = $('[data-periodform]', el); f.pfrom.value ||= todayIso(); f.pto.value = f.pfrom.value; if (!f.plabel.value) f.plabel.focus(); return; }
     if (ev.target.closest('[data-pweek]')) {
       const f = $('[data-periodform]', el), v = f.pfrom.value || todayIso(), mon = mondayOf(parse(v));
       f.pfrom.value = iso(mon); f.pto.value = iso(addDays(mon, 6)); if (!f.plabel.value) f.plabel.focus(); return;
