@@ -934,3 +934,18 @@ details.setsec[open] > summary { margin-bottom: 8px; }
 .noodtips p { margin: 0 0 6px; font-size: 14px; }
 .acklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .acklist li { display: flex; justify-content: space-between; gap: 10px; }
+
+/* Gesloten weken en periodes */
+.closedbar { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; padding: 12px 16px; margin-bottom: 14px; border-radius: var(--radius); background: var(--surface-2); border: 1px dashed var(--line-strong); }
+.closedbar strong { white-space: nowrap; }
+.closedbar span { color: var(--muted); font-size: 14px; min-width: 0; }
+th.closedday { background: var(--surface-2); }
+.fd.cl, .fdtag.cl { color: var(--muted); font-style: normal; }
+.ds.closed { opacity: .55; }
+.daylist li.closed .t strong { color: var(--muted); }
+.daylist li.weekclosed { background: var(--surface-2); }
+.periodform { padding: 12px; border: 1px solid var(--line); border-radius: 12px; margin: 10px 0 4px; }
+.pfrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.4fr); gap: 8px; }
+@media (max-width: 600px) { .pfrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .pfrow .field:nth-child(3) { grid-column: span 2; } }
+.spdrange { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); border: 1px dashed var(--line-strong); }
+.spdrange > span { min-width: 0; }

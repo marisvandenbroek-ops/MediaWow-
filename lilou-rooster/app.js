@@ -1248,7 +1248,7 @@ async function viewWeek(el, editable) {
         <span class="chev" aria-hidden="true">›</span></button>`;
     }).join('');
     return `<section class="pday ${ds === today ? 'today' : ''}">
-      <div class="pday-head"><h3>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}${fd ? ` <span class="fdtag">${esc(fd)}</span>` : ''}</h3><span class="muted small">${list.length ? `${new Set(list.filter(x => x.employee_id).map(x => x.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
+      <div class="pday-head"><h3>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}${sp?.kind === 'gesloten' ? ' <span class="fdtag cl">🔒 Gesloten</span>' : fd ? ` <span class="fdtag">${esc(fd)}</span>` : ''}</h3><span class="muted small">${list.length ? `${new Set(list.filter(x => x.employee_id).map(x => x.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
       ${covOn && !(sp?.kind === 'gesloten') ? `<div class="cov">${covHTML(ds)}</div>` : sp?.kind === 'gesloten' ? `<div class="cov">${covHTML(ds)}</div>` : ''}
       ${lv.length ? `<div class="mleaves">${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}</div>` : ''}
       <div class="plist">${rowsL || '<p class="hint" style="margin:6px 2px">Nog niemand ingepland.</p>'}</div>
@@ -1262,7 +1262,7 @@ async function viewWeek(el, editable) {
     const h = list.reduce((t, s) => t + shiftHours(s), 0);
     const fd = feestdag(ds);
     const strip = days.map((d, i) => { const n = new Set(shifts.filter(s => s.date === iso(d)).map(s => s.employee_id)).size; const mineThere = shifts.some(s => s.date === iso(d) && s.employee_id === S.me.id);
-      return `<button class="ds ${i === di ? 'on' : ''} ${iso(d) === today ? 'today' : ''}" data-day="${i}" aria-label="${fmtLong(iso(d))}"><span>${DAG[i]}</span><b>${d.getDate()}</b><i class="${mineThere && !editable ? 'mine' : ''}">${n || ''}</i></button>`; }).join('');
+      return `<button class="ds ${i === di ? 'on' : ''} ${iso(d) === today ? 'today' : ''} ${specialDay(iso(d))?.kind === 'gesloten' ? 'closed' : ''}" data-day="${i}" aria-label="${fmtLong(iso(d))}"><span>${DAG[i]}</span><b>${d.getDate()}</b><i class="${mineThere && !editable ? 'mine' : ''}">${n || ''}</i></button>`; }).join('');
     const items = list.map(s => { const isOpen = !s.employee_id; const e = byId[s.employee_id] || (isOpen ? { name: 'Open dienst', color: '#a8988f' } : {}); const me = !isOpen && e.id === S.me.id; const tag = editable || isOpen ? 'button' : 'div';
       const nApps = isOpen ? apps.filter(a => a.shift_id === s.id && a.status === 'pending').length : 0;
       return `<${tag} class="mshift ${s.published ? '' : 'concept'} ${me ? 'me' : ''} ${isOpen ? 'open' : ''}" style="--c:${esc(e.color || COLORS[0])}" ${editable ? `data-shift="${s.id}"` : isOpen ? 'data-goopen' : ''}>
@@ -1272,7 +1272,7 @@ async function viewWeek(el, editable) {
     const availFree = editable ? avail.filter(a => a.date === ds && a.kind !== 'niet' && !list.some(s => s.employee_id === a.employee_id)) : [];
     const leaveHTML = lv.length ? `<div class="mleaves">${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}</div>` : '';
     return `<div class="daystrip">${strip}</div>
-      <div class="dayhead"><div><h2>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}</h2>${fd ? `<span class="fdtag">${esc(fd)}</span>` : ''}</div><span>${list.length ? `${new Set(list.filter(s => s.employee_id).map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
+      <div class="dayhead"><div><h2>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}</h2>${specialDay(ds)?.kind === 'gesloten' ? `<span class="fdtag cl">🔒 Gesloten · ${esc(specialDay(ds).label)}</span>` : fd ? `<span class="fdtag">${esc(fd)}</span>` : ''}</div><span>${list.length ? `${new Set(list.filter(s => s.employee_id).map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
       ${moneyOn ? moneyHTML(ds, true) : ''}
       ${covOn ? `<div class="cov mcov">${covHTML(ds)}</div>` : ''}
       ${leaveHTML}
@@ -1298,6 +1298,7 @@ async function viewWeek(el, editable) {
         <button class="btn primary" data-act="publish" ${concept ? '' : 'disabled'}>${concept ? `Publiceer ${concept} dienst${concept > 1 ? 'en' : ''}` : 'Week gepubliceerd ✓'}</button>
       </div>` : ''}
     </div>
+    ${closedBanner(iso(days[0]), iso(days[days.length - 1]))}
     ${elsewhere ? `<div class="pubbar"><span>Nog <strong>${future.length} concept${future.length > 1 ? 'en' : ''}</strong> in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} (${futureWeeks.map(w => 'wk ' + weekNr(parse(w))).join(', ')})</span><button class="btn sm primary" data-act="publishall">Alles publiceren</button></div>` : ''}
     ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : ''}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><button type="button" class="btn sm" data-personpick>👤 Diensten per persoon</button></div>` : ''}
     ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren${listView ? ', of kies "Hele dag selecteren" onder een dag' : ''}. Met "Hele week" in de balk onderin selecteer je alles van deze week.</p>` : ''}
@@ -1305,7 +1306,7 @@ async function viewWeek(el, editable) {
     ${people.length && listView ? listHTML() : ''}
     ${people.length && mobile && !listView ? mobileHTML() : ''}
     ${people.length && !mobile && !listView ? `<div class="grid-wrap"><table class="grid">
-      <thead><tr><th class="who">Medewerker</th>${days.map(d => `<th class="${iso(d) === today ? 'today' : ''}" ${feestdag(iso(d)) ? `title="${esc(feestdag(iso(d)))}"` : ''}>${DAG[dayIdx(d)]}<b>${d.getDate()}</b>${feestdag(iso(d)) ? `<em class="fd">${esc(feestdag(iso(d)))}</em>` : ''}</th>`).join('')}</tr></thead>
+      <thead><tr><th class="who">Medewerker</th>${days.map(d => { const cl = specialDay(iso(d))?.kind === 'gesloten'; return `<th class="${iso(d) === today ? 'today' : ''} ${cl ? 'closedday' : ''}" ${feestdag(iso(d)) ? `title="${esc(feestdag(iso(d)))}"` : ''}>${DAG[dayIdx(d)]}<b>${d.getDate()}</b>${cl ? '<em class="fd cl">Gesloten</em>' : feestdag(iso(d)) ? `<em class="fd">${esc(feestdag(iso(d)))}</em>` : ''}</th>`; }).join('')}</tr></thead>
       <tbody>${moneyOn ? `<tr class="moneyrow"><th class="who"><div class="who-inner"><div><strong>Personeelskosten</strong><small>${(revRows || []).some(r => r.forecast != null) ? (stW.goal_labor_pct ? `doel ${pct1(Number(stW.goal_labor_pct))} van de omzet` : 'kosten als % van verwachte omzet') : stW.goal_labor_pct ? `vul je omzet in, dan zie je het % (doel ${pct1(Number(stW.goal_labor_pct))})` : 'omzet invullen is optioneel'}</small></div></div></th>${days.map(d => `<td class="${iso(d) === today ? 'today' : ''}">${moneyHTML(iso(d))}</td>`).join('')}</tr>` : ''}${covOn ? `<tr class="covrow"><th class="who"><div class="who-inner"><div><strong>Bezetting</strong><small>ingepland / nodig</small></div></div></th>${days.map(d => `<td class="${iso(d) === today ? 'today' : ''}"><div class="cov">${covHTML(iso(d))}</div></td>`).join('')}</tr>` : ''}${openRow}${rows}</tbody>
       <tfoot><tr><th class="who">${fmtH(totalH)} u totaal${totalK ? `<br><span class="cost">${euro(totalK)} loonkosten</span>` : ''}</th>${foot}</tr></tfoot>
     </table></div>` : people.length ? '' : `<div class="card empty">Nog geen medewerkers. ${editable ? 'Voeg ze toe via <strong>Team</strong>.' : ''}</div>`}
@@ -2326,6 +2327,10 @@ async function viewSettings(el) {
   const T = Object.assign({ avondVan: '20:00', avondTot: '24:00', nachtVan: '00:00', nachtTot: '06:00' }, CFG.toeslagen);
   const pf = (k, l, d) => `<label class="field">${l}<input type="number" name="${k}" min="0" max="300" step="0.5" value="${st[k] ?? d}"></label>`;
   const tf = (k, l) => `<label class="field">${l}<input type="time" name="${k}" value="${esc(T[k] === '24:00' ? '23:59' : T[k])}" required></label>`;
+  const rangeRow = r => `<div class="spdrange" data-from="${r.from}" data-to="${r.to}" data-label="${esc(r.label)}"><span><strong>🔒 ${esc(runLabel(r))}</strong> · ${esc(r.label)} <span class="muted">(${r.n} dagen)</span></span><button type="button" class="btn ghost sm" data-spddel aria-label="Periode verwijderen">✕</button></div>`;
+  const spAll = (CFG.specialDays || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+  const spRuns = closedRuns(spAll).filter(r => r.n > 1);
+  const spSingles = spAll.filter(d => !(d.kind === 'gesloten' && spRuns.some(r => d.date >= r.from && d.date <= r.to && d.label === r.label)));
   const dayRow = d => `<div class="spdrow"><label class="field">Datum<input type="date" name="date" value="${esc(d.date || '')}" required></label><label class="field">Omschrijving<input name="label" value="${esc(d.label || '')}" maxlength="40" placeholder="bv. Kerstavond" required></label><label class="field">Soort<select name="kind"><option value="gesloten" ${d.kind !== 'feestdag' ? 'selected' : ''}>Gesloten</option><option value="feestdag" ${d.kind === 'feestdag' ? 'selected' : ''}>Feestdag (toeslag)</option></select></label><button type="button" class="btn ghost sm" data-spddel aria-label="Verwijderen">✕</button></div>`;
   const tplRow = (d, i) => `<div class="tplrow" data-i="${i}"><label class="field">Naam<input name="label" value="${esc(d.label || '')}" required maxlength="30"></label><label class="field">Van<input type="time" name="start" value="${esc(d.start || '')}" required></label><label class="field">Tot<input type="time" name="end" value="${esc(d.end || '')}" required></label><label class="field">Pauze (min)<input type="number" name="pauze" min="0" max="240" step="5" value="${Number(d.pauze) || 0}"></label><button type="button" class="btn ghost sm" data-tpldel="${i}" aria-label="Verwijderen">✕</button></div>`;
   el.innerHTML = `
@@ -2363,8 +2368,14 @@ async function viewSettings(el) {
       </details>
 
       <details class="card pad setsec" data-k="5"><summary><h2>Gesloten dagen en extra feestdagen</h2></summary>
-        <p class="hint">Gesloten dagen zie je in de planning; een dienst op zo'n dag krijgt een waarschuwing. Extra feestdagen tellen mee voor de feestdagtoeslag, net als de wettelijke feestdagen.</p>
-        <form data-dayform><div class="daylist2">${(CFG.specialDays || []).slice().sort((a, b) => a.date.localeCompare(b.date)).map(dayRow).join('')}</div>
+        <p class="hint">Gesloten dagen zie je in de planning en het rooster van iedereen, met de melding "Gesloten". Een dienst op zo'n dag krijgt een waarschuwing. Extra feestdagen tellen mee voor de feestdagtoeslag, net als de wettelijke feestdagen.</p>
+        <form data-periodform class="periodform">
+          <h3 class="small-h">Een week of periode gesloten</h3>
+          <div class="pfrow"><label class="field">Van<input type="date" name="pfrom" required></label><label class="field">Tot en met<input type="date" name="pto" required></label><label class="field">Omschrijving<input name="plabel" maxlength="40" placeholder="bv. Zomervakantie" required></label></div>
+          <div class="actions" style="margin-top:8px"><button type="button" class="btn" data-pweek>Hele week van "Van"</button><button class="btn primary">Gesloten zetten</button></div>
+        </form>
+        <h3 class="small-h" style="margin-top:16px">Gesloten en feestdagen</h3>
+        <form data-dayform><div class="daylist2">${spRuns.map(rangeRow).join('')}${spSingles.map(dayRow).join('')}</div>
           <div class="actions" style="margin-top:10px"><button type="button" class="btn" data-dayadd>+ Dag toevoegen</button><button class="btn primary">Opslaan</button></div></form>
       </details>
 
@@ -2416,7 +2427,11 @@ async function viewSettings(el) {
     }
     const td = ev.target.closest('[data-tpldel]'); if (td) { td.closest('.tplrow').remove(); return; }
     if (ev.target.closest('[data-dayadd]')) { $('.daylist2', el).insertAdjacentHTML('beforeend', dayRow({ date: '', label: '', kind: 'gesloten' })); $$('.spdrow', el).pop().querySelector('[name=date]').focus(); return; }
-    const sd = ev.target.closest('[data-spddel]'); if (sd) { sd.closest('.spdrow').remove(); return; }
+    const sd = ev.target.closest('[data-spddel]'); if (sd) { const row = sd.closest('.spdrow, .spdrange'); row.parentNode.removeChild(row); return; }
+    if (ev.target.closest('[data-pweek]')) {
+      const f = $('[data-periodform]', el), v = f.pfrom.value || todayIso(), mon = mondayOf(parse(v));
+      f.pfrom.value = iso(mon); f.pto.value = iso(addDays(mon, 6)); if (!f.plabel.value) f.plabel.focus(); return;
+    }
     if (ev.target.closest('[data-clockset]')) return settingsDialog(st);
     const le = ev.target.closest('[data-ledit]'); if (le) { const l = (await store.checklists()).find(x => x.id === le.dataset.ledit); if (l) listDialog(l); return; }
     if (ev.target.closest('[data-lnew]')) return listDialog({});
@@ -2454,9 +2469,25 @@ async function viewSettings(el) {
     $$('[data-ratio]', el).forEach(i => { const n = Math.max(0, Math.round(Number(i.value)) || 0); if (n) ratios[i.dataset.ratio] = n; });
     await store.saveSettings({ staffing, guest_ratios: ratios }); toast('Bezetting opgeslagen'); rerender();
   };
+  $('[data-periodform]', el).onsubmit = async ev => {
+    ev.preventDefault();
+    const f = ev.target, from = f.pfrom.value, to = f.pto.value, label = f.plabel.value.trim();
+    if (!from || !to || !label) return toast('Vul van, tot en met en een omschrijving in', 'error');
+    if (to < from) return toast('"Tot en met" ligt vóór "Van"', 'error');
+    const n = Math.round((parse(to) - parse(from)) / 864e5) + 1;
+    if (n > 366) return toast('Kies een periode van maximaal een jaar', 'error');
+    const add = [...Array(n)].map((_, i) => ({ date: iso(addDays(parse(from), i)), label, kind: 'gesloten' }));
+    const keep = (CFG.specialDays || []).filter(d => d.date < from || d.date > to);
+    await store.saveSettings({ special_days: [...keep, ...add].sort((a, b) => a.date.localeCompare(b.date)) });
+    applySettings(await store.settings());
+    const busy = (await store.shifts(from, to)).filter(x => x.employee_id).length;
+    toast(busy ? `Gesloten gezet. Let op: er staan nog ${busy} dienst${busy === 1 ? '' : 'en'} in deze periode` : `${n === 1 ? 'Dag' : n + ' dagen'} gesloten gezet`, busy ? 'error' : undefined);
+    rerender();
+  };
   $('[data-dayform]', el).onsubmit = async ev => {
     ev.preventDefault();
     const list = $$('.spdrow', el).map(r => ({ date: $('[name=date]', r).value, label: $('[name=label]', r).value.trim(), kind: $('[name=kind]', r).value }));
+    $$('.spdrange', el).forEach(r => { for (let d = parse(r.dataset.from); iso(d) <= r.dataset.to; d = addDays(d, 1)) list.push({ date: iso(d), label: r.dataset.label, kind: 'gesloten' }); });
     if (list.some(d => !d.date || !d.label)) return toast('Vul bij elke dag een datum en omschrijving in', 'error');
     if (new Set(list.map(d => d.date)).size !== list.length) return toast('Elke datum mag maar één keer voorkomen', 'error');
     await store.saveSettings({ special_days: list.sort((a, b) => a.date.localeCompare(b.date)) }); applySettings(await store.settings()); toast('Dagen opgeslagen'); rerender();
@@ -2504,9 +2535,11 @@ async function viewMine(el) {
     const wFrom = iso(mon), wTo = iso(addDays(mon, 6));
     const ws = mine.filter(s => s.date >= wFrom && s.date <= wTo);
     const wl = myLeaves.filter(r => overlaps(r.start_date, r.end_date, wFrom, wTo));
-    if (!showOff && !ws.length && !wl.length) return '';
+    const wRuns = closedRuns(CFG.specialDays, wFrom, wTo), closedN = wRuns.reduce((t, r) => t + r.n, 0), weekClosed = closedN === 7;
+    if (!showOff && !ws.length && !wl.length && !closedN) return '';
     const h = ws.reduce((t, s) => t + shiftHours(s), 0);
     const items = [];
+    if (weekClosed) items.push(`<li class="off closed weekclosed"><div class="d"><span>🔒</span></div><div class="t"><strong>Hele week gesloten</strong><small>${esc([...new Set(wRuns.map(r => r.label))].join(', '))}</small></div><div class="h"></div></li>`);
     for (let i = 0; i < 7; i++) {
       const ds = iso(addDays(mon, i));
       const d = parse(ds);
@@ -2514,6 +2547,8 @@ async function viewMine(el) {
       const fd = feestdag(ds);
       ws.filter(s => s.date === ds).forEach(s => items.push(`<li class="${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${hm(s.start_time)} – ${hm(s.end_time)}</strong><small>${esc(s.position || '')}${s.break_minutes ? ` · ${s.break_minutes} min pauze` : ''}${s.note ? ` · ${esc(s.note)}` : ''}${fd ? ` · ${esc(fd)}` : ''}</small>${withWho(s).length ? `<small class="with">Met ${esc(withWho(s).join(', '))}</small>` : ''}${shiftWindow(s)[0] > new Date() ? (swapOf(s.id) ? `<small class="swapst">⇄ ${SWAPST[swapOf(s.id).status].toLowerCase()}</small>` : `<button class="linkbtn small swapbtn" data-swap="${s.id}">⇄ Ruilen of overdragen</button>`) : ''}</div><div class="h">${fmtH(shiftHours(s))} u</div></li>`));
       if (ws.some(s => s.date === ds)) continue;
+      const cl = specialDay(ds);
+      if (cl?.kind === 'gesloten') { if (!weekClosed) items.push(`<li class="off closed ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>Gesloten</strong><small>${esc(cl.label)}</small></div><div class="h"><span class="pill">🔒</span></div></li>`); continue; }
       const lv = wl.find(r => r.start_date <= ds && r.end_date >= ds);
       if (lv) items.push(`<li class="off ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${esc(REQ[lv.type])}</strong></div><div class="h"><span class="pill ok">vrij</span></div></li>`);
       else if (showOff) items.push(`<li class="off free ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>Vrij</strong>${fd ? `<small>${esc(fd)}</small>` : ''}</div><div class="h"></div></li>`);
@@ -3346,6 +3381,23 @@ function easter(y) {
 const _fd = {};
 // Gesloten dagen en extra feestdagen uit Instellingen
 function specialDay(ds) { return (CFG.specialDays || []).find(x => x.date === ds) || null; }
+// Aaneengesloten gesloten dagen met dezelfde omschrijving als één periode: [{ from, to, label, n }]
+function closedRuns(list, from, to) {
+  const days = (list || []).filter(x => x.kind === 'gesloten' && (!from || x.date >= from) && (!to || x.date <= to)).sort((a, b) => a.date.localeCompare(b.date));
+  const runs = [];
+  days.forEach(d => {
+    const r = runs[runs.length - 1];
+    if (r && r.label === d.label && iso(addDays(parse(r.to), 1)) === d.date) { r.to = d.date; r.n++; }
+    else runs.push({ from: d.date, to: d.date, label: d.label, n: 1 });
+  });
+  return runs;
+}
+const runLabel = r => (r.n === 1 ? fmtLong(r.from) : `${fmtShort(r.from)} t/m ${fmtShort(r.to)}`);
+function closedBanner(from, to) {
+  const runs = closedRuns(CFG.specialDays, from, to);
+  if (!runs.length) return '';
+  return `<div class="closedbar" role="note"><strong>🔒 Gesloten</strong><span>${runs.map(r => `${esc(runLabel(r))} · ${esc(r.label)}`).join('<br>')}</span></div>`;
+}
 function feestdag(ds) {
   const y = Number(ds.slice(0, 4));
   if (!_fd[y]) {

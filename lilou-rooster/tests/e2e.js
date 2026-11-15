@@ -312,6 +312,35 @@ async function test(name, fn) {
     await shared.waitForSelector('[data-shift="dicht1"].atw');
     assert.match(await shared.getAttribute('[data-shift="dicht1"]', 'title'), /gesloten/);
   });
+  await test('hele week gesloten: één keer instellen, melding in planning en rooster van iedereen', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await p.click('[data-gosettings]'); await p.waitForSelector('[data-periodform]'); await p.evaluate(() => document.querySelectorAll('details.setsec').forEach(d => (d.open = true)));
+    const ds = await p.evaluate(() => { const d = new Date(); d.setDate(d.getDate() + 23); const q = x => String(x).padStart(2, '0'); return d.getFullYear() + '-' + q(d.getMonth() + 1) + '-' + q(d.getDate()); });
+    await p.fill('[name=pfrom]', ds); await p.click('[data-pweek]'); await p.fill('[name=plabel]', 'Zomervakantie');
+    await p.click('[data-periodform] button.primary'); await p.waitForSelector('.toast:has-text("gesloten gezet")');
+    let { db } = await demoDb(p);
+    const closed = db.settings.special_days.filter(d => d.label === 'Zomervakantie');
+    assert.strictEqual(closed.length, 7, 'niet 7 dagen gesloten');
+    assert.strictEqual(new Date(closed[0].date + 'T12:00').getDay(), 1, 'week begint niet op maandag');
+    await p.waitForSelector('.spdrange:has-text("Zomervakantie")');
+    await p.click('[data-tab=planning]'); await p.click('[data-act=today]');
+    for (let i = 0; i < 4 && !(await p.$('.closedbar:has-text("Zomervakantie")')); i++) { await p.click('[data-act=next]'); await p.waitForTimeout(250); }
+    await p.waitForSelector('.closedbar:has-text("Zomervakantie")');
+    if (await p.$('th.closedday')) assert.strictEqual(await p.$$eval('th.closedday', x => x.length), 7);
+    const s2 = watch(await ctx.newPage()); await s2.setViewportSize({ width: 390, height: 844 });
+    await s2.goto(URL + '#personeel'); await s2.waitForSelector('[data-demo]'); await login(s2, 'Sanne');
+    await s2.waitForSelector('.daylist li.weekclosed:has-text("Zomervakantie")');
+    await s2.click('[data-tab=planning]'); await s2.click('[data-act=today]');
+    for (let i = 0; i < 4 && !(await s2.$('.closedbar:has-text("Zomervakantie")')); i++) { await s2.click('[data-act=next]'); await s2.waitForTimeout(250); }
+    await s2.waitForSelector('.closedbar:has-text("Zomervakantie")');
+    // periode weer weghalen
+    await p.click('[data-gosettings]'); await p.waitForSelector('.spdrange'); await p.evaluate(() => document.querySelectorAll('details.setsec').forEach(d => (d.open = true)));
+    await p.click('.spdrange:has-text("Zomervakantie") [data-spddel]'); await p.click('[data-dayform] button.primary'); await p.waitForSelector('.toast:has-text("Dagen opgeslagen")');
+    ({ db } = await demoDb(p));
+    assert.ok(!db.settings.special_days.some(d => d.label === 'Zomervakantie'), 'periode niet verwijderd');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1); pages.splice(pages.indexOf(s2), 1);
+  });
   await test('contracttype oproep: waarschuwing bij oproep korter dan 3 uur', async () => {
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
     await shared.click('[data-tab=team]'); await shared.click('tr:has-text("Eva Smit")'); await shared.waitForSelector('dialog [name=contract_type]');
