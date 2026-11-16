@@ -3279,7 +3279,7 @@ async function viewMine(el) {
   }
 
   el.innerHTML = `
-    <div class="page-head"><div><h1>Hoi ${esc(S.me.name.split(' ')[0])}</h1><p>Je rooster${sel ? ' per week' : ' voor de komende weken'}.</p></div>
+    <div class="page-head greet"><div>${sel ? '' : `<p class="g-date">${esc(fmtLong(todayIso()))}</p>`}<h1>${sel ? 'Je rooster' : `${new Date().getHours() < 5 || new Date().getHours() >= 17 ? 'Bonsoir' : 'Bonjour'}, ${esc(S.me.name.split(' ')[0])}.`}</h1>${sel ? '<p>Per week.</p>' : ''}</div>
       <div class="head-actions"><button class="btn" data-ics>${ico('cal')}Agenda</button>${sickNow ? '' : `<button class="btn" data-sick>${ico('therm')}Ik ben ziek</button>`}</div></div>
     ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     <div class="mhome ${sel ? 'sel' : ''}"><div class="mcol">
@@ -4605,21 +4605,50 @@ function askOvertime(plannedEnd, overMin) {
 const shiftKind = x => (mins(x.start_time) >= 15 * 60 ? 'avond' : 'dag');
 const shiftKindLabel = x => (shiftKind(x) === 'avond' ? 'Avonddienst' : 'Dagdienst');
 // Startscherm medewerker: grote, rustige klokkaart (tijd, dienst, één knop)
+// Startscherm medewerker: rustige kaart met een ring die aftelt naar de dienst (of de dienst laat vollopen)
+const RING_R = 64, RING_C = 2 * Math.PI * RING_R;
+function ringInfo(d) {
+  const now = Date.now(), m = d.dataset;
+  const dur = ms => { const t = Math.max(0, Math.round(ms / 60000)); return `${Math.floor(t / 60)}:${pad(t % 60)}`; };
+  if (m.mode === 'voor') {
+    const left = Number(m.start) - now;
+    if (left <= 0) return { big: 'Nu', small: 'je dienst is begonnen', frac: 1, late: true };
+    return { big: dur(left), small: 'tot je dienst', frac: Math.max(0.04, 1 - left / (3 * 3600e3)) };
+  }
+  if (m.mode === 'in') {
+    const from = Number(m.from), to = Number(m.to);
+    if (to > from) { const left = to - now; return left > 0 ? { big: dur(left), small: m.brk ? 'pauze · nog te gaan' : 'nog te gaan', frac: Math.min(1, (now - from) / (to - from)) } : { big: dur(now - to), small: 'over je eindtijd', frac: 1, late: true }; }
+    return { big: dur(now - from), small: m.brk ? 'pauze · gewerkt' : 'gewerkt', frac: 0.5 };
+  }
+  return null;
+}
+function paintRing(el) {
+  const d = $('[data-ring]', el); if (!d) return;
+  const r = ringInfo(d); if (!r) return;
+  $('[data-ringbig]', d).textContent = r.big; $('[data-ringsmall]', d).textContent = r.small;
+  const arc = $('.ring-arc', d); arc.style.strokeDashoffset = String(RING_C * (1 - r.frac));
+  d.classList.toggle('late', !!r.late);
+}
 async function clockHero(todayShift) {
   const [open] = await store.openEntries().then(l => l.filter(e => e.employee_id === S.me.id));
   const st = await store.settings();
   const onBreak = open && open.break_started_at;
-  const now = new Date();
-  const sub = open
-    ? `${onBreak ? 'Pauze sinds ' + tHM(open.break_started_at) : 'Ingeklokt sinds ' + tHM(open.clock_in)} · <span data-live="${open.id}">${fmtDur(entryHours(open))} gewerkt</span>`
-    : todayShift ? `${esc(shiftKindLabel(todayShift))}${todayShift.position ? ' · ' + esc(todayShift.position) : ''} · ${hm(todayShift.start_time)} – ${hm(todayShift.end_time)}` : 'Geen dienst vandaag';
-  const btns = !open
-    ? `<button class="btn big hero-main" data-clock="in">Inklokken</button>`
-    : `${onBreak ? '<button class="btn big hero-alt" data-clock="pauze_eind">Pauze stoppen</button>' : '<button class="btn big hero-alt" data-clock="pauze_start">Pauze</button>'}<button class="btn big hero-main" data-clock="uit">Uitklokken</button>`;
   const noLoc = st.lat == null && !hasWifi(st);
-  return `<div class="clock-hero ${open ? (onBreak ? 'is-break' : 'is-on') : ''}" data-clockcard>
-    <div class="ch-time"><span data-tick>${pad(now.getHours())}:${pad(now.getMinutes())}</span><small data-ticks>:${pad(now.getSeconds())}</small></div>
-    <p class="ch-sub">${open ? `<span class="ch-dot"></span>` : ''}${sub}</p>
+  const win = todayShift ? shiftWindow(todayShift) : null;
+  let ring = '';
+  if (open) ring = `data-mode="in" data-from="${new Date(open.clock_in).getTime()}" data-to="${win && win[1] > new Date(open.clock_in) ? win[1].getTime() : 0}" ${onBreak ? 'data-brk="1"' : ''}`;
+  else if (win && win[1] > new Date()) ring = `data-mode="voor" data-start="${win[0].getTime()}"`;
+  const ringHTML = ring ? `<div class="ring" data-ring ${ring}><svg viewBox="0 0 160 160" aria-hidden="true"><circle class="ring-track" cx="80" cy="80" r="${RING_R}"/><circle class="ring-arc" cx="80" cy="80" r="${RING_R}" style="stroke-dasharray:${RING_C.toFixed(1)};stroke-dashoffset:${RING_C.toFixed(1)}"/></svg>
+      <div class="ring-in"><b data-ringbig></b><small data-ringsmall></small></div></div>` : '';
+  const title = todayShift
+    ? `<p class="ch-shift"><strong>${esc(shiftKindLabel(todayShift))} <span class="nowrap">${hm(todayShift.start_time)} – ${hm(todayShift.end_time)}</span></strong>${todayShift.position ? `<small>${esc(todayShift.position)}</small>` : ''}</p>`
+    : `<p class="ch-shift"><strong>Geen dienst vandaag</strong><small>Je kunt wel inklokken als je toch werkt.</small></p>`;
+  const status = open ? `<p class="ch-status"><span class="ch-dot ${onBreak ? 'brk' : ''}"></span>${onBreak ? 'Pauze sinds ' + tHM(open.break_started_at) : 'Ingeklokt sinds ' + tHM(open.clock_in)} · <span data-live="${open.id}">${fmtDur(entryHours(open))} gewerkt</span></p>` : '';
+  const btns = !open
+    ? `<button class="btn big ch-main" data-clock="in">${ico('pin')}Inklokken</button>`
+    : `${onBreak ? '<button class="btn big ch-alt" data-clock="pauze_eind">Pauze stoppen</button>' : '<button class="btn big ch-alt" data-clock="pauze_start">Pauze</button>'}<button class="btn big ch-main" data-clock="uit">Uitklokken</button>`;
+  return `<div class="champ ${open ? (onBreak ? 'is-break' : 'is-on') : ''}" data-clockcard>
+    ${ringHTML}${title}${status}
     <div class="ch-btns">${noLoc ? '<p class="ch-note">De werklocatie is nog niet ingesteld. Vraag de directie om dit te doen.</p>' : btns}</div>
     <p class="ch-note">${hasWifi(st) ? ico('wifi') + 'Op de wifi van de zaak of op locatie' : ico('pin') + 'Alleen op de werklocatie'}</p>
     ${store.demo ? `<div class="demo-loc"><span>Demo – doe alsof ik ben:</span><div class="filters"><button data-demoloc="wifi" class="${S.demoLoc === 'wifi' ? 'active' : ''}">Op de wifi</button><button data-demoloc="op" class="${!S.demoLoc || S.demoLoc === 'op' ? 'active' : ''}">Op locatie (gps)</button><button data-demoloc="buiten" class="${S.demoLoc === 'buiten' ? 'active' : ''}">Thuis</button></div></div>` : ''}
@@ -4647,6 +4676,8 @@ async function clockCard(todayShift) {
 function bindClock(el) {
   if (!el.isConnected) return;   // oudere laadactie: niet de klok van het huidige scherm stoppen
   clearInterval(S.timer); clearInterval(S.tick);
+  paintRing(el);
+  if ($('[data-ring]', el)) { const id = setInterval(() => { if (!el.isConnected) return clearInterval(id); paintRing(el); }, 30000); S.tick = id; }
   if ($('[data-tick]', el)) { const id = setInterval(() => {
     const a = $('[data-tick]', el), b = $('[data-ticks]', el); if (!a || !a.isConnected) return clearInterval(id);
     const d = new Date(); a.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`; b.textContent = `:${pad(d.getSeconds())}`;
