@@ -495,5 +495,27 @@ update employees set active = false where id = 'a0000000-0000-0000-0000-00000000
 select t_ok((select emergency = '[]'::jsonb and not share_phone from employee_profile where employee_id = 'a0000000-0000-0000-0000-000000000003'), 'uit dienst: noodcontact en delen vervallen');
 update employees set active = true where id = 'a0000000-0000-0000-0000-000000000003';
 
+\echo '== Update 41: rechten per functie'
+-- medewerker 3 (staff) heeft functie; geef die functie planrechten
+update employees set position = 'Bar', plan_mode = 'functie' where id = 'a0000000-0000-0000-0000-000000000003';
+select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000003') = 'staff', 'zonder functierecht: medewerker');
+update settings set position_rights = '{"Bar": {"plan": true, "lists": ["Keuken"]}}' where id = 1;
+select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000003') = 'planner', 'functie met planrecht maakt shiftleader');
+set role authenticated; select as_user(3);
+select t_ok(public.is_planner(), 'is_planner werkt via de functie');
+select t_ok((staff_settings()->'position_rights'->'Bar'->>'plan') = 'true', 'medewerker leest de rechten van functies');
+update employees set plan_mode = 'nee', extra_lists = '{Keuken}' where id = public.my_employee_id();   -- RLS: wijzigt niets
+reset role;
+select t_ok((select plan_mode = 'functie' and extra_lists = '{}' from employees where id = 'a0000000-0000-0000-0000-000000000003'), 'medewerker past eigen rechten niet aan');
+update employees set plan_mode = 'nee' where id = 'a0000000-0000-0000-0000-000000000003';
+select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000003') = 'staff', 'uitzondering nee wint van de functie');
+update employees set plan_mode = 'functie', position = 'Bediening' where id = 'a0000000-0000-0000-0000-000000000003';
+select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000003') = 'staff', 'andere functie zonder planrecht: medewerker');
+update employees set role = 'planner' where id = 'a0000000-0000-0000-0000-000000000003';
+select t_ok((select role = 'planner' and plan_mode = 'ja' from employees where id = 'a0000000-0000-0000-0000-000000000003'), 'oude app: rol planner wordt uitzondering ja');
+update employees set plan_mode = 'functie' where id = 'a0000000-0000-0000-0000-000000000003';
+select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000001') = 'manager', 'directie blijft directie');
+update settings set position_rights = '{}' where id = 1;
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'
