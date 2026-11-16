@@ -447,5 +447,16 @@ select sick_recover((select id from requests where employee_id = 'a0000000-0000-
 reset role;
 select t_ok((select not open_end and end_date = today_nl() from requests where employee_id = 'a0000000-0000-0000-0000-000000000003' and type = 'ziek' and start_date = today_nl() - 2), 'weer beter: open einde stopt vandaag');
 
+\echo '== Update 31: gerechten op de kaart aanpassen'
+set role authenticated; select as_user(3);
+update menu_cards set items = '[{"name":"x"}]'::jsonb;
+reset role;
+select t_ok((select count(*) = 0 from menu_cards where items is not null), 'medewerker kan de gerechten niet aanpassen');
+set role authenticated; select as_user(1);
+update menu_cards set items = '[{"group":"","section":"Hoofd","name":"Testgerecht","tag":"","lines":[],"price":"€ 28","allergens":""}]'::jsonb where title = 'Menukaart';
+reset role;
+select t_ok((select items->0->>'name' = 'Testgerecht' from menu_cards where title = 'Menukaart'), 'directie past de gerechten aan');
+select t_fails($$update menu_cards set items = '{"a":1}'::jsonb$$, 'gerechtenlijst moet een lijst zijn');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

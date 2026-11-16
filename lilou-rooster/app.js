@@ -745,6 +745,7 @@ async function supabaseStore() {
     async menuCards() { return ok(await sb.from('menu_cards').select('*').order('sort').order('title')) || []; },
     async saveMenuCard(c) {
       const row = { title: c.title, file_path: c.file_path, file_name: c.file_name, file_type: c.file_type, updated_at: new Date().toISOString(), updated_by: S.me.id };
+      if ('items' in c) row.items = c.items;   // eigen gerechtenlijst (null = weer uit de pdf lezen)
       if (c.id) ok(await sb.from('menu_cards').update(row).eq('id', c.id));
       else ok(await sb.from('menu_cards').insert({ ...row, sort: c.sort ?? 0 }));
     },
@@ -1251,44 +1252,107 @@ async function parseMenuPdf(path) {
 }
 async function menuList(c) {
   let items;
-  try { items = await parseMenuPdf(c.file_path); } catch (e) { items = []; }
-  if (items.length < 3) return fileViewer(c.file_path, c.title, c.file_type);   // geen app-kaart: gewoon de pdf
-  const secs = [];
-  items.forEach(it => { const k = it.group + '|' + it.section; if (!secs.some(x => x.k === k)) secs.push({ k, group: it.group, section: it.section || it.group }); });
-  secs.forEach(x => { x.label = secs.filter(y => y.section === x.section).length > 1 ? `${x.section} · ${x.group.replace(/^Per /i, '').toLowerCase()}` : x.section; });
-  let cur = 'alle', q = '';
+  if (Array.isArray(c.items) && c.items.length) items = clone(c.items);   // door de directie aangepaste lijst
+  else { try { items = await parseMenuPdf(c.file_path); } catch (e) { items = []; } items = clone(items); }
+  const mgr = isMgr();
+  if (items.length < 3 && !(mgr && items.length)) return fileViewer(c.file_path, c.title, c.file_type);   // geen app-kaart: gewoon de pdf
+  let secs = [];
+  const keyOf = it => it.group + '|' + it.section;
+  const calcSecs = () => {
+    secs = [];
+    items.forEach(it => { const k = keyOf(it); if (!secs.some(x => x.k === k)) secs.push({ k, group: it.group, section: it.section || it.group }); });
+    secs.forEach(x => { x.label = secs.filter(y => y.section === x.section).length > 1 ? `${x.section} · ${(x.group || '').replace(/^Per /i, '').toLowerCase()}` : x.section; });
+  };
+  calcSecs();
+  let cur = 'alle', q = '', edit = false;
   const dlg = document.createElement('dialog');
   dlg.className = 'viewer menulist';
   dlg.setAttribute('aria-labelledby', 'ml-name');
-  dlg.innerHTML = `<div class="viewer-bar"><strong class="viewer-name" id="ml-name">${esc(c.title)}</strong><button type="button" class="btn sm" data-mlpdf>Als kaart</button><button type="button" class="x" data-mlclose aria-label="Sluiten">×</button></div>
+  dlg.innerHTML = `<div class="viewer-bar"><strong class="viewer-name" id="ml-name">${esc(c.title)}</strong>${mgr ? '<button type="button" class="btn sm" data-mledit aria-pressed="false">Bewerken</button>' : ''}<button type="button" class="btn sm" data-mlpdf>Als kaart</button><button type="button" class="x" data-mlclose aria-label="Sluiten">×</button></div>
     <div class="ml-tools"><input type="search" placeholder="Zoeken, bv. truffel of Bourgogne" aria-label="Zoeken in ${esc(c.title)}" data-mlq>
-      <div class="ml-chips" role="tablist">${[{ k: 'alle', label: 'Alles' }, ...secs].map(x => `<button type="button" role="tab" data-mlsec="${esc(x.k)}" class="${x.k === 'alle' ? 'on' : ''}">${esc(x.label)}</button>`).join('')}</div></div>
+      <div class="ml-chips" role="tablist" data-mlchips></div></div>
     <div class="ml-body" data-mlbody></div>`;
   document.body.append(dlg);
   const body = $('[data-mlbody]', dlg);
-  const norm = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const draw = () => {
+  const norm = t => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const drawChips = () => {
+    if (cur !== 'alle' && !secs.some(x => x.k === cur)) cur = 'alle';
+    $('[data-mlchips]', dlg).innerHTML = [{ k: 'alle', label: 'Alles' }, ...secs].map(x => `<button type="button" role="tab" aria-selected="${x.k === cur}" data-mlsec="${esc(x.k)}" class="${x.k === cur ? 'on' : ''}">${esc(x.label)}</button>`).join('');
+  };
+  const draw = (keepScroll) => {
+    const top = body.scrollTop;
     const nq = norm(q.trim());
-    const show = items.filter(it => (cur === 'alle' || it.group + '|' + it.section === cur) && (!nq || norm([it.name, it.tag, ...it.lines, it.section].join(' ')).includes(nq)));
+    const show = items.filter(it => (cur === 'alle' || keyOf(it) === cur) && (!nq || norm([it.name, it.tag, ...it.lines, it.section].join(' ')).includes(nq)));
     let lastK = '';
-    body.innerHTML = show.length ? show.map(it => {
-      const k = it.group + '|' + it.section, head = k !== lastK ? `<h3 class="ml-sec">${esc(secs.find(x => x.k === k)?.label || it.section)}</h3>` : ''; lastK = k;
+    const tools = edit ? `<div class="ml-edbar"><button type="button" class="btn primary" data-mladd>+ Gerecht toevoegen</button>${Array.isArray(c.items) && c.items.length ? '<button type="button" class="linkbtn small" data-mlreset>Opnieuw uit de pdf halen</button>' : ''}<p class="hint">Tik op een gerecht om het te wijzigen, te verplaatsen of weg te halen. Wijzigingen ziet het team meteen.</p></div>` : '';
+    body.innerHTML = tools + (show.length ? show.map(it => {
+      const k = keyOf(it), head = k !== lastK ? `<h3 class="ml-sec">${esc(secs.find(x => x.k === k)?.label || it.section)}</h3>` : ''; lastK = k;
       const unknown = !it.allergens || /niet bekend/i.test(it.allergens);
-      return `${head}<article class="ml-item"><div class="ml-top"><strong>${esc(it.name)}</strong>${it.tag ? `<span class="pill">${esc(it.tag)}</span>` : ''}</div>
+      const inner = `<div class="ml-top"><strong>${esc(it.name)}</strong>${it.tag ? `<span class="pill">${esc(it.tag)}</span>` : ''}${edit ? `<span class="ml-pen">${ico('pen')}Wijzig</span>` : ''}</div>
         ${it.lines.map(l => `<p>${esc(l)}</p>`).join('')}
         ${it.price ? `<p class="ml-price">${esc(it.price)}</p>` : ''}
-        ${it.allergens ? `<p class="ml-all ${unknown ? 'unk' : ''}"><b>Allergenen</b> ${esc(it.allergens)}</p>` : ''}</article>`;
-    }).join('') : '<p class="hint" style="padding:16px">Niets gevonden.</p>';
-    body.scrollTop = 0;
+        ${it.allergens ? `<p class="ml-all ${unknown ? 'unk' : ''}"><b>Allergenen</b> ${esc(it.allergens)}</p>` : ''}`;
+      return head + (edit ? `<button type="button" class="ml-item ml-ed" data-mlitem="${items.indexOf(it)}">${inner}</button>` : `<article class="ml-item">${inner}</article>`);
+    }).join('') : '<p class="hint" style="padding:16px">Niets gevonden.</p>');
+    body.scrollTop = keepScroll ? top : 0;
+  };
+  const persist = async next => {
+    await store.saveMenuCard({ ...c, items: next });
+    c.items = next; items = clone(next); calcSecs(); drawChips(); draw(true);
+  };
+  const dishDialog = idx => {
+    const it = idx == null ? { group: '', section: '', name: '', tag: '', lines: [], price: '', allergens: '' } : items[idx];
+    const curK = idx == null ? (cur !== 'alle' ? cur : secs[0]?.k || '') : keyOf(it);
+    openDialog(idx == null ? 'Gerecht toevoegen' : 'Gerecht wijzigen', `
+      <label class="field">Categorie<select name="sec">${secs.map(x => `<option value="${esc(x.k)}" ${x.k === curK ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}<option value="__new">+ Nieuwe categorie…</option></select></label>
+      <label class="field" data-newsec hidden>Naam nieuwe categorie<input name="newsec" maxlength="40" placeholder="bv. Dessert"></label>
+      <label class="field">Naam gerecht<input name="name" required maxlength="80" value="${esc(it.name)}"></label>
+      <label class="field">Beschrijving <small class="hint">(elke regel apart)</small><textarea name="lines" rows="3" maxlength="600">${esc(it.lines.join('\n'))}</textarea></label>
+      <div class="row"><label class="field">Prijs<input name="price" maxlength="60" value="${esc(it.price)}" placeholder="bv. 24 of Glas € 12 · Fles € 70"></label>
+      <label class="field">Label <small class="hint">(mag leeg)</small><input name="tag" maxlength="30" value="${esc(it.tag)}" placeholder="bv. VEGA, NIEUW"></label></div>
+      <label class="field">Allergenen<input name="allergens" maxlength="200" value="${esc(it.allergens)}" placeholder="bv. gluten, ei, melk"></label>
+      <div class="dlg-foot">${idx == null ? '' : '<button class="btn danger" value="delete" formnovalidate>Weghalen</button>'}<button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
+      onReady(d) { const sel = $('[name=sec]', d), box = $('[data-newsec]', d); const f = () => { box.hidden = sel.value !== '__new'; $('[name=newsec]', d).required = !box.hidden; }; sel.onchange = f; f(); },
+      async onSubmit(fd, action) {
+        const next = clone(items);
+        if (action === 'delete') {
+          if (!await ask(`"${it.name}" van de kaart halen?`, 'Weghalen')) throw 'cancel';
+          next.splice(idx, 1); await persist(next); toast('Gerecht weggehaald'); return;
+        }
+        const name = String(fd.get('name') || '').trim(); if (!name) throw new Error('Geef het gerecht een naam.');
+        let group, section;
+        if (fd.get('sec') === '__new') { section = String(fd.get('newsec') || '').trim(); group = ''; if (!section) throw new Error('Geef de nieuwe categorie een naam.'); }
+        else { const x = secs.find(y => y.k === fd.get('sec')); group = x.group; section = x.section === x.group && !items.some(i => keyOf(i) === x.k && i.section) ? '' : x.section; }
+        let price = String(fd.get('price') || '').trim();
+        if (/^\d+([.,]\d{1,2})?$/.test(price)) price = '€ ' + price;
+        const rec = { group, section, name, tag: String(fd.get('tag') || '').trim(), lines: String(fd.get('lines') || '').split('\n').map(l => l.trim()).filter(Boolean), price, allergens: String(fd.get('allergens') || '').trim() };
+        const k = keyOf(rec);
+        if (idx != null && keyOf(next[idx]) === k) next[idx] = rec;   // zelfde categorie: op zijn plek laten
+        else {
+          if (idx != null) next.splice(idx, 1);
+          let at = -1; next.forEach((i, n) => { if (keyOf(i) === k) at = n; });
+          if (at < 0) next.push(rec); else next.splice(at + 1, 0, rec);   // achteraan in zijn categorie
+        }
+        await persist(next); toast(idx == null ? 'Gerecht toegevoegd' : 'Gerecht bijgewerkt');
+      },
+    });
   };
   dlg.addEventListener('close', () => { if (dlg.parentNode) dlg.parentNode.removeChild(dlg); });
-  dlg.addEventListener('click', ev => {
-    if (ev.target.closest('[data-mlclose]')) return dlg.close();
+  dlg.addEventListener('click', async ev => {
+    if (ev.target.closest('[data-mlclose]')) { dlg.close(); if (S.view === 'kaarten') rerender(); return; }
     if (ev.target.closest('[data-mlpdf]')) { dlg.close(); return fileViewer(c.file_path, c.title, c.file_type); }
-    const b = ev.target.closest('[data-mlsec]'); if (b) { cur = b.dataset.mlsec; $$('[data-mlsec]', dlg).forEach(x => x.classList.toggle('on', x === b)); b.scrollIntoView({ inline: 'center', block: 'nearest' }); draw(); }
+    const e = ev.target.closest('[data-mledit]');
+    if (e) { edit = !edit; e.textContent = edit ? 'Klaar' : 'Bewerken'; e.setAttribute('aria-pressed', edit); e.classList.toggle('primary', edit); return draw(true); }
+    if (ev.target.closest('[data-mladd]')) return dishDialog(null);
+    const it = ev.target.closest('[data-mlitem]'); if (it) return dishDialog(+it.dataset.mlitem);
+    if (ev.target.closest('[data-mlreset]')) {
+      if (!await ask('Je eigen wijzigingen vervallen en de lijst wordt weer uit de pdf gelezen. Doorgaan?', 'Uit de pdf halen')) return;
+      try { await store.saveMenuCard({ ...c, items: null }); c.items = null; dlg.close(); toast('Lijst komt weer uit de pdf'); return menuList(c); } catch (x) { return toast(errMsg(x), 'error'); }
+    }
+    const b = ev.target.closest('[data-mlsec]'); if (b) { cur = b.dataset.mlsec; $$('[data-mlsec]', dlg).forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b); }); b.scrollIntoView({ inline: 'center', block: 'nearest' }); draw(); }
   });
   $('[data-mlq]', dlg).addEventListener('input', ev => { q = ev.target.value; draw(); });
-  draw();
+  drawChips(); draw();
   dlg.showModal();
 }
 async function staticBlob(path) {
@@ -1320,7 +1384,7 @@ function menuCardDialog(c = {}) {
   openDialog(isNew ? 'Kaart toevoegen' : 'Kaart bijwerken', `
     <label class="field">Naam<input name="title" maxlength="60" required value="${esc(c.title || '')}" placeholder="bv. Menukaart, Wijnkaart, Bites, Kerstmenu"></label>
     <label class="field">${isNew ? 'Bestand (pdf of foto)' : 'Nieuw bestand (laat leeg om alleen de naam te wijzigen)'}<input type="file" name="file" accept="application/pdf,image/*" ${isNew ? 'required' : ''}></label>
-    <p class="hint" style="margin:0">Maximaal 10 MB. Een pdf van de drukker of een scherpe foto van de kaart werkt het best.</p>
+    <p class="hint" style="margin:0">Maximaal 10 MB. Een pdf van de drukker of een scherpe foto van de kaart werkt het best.${Array.isArray(c.items) && c.items.length ? ' <strong>Let op:</strong> met een nieuw bestand vervallen de gerechten die je in de app hebt aangepast.' : ''}</p>
     <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">${isNew ? 'Toevoegen' : 'Opslaan'}</button></div>`, {
     async onSubmit(fd) {
       const title = String(fd.get('title') || '').trim(); if (!title) throw new Error('Geef de kaart een naam.');
@@ -1328,7 +1392,7 @@ function menuCardDialog(c = {}) {
       if (file && file.size) {
         if (!/^(application\/pdf|image\/)/.test(file.type || '')) throw new Error('Kies een pdf of een foto.');
         const up = await store.uploadAttachment(file); const old = c.file_path;
-        rec = { ...rec, file_path: up.path, file_name: up.name, file_type: up.type };
+        rec = { ...rec, file_path: up.path, file_name: up.name, file_type: up.type, items: null };   // nieuwe pdf: lijst weer uit de pdf
         await store.saveMenuCard(rec);
         if (old && !old.startsWith('static:') && store.deleteAttachment) store.deleteAttachment(old).catch(() => {});
       } else await store.saveMenuCard(rec);

@@ -773,6 +773,23 @@ async function test(name, fn) {
     assert.strictEqual(await p.$$eval('.kcard', x => x.length), 4, 'de vier standaardkaarten staan er niet');
     await p.fill('dialog [name=title]', 'Testkaart'); await p.setInputFiles('dialog [name=file]', { name: 'menu.pdf', mimeType: 'application/pdf', buffer: Buffer.from(pdf) });
     await p.click('dialog button[value=save]'); await p.waitForSelector('.kcard:has-text("Testkaart")');
+    // directie zet zelf een gerecht in een categorie
+    await p.click('.kcard:has-text("Menukaart") [data-kopen]'); await p.waitForSelector('dialog.menulist[open] .ml-item', { timeout: 15000 });
+    await p.click('dialog.menulist [data-mledit]'); await p.click('dialog.menulist [data-mladd]');
+    const hoofdK = await p.$eval('dialog.dlg[open] [name=sec]', s => [...s.options].find(o => o.text === 'Hoofd').value);
+    await p.selectOption('dialog.dlg[open] [name=sec]', hoofdK);
+    await p.fill('dialog.dlg[open] [name=name]', 'Testgerecht met kreeft'); await p.fill('dialog.dlg[open] [name=lines]', 'Bisque · venkel');
+    await p.fill('dialog.dlg[open] [name=price]', '38'); await p.fill('dialog.dlg[open] [name=allergens]', 'schaaldieren');
+    await p.click('dialog.dlg[open] button[value=save]'); await p.waitForSelector('dialog.menulist .ml-ed:has-text("Testgerecht met kreeft")');
+    // nieuwe categorie
+    await p.click('dialog.menulist [data-mladd]'); await p.selectOption('dialog.dlg[open] [name=sec]', '__new');
+    await p.fill('dialog.dlg[open] [name=newsec]', 'Dessert'); await p.fill('dialog.dlg[open] [name=name]', 'Tarte tatin');
+    await p.click('dialog.dlg[open] button[value=save]'); await p.waitForSelector('dialog.menulist [data-mlsec]:text-is("Dessert")');
+    // weghalen
+    await p.click('dialog.menulist .ml-ed:has-text("Tarte tatin")'); await p.click('dialog.dlg[open] button[value=delete]');
+    await p.click('dialog.dlg[open]:has-text("Weet je het zeker") button[value=save]');
+    await p.waitForSelector('dialog.menulist [data-mlsec]:text-is("Dessert")', { state: 'detached' });
+    await p.click('dialog.menulist [data-mlclose]'); await p.waitForSelector('dialog.menulist', { state: 'detached' });
     const s2 = watch(await ctx.newPage()); await s2.setViewportSize({ width: 390, height: 844 });
     await s2.goto(URL + '#personeel'); await s2.waitForSelector('[data-demo]'); await login(s2, 'Sanne');
     await s2.click('[data-gokaarten]'); await s2.click('.kcard:has-text("Testkaart") [data-kopen]');
@@ -785,6 +802,9 @@ async function test(name, fn) {
     const hoofd = await s2.$$eval('.ml-item', x => x.length);
     assert.ok(hoofd > 0 && hoofd < all, `filter Hoofd werkt niet (${hoofd} van ${all})`);
     assert.deepStrictEqual(await s2.$$eval('.ml-sec', x => x.map(e => e.textContent)), ['Hoofd'], 'andere kopjes zichtbaar bij filter');
+    const kreeft = await s2.$eval('.ml-item:has-text("Testgerecht met kreeft")', e => e.textContent);
+    assert.ok(/€ 38/.test(kreeft) && /schaaldieren/.test(kreeft), 'medewerker ziet het nieuwe gerecht niet goed: ' + kreeft);
+    assert.ok(!(await s2.$('dialog.menulist [data-mledit]')), 'medewerker kan de kaart bewerken');
     await s2.click('dialog.menulist [data-mlsec]:text-is("Alles")'); await s2.fill('dialog.menulist [data-mlq]', 'zzzgeenzzz');
     await s2.waitForSelector('dialog.menulist .hint:has-text("Niets gevonden")');
     await s2.click('dialog.menulist [data-mlclose]'); await s2.waitForSelector('dialog.menulist', { state: 'detached' });

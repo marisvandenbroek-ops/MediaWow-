@@ -1132,3 +1132,13 @@ dialog.menulist::backdrop { background: var(--bg); }
 .ml-item p.ml-all { font-size: 13px; margin-top: 4px; }
 .ml-item p.ml-all b { color: var(--text); font-weight: 600; margin-right: 4px; }
 .ml-item p.ml-all.unk { font-style: italic; }
+
+/* Kaart bewerken (directie) */
+.ml-edbar { display: grid; gap: 8px; justify-items: start; margin: 12px 0 4px; }
+.ml-edbar .hint { margin: 0; }
+button.ml-item.ml-ed { display: block; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; border-style: dashed; }
+button.ml-item.ml-ed:hover, button.ml-item.ml-ed:focus-visible { border-color: var(--accent); }
+.ml-pen { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--accent); font-weight: 600; }
+.ml-pen .ico { width: 15px; height: 15px; margin: 0; }
+.field[hidden] { display: none; }
+.dlg .field small.hint { display: inline; font-weight: 400; }

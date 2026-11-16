@@ -1839,6 +1839,11 @@ create policy mc_write on public.menu_cards for all to authenticated
   using (public.is_manager()) with check (public.is_manager());
 revoke all on public.menu_cards from public, anon;
 grant select, insert, update, delete on public.menu_cards to authenticated;
+-- eigen gerechtenlijst per kaart (update 31); leeg = lijst uit de pdf
+alter table public.menu_cards add column if not exists items jsonb;
+alter table public.menu_cards drop constraint if exists menu_cards_items_check;
+alter table public.menu_cards add constraint menu_cards_items_check
+  check (items is null or (jsonb_typeof(items) = 'array' and jsonb_array_length(items) <= 500 and pg_column_size(items) < 400000));
 
 -- De vier app-kaarten die met de website meekomen (map kaarten/), alleen als er nog geen kaarten zijn
 insert into public.menu_cards (title, sort, file_path, file_name, file_type)
