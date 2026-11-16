@@ -724,6 +724,16 @@ async function test(name, fn) {
     await p.click('dialog [data-lpick]:has-text("Weekschoonmaak")'); await p.waitForSelector('dialog[open]:has-text("Lijst bewerken")');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('ziek: standaard tot je je beter meldt (niet alleen vandaag)', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Noor');
+    await p.click('[data-sick]'); await p.waitForSelector('dialog [name=open_end]:checked');
+    await p.click('dialog button[value=save]'); await p.waitForSelector('.sickbanner');
+    const { db } = await demoDb(p); const noor = db.employees.find(e => e.name.startsWith('Noor'));
+    const r = db.requests.filter(x => x.employee_id === noor.id && x.type === 'ziek').pop();
+    assert.ok(r && (new Date(r.end_date) - new Date(r.start_date)) / 864e5 === 13, 'ziekmelding niet open: ' + JSON.stringify(r && [r.start_date, r.end_date]));
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('telefoon: geen enkel scherm loopt rechts van het scherm af', async () => {
     // elk element binnen #view moet binnen de schermbreedte blijven (behalve in bewust scrollende tabellen)
     const outside = p => p.evaluate(() => { const W = document.documentElement.clientWidth, out = [];

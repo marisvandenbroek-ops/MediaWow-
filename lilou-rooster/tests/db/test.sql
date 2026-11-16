@@ -422,5 +422,19 @@ select t_ok((select rules_version from settings) = 3, 'directie verhoogt de vers
 select t_fails('update settings set rules_version = 1', 'versie van de afspraken kan niet omlaag');
 reset role;
 
+\echo '== Update 28: instellingen afgeschermd, ingeklokt-overzicht'
+update settings set wifi_ips = '{1.2.3.4}', goal_labor_pct = 30 where id = 1;
+set role authenticated; select as_user(2);
+select t_ok(t_count('select * from settings') = 0, 'medewerker leest de instellingentabel niet rechtstreeks');
+select t_ok(staff_settings() ? 'special_days' and not (staff_settings() ? 'wifi_ips') and not (staff_settings() ? 'goal_labor_pct') and not (staff_settings() ? 'pct_werkgever'), 'medewerker krijgt alleen de nodige instellingen');
+select t_ok(t_count('select * from clocked_today()') = 0, 'medewerker ziet niet wie er ingeklokt is');
+reset role;
+insert into time_entries (employee_id, clock_in) values ('a0000000-0000-0000-0000-000000000003', now() - interval '30 minutes');
+update employees set role = 'planner' where id = 'a0000000-0000-0000-0000-000000000004';
+set role authenticated; select as_user(4);
+select t_ok(t_count('select * from clocked_today()') >= 1, 'shiftleader ziet wie er vandaag is ingeklokt');
+select t_ok(t_count('select * from settings') = 1, 'shiftleader leest de instellingen voor de planning');
+reset role;
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

@@ -65,6 +65,28 @@ function errMsg(e) {
   return map[m] || m;
 }
 
+// Kleine lijn-iconen voor knoppen en kaarten (in plaats van emoji, die per telefoon anders ogen)
+const IC = {
+  cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  therm: '<path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>',
+  book: '<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2zM22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
+  phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  clip: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  wifi: '<path d="M5 13a10 10 0 0 1 14 0M8.5 16.5a5 5 0 0 1 7 0M2 8.82a15 15 0 0 1 20 0M12 20h.01"/>',
+  pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  box: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  pinned: '<path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+};
+const hasWifi = st => !!((st && st.wifi_ips && st.wifi_ips.length) || (st && st.has_wifi));   // medewerkers krijgen alleen has_wifi, niet de adressen
+const ico = n => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${IC[n] || ''}</svg>`;
 const ICON = {
   planning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 14h3M13.5 14h3M7.5 17.5h3"/></svg>',
   diensten: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5"/></svg>',
@@ -396,6 +418,11 @@ function demoStore() {
       Object.assign(x, { resolved_at: new Date().toISOString(), resolved_by: mem, resolution }); save();
     },
     async rulesAcks() { db.rulesAcks ||= []; return clone(db.rulesAcks.filter(r => isMgr() || r.employee_id === mem)); },
+    async clockedToday() {
+      if (!canPlan()) return [];
+      const lim = Date.now() - 20 * 3600e3;
+      return clone(db.entries.filter(x => new Date(x.clock_in).getTime() > lim).map(x => ({ employee_id: x.employee_id, clock_in: x.clock_in, clock_out: x.clock_out, on_break: !!x.break_started_at })));
+    },
     async ackRules() {
       db.rulesAcks ||= []; const v = db.settings.rules_version || 1;
       if (!db.rulesAcks.some(r => r.employee_id === mem && r.version === v)) db.rulesAcks.push({ employee_id: mem, version: v, at: new Date().toISOString() });
@@ -733,6 +760,7 @@ async function supabaseStore() {
     async saveRequest(r) { ok(await sb.from('requests').insert(r)); },
     async sickRecover(id) { const { error } = await sb.rpc('sick_recover', { p_id: id }); if (error) throw error; },
     async rulesAcks() { return ok(await sb.from('rules_acks').select('*')) || []; },
+    async clockedToday() { return ok(await sb.rpc('clocked_today')) || []; },
     async ackRules() { const { error } = await sb.rpc('ack_rules'); if (error) throw error; },
     async bumpRules() { return ok(await sb.rpc('bump_rules')); },
     // --- lijsten
@@ -763,7 +791,10 @@ async function supabaseStore() {
     },
     async deleteRequest(id) { ok(await sb.from('requests').delete().eq('id', id)); },
     // --- klokken
-    async settings() { return ok(await sb.from('settings').select('*').eq('id', 1).maybeSingle()) || {}; },
+    async settings() {
+      if (S.me && !canPlan()) return ok(await sb.rpc('staff_settings')) || {};   // medewerkers: zonder wifi-adressen, doelen en loonpercentages
+      return ok(await sb.from('settings').select('*').eq('id', 1).maybeSingle()) || {};
+    },
     async saveSettings(st) {
       const rows = ok(await sb.from('settings').update({ ...st, updated_at: new Date().toISOString() }).eq('id', 1).select('id'));
       if (!rows || !rows.length) throw new Error('Opslaan is niet gelukt (geen rechten of geen verbinding).');
@@ -1141,6 +1172,28 @@ async function viewWeek(el, editable) {
     isMgr() ? store.privates() : Promise.resolve([]), canPlan() ? store.settings() : Promise.resolve({}), canPlan() ? store.shifts(iso(addDays(S.week, -1)), iso(addDays(S.week, 7))) : Promise.resolve([]), canPlan() ? store.dayInfo(from, to) : Promise.resolve([]), isMgr() ? store.revenue(from, to) : Promise.resolve([])]);
   const emps = sortEmps(emps0);
   const privs = Object.fromEntries(privList.map(p => [p.employee_id, p]));
+  // Shiftleader (niet de directie, die heeft Klokken): wie staat er vandaag en is die al binnen?
+  let todayPanel = '';
+  const tdy0 = todayIso();
+  if (canPlan() && !isMgr() && from <= tdy0 && to >= tdy0) {
+    try {
+      const inn = await store.clockedToday();
+      const now0 = new Date(), nowHM = `${pad(now0.getHours())}:${pad(now0.getMinutes())}`;
+      const todays = shifts.filter(x => x.date === tdy0 && x.employee_id && x.published).sort((a, b) => hm(a.start_time).localeCompare(hm(b.start_time)));
+      const ids = [...new Set([...todays.map(x => x.employee_id), ...inn.map(x => x.employee_id)])];
+      const nm = id => (emps.find(e => e.id === id)?.name || '?').split(' ')[0];
+      const rows = ids.map(id => {
+        const sh = todays.find(x => x.employee_id === id), en = inn.filter(x => x.employee_id === id).pop();
+        let st, cls;
+        if (en && !en.clock_out) { st = en.on_break ? `pauze · binnen sinds ${tHM(en.clock_in)}` : `binnen sinds ${tHM(en.clock_in)}`; cls = en.on_break ? 'warn' : 'ok'; }
+        else if (en && en.clock_out) { st = `uitgeklokt ${tHM(en.clock_out)}`; cls = ''; }
+        else if (sh && hm(sh.start_time) < nowHM) { st = `nog niet ingeklokt (dienst ${hm(sh.start_time)})`; cls = 'bad'; }
+        else { st = sh ? `begint ${hm(sh.start_time)}` : ''; cls = ''; }
+        return `<li><strong>${esc(nm(id))}</strong><span class="pill ${cls}">${esc(st)}</span></li>`;
+      });
+      todayPanel = rows.length ? `<section class="card pad todaypanel"><h2>${ico('clock')}Vandaag in de zaak</h2><ul>${rows.join('')}</ul></section>` : '';
+    } catch (e) { /* niet kritiek */ }
+  }
   // Arbeidstijdenwet-signalen per dienst (directie)
   const atw = {};
   if (canPlan()) emps.forEach(e => Object.assign(atw, atwIssues(around.filter(x => x.employee_id === e.id), privs[e.id]?.birth_date)));
@@ -1276,7 +1329,7 @@ async function viewWeek(el, editable) {
         <span class="chev" aria-hidden="true">›</span></button>`;
     }).join('');
     return `<section class="pday ${ds === today ? 'today' : ''}">
-      <div class="pday-head"><h3>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}${sp?.kind === 'gesloten' ? ' <span class="fdtag cl">🔒 Gesloten</span>' : fd ? ` <span class="fdtag">${esc(fd)}</span>` : ''}</h3><span class="muted small">${list.length ? `${new Set(list.filter(x => x.employee_id).map(x => x.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
+      <div class="pday-head"><h3>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}${sp?.kind === 'gesloten' ? ` <span class="fdtag cl">${ico('lock')}Gesloten</span>` : fd ? ` <span class="fdtag">${esc(fd)}</span>` : ''}</h3><span class="muted small">${list.length ? `${new Set(list.filter(x => x.employee_id).map(x => x.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
       ${covOn && !(sp?.kind === 'gesloten') ? `<div class="cov">${covHTML(ds)}</div>` : sp?.kind === 'gesloten' ? `<div class="cov">${covHTML(ds)}</div>` : ''}
       ${lv.length ? `<div class="mleaves">${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}</div>` : ''}
       <div class="plist">${rowsL || '<p class="hint" style="margin:6px 2px">Nog niemand ingepland.</p>'}</div>
@@ -1300,7 +1353,7 @@ async function viewWeek(el, editable) {
     const availFree = editable ? avail.filter(a => a.date === ds && a.kind !== 'niet' && !list.some(s => s.employee_id === a.employee_id)) : [];
     const leaveHTML = lv.length ? `<div class="mleaves">${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}</div>` : '';
     return `<div class="daystrip">${strip}</div>
-      <div class="dayhead"><div><h2>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}</h2>${specialDay(ds)?.kind === 'gesloten' ? `<span class="fdtag cl">🔒 Gesloten · ${esc(specialDay(ds).label)}</span>` : fd ? `<span class="fdtag">${esc(fd)}</span>` : ''}</div><span>${list.length ? `${new Set(list.filter(s => s.employee_id).map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
+      <div class="dayhead"><div><h2>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}</h2>${specialDay(ds)?.kind === 'gesloten' ? `<span class="fdtag cl">${ico('lock')}Gesloten · ${esc(specialDay(ds).label)}</span>` : fd ? `<span class="fdtag">${esc(fd)}</span>` : ''}</div><span>${list.length ? `${new Set(list.filter(s => s.employee_id).map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
       ${moneyOn ? moneyHTML(ds, true) : ''}
       ${covOn ? `<div class="cov mcov">${covHTML(ds)}</div>` : ''}
       ${leaveHTML}
@@ -1327,6 +1380,7 @@ async function viewWeek(el, editable) {
       </div>` : ''}
     </div>
     ${closedBanner(iso(days[0]), iso(days[days.length - 1]))}
+    ${todayPanel}
     ${elsewhere ? `<div class="pubbar"><span>Nog <strong>${future.length} concept${future.length > 1 ? 'en' : ''}</strong> in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} (${futureWeeks.map(w => 'wk ' + weekNr(parse(w))).join(', ')})</span><button class="btn sm primary" data-act="publishall">Alles publiceren</button></div>` : ''}
     ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : ''}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><button type="button" class="btn sm" data-personpick>👤 Diensten per persoon</button></div>` : ''}
     ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren${listView ? ', of kies "Hele dag selecteren" onder een dag' : ''}. Met "Hele week" in de balk onderin selecteer je alles van deze week.</p>` : ''}
@@ -1686,7 +1740,7 @@ async function publishWeek(from, to, weekShifts, quiet = false) {
 const NOOD = [['112', 'Brand, ambulance, politie', '112'], ['0800 - 9009', 'Gaslucht', '08009009'], ['0318 - 200 800', 'Huisartsenpost', '0318200800'], ['0900 - 8844', 'Politie, geen spoed', '09008844']];
 function noodDialog() {
   const sick = CFG.sickPhone ? [[CFG.sickPhone, `Ziek melden${CFG.sickName ? ' · ' + CFG.sickName : ''}`, CFG.sickPhone.replace(/[^\d+]/g, '')]] : [];
-  openDialog('🚨 Noodnummers', `<div class="noodlist">${[...NOOD, ...sick].map(([n, l, t]) => `<a class="nood" href="tel:${esc(t)}"><span>${esc(l)}</span><strong>${esc(n)}</strong></a>`).join('')}</div>
+  openDialog('Noodnummers', `<div class="noodlist">${[...NOOD, ...sick].map(([n, l, t]) => `<a class="nood" href="tel:${esc(t)}"><span>${esc(l)}</span><strong>${esc(n)}</strong></a>`).join('')}</div>
     <div class="noodtips"><p><strong>Brand:</strong> alarm slaan, gasten rustig naar buiten, deuren dicht, verzamelen buiten. Nooit terug naar binnen.</p>
     <p><strong>Gaslucht:</strong> geen schakelaars of vuur, ramen open, gaskraan dicht, iedereen naar buiten, dan bellen.</p>
     <p><strong>Allergische reactie:</strong> bel 112, help met de adrenalinepen, haal de BHV'er en bewaar het gerecht en de bon.</p></div>
@@ -1719,7 +1773,7 @@ async function rulesBannerHTML() {
     const [st, acks] = await Promise.all([store.settings(), store.rulesAcks()]);
     const v = st.rules_version || 1;
     if (acks.some(r => r.employee_id === S.me.id && r.version === v)) return '';
-    return `<div class="sickbanner rulesbanner"><div><strong>📘 ${v > 1 ? 'De afspraken zijn bijgewerkt' : 'Lees de afspraken van Lilou'}</strong><span>Lees ze rustig door en tik onderaan op Gelezen en akkoord.</span></div><button class="btn primary" data-rulesread>Lezen</button></div>`;
+    return `<div class="sickbanner rulesbanner"><div><strong>${ico('book')}${v > 1 ? 'De afspraken zijn bijgewerkt' : 'Lees de afspraken van Lilou'}</strong><span>Lees ze rustig door en tik onderaan op Gelezen en akkoord.</span></div><button class="btn primary" data-rulesread>Lezen</button></div>`;
   } catch (x) { return ''; }
 }
 const rulesTeam = emps => sortEmps(emps).filter(e => e.active !== false && e.role !== 'manager');
@@ -1731,7 +1785,7 @@ async function rulesDialog() {
   const yes = team.filter(e => at[e.id]), no = team.filter(e => !at[e.id]);
   const when = t => { const d = new Date(t); return `${fmtShort(iso(d))} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
   openDialog('Afspraken: gelezen en akkoord', `<p class="hint" style="margin:0">Iedereen behalve de directie tekent in de app voor de afspraken. Na een wijziging tekent iedereen opnieuw. Versie ${v}.</p>
-    <div><h3 class="small-h">Nog niet getekend (${no.length})</h3><p style="margin:0">${no.map(e => esc(e.name)).join(', ') || '<span class="muted">Iedereen heeft getekend 🎉</span>'}</p></div>
+    <div><h3 class="small-h">Nog niet getekend (${no.length})</h3><p style="margin:0">${no.map(e => esc(e.name)).join(', ') || '<span class="muted">Iedereen heeft getekend</span>'}</p></div>
     <div><h3 class="small-h">Getekend (${yes.length})</h3>${yes.length ? `<ul class="acklist">${yes.sort((a, b) => at[b.id].localeCompare(at[a.id])).map(e => `<li><span>${esc(e.name)}</span><small class="muted">${esc(when(at[e.id]))}</small></li>`).join('')}</ul>` : '<p class="muted" style="margin:0">Nog niemand</p>'}</div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-rulesview>Afspraken bekijken</button><button type="button" class="btn" data-rulesbump>Afspraken gewijzigd</button><button type="button" class="btn primary" data-close>Sluiten</button></div>`,
   { onReady: dlg => {
@@ -1750,12 +1804,12 @@ const annAudience = (a, emps) => emps.filter(e => e.active !== false && e.role !
 function annCard(a, { read, mgr, readInfo } = {}) {
   const img = /^image\//.test(a.attachment_type || '');
   return `<article class="ann card ${a.pinned ? 'pinned' : ''} ${read ? 'read' : 'unread'}" data-ann="${a.id}">
-    <div class="ann-head"><div><h3>${a.pinned ? '<span title="Vastgezet">📌</span> ' : ''}${esc(a.title)}</h3><small class="muted">${esc(fmtShort(iso(new Date(a.created_at))))}${a.updated_at && new Date(a.updated_at) - new Date(a.created_at) > 60000 ? ` · bijgewerkt ${esc(fmtShort(iso(new Date(a.updated_at))))}` : ''}</small></div>
+    <div class="ann-head"><div><h3>${a.pinned ? '<span title="Vastgezet">' + ico('pinned') + '</span>' : ''}${esc(a.title)}</h3><small class="muted">${esc(fmtShort(iso(new Date(a.created_at))))}${a.updated_at && new Date(a.updated_at) - new Date(a.created_at) > 60000 ? ` · bijgewerkt ${esc(fmtShort(iso(new Date(a.updated_at))))}` : ''}</small></div>
       ${mgr ? `<div class="ann-tools"><button type="button" class="btn sm ghost" data-annedit="${a.id}">Bewerken</button></div>` : ''}</div>
     ${a.body ? `<p class="ann-body">${annBody(a.body)}</p>` : ''}
     ${a.attachment_path ? (img ? `<button type="button" class="ann-img" data-annview="${esc(a.attachment_path)}" data-annname="${esc(a.attachment_name || 'Afbeelding')}" data-anntype="${esc(a.attachment_type || '')}" aria-label="${esc(a.attachment_name || 'Afbeelding')} openen"><img data-annimg="${esc(a.attachment_path)}" alt="${esc(a.attachment_name || 'Afbeelding')}"></button>`
-      : `<button type="button" class="btn sm ann-file" data-annview="${esc(a.attachment_path)}" data-annname="${esc(a.attachment_name || 'Bijlage')}" data-anntype="${esc(a.attachment_type || '')}">📄 ${esc(a.attachment_name || 'Bijlage openen')}</button>`) : ''}
-    <div class="ann-foot">${mgr ? `<button type="button" class="linkbtn" data-annreads="${a.id}">${readInfo}</button>` : read ? '<span class="muted small">✓ Gelezen</span>' : `<button type="button" class="btn sm primary" data-annread="${a.id}">👍 Gelezen</button>`}</div>
+      : `<button type="button" class="btn sm ann-file" data-annview="${esc(a.attachment_path)}" data-annname="${esc(a.attachment_name || 'Bijlage')}" data-anntype="${esc(a.attachment_type || '')}">${ico('file')}${esc(a.attachment_name || 'Bijlage openen')}</button>`) : ''}
+    <div class="ann-foot">${mgr ? `<button type="button" class="linkbtn" data-annreads="${a.id}">${readInfo}</button>` : read ? '<span class="muted small">✓ Gelezen</span>' : `<button type="button" class="btn sm primary" data-annread="${a.id}">${ico('check')}Gelezen</button>`}</div>
   </article>`;
 }
 // bijlagen pas na het tekenen ophalen (beveiligde links zijn tijdelijk)
@@ -1876,7 +1930,7 @@ async function annReadsDialog(a, reads, emps) {
   const yes = team.filter(e => got.has(e.id)), no = team.filter(e => !got.has(e.id));
   openDialog('Wie heeft het gelezen?', `<p style="margin:0"><strong>${esc(a.title)}</strong></p>
     <div><h3 class="small-h">Gelezen (${yes.length})</h3><p>${yes.map(e => esc(e.name)).join(', ') || '<span class="muted">Nog niemand</span>'}</p></div>
-    <div><h3 class="small-h">Nog niet (${no.length})</h3><p>${no.map(e => esc(e.name)).join(', ') || '<span class="muted">Iedereen heeft het gelezen 🎉</span>'}</p></div>
+    <div><h3 class="small-h">Nog niet (${no.length})</h3><p>${no.map(e => esc(e.name)).join(', ') || '<span class="muted">Iedereen heeft het gelezen</span>'}</p></div>
     <div class="dlg-foot"><button type="button" class="btn primary" data-close>Sluiten</button></div>`);
 }
 function annAllDialog(board, emps, mgr) {
@@ -1908,7 +1962,7 @@ async function boardHTML() {
   if (!list.length) return '';
   return `<section class="board">
     ${unread.map((a, i) => i === 0 ? annCard(a, { read: false }) : `<details class="pinitem unreaditem"><summary><span class="newdot">nieuw</span> ${esc(a.title)}</summary>${annCard(a, { read: false })}</details>`).join('')}
-    ${pinnedRead.length || recentRead.length ? `<div class="pinlist">${pinnedRead.map(a => `<details class="pinitem"><summary>📌 ${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}${recentRead.map(a => `<details class="pinitem"><summary><span class="muted">✓</span> ${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}</div>` : ''}
+    ${pinnedRead.length || recentRead.length ? `<div class="pinlist">${pinnedRead.map(a => `<details class="pinitem"><summary>${ico('pinned')}${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}${recentRead.map(a => `<details class="pinitem"><summary><span class="muted">✓</span> ${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}</div>` : ''}
     ${list.length > unread.length + pinnedRead.length + recentRead.length ? '<button type="button" class="linkbtn small" data-annall>Alle mededelingen</button>' : ''}
   </section>`;
 }
@@ -1998,7 +2052,7 @@ async function viewDashboard(el) {
   ].filter(Boolean);
   el.innerHTML = `
     ${S.dashPartial ? '<p class="msg err">Niet alle gegevens konden worden geladen; sommige cijfers kunnen ontbreken. Trek omlaag of tik opnieuw op Overzicht.</p>' : ''}
-    <div class="page-head"><div><h1>Overzicht</h1><p>Personeelskosten, omzet en wat er aandacht nodig heeft.</p></div><div class="head-actions"><button class="btn" data-rulesmgr>📘 Afspraken</button><button class="btn" data-nood>🚨 Noodnummers</button><button class="btn" data-myagenda>📅 Mijn diensten in agenda</button></div></div>
+    <div class="page-head"><div><h1>Overzicht</h1><p>Personeelskosten, omzet en wat er aandacht nodig heeft.</p></div><div class="head-actions"><button class="btn" data-rulesmgr>${ico('book')}Afspraken</button><button class="btn" data-nood>${ico('phone')}Noodnummers</button><button class="btn" data-myagenda>${ico('cal')}Mijn diensten in agenda</button></div></div>
     <div class="toolbar"><div class="weeknav">
       <button class="btn icon" data-dw="-1" aria-label="Vorige week">‹</button>
       <div class="label"><strong>${wl.title}</strong><span>${wl.sub}</span></div>
@@ -2006,6 +2060,10 @@ async function viewDashboard(el) {
       <button class="btn ghost sm" data-dw="0">Deze week</button>
     </div></div>
     ${!st.goal_labor_pct && !st.goal_productivity && !st.goal_cost_hour ? '<div class="pubbar"><span>Stel je doelen in, dan kleuren de cijfers groen, geel of rood.</span><button class="btn sm primary" data-gosettings2>Doelen instellen</button></div>' : ''}
+      <section class="card pad attcard">
+        <h2>Aandacht nodig</h2>
+        ${att.length ? `<ul class="attlist">${att.map(([t, v]) => { const m = String(t).match(/^(\d+)(×)?\s+(.*)$/); return `<li><button class="linkbtn" data-goto2="${v}">${m ? `<span class="n">${m[1]}${m[2] || ''}</span><span>${esc(m[3])}</span>` : `<span>${esc(t)}</span>`}</button></li>`; }).join('')}</ul>` : '<p class="hint" style="margin:0">Alles is bij.</p>'}
+      </section>
     <div class="kpis">
       ${tile('omzet', 'Omzet', 'Verwachte omzet die je per dag invult. Werkelijk = omzet uit de kassa of zelf ingevuld.', fc || null, hasActual ? ac : undefined, euro0, '', 0)}
       ${tile('pct', 'Personeelskosten %', 'Personeelskosten (loon, toeslagen, vakantiegeld en werkgeverslasten) gedeeld door de omzet. Werkelijk: alleen de dagen waarop al gewerkt is.', P.pct, done.length ? W.pct : undefined, pct1, 'pct', Number(st.goal_labor_pct))}
@@ -2018,10 +2076,6 @@ async function viewDashboard(el) {
         <div class="pw"><div><small>Gepland</small><b>${fmtH(P.hours)} u</b><span class="muted small">${euro0(P.cost)}</span></div>
           <div><small>Gewerkt</small><b>${fmtH(W.hours)} u</b><span class="muted small">${plannedSoFar ? Math.round(workedSoFar / plannedSoFar * 100) + '% van gepland tot vandaag' : ''}</span></div>
           <div><small>Nu ingeklokt</small><b>${inNow.length}</b><span class="muted small">${esc(inNow.slice(0, 3).map(x => (byId[x.employee_id]?.name || '').split(' ')[0]).join(', '))}</span></div></div>
-      </section>
-      <section class="card pad">
-        <h2>Aandacht nodig</h2>
-        ${att.length ? `<ul class="attlist">${att.map(([t, v]) => `<li><button class="linkbtn" data-goto2="${v}">${esc(t)} ›</button></li>`).join('')}</ul>` : '<p class="hint" style="margin:0">Alles is bij. 🎉</p>'}
       </section>
     </div>
     <section class="card pad dsect">
@@ -2191,7 +2245,7 @@ async function viewLijsten(el) {
     const isOpen = S.lOpen ? S.lOpen.has(l.id) : (!lead && l.id === firstOpen);
     return `<details class="card lcard ${full ? 'full' : ''} ${flagged ? 'flag' : ''}" ${isOpen ? 'open' : ''} data-list="${l.id}">
       <summary><span class="lname">${esc(l.name)}${l.department ? ` <small>${esc(l.department)}</small>` : ''}</span>${stat}</summary>
-      <div class="lrows">${rows || '<p class="hint">Nog geen onderdelen.</p>'}${isMgr() ? `<div class="ledit"><button type="button" class="linkbtn small" data-ledit2="${l.id}">✏️ Deze lijst aanpassen</button></div>` : ''}</div></details>`;
+      <div class="lrows">${rows || '<p class="hint">Nog geen onderdelen.</p>'}${isMgr() ? `<div class="ledit"><button type="button" class="linkbtn small" data-ledit2="${l.id}">${ico('pen')}Deze lijst aanpassen</button></div>` : ''}</div></details>`;
   };
   // medewerkers: alleen de eerste lijst die nog niet af is staat open; de rest ingeklapt (blijft zo bij het afvinken)
   const firstOpen = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).sort((a, b) => (['opening', 'dag', 'sluiting'].indexOf(a.moment) - ['opening', 'dag', 'sluiting'].indexOf(b.moment)) || a.sort - b.sort)
@@ -2204,8 +2258,8 @@ async function viewLijsten(el) {
     <div class="page-head"><div><h1>Lijsten</h1><p>${lead ? 'Wie wat afvinkt, met tijd. Rood = niet gedaan of buiten de norm.' : 'Vink af wat je gedaan hebt. Je naam en de tijd worden bewaard.'}</p></div>
       ${lead ? `<div class="weeknav"><button class="btn icon" data-lday="-1" aria-label="Vorige dag">‹</button><div class="label"><strong>${ds === today ? 'Vandaag' : esc(fmtLong(ds))}</strong><span>${ds === today ? esc(fmtLong(ds)) : ''}</span></div><button class="btn icon" data-lday="1" aria-label="Volgende dag" ${ds >= today ? 'disabled' : ''}>›</button></div>` : ''}</div>
     ${lead ? `<div class="filters ldeps">${deps.map(d => `<button type="button" class="${S.lDep === d ? 'active' : ''}" data-ldep="${esc(d)}">${d === 'alle' ? 'Alles' : esc(d)}</button>`).join('')}</div>` : ''}
-    ${isMgr() ? '<div class="lmanage"><button type="button" class="btn" data-lmanage>✏️ Lijsten aanpassen</button><button type="button" class="btn" data-lnew2>+ Nieuwe lijst</button></div>' : ''}
-    ${past ? '' : `<div class="logbtns"><button class="btn" data-newlog="ontvangst">📦 Ontvangst goederen</button><button class="btn" data-newlog="kern">🌡️ Kerntemperatuur</button><button class="btn" data-newlog="melding">⚠️ Melding maken</button></div>`}
+    ${isMgr() ? '<div class="lmanage"><button type="button" class="btn" data-lmanage>' + ico('pen') + 'Lijsten aanpassen</button><button type="button" class="btn" data-lnew2>+ Nieuwe lijst</button></div>' : ''}
+    ${past ? '' : `<div class="logbtns"><button class="btn" data-newlog="ontvangst">${ico('box')}Ontvangst goederen</button><button class="btn" data-newlog="kern">${ico('therm')}Kerntemperatuur</button><button class="btn" data-newlog="melding">⚠️ Melding maken</button></div>`}
     ${group(ds === today ? 'Vandaag' : 'Deze dag', dayLists)}
     ${group('Deze week', lists.filter(l => l.moment === 'week'))}
     ${group('Deze maand', lists.filter(l => l.moment === 'maand'))}
@@ -2344,7 +2398,7 @@ async function listsHomeHTML() {
     const ticks = await store.ticks([...new Set(lists.map(l => periodOf(l.moment, today)))]);
     const st = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).map(l => { const its = itemsOn(l, today), n = its.length, d = its.filter(it => ticks.some(t => t.checklist_id === l.id && t.period === today && t.item_id === it.id)).length; return { l, n, d }; });
     const open = st.filter(x => x.d < x.n);
-    return `<button type="button" class="card lhome" data-golists><span><strong>📋 Lijsten vandaag</strong><small>${open.length ? open.slice(0, 3).map(x => `${esc(x.l.name)} ${x.d}/${x.n}`).join(' · ') : 'Alles afgevinkt ✓'}</small></span><span class="chev">›</span></button>`;
+    return `<button type="button" class="card lhome" data-golists><span><strong>${ico('clip')}Lijsten vandaag</strong><small>${open.length ? open.slice(0, 3).map(x => `${esc(x.l.name)} ${x.d}/${x.n}`).join(' · ') : 'Alles afgevinkt ✓'}</small></span><span class="chev">›</span></button>`;
   } catch (e) { return ''; }
 }
 // lijst bewerken (directie)
@@ -2414,7 +2468,7 @@ async function viewSettings(el) {
   const T = Object.assign({ avondVan: '20:00', avondTot: '24:00', nachtVan: '00:00', nachtTot: '06:00' }, CFG.toeslagen);
   const pf = (k, l, d) => `<label class="field">${l}<input type="number" name="${k}" min="0" max="300" step="0.5" value="${st[k] ?? d}"></label>`;
   const tf = (k, l) => `<label class="field">${l}<input type="time" name="${k}" value="${esc(T[k] === '24:00' ? '23:59' : T[k])}" required></label>`;
-  const rangeRow = r => `<div class="spdrange" data-from="${r.from}" data-to="${r.to}" data-label="${esc(r.label)}"><span><strong>🔒 ${esc(runLabel(r))}</strong> · ${esc(r.label)} <span class="muted">(${r.n} dagen)</span></span><button type="button" class="btn ghost sm" data-spddel aria-label="Periode verwijderen">✕</button></div>`;
+  const rangeRow = r => `<div class="spdrange" data-from="${r.from}" data-to="${r.to}" data-label="${esc(r.label)}"><span><strong>${ico('lock')}${esc(runLabel(r))}</strong> · ${esc(r.label)} <span class="muted">(${r.n} dagen)</span></span><button type="button" class="btn ghost sm" data-spddel aria-label="Periode verwijderen">✕</button></div>`;
   const spAll = (CFG.specialDays || []).slice().sort((a, b) => a.date.localeCompare(b.date));
   const spRuns = closedRuns(spAll).filter(r => r.n > 1);
   const spSingles = spAll.filter(d => !(d.kind === 'gesloten' && spRuns.some(r => d.date >= r.from && d.date <= r.to && d.label === r.label)));
@@ -2630,7 +2684,7 @@ async function viewMine(el) {
     if (!showOff && !ws.length && !wl.length && !closedN) return '';
     const h = ws.reduce((t, s) => t + shiftHours(s), 0);
     const items = [];
-    if (weekClosed) items.push(`<li class="off closed weekclosed"><div class="d"><span>🔒</span></div><div class="t"><strong>Hele week gesloten</strong><small>${esc([...new Set(wRuns.map(r => r.label))].join(', '))}</small></div><div class="h"></div></li>`);
+    if (weekClosed) items.push(`<li class="off closed weekclosed"><div class="d"><span>${ico('lock')}</span></div><div class="t"><strong>Hele week gesloten</strong><small>${esc([...new Set(wRuns.map(r => r.label))].join(', '))}</small></div><div class="h"></div></li>`);
     for (let i = 0; i < 7; i++) {
       const ds = iso(addDays(mon, i));
       const d = parse(ds);
@@ -2668,15 +2722,18 @@ async function viewMine(el) {
 
   el.innerHTML = `
     <div class="page-head"><div><h1>Hoi ${esc(S.me.name.split(' ')[0])}</h1><p>Je rooster${sel ? ' per week' : ' voor de komende weken'}.</p></div>
-      <div class="head-actions"><button class="btn" data-ics>📅 Zet in mijn agenda</button>${sickNow ? '' : '<button class="btn" data-sick>🤒 Ik ben ziek</button>'}</div></div>
-    ${sickNow ? `<div class="sickbanner"><div><strong>🤒 Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap!</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
-    ${rulesH}
+      <div class="head-actions"><button class="btn" data-ics>${ico('cal')}Zet in mijn agenda</button>${sickNow ? '' : `<button class="btn" data-sick>${ico('therm')}Ik ben ziek</button>`}</div></div>
+    ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     ${clockHTML}
-    ${sel ? '' : await listsHomeHTML()}
-    ${sel ? '' : '<button type="button" class="card lhome" data-gohours><span><strong>⏱️ Mijn gewerkte uren</strong><small>Per week, met je kloktijden en wat is goedgekeurd</small></span><span class="chev">›</span></button>'}
-    ${sel ? '' : `<div class="homepair"><button type="button" class="card lhome" data-nood><span><strong>🚨 Noodnummers</strong><small>112, gaslucht, huisartsenpost${CFG.sickPhone ? ', ziek melden' : ''}</small></span><span class="chev">›</span></button><button type="button" class="card lhome" data-rulesview><span><strong>📘 Afspraken</strong><small>Alle regels: service, allergenen, hygiëne en meer</small></span><span class="chev">›</span></button></div>`}
     ${next && !sel ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
+    ${rulesH}
+    ${sel ? '' : await listsHomeHTML()}
     ${boardH}
+    ${sel ? '' : `<div class="homemore">
+      <button type="button" class="card lhome" data-gohours><span><strong>${ico('clock')}Mijn gewerkte uren</strong><small>Per week, met je kloktijden en wat is goedgekeurd</small></span><span class="chev">›</span></button>
+      <button type="button" class="card lhome" data-nood><span><strong>${ico('phone')}Noodnummers</strong><small>112, gaslucht, huisartsenpost${CFG.sickPhone ? ', ziek melden' : ''}</small></span><span class="chev">›</span></button>
+      ${rulesH ? '' : `<button type="button" class="card lhome" data-rulesview><span><strong>${ico('book')}Afspraken</strong><small>Alle regels: service, allergenen, hygiëne en meer</small></span><span class="chev">›</span></button>`}
+    </div>`}
     <div class="filters mine-filter"><button data-mf="all" class="${sel ? '' : 'active'}">Komende weken</button><button data-mf="week" class="${sel ? 'active' : ''}">Per week</button></div>
     ${body}
   `;
@@ -2723,7 +2780,7 @@ function agendaDialog(mine) {
   openDialog('Zet in mijn agenda', ok2 ? `
     <p style="margin:0">Je diensten komen in je eigen agenda en blijven <strong>vanzelf bijgewerkt</strong>: nieuwe en gewijzigde diensten verschijnen automatisch.</p>
     <div class="agenda-btns">
-      <a class="btn ${apple ? 'primary' : ''} block" href="${esc(webcal)}" data-agclose>📅 iPhone- of Mac-agenda</a>
+      <a class="btn ${apple ? 'primary' : ''} block" href="${esc(webcal)}" data-agclose>iPhone- of Mac-agenda</a>
       <a class="btn ${apple ? '' : 'primary'} block" href="${esc(google)}" target="_blank" rel="noopener" data-agclose>Google Agenda (Android en computer)</a>
       <button type="button" class="btn block" data-agcopy>Link kopiëren (Outlook en andere)</button>
     </div>
@@ -2775,19 +2832,24 @@ function sickDialog() {
   const t = todayIso();
   openDialog('Ik ben ziek', `
     <div class="warnbox"><strong>Eerst bellen.</strong> Bel zo snel mogelijk, en uiterlijk 2 uur voor je dienst${CFG.sickName ? ` met ${esc(CFG.sickName)}` : ', met de directie'}. Een melding in de app alleen is niet genoeg.</div>
-    ${CFG.sickPhone ? `<a class="btn primary block callbtn" href="tel:${esc(CFG.sickPhone.replace(/[^0-9+]/g, ''))}">📞 Bel ${esc(CFG.sickName || 'de directie')} (${esc(CFG.sickPhone)})</a>` : ''}
+    ${CFG.sickPhone ? `<a class="btn primary block callbtn" href="tel:${esc(CFG.sickPhone.replace(/[^0-9+]/g, ''))}">${ico('phone')}Bel ${esc(CFG.sickName || 'de directie')} (${esc(CFG.sickPhone)})</a>` : ''}
     <div class="row keep">
       <label class="field">Ziek vanaf<input type="date" name="start_date" value="${t}" min="${iso(addDays(new Date(), -7))}" required></label>
-      <label class="field">Verwacht tot en met<input type="date" name="end_date" value="${t}" required></label>
+      <label class="field">Verwacht tot en met<input type="date" name="end_date" value="${t}" required disabled></label>
     </div>
-    <p class="hint" style="margin:0">Weet je nog niet hoe lang? Laat het op vandaag staan. Ben je weer beter, tik dan op je startscherm op <strong>Ik ben weer beter</strong>.</p>
+    <label class="check"><input type="checkbox" name="open_end" checked> Ik weet nog niet hoe lang: ziek tot ik me beter meld</label>
+    <p class="hint" style="margin:0">Ben je weer beter, tik dan op je startscherm op <strong>Ik ben weer beter</strong>. Je blijft tot dan ziek gemeld, ook morgen.</p>
     <label class="field">Opmerking<textarea name="note" placeholder="Optioneel, bv. dat je al gebeld hebt"></textarea></label>
     <p class="hint" style="margin:0">Vertel hier niet wat je hebt. Medische informatie hoort niet in de app.</p>
     <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Ziekmelding versturen</button></div>`, {
-    onReady(dlg) { const f = $('form', dlg); f.start_date.onchange = () => { f.end_date.min = f.start_date.value; if (f.end_date.value < f.start_date.value) f.end_date.value = f.start_date.value; }; f.end_date.min = t; },
+    onReady(dlg) { const f = $('form', dlg); f.start_date.onchange = () => { f.end_date.min = f.start_date.value; if (f.end_date.value < f.start_date.value) f.end_date.value = f.start_date.value; }; f.end_date.min = t;
+      f.open_end.onchange = () => { f.end_date.disabled = f.open_end.checked; }; },
     async onSubmit(fd) {
-      if (fd.get('end_date') < fd.get('start_date')) throw new Error('De einddatum ligt voor de begindatum');
-      await store.saveRequest({ employee_id: S.me.id, type: 'ziek', start_date: fd.get('start_date'), end_date: fd.get('end_date'), note: String(fd.get('note') || '').trim() || null });
+      const start = fd.get('start_date');
+      // open einde: twee weken vooruit; "Ik ben weer beter" zet de einddatum op de dag van herstel
+      const end = fd.get('open_end') ? iso(addDays(parse(start), 13)) : fd.get('end_date');
+      if (end < start) throw new Error('De einddatum ligt voor de begindatum');
+      await store.saveRequest({ employee_id: S.me.id, type: 'ziek', start_date: start, end_date: end, note: String(fd.get('note') || '').trim() || null });
       toast('Ziekmelding verstuurd. Beterschap!'); rerender();
     },
   });
@@ -2878,7 +2940,7 @@ async function viewLeaveMgr(el) {
         <div class="req-actions">${r.status === 'pending'
           ? (r.type === 'ziek' ? `<button class="btn sm ok" data-ok="${r.id}">Verwerken</button>` : `<button class="btn sm ok" data-ok="${r.id}">Goedkeuren</button><button class="btn sm danger" data-no="${r.id}">Afwijzen</button>`)
           : `<button class="btn sm ghost" data-undo="${r.id}">Terugzetten naar openstaand</button>`}</div></article>`;
-    }).join('')}</div>` : `<div class="card empty">${S.reqFilter === 'pending' ? 'Geen openstaande aanvragen. 🎉' : 'Nog geen aanvragen.'}</div>`}`;
+    }).join('')}</div>` : `<div class="card empty">${S.reqFilter === 'pending' ? 'Geen openstaande aanvragen.' : 'Nog geen aanvragen.'}</div>`}`;
 
   el.onclick = async ev => {
     if (rtClick(ev)) return;
@@ -2988,7 +3050,7 @@ function employeeDialog(e, priv = {}, reqs = []) {
       <label class="field">Kleur in rooster<input type="color" name="color" value="${esc(e.color || COLORS[0])}"></label>
     </div>
     <label class="check"><input type="checkbox" name="active" ${e.active !== false ? 'checked' : ''}> Actief (uit dienst? Zet dit uit, dan blijft de historie bewaard)</label>
-    <fieldset class="privbox"><legend>🔒 Vertrouwelijk — alleen directie (en de medewerker zelf)</legend>
+    <fieldset class="privbox"><legend>${ico('lock')}Vertrouwelijk — alleen directie (en de medewerker zelf)</legend>
       <div class="row keep">
         <label class="field">Uurloon bruto (€)<input type="number" name="hourly_wage" min="0" step="0.01" value="${priv.hourly_wage ?? ''}" placeholder="bijv. 14,20"></label>
         <label class="field">Geboortedatum<input type="date" name="birth_date" value="${priv.birth_date || ''}"></label>
@@ -3000,7 +3062,7 @@ function employeeDialog(e, priv = {}, reqs = []) {
       ${isNew ? '' : `<p class="hint">Verlof ${bal.year}: ${fmtH(bal.opening)} meegenomen uit ${bal.year - 1} + ${fmtH(bal.entitlement)} recht − ${fmtH(bal.used)} opgenomen = <strong>${fmtH(bal.rest)} uur over</strong>${bal.pending ? ` · ${bal.pending} ${bal.pending === 1 ? 'aanvraag' : 'aanvragen'} open` : ''}</p>`}
       <p class="hint">De geboortedatum gebruikt de app voor de jongerenregels uit de Arbeidstijdenwet.</p>
     </fieldset>
-    ${isNew ? '' : `<div class="futbox"><div class="req-actions"><button type="button" class="btn sm" data-allshifts>👤 Alle diensten bekijken</button><button type="button" class="btn sm" data-futshifts>🗓️ Komende diensten uit het rooster halen…</button></div><span class="hint">Bijvoorbeeld als iemand stopt of langere tijd niet werkt. Alles vanaf een datum in één keer.</span></div>`}
+    ${isNew ? '' : `<div class="futbox"><div class="req-actions"><button type="button" class="btn sm" data-allshifts>${ico('user')}Alle diensten bekijken</button><button type="button" class="btn sm" data-futshifts>🗓️ Komende diensten uit het rooster halen…</button></div><span class="hint">Bijvoorbeeld als iemand stopt of langere tijd niet werkt. Alles vanaf een datum in één keer.</span></div>`}
     ${isNew ? '' : '<details class="history" data-history><summary>Geschiedenis van wijzigingen</summary><div class="hint">Laden…</div></details>'}
     ${isNew ? `<label class="check"><input type="checkbox" name="send_invite" checked> Stuur meteen een uitnodiging per e-mail</label>` : !e.user_id && e.active !== false ? `<div class="invitebox"><span class="hint">${e.invited_at ? `Uitgenodigd op ${esc(fmtShort(iso(new Date(e.invited_at))))} ${tHM(e.invited_at)}, nog niet geactiveerd.` : 'Nog niet uitgenodigd.'}</span>
       <div class="req-actions"><button type="button" class="btn sm primary" data-sendinvite>${e.invited_at ? 'Uitnodiging opnieuw sturen' : 'Uitnodiging sturen'}</button><button type="button" class="btn sm" data-invite>Kopieer bericht voor WhatsApp</button></div></div>` : ''}
@@ -3487,7 +3549,7 @@ const runLabel = r => (r.n === 1 ? fmtLong(r.from) : `${fmtShort(r.from)} t/m ${
 function closedBanner(from, to) {
   const runs = closedRuns(CFG.specialDays, from, to);
   if (!runs.length) return '';
-  return `<div class="closedbar" role="note"><strong>🔒 Gesloten</strong><span>${runs.map(r => `${esc(runLabel(r))} · ${esc(r.label)}`).join('<br>')}</span></div>`;
+  return `<div class="closedbar" role="note"><strong>${ico('lock')}Gesloten</strong><span>${runs.map(r => `${esc(runLabel(r))} · ${esc(r.label)}`).join('<br>')}</span></div>`;
 }
 function feestdag(ds) {
   const y = Number(ds.slice(0, 4));
@@ -3790,7 +3852,7 @@ async function viewHours(el) {
   };
 
   el.innerHTML = `
-    <div class="page-head"><div><h1>Uren & export</h1><p>Overzicht per periode en exportbestanden voor salaris en boekhouding.</p></div><button class="btn" data-loonset>⚙︎ Loon & toeslagen</button></div>
+    <div class="page-head"><div><h1>Uren & export</h1><p>Overzicht per periode en exportbestanden voor salaris en boekhouding.</p></div><button class="btn" data-loonset>${ico('gear')}Loon & toeslagen</button></div>
     <div class="toolbar">
       <div class="weeknav">
         <button class="btn icon" data-p="-1" aria-label="Vorige periode">‹</button>
@@ -3946,11 +4008,11 @@ async function clockCard(todayShift) {
   const btns = !open
     ? `<button class="btn primary big" data-clock="in">Inklokken</button>`
     : `${onBreak ? '<button class="btn big" data-clock="pauze_eind">Pauze stoppen</button>' : '<button class="btn big" data-clock="pauze_start">Pauze</button>'}<button class="btn primary big" data-clock="uit">Uitklokken</button>`;
-  const noLoc = st.lat == null && !(st.wifi_ips || []).length;
+  const noLoc = st.lat == null && !hasWifi(st);
   return `<div class="card clock ${open ? 'is-on' : ''}" data-clockcard>
     <div class="clock-state">${state}</div>
     <div class="clock-btns">${noLoc ? '<p class="hint">De werklocatie is nog niet ingesteld. Vraag de directie om dit te doen.</p>' : btns}</div>
-    <p class="hint clock-hint">${(st.wifi_ips || []).length ? '📶 Klokken kan op de wifi van de zaak, of op locatie via gps.' : '📍 Bij in- en uitklokken wordt gecontroleerd of je op de werklocatie bent.'}</p>
+    <p class="hint clock-hint">${hasWifi(st) ? ico('wifi') + 'Klokken kan op de wifi van de zaak, of op locatie via gps.' : ico('pin') + 'Bij in- en uitklokken wordt gecontroleerd of je op de werklocatie bent.'}</p>
     ${store.demo ? `<div class="demo-loc"><span>Demo – doe alsof ik ben:</span><div class="filters"><button data-demoloc="wifi" class="${S.demoLoc === 'wifi' ? 'active' : ''}">Op de wifi</button><button data-demoloc="op" class="${!S.demoLoc || S.demoLoc === 'op' ? 'active' : ''}">Op locatie (gps)</button><button data-demoloc="buiten" class="${S.demoLoc === 'buiten' ? 'active' : ''}">Thuis</button></div></div>` : ''}
   </div>`;
 }
@@ -3987,7 +4049,7 @@ async function doClock(action, btn) {
   }
   try {
     // Eerst via de wifi van de zaak (geen locatievraag); lukt dat niet, dan via gps
-    if (needLoc && (st0.wifi_ips || []).length) {
+    if (needLoc && hasWifi(st0)) {
       btn.textContent = 'Wifi controleren…';
       try { await store.clock(action, null, null, ot); toast(done[action]); return rerender(); }
       catch (e) { if (e.code !== 'LC001') throw e; }
@@ -4177,7 +4239,7 @@ async function viewClockMgr(el) {
 
   el.innerHTML = `
     <div class="page-head"><div><h1>Klokken</h1><p>Wie is er aan het werk, en gewerkte uren controleren.</p></div>
-      <div class="actions"><button class="btn" data-settings>⚙︎ Instellingen</button><button class="btn" data-newentry>+ Registratie</button></div></div>
+      <div class="actions"><button class="btn" data-settings>${ico('gear')}Instellingen</button><button class="btn" data-newentry>+ Registratie</button></div></div>
     ${st.lat == null ? '<div class="warnbox" style="margin-bottom:14px">Stel eerst de <strong>werklocatie</strong> in, anders kan niemand klokken.</div>' : ''}
     <div class="clock-top">
       ${await clockCard(todayShift)}
@@ -4199,7 +4261,7 @@ async function viewClockMgr(el) {
         ${pending.filter(isClean).length ? `<button class="btn ok" data-okall>✓ ${pending.filter(isClean).length} zonder afwijking goedkeuren</button>` : ''}
       </div>
     </div>
-    ${list.length ? `<div class="reqs">${list.map(entryCard).join('')}</div>` : `<div class="card empty">${S.clockFilter === 'check' ? 'Alles is gecontroleerd. 🎉' : 'Geen registraties deze week.'}</div>`}
+    ${list.length ? `<div class="reqs">${list.map(entryCard).join('')}</div>` : `<div class="card empty">${S.clockFilter === 'check' ? 'Alles is gecontroleerd.' : 'Geen registraties deze week.'}</div>`}
     <p class="hint" style="margin-top:12px">“Zonder afwijking” = geen locatiemelding en maximaal 15 minuten verschil met de planning.</p>`;
 
   bindClock(el);
