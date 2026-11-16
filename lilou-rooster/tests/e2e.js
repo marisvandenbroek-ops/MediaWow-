@@ -451,7 +451,8 @@ async function test(name, fn) {
   });
   await test('overzicht: kerngetallen, omzet invullen kleurt de kosten tegen het doel', async () => {
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
-    await tab(shared, 'overzicht'); await shared.waitForSelector('.kpis .kpi');
+    await tab(shared, 'overzicht'); await shared.waitForSelector('.dhome');
+    await shared.click('.hhead [data-dcijfers]'); await shared.waitForSelector('.kpis .kpi');
     assert.equal(await shared.$$eval('.kpis .kpi', a => a.length), 4);
     const first = await shared.$$eval('[data-revf]', a => a[a.length - 1].dataset.revf);   // zondag: nog geen werkelijke omzet
     await shared.fill(`[data-revf="${first}"]`, '100'); await shared.press(`[data-revf="${first}"]`, 'Tab');
@@ -499,8 +500,11 @@ async function test(name, fn) {
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
     await tab(shared, 'overzicht'); await shared.click('[data-annnew]'); await shared.waitForSelector('dialog [name=title]');
     await shared.fill('dialog [name=title]', 'Proeverij donderdag'); await shared.fill('dialog [name=body]', 'Om 15:00 in de keuken');
-    await shared.click('dialog button[value=save]'); await shared.waitForSelector('.annlist .ann:has-text("Proeverij donderdag")');
-    assert.match(await shared.textContent('.annlist .ann:has-text("Proeverij donderdag") [data-annreads]'), /Gelezen door 0 van \d+/);
+    await shared.click('dialog button[value=save]'); await shared.waitForSelector('.dhome .hrow:has-text("Proeverij donderdag")');
+    assert.match(await shared.textContent('.dhome .hrow:has-text("Proeverij donderdag")'), /gelezen door 0 van \d+/);
+    await shared.click('.dhome .hrow:has-text("Proeverij donderdag")');
+    assert.match(await shared.textContent('dialog .annall .ann:has-text("Proeverij donderdag") [data-annreads]'), /Gelezen door 0 van \d+/);
+    await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
     const p = watch(await browser.newPage({ viewport: { width: 390, height: 844 } }));
     await p.goto(URL + '#personeel'); await p.waitForSelector('[data-demo]');
     await p.evaluate(s => localStorage.setItem(s.k, JSON.stringify(s.db)), await demoDb(shared));
@@ -539,7 +543,8 @@ async function test(name, fn) {
     const ctx = await browser.newContext({ ...devices['iPhone 13'] }); const p = watch(await ctx.newPage());
     await fresh(p, '#directie'); await login(p, 'Mark');
     await p.click('[data-annnew]'); await p.fill('dialog [name=title]', 'Menukaart online'); await p.fill('dialog [name=body]', 'Zie https://www.lilou-ede.nl/' + 'menukaart-najaar-'.repeat(8) + 'definitief.pdf');
-    await p.click('dialog button[value=save]'); await p.waitForSelector('.annlist .ann:has-text("Menukaart online") a[href^="https://www.lilou-ede.nl/"]');
+    await p.click('dialog button[value=save]'); await p.waitForSelector('.dhome .hrow:has-text("Menukaart online")');
+    await p.click('.dhome .hrow:has-text("Menukaart online")'); await p.waitForSelector('dialog .annall .ann:has-text("Menukaart online") a[href^="https://www.lilou-ede.nl/"]');
     assert.ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'pagina wordt breder dan het scherm');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
@@ -786,6 +791,24 @@ async function test(name, fn) {
     assert.ok(!mine.some(n => /Sluiting keuken/.test(n.body)), 'keuken werkt vandaag niet, toch in de herinnering');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('overzicht: directie keurt een vrije dag goed vanaf het startscherm (Ja-knop)', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark'); await p.waitForSelector('.dhome');
+    const { db } = await demoDb(p);
+    const r = db.requests.find(x => x.status === 'pending' && (x.type === 'vrij' || x.type === 'vakantie'));
+    assert.ok(r, 'geen openstaande verlofaanvraag in de demo');
+    const name = db.employees.find(e => e.id === r.employee_id).name.split(' ')[0];
+    if (!(await p.$(`[data-hok="${r.id}"]`))) await p.click('[data-hall]');
+    await p.click(`[data-hok="${r.id}"]`); await p.waitForSelector('dialog:has-text("Verlof goedkeuren")');
+    await p.click('dialog button[value=save]'); await p.waitForSelector('.toast:has-text("Verlof goedgekeurd")');
+    await p.waitForSelector(`[data-hok="${r.id}"]`, { state: 'detached' });
+    assert.equal((await demoDb(p)).db.requests.find(x => x.id === r.id).status, 'approved', name + ': aanvraag niet goedgekeurd');
+    // Cijfers-pagina en weer terug
+    await p.click('.hhead [data-dcijfers]'); await p.waitForSelector('[data-revf]');
+    await p.click('[data-dhome]'); await p.waitForSelector('.dhome');
+    assert.ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'startscherm breder dan de telefoon');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('kaarten: directie uploadt de menukaart, medewerker opent hem in de app', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#directie'); await login(p, 'Mark');
@@ -862,9 +885,10 @@ async function test(name, fn) {
     const pdf = '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 400]/Contents 4 0 R/Resources<<>>>>endobj\n4 0 obj<</Length 33>>stream\n0.57 0.15 0.03 rg 20 20 260 360 re f\nendstream endobj\ntrailer<</Root 1 0 R>>\n%%EOF';
     await p.click('[data-annnew]'); await p.fill('dialog [name=title]', 'Wijnkaart');
     await p.setInputFiles('dialog [name=file]', { name: 'wijnkaart.pdf', mimeType: 'application/pdf', buffer: Buffer.from(pdf) });
-    await p.click('dialog button[value=save]'); await p.waitForSelector('.annlist .ann:has-text("Wijnkaart") [data-annview]');
+    await p.click('dialog button[value=save]'); await p.waitForSelector('.dhome .hrow:has-text("Wijnkaart")');
+    await p.click('.dhome .hrow:has-text("Wijnkaart")'); await p.waitForSelector('dialog .annall .ann:has-text("Wijnkaart") [data-annview]');
     const before = ctx.pages().length;
-    await p.click('.annlist .ann:has-text("Wijnkaart") [data-annview]');
+    await p.click('dialog .annall .ann:has-text("Wijnkaart") [data-annview]');
     await p.waitForSelector('dialog.viewer[open] canvas.viewer-page', { timeout: 15000 });
     assert.strictEqual(ctx.pages().length, before, 'er ging een los tabblad open');
     const painted = await p.waitForFunction(() => { const c = document.querySelector('canvas.viewer-page'); if (!c || !c.width) return false; const d = c.getContext('2d').getImageData(Math.floor(c.width / 2), Math.floor(c.height / 2), 1, 1).data; return d[0] > 100 && d[1] < 80; }, null, { timeout: 10000 }).then(() => true, () => false);

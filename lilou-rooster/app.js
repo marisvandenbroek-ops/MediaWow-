@@ -1168,6 +1168,7 @@ async function go(view) {
   const tok = (S.renderTok = (S.renderTok || 0) + 1);
   // het gekozen scherm meteen vastleggen: een rerender() van een eerdere actie gaat dan naar dit scherm, niet terug
   const changed = S.view !== view;
+  if (changed && view === 'overzicht') { S.dashTab = ''; S.dashAll = false; }   // via het menu altijd naar het startscherm
   S.view = view;
   $$('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === view));
   $('[data-gosettings]')?.classList.toggle('active', view === 'instellingen');
