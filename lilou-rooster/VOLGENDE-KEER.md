@@ -66,3 +66,8 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Zenchef: mail aan Nina verstuurd; wachten op documentatie + aparte leessleutel. Plan: edge function haalt alleen aantallen per lunch/diner op; advies per functie.
 - Recepten-app: apart gesprek, briefing in RECEPTEN-BRIEFING.md.
 - Open: lunch/diner-splitsing met advies; Klokken in rustige stijl; Mariëlle activeren; Supabase Auth (leaked password, linkduur).
+
+## Update 31–33 (16 nov) — live
+- Kaarten als filterbare lijst (parseMenuPdf/menuList), directie kan gerechten toevoegen/wijzigen/weghalen (`menu_cards.items`, update31.sql). Nieuwe pdf = lijst weer uit de pdf.
+- Herinnering aan shiftleader/directie van dienst als opening- of sluitingslijsten niet af zijn: `lists_reminders()` in `run_jobs` (update32.sql). Opening: 1 uur na eerste dienst; sluiting: 30 min voor einde laatste (of eigen) dienst.
+- App-versie v40 (zip rooster-update-33).
