@@ -877,8 +877,7 @@ async function test(name, fn) {
     await s2.click('dialog.menulist [data-mlclose]'); await s2.waitForSelector('dialog.menulist', { state: 'detached' });
     await s2.click('.kcard:has-text("Wijnkaart") [data-kopen]');
     await s2.waitForSelector('dialog.menulist[open] .ml-price:has-text("Glas €")', { timeout: 15000 });
-    await s2.click('dialog.menulist [data-mlpdf]');   // "Als kaart" opent de pdf zelf
-    await s2.waitForSelector('dialog.viewer[open] canvas.viewer-page', { timeout: 15000 });
+    assert.ok(!(await s2.$('dialog.menulist [data-mlpdf]')), 'knop Als kaart hoort weg te zijn');
     assert.ok(!(await s2.$('[data-kadd]')), 'medewerker kan kaarten toevoegen');
     await ctx.close(); pages.splice(pages.indexOf(p), 1); pages.splice(pages.indexOf(s2), 1);
   });

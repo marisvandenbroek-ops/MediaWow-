@@ -1270,7 +1270,7 @@ async function go(view) {
   // Nieuw element per keer: een tragere, oudere laadactie schrijft dan in een losgekoppeld element en niet over dit scherm
   const old = $('#view');
   if (!old) return;
-  const el = document.createElement('main'); el.id = 'view';
+  const el = document.createElement('main'); el.id = 'view'; el.dataset.view = view;
   el.style.minHeight = old.offsetHeight + 'px';   // geen sprong naar boven tijdens het opnieuw laden
   old.parentNode.replaceChild(el, old);
   const slow = setTimeout(() => { if (el.isConnected && !el.childElementCount) el.innerHTML = '<p class="hint loading">Laden…</p>'; }, 400);
@@ -1373,7 +1373,7 @@ async function parseMenuPdf(path) {
     }
   }
   push();
-  out.forEach(it => { delete it.row; delete it.closed; });
+  out.forEach(it => { delete it.row; delete it.closed; it.price = (it.price || '').replace(/(€\s*\d+),(\d)(?!\d)/g, '$1,$20'); });   // € 7,5 → € 7,50
   return (_menuCache[path] = out);
 }
 async function menuList(c) {
@@ -1394,7 +1394,7 @@ async function menuList(c) {
   const dlg = document.createElement('dialog');
   dlg.className = 'viewer menulist';
   dlg.setAttribute('aria-labelledby', 'ml-name');
-  dlg.innerHTML = `<div class="viewer-bar"><strong class="viewer-name" id="ml-name">${esc(c.title)}</strong>${mgr ? '<button type="button" class="btn sm" data-mledit aria-pressed="false">Bewerken</button>' : ''}<button type="button" class="btn sm" data-mlpdf>Als kaart</button><button type="button" class="x" data-mlclose aria-label="Sluiten">×</button></div>
+  dlg.innerHTML = `<div class="viewer-bar"><strong class="viewer-name" id="ml-name">${esc(c.title)}</strong>${mgr ? '<button type="button" class="btn sm" data-mledit aria-pressed="false">Bewerken</button>' : ''}<button type="button" class="x" data-mlclose aria-label="Sluiten">×</button></div>
     <div class="ml-tools"><input type="search" placeholder="Zoeken, bv. truffel of Bourgogne" aria-label="Zoeken in ${esc(c.title)}" data-mlq>
       <div class="ml-chips" role="tablist" data-mlchips></div></div>
     <div class="ml-body" data-mlbody></div>`;
@@ -1466,7 +1466,6 @@ async function menuList(c) {
   dlg.addEventListener('close', () => { if (dlg.parentNode) dlg.parentNode.removeChild(dlg); });
   dlg.addEventListener('click', async ev => {
     if (ev.target.closest('[data-mlclose]')) { dlg.close(); if (S.view === 'kaarten') rerender(); return; }
-    if (ev.target.closest('[data-mlpdf]')) { dlg.close(); return fileViewer(c.file_path, c.title, c.file_type); }
     const e = ev.target.closest('[data-mledit]');
     if (e) { edit = !edit; e.textContent = edit ? 'Klaar' : 'Bewerken'; e.setAttribute('aria-pressed', edit); e.classList.toggle('primary', edit); return draw(true); }
     if (ev.target.closest('[data-mladd]')) return dishDialog(null);

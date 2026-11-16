@@ -1219,3 +1219,16 @@ details.ice2 summary { cursor: pointer; color: var(--accent); font-weight: 600; 
 .icemini { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
 /* rooster-lijst onder het startscherm van medewerkers ook niet over de hele breedte */
 #view > .mine-filter ~ * { max-width: 1100px; }
+
+/* Laptop: geen schermvullende banen. Lijsten, aanvragen, formulieren in een rustige kolom; alleen planning, uren en team (tabellen) mogen breed */
+@media (min-width: 900px) {
+  #view:not([data-view="planning"]):not([data-view="uren"]):not([data-view="team"]):not([data-view="overzicht"]):not([data-view="mijn"]) > * { max-width: 920px; }
+  #view[data-view="planning"] > .page-head, #view[data-view="uren"] > .page-head, #view[data-view="team"] > .page-head { max-width: none; }
+}
+/* Kaart als lijst: titel goed leesbaar, inhoud in een kolom in het midden */
+.viewer-bar .viewer-name { color: #fff; font-weight: 600; }
+@media (min-width: 900px) {
+  dialog.menulist .ml-tools > *, dialog.menulist .ml-body > * { max-width: 820px; margin-left: auto; margin-right: auto; }
+  dialog.menulist .ml-tools .ml-chips { flex-wrap: wrap; }
+}
+dialog.menulist .ml-tools .ml-chips { width: 100%; justify-content: flex-start; }
