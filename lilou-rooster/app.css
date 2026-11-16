@@ -1466,3 +1466,4 @@ fieldset.choice[hidden] { display: none; }
   .avform .avfoot .actions .btn { min-height: 46px; font-size: 14px; line-height: 1.15; padding: 0 8px; white-space: normal; }
   .dlg-foot .btn[data-dreps] { order: 3; }
 }
+.sdate.istoday small { color: var(--accent); font-weight: 700; }
