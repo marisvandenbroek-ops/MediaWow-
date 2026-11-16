@@ -1054,8 +1054,10 @@ async function handleSession(r) {
 /* ================= Shell ================= */
 function tabsFor() {
   return isMgr()
-    ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['lijsten', 'Lijsten'], ['aanvragen', 'Aanvragen'], ['team', 'Team'], ['uren', 'Uren & export']]
-    : [['mijn', 'Mijn rooster'], ['planning', canPlan() ? 'Planning' : 'Team'], ['diensten', 'Diensten'], ['lijsten', 'Lijsten'], ['beschikbaar', 'Beschikbaar'], ['aanvragen', 'Verlof']];
+    ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['aanvragen', 'Aanvragen'], ['lijsten', 'Lijsten'], ['team', 'Team'], ['uren', 'Uren & export']]
+    : canPlan()
+      ? [['mijn', 'Mijn rooster'], ['planning', 'Planning'], ['lijsten', 'Lijsten'], ['diensten', 'Diensten'], ['aanvragen', 'Verlof'], ['beschikbaar', 'Beschikbaar']]
+      : [['mijn', 'Mijn rooster'], ['diensten', 'Diensten'], ['lijsten', 'Lijsten'], ['aanvragen', 'Verlof'], ['planning', 'Team'], ['beschikbaar', 'Beschikbaar']];
 }
 
 function renderShell() {
@@ -1065,12 +1067,13 @@ function renderShell() {
     ${store.demo ? '<div class="demo-banner">Demo-modus<span class="hide-sm"> · gegevens worden alleen in deze browser bewaard</span></div>' : ''}
     <header class="topbar"><div class="topbar-inner">
       <div class="brand">${CFG.logo ? `<div class="stack-brand"><img class="wordmark light" src="${esc(CFG.logo)}" alt="${esc(CFG.bedrijf)}"><img class="wordmark dark" src="${esc(CFG.logoDark || CFG.logo)}" alt="${esc(CFG.bedrijf)}"><div class="sub">Rooster · ${isMgr() ? 'Leiding' : S.me.role === 'planner' ? 'Shiftleader' : esc(S.me.position || 'Team')}</div></div>` : `<div class="logo">${letter}</div><div><strong>${esc(CFG.appName)}</strong><small>${isMgr() ? 'Leidinggevende' : esc(S.me.position || 'Medewerker')}</small></div>`}</div>
-      <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !canPlan() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l === 'Mijn rooster' ? 'Rooster' : l}</span>${(isMgr() ? k === 'aanvragen' : k === 'diensten') ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}</nav>
+      <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !canPlan() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l === 'Mijn rooster' ? 'Rooster' : l}</span>${(isMgr() ? k === 'aanvragen' : k === 'diensten') ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}<button class="tab tab-more" data-more aria-label="Meer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg><span class="tl">Meer</span><span class="ts">Meer</span></button></nav>
       <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon bell" data-bell title="Meldingen" aria-label="Meldingen">${ICON.bell}<span class="ncount hidden" data-ncount></span></button>${isMgr() ? `<button class="btn ghost icon" data-gosettings title="Instellingen" aria-label="Instellingen">${ICON.settings}</button>` : ''}<button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
     </div></header>
     <main id="view"></main>
     ${store.demo ? '' : `<footer class="app-foot">${LEGAL}</footer>`}`;
   $$('[data-tab]').forEach(b => (b.onclick = () => go(b.dataset.tab)));
+  const mb = $('[data-more]'); if (mb) mb.onclick = moreSheet;
   const gs = $('[data-gosettings]'); if (gs) gs.onclick = () => go('instellingen');
   $('[data-logout]').onclick = signOut;
   $('[data-bell]').onclick = notifPanel;
@@ -1109,13 +1112,14 @@ async function maybeRunJobs() {
 }
 
 async function go(view) {
-  clearInterval(S.timer);
+  clearInterval(S.timer); clearInterval(S.tick);
   const tok = (S.renderTok = (S.renderTok || 0) + 1);
   // het gekozen scherm meteen vastleggen: een rerender() van een eerdere actie gaat dan naar dit scherm, niet terug
   const changed = S.view !== view;
   S.view = view;
   $$('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === view));
   $('[data-gosettings]')?.classList.toggle('active', view === 'instellingen');
+  $('[data-more]')?.classList.toggle('active', !tabsFor().slice(0, 4).some(([k]) => k === view));
   if (!(await checkMe())) return;
   if (tok !== S.renderTok) return;   // intussen al naar een ander scherm gegaan
   maybeRunJobs();   // niet op wachten: de database doet dit ook zelf
@@ -1154,6 +1158,36 @@ async function renderView(view, el) {
   }
 }
 const rerender = () => go(S.view);
+
+/* ================= Meer (telefoon) ================= */
+function moreSheet() {
+  if (document.querySelector('dialog.moresheet[open]')) return;
+  const rest = tabsFor().slice(4);
+  const ini = esc(S.me.name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase());
+  const role = isMgr() ? 'Directie' : S.me.role === 'planner' ? 'Shiftleader' : esc(S.me.position || 'Team');
+  const row = (attr, iconHTML, label) => `<button type="button" class="mrow" ${attr}><span class="mic">${iconHTML}</span><span>${label}</span><span class="chev">›</span></button>`;
+  const items = [
+    ...rest.map(([k, l]) => row(`data-mgo="${k}"`, ICON[k === 'planning' && !canPlan() ? 'team' : k] || '', esc(l))),
+    ...(isMgr() ? [] : [row('data-mgo="mijnuren"', ico('clock'), 'Mijn gewerkte uren')]),
+    ...(isMgr() ? [row('data-mgo="instellingen"', ICON.settings, 'Instellingen')] : []),
+    row('data-mrules', ico('book'), 'Afspraken'),
+    row('data-mnood', ico('phone'), 'Noodnummers'),
+    row('data-mout', ICON.logout, 'Uitloggen'),
+  ];
+  const dlg = document.createElement('dialog');
+  dlg.className = 'moresheet';
+  dlg.innerHTML = `<div class="ms-head"><span class="ms-av">${ini}</span><div><strong>${esc(S.me.name)}</strong><small>${role}</small></div><button type="button" class="x" data-mclose aria-label="Sluiten">×</button></div><div class="ms-list">${items.join('')}</div>`;
+  document.body.append(dlg);
+  dlg.addEventListener('close', () => { if (dlg.parentNode) dlg.parentNode.removeChild(dlg); });
+  dlg.addEventListener('click', ev => {
+    if (ev.target === dlg || ev.target.closest('[data-mclose]')) return dlg.close();
+    const g = ev.target.closest('[data-mgo]'); if (g) { dlg.close(); return go(g.dataset.mgo); }
+    if (ev.target.closest('[data-mrules]')) { dlg.close(); return rulesViewer(); }
+    if (ev.target.closest('[data-mnood]')) { dlg.close(); return noodDialog(); }
+    if (ev.target.closest('[data-mout]')) { dlg.close(); return signOut(); }
+  });
+  dlg.showModal();
+}
 
 /* ================= Week planning ================= */
 const MQ = window.matchMedia('(max-width: 760px)');
@@ -2683,7 +2717,12 @@ async function viewMine(el) {
   const today = todayIso();
   const nowHM = `${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
   const next = mine.find(s => s.date > today || (s.date === today && hm(s.end_time) > nowHM) || (s.date === today && mins(s.end_time) <= mins(s.start_time)));
-  const [clockHTML, boardH, rulesH] = await Promise.all([clockCard(mine.find(s => s.date === today)), boardHTML().catch(() => ''), sel ? '' : rulesBannerHTML()]);
+  const todayShift = mine.find(s => s.date === today);
+  const [clockHTML, boardH, rulesH] = await Promise.all([sel ? '' : clockHero(todayShift), boardHTML().catch(() => ''), sel ? '' : rulesBannerHTML()]);
+  const srow = (x, withDate) => `<li class="srow k-${shiftKind(x)}">${withDate ? `<span class="sdate"><small>${DAG[dayIdx(parse(x.date))]}</small><b>${parse(x.date).getDate()}</b></span>` : ''}<span class="sbar"></span><span class="sinfo"><strong>${esc(shiftKindLabel(x))}${x.position ? ` <span class="muted">· ${esc(x.position)}</span>` : ''}</strong><small>${hm(x.start_time)} – ${hm(x.end_time)}${withWho(x).length ? ` · met ${esc(withWho(x).slice(0, 3).join(', '))}${withWho(x).length > 3 ? ' e.a.' : ''}` : ''}</small></span><span class="shrs">${fmtH(shiftHours(x))}u</span></li>`;
+  const upcoming = mine.filter(s => s.date > today).slice(0, 3);
+  const todayHTML = sel ? '' : `<section class="homesec"><div class="hs-head"><h2>Vandaag</h2><span class="muted small">${esc(fmtShort(today))}</span></div>${todayShift ? `<ul class="srows card">${srow(todayShift, false)}</ul>` : '<p class="hint hs-empty">Geen dienst vandaag.</p>'}</section>
+    <section class="homesec"><div class="hs-head"><h2>Komende diensten</h2>${upcoming.length ? '<button type="button" class="linkbtn" data-allweeks>Alles bekijken</button>' : ''}</div>${upcoming.length ? `<ul class="srows card">${upcoming.map(x => srow(x, true)).join('')}</ul>` : '<p class="hint hs-empty">Diensten verschijnen hier zodra de week is gepubliceerd.</p>'}</section>`;
   let workedHTML = '';
   if (sel) {
     const [ents0, stM] = await Promise.all([store.entries(iso(sel), iso(addDays(sel, 6))), store.settings()]);
@@ -2741,10 +2780,11 @@ async function viewMine(el) {
 
   el.innerHTML = `
     <div class="page-head"><div><h1>Hoi ${esc(S.me.name.split(' ')[0])}</h1><p>Je rooster${sel ? ' per week' : ' voor de komende weken'}.</p></div>
-      <div class="head-actions"><button class="btn" data-ics>${ico('cal')}Zet in mijn agenda</button>${sickNow ? '' : `<button class="btn" data-sick>${ico('therm')}Ik ben ziek</button>`}</div></div>
+      <div class="head-actions"><button class="btn" data-ics>${ico('cal')}Agenda</button>${sickNow ? '' : `<button class="btn" data-sick>${ico('therm')}Ik ben ziek</button>`}</div></div>
     ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     ${clockHTML}
-    ${next && !sel ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
+    ${todayHTML}
+    ${false ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
     ${rulesH}
     ${sel ? '' : await listsHomeHTML()}
     ${boardH}
@@ -2753,7 +2793,7 @@ async function viewMine(el) {
       <button type="button" class="card lhome" data-nood><span><strong>${ico('phone')}Noodnummers</strong><small>112, gaslucht, huisartsenpost${CFG.sickPhone ? ', ziek melden' : ''}</small></span><span class="chev">›</span></button>
       ${rulesH ? '' : `<button type="button" class="card lhome" data-rulesview><span><strong>${ico('book')}Afspraken</strong><small>Alle regels: service, allergenen, hygiëne en meer</small></span><span class="chev">›</span></button>`}
     </div>`}
-    <div class="filters mine-filter"><button data-mf="all" class="${sel ? '' : 'active'}">Komende weken</button><button data-mf="week" class="${sel ? 'active' : ''}">Per week</button></div>
+    <div class="filters mine-filter" id="weken"><button data-mf="all" class="${sel ? '' : 'active'}">Komende weken</button><button data-mf="week" class="${sel ? 'active' : ''}">Per week</button></div>
     ${body}
   `;
   bindClock(el);
@@ -2767,6 +2807,7 @@ async function viewMine(el) {
     if (ev.target.closest('[data-golists]')) return go('lijsten');
     if (ev.target.closest('[data-gohours]')) return go('mijnuren');
     if (ev.target.closest('[data-nood]')) return noodDialog();
+    if (ev.target.closest('[data-allweeks]')) return $('#weken', el)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (ev.target.closest('[data-rulesread]')) return rulesViewer({ ack: true });
     if (ev.target.closest('[data-rulesview]')) return rulesViewer();
     const bt = ev.target.closest('[data-better]');
@@ -4017,6 +4058,29 @@ function askOvertime(plannedEnd, overMin) {
   });
 }
 
+const shiftKind = x => (mins(x.start_time) >= 15 * 60 ? 'avond' : 'dag');
+const shiftKindLabel = x => (shiftKind(x) === 'avond' ? 'Avonddienst' : 'Dagdienst');
+// Startscherm medewerker: grote, rustige klokkaart (tijd, dienst, één knop)
+async function clockHero(todayShift) {
+  const [open] = await store.openEntries().then(l => l.filter(e => e.employee_id === S.me.id));
+  const st = await store.settings();
+  const onBreak = open && open.break_started_at;
+  const now = new Date();
+  const sub = open
+    ? `${onBreak ? 'Pauze sinds ' + tHM(open.break_started_at) : 'Ingeklokt sinds ' + tHM(open.clock_in)} · <span data-live="${open.id}">${fmtDur(entryHours(open))} gewerkt</span>`
+    : todayShift ? `${esc(shiftKindLabel(todayShift))}${todayShift.position ? ' · ' + esc(todayShift.position) : ''} · ${hm(todayShift.start_time)} – ${hm(todayShift.end_time)}` : 'Geen dienst vandaag';
+  const btns = !open
+    ? `<button class="btn big hero-main" data-clock="in">Inklokken</button>`
+    : `${onBreak ? '<button class="btn big hero-alt" data-clock="pauze_eind">Pauze stoppen</button>' : '<button class="btn big hero-alt" data-clock="pauze_start">Pauze</button>'}<button class="btn big hero-main" data-clock="uit">Uitklokken</button>`;
+  const noLoc = st.lat == null && !hasWifi(st);
+  return `<div class="clock-hero ${open ? (onBreak ? 'is-break' : 'is-on') : ''}" data-clockcard>
+    <div class="ch-time"><span data-tick>${pad(now.getHours())}:${pad(now.getMinutes())}</span><small data-ticks>:${pad(now.getSeconds())}</small></div>
+    <p class="ch-sub">${open ? `<span class="ch-dot"></span>` : ''}${sub}</p>
+    <div class="ch-btns">${noLoc ? '<p class="ch-note">De werklocatie is nog niet ingesteld. Vraag de directie om dit te doen.</p>' : btns}</div>
+    <p class="ch-note">${hasWifi(st) ? ico('wifi') + 'Op de wifi van de zaak of op locatie' : ico('pin') + 'Alleen op de werklocatie'}</p>
+    ${store.demo ? `<div class="demo-loc"><span>Demo – doe alsof ik ben:</span><div class="filters"><button data-demoloc="wifi" class="${S.demoLoc === 'wifi' ? 'active' : ''}">Op de wifi</button><button data-demoloc="op" class="${!S.demoLoc || S.demoLoc === 'op' ? 'active' : ''}">Op locatie (gps)</button><button data-demoloc="thuis" class="${S.demoLoc === 'thuis' ? 'active' : ''}">Thuis</button></div></div>` : ''}
+  </div>`;
+}
 async function clockCard(todayShift) {
   const [open] = await store.openEntries().then(l => l.filter(e => e.employee_id === S.me.id));
   const st = await store.settings();
@@ -4037,7 +4101,11 @@ async function clockCard(todayShift) {
 }
 
 function bindClock(el) {
-  clearInterval(S.timer);
+  clearInterval(S.timer); clearInterval(S.tick);
+  if ($('[data-tick]', el)) S.tick = setInterval(() => {
+    const a = $('[data-tick]', el), b = $('[data-ticks]', el); if (!a || !a.isConnected) return clearInterval(S.tick);
+    const d = new Date(); a.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`; b.textContent = `:${pad(d.getSeconds())}`;
+  }, 1000);
   S.timer = setInterval(async () => {
     const live = $('[data-live]', el); if (!live) return;
     const [open] = (await store.openEntries()).filter(e => e.id === live.dataset.live);

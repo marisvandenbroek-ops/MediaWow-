@@ -1028,3 +1028,63 @@ th.closedday { background: var(--surface-2); }
 .meldlist li + li { border-top: 1px solid var(--line); }
 .meldlist p { margin: 2px 0 0; }
 .meldlist .btn { flex: none; }
+
+/* ===== Startscherm medewerker: rustige klokkaart en dienstenlijst ===== */
+.clock-hero { background: linear-gradient(135deg, #912508 0%, #b23a17 100%); color: #f9efe6; border-radius: 22px; padding: 20px 20px 16px; margin-bottom: 22px; box-shadow: 0 10px 30px rgba(145, 37, 8, .22); display: grid; gap: 12px; }
+.clock-hero.is-on { background: linear-gradient(135deg, #2f5d43 0%, #3f7d58 100%); box-shadow: 0 10px 30px rgba(47, 93, 67, .25); }
+.clock-hero.is-break { background: linear-gradient(135deg, #7a4a10 0%, #a6650f 100%); }
+.ch-time { font-size: 56px; font-weight: 700; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.ch-time small { font-size: 22px; font-weight: 600; opacity: .7; margin-left: 2px; }
+.ch-sub { margin: 0; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; opacity: .9; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ch-dot { width: 9px; height: 9px; border-radius: 50%; background: #f9efe6; box-shadow: 0 0 0 4px rgba(249, 239, 230, .25); }
+.ch-btns { display: flex; gap: 10px; }
+.ch-btns .btn { flex: 1; border: 0; }
+.clock-hero .hero-main { background: #2b1611; color: #fff; }
+.clock-hero .hero-main:hover { background: #1a0d0a; }
+.clock-hero .hero-alt { background: #f9efe6; color: #2b1611; flex: 0 0 auto; padding-left: 22px; padding-right: 22px; }
+.ch-note { margin: 0; font-size: 12px; opacity: .85; }
+.ch-note .ico { width: 14px; height: 14px; vertical-align: -2px; margin-right: 5px; color: inherit; }
+.clock-hero .demo-loc { background: rgba(255, 255, 255, .12); border-radius: 12px; padding: 8px 10px; font-size: 12px; }
+.clock-hero .demo-loc .filters button { color: #f9efe6; }
+.clock-hero .demo-loc .filters button.active { background: rgba(255, 255, 255, .22); color: #fff; }
+.homesec { margin-bottom: 20px; }
+.hs-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 0 2px 8px; }
+.hs-head h2 { font-size: 19px; }
+.hs-empty { margin: 0 2px; }
+.srows { list-style: none; margin: 0; padding: 4px 0; }
+.srow { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+.srow + .srow { border-top: 1px solid var(--line); }
+.sdate { width: 44px; flex: none; text-align: center; background: var(--surface-2); border-radius: 10px; padding: 5px 0; line-height: 1.1; }
+.sdate small { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.sdate b { font-size: 18px; }
+.sbar { width: 4px; align-self: stretch; border-radius: 4px; background: var(--accent); flex: none; min-height: 34px; }
+.srow.k-dag .sbar { background: #e0894a; }
+.sinfo { flex: 1; min-width: 0; }
+.sinfo strong { display: block; font-size: 15.5px; }
+.sinfo small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.shrs { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+/* ===== Meer-menu (telefoon): 4 tabs onderin + Meer ===== */
+.tab-more { display: none; }
+@media (max-width: 760px) {
+  .tabs .tab:nth-child(n+5):not(.tab-more) { display: none; }
+  .tab-more { display: flex; }
+}
+dialog.moresheet { margin: auto 0 0; width: 100%; max-width: 100%; max-height: 88dvh; border: 0; padding: 0 0 calc(10px + env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; background: var(--surface); color: var(--text); box-shadow: 0 -10px 40px rgba(0, 0, 0, .18); overflow: auto; }
+dialog.moresheet::backdrop { background: rgba(43, 22, 17, .35); }
+@media (min-width: 761px) { dialog.moresheet { margin: auto; max-width: 420px; border-radius: 22px; } }
+.ms-head { display: flex; align-items: center; gap: 14px; padding: 20px 20px 14px; }
+.ms-head > div { flex: 1; min-width: 0; }
+.ms-head strong { display: block; font-size: 17px; }
+.ms-head small { color: var(--muted); font-size: 13px; }
+.ms-head .x { background: var(--surface-2); border: 0; width: 34px; height: 34px; border-radius: 50%; font-size: 22px; line-height: 1; color: var(--muted); cursor: pointer; }
+.ms-av { width: 52px; height: 52px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 700; font-size: 19px; flex: none; }
+.ms-list { padding: 0 8px; }
+.mrow { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 56px; padding: 8px 12px; background: none; border: 0; border-top: 1px solid var(--line); color: var(--text); font: inherit; font-size: 16px; font-weight: 500; text-align: left; cursor: pointer; }
+.mrow:first-child { border-top: 0; }
+.mrow > span:nth-child(2) { flex: 1; }
+.mic { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+.mic svg, .mic .ico { width: 19px; height: 19px; margin: 0; color: var(--accent); }
+.mrow .chev { color: var(--muted); font-size: 20px; }
+.clock-hero .demo-loc .filters { background: transparent; border-color: rgba(255, 255, 255, .3); }
+@media (max-width: 760px) { .page-head [data-rulesmgr], .page-head [data-nood] { display: none; } }
