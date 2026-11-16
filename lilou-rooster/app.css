@@ -1244,3 +1244,19 @@ dialog.menulist .ml-tools .ml-chips { width: 100%; justify-content: flex-start; 
 .rightsbox { display: grid; gap: 4px; padding: 10px 12px; border: 1px dashed var(--line-strong); border-radius: 12px; margin: 4px 0; }
 .rightsbox[hidden] { display: none; }
 fieldset.choice[hidden] { display: none; }
+
+/* ===== Wijnrood (i.p.v. oranjerood) en menu onderin in wijnrood ===== */
+:root:not([data-theme="dark"]) { --brand: #8E1B14; --accent: #8E1B14; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --brand: #8E1B14; } }
+.clock-hero, .dhome > .hcard:first-child { background: linear-gradient(135deg, #8E1B14 0%, #74140F 100%); box-shadow: 0 10px 30px rgba(142, 27, 20, .22); }
+.clock-hero.is-on { background: linear-gradient(135deg, #2f5d43 0%, #3f7d58 100%); }
+.clock-hero.is-break { background: linear-gradient(135deg, #7a4a10 0%, #a6650f 100%); }
+.viewer-bar, .nood:first-child { background: #8E1B14; }
+.nood:first-child { border-color: #8E1B14; }
+@media (max-width: 760px) {
+  .tabs { background: #8E1B14; border-top: 0; box-shadow: 0 -6px 18px rgba(142, 27, 20, .18); }
+  .tab { color: #F6D9D2; }
+  .tab.active { background: #FFFFFF; color: #8E1B14; font-weight: 700; }
+  .tab .count { background: #FFFFFF; color: #8E1B14; box-shadow: 0 0 0 2px #8E1B14; }
+  .tab.active .count { background: #8E1B14; color: #fff; box-shadow: 0 0 0 2px #fff; }
+}
