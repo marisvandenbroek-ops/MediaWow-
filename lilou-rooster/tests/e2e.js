@@ -765,6 +765,27 @@ async function test(name, fn) {
     await p.waitForSelector('.sickbanner');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('lijsten: shiftleader van dienst krijgt een herinnering als de sluitingslijst niet af is', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await setDemoDb(p, `
+      const pad = n => String(n).padStart(2, '0'), hm = d => pad(d.getHours()) + ':' + pad(d.getMinutes());
+      const now = new Date(), bd = new Date(now - 5 * 3600e3), ds = bd.getFullYear() + '-' + pad(bd.getMonth() + 1) + '-' + pad(bd.getDate());
+      const mark = db.employees.find(e => e.name.startsWith('Mark'));
+      db.shifts = db.shifts.filter(x => x.date !== ds);
+      db.shifts.push({ id: 'lr1', employee_id: mark.id, date: ds, start_time: hm(new Date(now - 2 * 3600e3)), end_time: hm(new Date(+now + 20 * 60e3)), position: 'Bediening', published: true, break_minutes: 0 });
+      db.requests = db.requests.filter(r => r.employee_id !== mark.id);
+      db.notifications = []; db.reminders = {};`);
+    await p.reload(); await p.waitForSelector('#view > *', { state: 'attached' }).catch(() => {});
+    if (await p.$('[data-demo]')) await login(p, 'Mark');
+    await p.waitForTimeout(800);
+    const { db } = await demoDb(p);
+    const mark = db.employees.find(e => e.name.startsWith('Mark'));
+    const mine = db.notifications.filter(n => n.employee_id === mark.id && /lijsten nog niet af/.test(n.title));
+    assert.ok(mine.some(n => n.title === 'Sluitingslijsten nog niet af' && /Sluiting bediening \(0 van \d+\)/.test(n.body)), 'geen herinnering sluiting: ' + JSON.stringify(mine));
+    assert.ok(!mine.some(n => /Sluiting keuken/.test(n.body)), 'keuken werkt vandaag niet, toch in de herinnering');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('kaarten: directie uploadt de menukaart, medewerker opent hem in de app', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#directie'); await login(p, 'Mark');

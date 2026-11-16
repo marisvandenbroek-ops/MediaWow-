@@ -1729,6 +1729,57 @@ $$;
 revoke execute on function public.clocked_today() from public, anon;
 grant execute on function public.clocked_today() to authenticated;
 
+-- Herinnering voor de shiftleader: lijsten nog niet af bij opening (1 uur na de eerste dienst)
+-- en bij sluiting (half uur voor het einde van de laatste dienst, of van de eigen dienst als die eerder stopt)
+create or replace function public.lists_reminders() returns int
+language plpgsql security definer set search_path = public as $$
+declare d date := public.business_day(); ds text := d::text; first_start timestamptz; last_end timestamptz;
+        ld record; m text; t_at timestamptz; msg text; n int := 0;
+begin
+  select min(public.shift_start_ts(s)), max(public.shift_end_ts(s)) into first_start, last_end
+    from public.shifts s where s.published and s.employee_id is not null and s.date = d;
+  if first_start is null then return 0; end if;
+  for ld in
+    select e.id, min(public.shift_start_ts(s)) st, max(public.shift_end_ts(s)) en
+      from public.employees e join public.shifts s on s.employee_id = e.id
+     where s.published and s.date = d and e.active and e.role in ('manager', 'planner')
+       and not exists (select 1 from public.requests r where r.employee_id = e.id and r.status <> 'rejected'
+                        and r.type in ('vakantie', 'vrij', 'onbeschikbaar', 'ziek') and d between r.start_date and r.end_date)
+     group by e.id
+  loop
+    foreach m in array array['opening', 'sluiting'] loop
+      t_at := case m when 'opening' then greatest(first_start + interval '60 minutes', ld.st + interval '15 minutes')
+                     else least(last_end, ld.en) - interval '30 minutes' end;
+      continue when now() < t_at or now() > t_at + interval '3 hours' or now() > ld.en + interval '30 minutes';
+      select string_agg(x.name || ' (' || x.done || ' van ' || x.total || ')', ', ' order by x.sort, x.name) into msg
+        from (
+          select c.name, c.sort, its.total,
+                 (select count(*) from public.checklist_ticks t
+                   where t.checklist_id = c.id and t.period = ds and t.removed_at is null and t.item_id = any(its.ids)) done
+            from public.checklists c
+            cross join lateral (
+              select count(*) total, coalesce(array_agg(it->>'id'), '{}') ids
+                from jsonb_array_elements(c.items) it
+               where coalesce(it->>'from', '') <= ds and (coalesce(it->>'removed', '') = '' or it->>'removed' > ds)) its
+           where c.active
+             and (case m when 'opening' then c.moment = 'opening' else c.moment in ('dag', 'sluiting') end)
+             and (c.department = '' or exists (select 1 from public.shifts s where s.published and s.date = d
+                                                and s.employee_id is not null and s.position = c.department))
+        ) x
+       where x.total > 0 and x.done < x.total;
+      continue when msg is null;
+      insert into public.reminder_log (kind, ref) values ('lijsten', md5(ds || m || ld.id::text)::uuid) on conflict do nothing;
+      if found then
+        perform public.notify(ld.id, case m when 'opening' then 'Openingslijsten nog niet af' else 'Sluitingslijsten nog niet af' end,
+                              'Nog open: ' || msg || '.', 'lijsten');
+        n := n + 1;
+      end if;
+    end loop;
+  end loop;
+  return n;
+end $$;
+revoke execute on function public.lists_reminders() from public, anon, authenticated;
+
 create or replace function public.run_jobs() returns int
 language plpgsql security definer set search_path = public as $$
 declare e public.time_entries; x public.shifts; pe timestamptz; n int := 0; hhmm text;
@@ -1795,6 +1846,13 @@ begin
      where type = 'ziek' and open_end and status <> 'rejected' and end_date < public.today_nl();
   exception when others then
     raise warning 'run_jobs ziek: %', sqlerrm;
+  end;
+
+  -- Lijsten nog niet af: herinnering aan de shiftleader van dienst
+  begin
+    perform public.lists_reminders();
+  exception when others then
+    raise warning 'run_jobs lijsten: %', sqlerrm;
   end;
 
   -- 3. Privacy: exacte locaties na 90 dagen wissen (afstand en wifi/gps blijven), oude meldingen opruimen

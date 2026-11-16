@@ -458,5 +458,22 @@ reset role;
 select t_ok((select items->0->>'name' = 'Testgerecht' from menu_cards where title = 'Menukaart'), 'directie past de gerechten aan');
 select t_fails($$update menu_cards set items = '{"a":1}'::jsonb$$, 'gerechtenlijst moet een lijst zijn');
 
+\echo '== Update 32: herinnering lijsten voor de shiftleader'
+update shifts set date = business_day() + 7 where date = business_day();   -- alleen de dienst hieronder telt vandaag
+insert into shifts (employee_id, date, start_time, end_time, position, published)
+values ('a0000000-0000-0000-0000-000000000004', business_day(),
+        ((now() at time zone 'Europe/Amsterdam') - interval '2 hours')::time,
+        ((now() at time zone 'Europe/Amsterdam') + interval '20 minutes')::time, 'Bediening', true);
+select lists_reminders();
+select t_ok((select count(*) = 1 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000004' and title = 'Sluitingslijsten nog niet af' and body like 'Nog open: %Sluiting bediening%'), 'shiftleader krijgt herinnering: sluitingslijst niet af');
+select t_ok((select count(*) = 1 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000004' and title = 'Openingslijsten nog niet af'), 'shiftleader krijgt herinnering: openingslijst niet af');
+select t_ok((select count(*) = 0 from notifications where title like '%lijsten nog niet af' and body like '%Sluiting keuken%'), 'geen herinnering voor afdelingen die vandaag niet werken');
+select lists_reminders(); select run_jobs();
+select t_ok((select count(*) = 2 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000004' and title like '%lijsten nog niet af'), 'herinnering maar één keer per dag');
+select t_ok((select count(*) = 0 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000003' and title like '%lijsten nog niet af'), 'medewerker zonder leidinggevende rol krijgt geen herinnering');
+set role authenticated; select as_user(3);
+select t_fails('select lists_reminders()', 'medewerker kan de herinnering niet zelf starten');
+reset role;
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

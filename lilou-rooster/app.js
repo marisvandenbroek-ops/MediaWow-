@@ -636,6 +636,27 @@ function demoStore() {
           notify(x.employee_id, `Je dienst begint om ${hm(x.start_time)}`, lbl(x) + (x.position ? ' · ' + x.position : ''), 'mijn');
         }
       });
+      // lijsten nog niet af: herinnering aan de shiftleader van dienst (zelfde regels als public.lists_reminders)
+      const bd = iso(new Date(now - 5 * 3600e3)), dayShifts = db.shifts.filter(x => x.published && x.employee_id && x.date === bd);
+      if (dayShifts.length) {
+        const firstStart = Math.min(...dayShifts.map(x => shiftWindow(x)[0].getTime())), lastEnd = Math.max(...dayShifts.map(x => shiftWindow(x)[1].getTime()));
+        const away = id => db.requests.some(r => r.employee_id === id && r.status !== 'rejected' && ['vakantie', 'vrij', 'onbeschikbaar', 'ziek'].includes(r.type) && bd >= r.start_date && bd <= r.end_date);
+        leads().filter(e => dayShifts.some(x => x.employee_id === e.id) && !away(e.id)).forEach(e => {
+          const mine = dayShifts.filter(x => x.employee_id === e.id), st = Math.min(...mine.map(x => shiftWindow(x)[0].getTime())), en = Math.max(...mine.map(x => shiftWindow(x)[1].getTime()));
+          ['opening', 'sluiting'].forEach(m => {
+            const at = m === 'opening' ? Math.max(firstStart + 3600e3, st + 900e3) : Math.min(lastEnd, en) - 1800e3;
+            if (now < at || now > at + 3 * 3600e3 || now > en + 1800e3 || db.reminders['l' + bd + m + e.id]) return;
+            const open = db.checklists.filter(l => l.active !== false && (m === 'opening' ? l.moment === 'opening' : ['dag', 'sluiting'].includes(l.moment))
+                && (!l.department || dayShifts.some(x => x.position === l.department)))
+              .sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name))
+              .map(l => { const its = itemsOn(l, bd), done = its.filter(it => db.ticks.some(t => !t.removed_at && t.checklist_id === l.id && t.period === bd && t.item_id === it.id)).length; return { l, total: its.length, done }; })
+              .filter(x => x.total && x.done < x.total);
+            if (!open.length) return;
+            db.reminders['l' + bd + m + e.id] = 1;
+            notify(e.id, m === 'opening' ? 'Openingslijsten nog niet af' : 'Sluitingslijsten nog niet af', 'Nog open: ' + open.map(x => `${x.l.name} (${x.done} van ${x.total})`).join(', ') + '.', 'lijsten');
+          });
+        });
+      }
       save(); return n;
     },
   };
