@@ -110,7 +110,11 @@ async function test(name, fn) {
   console.log('Klokken');
   await test('inklokken via wifi, uitklokken via gps', async () => {
     await tab(mob, 'mijn'); await mob.click('[data-demoloc=wifi]'); await mob.click('[data-clock=in]'); await mob.waitForSelector('[data-clock=uit]');
-    await mob.click('[data-demoloc=op]'); await mob.waitForSelector('[data-clock=uit]'); await mob.click('[data-clock=uit]'); await mob.waitForSelector('[data-clock=in]');
+    await mob.click('[data-demoloc=op]'); await mob.waitForSelector('[data-clock=uit]'); await mob.click('[data-clock=uit]');
+    // na het einde van de demodienst vraagt de app terecht naar overuren: 'Nee' is al gekozen
+    await mob.waitForSelector('[data-clock=in], dialog[open]:has-text("Heb je langer gewerkt")');
+    if (await mob.$('dialog[open]:has-text("Heb je langer gewerkt")')) await mob.click('dialog[open] button[value=save]');
+    await mob.waitForSelector('[data-clock=in]');
   });
   await test('thuis inklokken vraagt om een reden', async () => {
     await mob.click('[data-demoloc=buiten]'); await mob.waitForSelector('[data-clock=in]'); await mob.click('[data-clock=in]');
@@ -768,6 +772,12 @@ async function test(name, fn) {
     await setDemoDb(p, `const r = db.requests.filter(x => x.type === 'ziek').pop(); const d = new Date(Date.now() - 864e5); const q = n => String(n).padStart(2, '0'); r.start_date = r.end_date = d.getFullYear() + '-' + q(d.getMonth() + 1) + '-' + q(d.getDate());`);
     await p.reload(); await p.waitForSelector('[data-demo], #view > *', { state: 'attached' }); if (await p.$('[data-demo]')) await login(p, 'Noor');
     await p.waitForSelector('.sickbanner');
+    // weer beter: de melding verdwijnt meteen, ook als de ziekmelding vandaag begon
+    await setDemoDb(p, `const r = db.requests.filter(x => x.type === 'ziek').pop(); const d = new Date(); const q = n => String(n).padStart(2, '0'); r.start_date = r.end_date = d.getFullYear() + '-' + q(d.getMonth() + 1) + '-' + q(d.getDate()); r.open_end = true;`);
+    await p.reload(); await p.waitForSelector('[data-demo], #view > *', { state: 'attached' }); if (await p.$('[data-demo]')) await login(p, 'Noor');
+    await p.click('.sickbanner:has-text("ziek gemeld") [data-better]'); await p.click('dialog[open]:has-text("Ben je weer beter") button[value=save]');
+    await p.waitForSelector('.toast:has-text("weer beter")');
+    await p.waitForSelector('.sickbanner:has-text("ziek gemeld")', { state: 'detached', timeout: 8000 });
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
   await test('lijsten: shiftleader van dienst krijgt een herinnering als de sluitingslijst niet af is', async () => {

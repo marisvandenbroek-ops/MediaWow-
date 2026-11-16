@@ -473,7 +473,7 @@ function demoStore() {
     },
     async sickRecover(id) {
       const r = db.requests.find(x => x.id === id && x.employee_id === mem && x.type === 'ziek'); if (!r) throw new Error('Ziekmelding niet gevonden');
-      const t = todayIso(); if (r.open_end || r.end_date > t) r.end_date = r.start_date > t ? r.start_date : t; r.open_end = false;
+      const t = todayIso(); if (r.open_end || r.end_date > t) r.end_date = r.start_date > t ? r.start_date : t; r.open_end = false; r.recovered_at ||= new Date().toISOString();
       db.employees.filter(e => ['manager', 'planner'].includes(e.role) && e.active !== false && e.id !== mem).forEach(e => notify(e.id, '💪 Weer beter', `${fname(mem)} is weer beter en kan weer werken.`, e.role === 'manager' ? 'aanvragen:verlof' : 'planning'));
       save();
     },
@@ -3208,7 +3208,7 @@ async function viewMine(el) {
   const from = iso(fromD), to = iso(toD);
   const [all, reqs, emps, swaps] = await Promise.all([store.shifts(from, to), store.requests(), store.employees(), store.swaps()]);
   const tdy = todayIso();
-  const sickNow = reqs.find(r => r.employee_id === S.me.id && r.type === 'ziek' && r.status !== 'rejected' && r.start_date <= tdy && (r.end_date >= tdy || r.open_end));
+  const sickNow = reqs.find(r => r.employee_id === S.me.id && r.type === 'ziek' && r.status !== 'rejected' && r.start_date <= tdy && !r.recovered_at && (r.end_date >= tdy || r.open_end));
   const swapOf = id => swaps.find(w => w.shift_id === id && w.from_employee === S.me.id && ['open', 'accepted'].includes(w.status));
   const nameOf = Object.fromEntries(emps.map(e => [e.id, e.name.split(' ')[0]]));
   const withWho = s => { const o = all.filter(x => x.date === s.date && x.employee_id !== S.me.id && x.published).map(x => nameOf[x.employee_id]).filter(Boolean); return [...new Set(o)]; };

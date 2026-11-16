@@ -542,5 +542,12 @@ select t_fails($$delete from employees where id = 'a0000000-0000-0000-0000-00000
 update settings set position_rights = '{}' where id = 1;
 update employees set position = 'Bediening' where id = 'a0000000-0000-0000-0000-000000000003';
 
+\echo '== Update 43: weer beter op de dag zelf'
+set role authenticated; select as_user(3);
+insert into requests (employee_id, type, start_date, end_date, status, open_end) values ('a0000000-0000-0000-0000-000000000003', 'ziek', today_nl(), today_nl(), 'pending', false);
+select sick_recover((select id from requests where employee_id = 'a0000000-0000-0000-0000-000000000003' and type = 'ziek' and start_date = today_nl() and not open_end order by created_at desc limit 1));
+reset role;
+select t_ok((select recovered_at is not null and end_date = today_nl() from requests where employee_id = 'a0000000-0000-0000-0000-000000000003' and type = 'ziek' and start_date = today_nl() order by created_at desc limit 1), 'weer beter op de dag zelf: tijdstip bewaard');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'
