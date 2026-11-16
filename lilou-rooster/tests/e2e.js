@@ -169,7 +169,12 @@ async function test(name, fn) {
     assert.match(await mob.textContent('.avfoot .hint'), /7 van 7/);
   });
   await test('verlof aanvragen', async () => {
-    await tab(mob, 'aanvragen'); await mob.click('#reqform button'); await mob.waitForTimeout(200);
+    await tab(mob, 'aanvragen');
+    await mob.click('#reqform button'); await mob.waitForTimeout(200);
+    assert.ok(!(await mob.$('[data-del]')), 'zonder datum mag er geen aanvraag verstuurd worden');
+    const d = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+    await mob.fill('#reqform [name=start_date]', d); await mob.fill('#reqform [name=end_date]', d);
+    await mob.click('#reqform button'); await mob.waitForTimeout(200);
     assert.ok(await mob.$('[data-del]'));
   });
   await test('ziek melden via de knop "Ik ben ziek"', async () => {

@@ -2184,6 +2184,7 @@ declare me uuid := public.my_employee_id(); r public.requests;
 begin
   select * into r from public.requests where id = p_id and employee_id = me and type = 'ziek';
   if not found then raise exception 'Ziekmelding niet gevonden.'; end if;
+  if r.recovered_at is not null or r.status = 'rejected' then return; end if;   -- al beter gemeld: geen dubbele melding
   update public.requests set end_date = case when r.open_end or r.end_date > public.today_nl() then greatest(r.start_date, public.today_nl()) else end_date end,
          open_end = false, recovered_at = coalesce(recovered_at, now())
    where id = p_id;
