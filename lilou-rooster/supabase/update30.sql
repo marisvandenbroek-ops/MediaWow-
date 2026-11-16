@@ -140,3 +140,10 @@ create policy mc_write on public.menu_cards for all to authenticated
   using (public.is_manager()) with check (public.is_manager());
 revoke all on public.menu_cards from public, anon;
 grant select, insert, update, delete on public.menu_cards to authenticated;
+
+-- De vier app-kaarten die met de website meekomen (map kaarten/), alleen als er nog geen kaarten zijn
+insert into public.menu_cards (title, sort, file_path, file_name, file_type)
+select v.title, v.sort, 'static:kaarten/' || v.f, v.f, 'application/pdf'
+  from (values ('Menukaart', 0, 'Lilou-menukaart-app.pdf'), ('Wijnkaart', 1, 'Lilou-wijnkaart-app.pdf'),
+               ('Bites', 2, 'Lilou-bites-app.pdf'), ('Kerstmenu', 3, 'Lilou-kerstmenu-app.pdf')) as v(title, sort, f)
+ where not exists (select 1 from public.menu_cards);
