@@ -778,7 +778,19 @@ async function test(name, fn) {
     await s2.click('[data-gokaarten]'); await s2.click('.kcard:has-text("Testkaart") [data-kopen]');
     await s2.waitForSelector('dialog.viewer[open] canvas.viewer-page', { timeout: 15000 });
     await s2.click('dialog.viewer [data-vclose]'); await s2.waitForSelector('dialog.viewer', { state: 'detached' });
-    await s2.click('.kcard:has-text("Wijnkaart") [data-kopen]');   // standaardkaart uit de map kaarten/
+    await s2.click('.kcard:has-text("Menukaart") [data-kopen]');   // standaardkaart uit de map kaarten/: als lijst met filter
+    await s2.waitForSelector('dialog.menulist[open] .ml-item', { timeout: 15000 });
+    const all = await s2.$$eval('.ml-item', x => x.length);
+    await s2.click('dialog.menulist [data-mlsec]:text-is("Hoofd")');
+    const hoofd = await s2.$$eval('.ml-item', x => x.length);
+    assert.ok(hoofd > 0 && hoofd < all, `filter Hoofd werkt niet (${hoofd} van ${all})`);
+    assert.deepStrictEqual(await s2.$$eval('.ml-sec', x => x.map(e => e.textContent)), ['Hoofd'], 'andere kopjes zichtbaar bij filter');
+    await s2.click('dialog.menulist [data-mlsec]:text-is("Alles")'); await s2.fill('dialog.menulist [data-mlq]', 'zzzgeenzzz');
+    await s2.waitForSelector('dialog.menulist .hint:has-text("Niets gevonden")');
+    await s2.click('dialog.menulist [data-mlclose]'); await s2.waitForSelector('dialog.menulist', { state: 'detached' });
+    await s2.click('.kcard:has-text("Wijnkaart") [data-kopen]');
+    await s2.waitForSelector('dialog.menulist[open] .ml-price:has-text("Glas €")', { timeout: 15000 });
+    await s2.click('dialog.menulist [data-mlpdf]');   // "Als kaart" opent de pdf zelf
     await s2.waitForSelector('dialog.viewer[open] canvas.viewer-page', { timeout: 15000 });
     assert.ok(!(await s2.$('[data-kadd]')), 'medewerker kan kaarten toevoegen');
     await ctx.close(); pages.splice(pages.indexOf(p), 1); pages.splice(pages.indexOf(s2), 1);

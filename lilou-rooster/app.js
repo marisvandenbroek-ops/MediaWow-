@@ -1192,6 +1192,105 @@ async function renderView(view, el) {
 const rerender = () => go(S.view);
 
 /* ================= Kaarten (menukaart, wijnkaart) ================= */
+// Een app-kaart (pdf) lezen als lijst: kopjes (groot), gerechten/wijnen (middel), beschrijving, prijs en allergenen.
+// Werkt op de vaste opmaak van de Lilou-app-kaarten; lukt het niet, dan opent de kaart gewoon als pdf.
+const _menuCache = {};
+async function parseMenuPdf(path) {
+  if (_menuCache[path]) return _menuCache[path];
+  const lib = await loadPdfjs();
+  const blob = await store.attachmentBlob(path);
+  const doc = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()), isEvalSupported: false }).promise;
+  const out = []; let group = '', section = '', item = null, afterSection = false;
+  const push = () => { if (item) out.push(item); item = null; };
+  for (let pn = 1; pn <= doc.numPages; pn++) {
+    const page = await doc.getPage(pn);
+    const vh = page.getViewport({ scale: 1 }).height;
+    const tc = await page.getTextContent();
+    const parts = tc.items.filter(t => t.str && t.str.trim()).map(t => ({ s: t.str, x: t.transform[4], w: t.width || 0, y: vh - t.transform[5], size: Math.round(Math.hypot(t.transform[2], t.transform[3]) * 10) / 10 }));
+    if (parts.some(t => t.size >= 28)) { push(); continue; }   // voorpagina of inhoud
+    parts.sort((a, b) => a.y - b.y || a.x - b.x);
+    const lines = [];
+    parts.forEach(t => { const l = lines.find(l => Math.abs(l.y - t.y) <= 3.5); if (l) { l.parts.push(t); l.size = Math.max(l.size, t.size); } else lines.push({ y: t.y, size: t.size, parts: [t] }); });
+    lines.sort((a, b) => a.y - b.y);
+    let prevName = false;
+    // tekst van een regel; alleen een spatie waar in de pdf ook ruimte zit (geen "‘ Fanatic ’")
+    const join = ps => ps.sort((a, b) => a.x - b.x).reduce((acc, t, i, arr) => acc + (i && t.x - (arr[i - 1].x + arr[i - 1].w) > 1.2 && !/\s$/.test(acc) && !/^\s/.test(t.s) ? ' ' : '') + t.s, '').replace(/\s+/g, ' ').trim();
+    for (const l of lines) {
+      const big = l.parts.filter(t => t.size >= l.size - 0.5);   // alleen de grootste letter (kopje zonder ondertitel)
+      const txt = join(l.parts.slice());
+      const bigTxt = join(big.slice());
+      if (l.size <= 10.5 || !txt) continue;                       // kop- en voetregel
+      if (l.size >= 21) { push(); group = bigTxt; section = ''; afterSection = false; prevName = false; continue; }
+      if (l.size >= 16.5) { push(); section = bigTxt; afterSection = true; prevName = false; continue; }
+      if (l.size >= 14.6 && !/€/.test(txt)) {
+        if (prevName && item && !item.lines.length) { item.name += ' ' + txt; continue; }
+        push(); afterSection = false; prevName = true;
+        const tag = (txt.match(/\s(VEGA|VEGAN|NIEUW|BIJ [0-9 &]+ GANGEN|\d+ stuks)$/i) || [])[1] || '';
+        item = { group, section, name: tag ? txt.slice(0, -tag.length).trim() : txt, tag, lines: [], price: '', allergens: '' };
+        continue;
+      }
+      prevName = false;
+      if (/^ALLERGENEN\b/i.test(txt)) { if (item) item.allergens = txt.replace(/^ALLERGENEN\s*/i, ''); continue; }
+      if (/€/.test(txt)) {
+        // labels (GLAS, FLES, PRIJS, ½ FLES) en bedragen staan los in de pdf: op volgorde koppelen
+        const labels = (txt.replace(/€\s*[\d.,]+/g, ' ').match(/½\s*FLES|[A-Za-zÀ-ÿ]+/gi) || []).map(x => x.trim());
+        const vals = txt.match(/€\s*[\d.,]+/g) || [];
+        const cap = t => t.charAt(0) + t.slice(1).toLowerCase();
+        const price = vals.map((v, i) => (labels[i] && !/^prijs$/i.test(labels[i]) ? cap(labels[i]) + ' ' : '') + v.replace(/\s+/, ' ')).join(' · ');
+        if (item) item.price = item.price ? item.price + ' · ' + price : price; else if (section) out.push({ group, section, name: section, tag: '', lines: [], price, allergens: '' });
+        continue;
+      }
+      if (afterSection && !item) { continue; }                     // ondertitel bij een kopje (bv. "To start")
+      if (!item) continue;
+      const last = item.lines[item.lines.length - 1];
+      if (last && last.length > 38 && !/[.:]$/.test(last)) item.lines[item.lines.length - 1] = last + ' ' + txt; else item.lines.push(txt);
+    }
+  }
+  push();
+  return (_menuCache[path] = out);
+}
+async function menuList(c) {
+  let items;
+  try { items = await parseMenuPdf(c.file_path); } catch (e) { items = []; }
+  if (items.length < 3) return fileViewer(c.file_path, c.title, c.file_type);   // geen app-kaart: gewoon de pdf
+  const secs = [];
+  items.forEach(it => { const k = it.group + '|' + it.section; if (!secs.some(x => x.k === k)) secs.push({ k, group: it.group, section: it.section || it.group }); });
+  secs.forEach(x => { x.label = secs.filter(y => y.section === x.section).length > 1 ? `${x.section} · ${x.group.replace(/^Per /i, '').toLowerCase()}` : x.section; });
+  let cur = 'alle', q = '';
+  const dlg = document.createElement('dialog');
+  dlg.className = 'viewer menulist';
+  dlg.setAttribute('aria-labelledby', 'ml-name');
+  dlg.innerHTML = `<div class="viewer-bar"><strong class="viewer-name" id="ml-name">${esc(c.title)}</strong><button type="button" class="btn sm" data-mlpdf>Als kaart</button><button type="button" class="x" data-mlclose aria-label="Sluiten">×</button></div>
+    <div class="ml-tools"><input type="search" placeholder="Zoeken, bv. truffel of Bourgogne" aria-label="Zoeken in ${esc(c.title)}" data-mlq>
+      <div class="ml-chips" role="tablist">${[{ k: 'alle', label: 'Alles' }, ...secs].map(x => `<button type="button" role="tab" data-mlsec="${esc(x.k)}" class="${x.k === 'alle' ? 'on' : ''}">${esc(x.label)}</button>`).join('')}</div></div>
+    <div class="ml-body" data-mlbody></div>`;
+  document.body.append(dlg);
+  const body = $('[data-mlbody]', dlg);
+  const norm = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const draw = () => {
+    const nq = norm(q.trim());
+    const show = items.filter(it => (cur === 'alle' || it.group + '|' + it.section === cur) && (!nq || norm([it.name, it.tag, ...it.lines, it.section].join(' ')).includes(nq)));
+    let lastK = '';
+    body.innerHTML = show.length ? show.map(it => {
+      const k = it.group + '|' + it.section, head = k !== lastK ? `<h3 class="ml-sec">${esc(secs.find(x => x.k === k)?.label || it.section)}</h3>` : ''; lastK = k;
+      const unknown = !it.allergens || /niet bekend/i.test(it.allergens);
+      return `${head}<article class="ml-item"><div class="ml-top"><strong>${esc(it.name)}</strong>${it.tag ? `<span class="pill">${esc(it.tag)}</span>` : ''}</div>
+        ${it.lines.map(l => `<p>${esc(l)}</p>`).join('')}
+        ${it.price ? `<p class="ml-price">${esc(it.price)}</p>` : ''}
+        ${it.allergens ? `<p class="ml-all ${unknown ? 'unk' : ''}"><b>Allergenen</b> ${esc(it.allergens)}</p>` : ''}</article>`;
+    }).join('') : '<p class="hint" style="padding:16px">Niets gevonden.</p>';
+    body.scrollTop = 0;
+  };
+  dlg.addEventListener('close', () => { if (dlg.parentNode) dlg.parentNode.removeChild(dlg); });
+  dlg.addEventListener('click', ev => {
+    if (ev.target.closest('[data-mlclose]')) return dlg.close();
+    if (ev.target.closest('[data-mlpdf]')) { dlg.close(); return fileViewer(c.file_path, c.title, c.file_type); }
+    const b = ev.target.closest('[data-mlsec]'); if (b) { cur = b.dataset.mlsec; $$('[data-mlsec]', dlg).forEach(x => x.classList.toggle('on', x === b)); b.scrollIntoView({ inline: 'center', block: 'nearest' }); draw(); }
+  });
+  $('[data-mlq]', dlg).addEventListener('input', ev => { q = ev.target.value; draw(); });
+  draw();
+  dlg.showModal();
+}
 async function staticBlob(path) {
   const r = await fetch(path.slice(7), { cache: 'no-cache' });
   if (!r.ok) throw new Error('Bestand niet gevonden');
@@ -1209,7 +1308,7 @@ async function viewKaarten(el) {
       </div>`).join('')}</div>`
       : `<div class="card empty">${mgr ? 'Nog geen kaarten. Tik op <strong>+ Kaart toevoegen</strong> en kies een pdf of foto van de menukaart, wijnkaart of bites.' : 'De kaarten staan hier zodra de directie ze heeft toegevoegd.'}</div>`}`;
   el.onclick = async ev => {
-    const o = ev.target.closest('[data-kopen]'); if (o) { const c = cards.find(x => x.id === o.dataset.kopen); return fileViewer(c.file_path, c.title, c.file_type); }
+    const o = ev.target.closest('[data-kopen]'); if (o) { const c = cards.find(x => x.id === o.dataset.kopen); return /pdf/.test(c.file_type || '') ? menuList(c) : fileViewer(c.file_path, c.title, c.file_type); }
     if (ev.target.closest('[data-kadd]')) return menuCardDialog();
     const e = ev.target.closest('[data-kedit]'); if (e) return menuCardDialog(cards.find(x => x.id === e.dataset.kedit));
     const d = ev.target.closest('[data-kdel]');
@@ -1233,7 +1332,7 @@ function menuCardDialog(c = {}) {
         await store.saveMenuCard(rec);
         if (old && !old.startsWith('static:') && store.deleteAttachment) store.deleteAttachment(old).catch(() => {});
       } else await store.saveMenuCard(rec);
-      toast(isNew ? 'Kaart toegevoegd' : 'Kaart bijgewerkt'); rerender();
+      delete _menuCache[c.file_path]; toast(isNew ? 'Kaart toegevoegd' : 'Kaart bijgewerkt'); rerender();
     },
   });
 }
