@@ -264,6 +264,23 @@ function demoStore() {
       return { email: e.email, demo: true };
     },
     async privates() { db.private ||= {}; return clone(Object.values(db.private).filter(p => isMgr() || p.employee_id === mem)); },
+    // profiel (demo): alle voorbeeldmedewerkers hebben het al ingevuld
+    _profiles() { db.profiles ||= Object.fromEntries(db.employees.map((e, i) => [e.id, { employee_id: e.id, emergency: i % 2 ? [] : [{ name: 'Ouder van ' + e.name.split(' ')[0], relation: 'ouder', phone: '06 1234 56' + String(10 + i) }], shirt_size: ['S', 'M', 'L'][i % 3], share_phone: i % 3 !== 2, done_at: new Date().toISOString() }])); return db.profiles; },
+    async myProfile() { const f = this._profiles()[mem] || {}, e = db.employees.find(x => x.id === mem) || {}; return clone({ phone: e.phone || null, birth_date: (db.private || {})[mem]?.birth_date || null, emergency: f.emergency || [], shirt_size: f.shirt_size || null, share_phone: !!f.share_phone, done_at: f.done_at || null }); },
+    async saveMyProfile(v) {
+      const okTel = t => /^[0-9 +()-]{6,20}$/.test(String(t || '').trim());
+      if (!okTel(v.phone)) throw new Error('Vul een geldig telefoonnummer in.');
+      if (!v.birth_date || v.birth_date < '1930-01-01' || v.birth_date > iso(addDays(new Date(), -365.25 * 13))) throw new Error('Vul een geldige geboortedatum in.');
+      const em = (v.emergency || []).filter(x => (x.name || '').trim() || (x.phone || '').trim());
+      if (em.some(x => !(x.name || '').trim() || !okTel(x.phone))) throw new Error('Vul bij een noodcontact een naam en een geldig telefoonnummer in.');
+      const e = db.employees.find(x => x.id === mem); e.phone = v.phone.trim();
+      db.private ||= {}; db.private[mem] = { ...(db.private[mem] || { employee_id: mem }), birth_date: v.birth_date };
+      const pr = this._profiles(); pr[mem] = { employee_id: mem, emergency: em.slice(0, 2), shirt_size: v.shirt_size || null, share_phone: !!v.share_phone, done_at: pr[mem]?.done_at || new Date().toISOString() };
+      save();
+    },
+    async profileOf(id) { if (!isMgr()) return null; return clone(this._profiles()[id] || null); },
+    async emergencyContacts() { if (!canPlan()) return []; const pr = this._profiles(); return clone(db.employees.filter(e => e.active !== false && pr[e.id]?.emergency?.length).map(e => ({ employee_id: e.id, name: e.name, emergency: pr[e.id].emergency })).sort((a, b) => a.name.localeCompare(b.name))); },
+    async teamPhones() { const pr = this._profiles(); return clone(db.employees.filter(e => e.active !== false && pr[e.id]?.share_phone && e.phone).map(e => ({ employee_id: e.id, name: e.name, position: e.position, phone: e.phone })).sort((a, b) => a.name.localeCompare(b.name))); },
     async savePrivate(p) {
       if (!isMgr()) throw new Error('Geen rechten');
       db.private ||= {};
@@ -769,6 +786,11 @@ async function supabaseStore() {
     },
     async attachmentUrl(path) { const { data } = await sb.storage.from('mededelingen').createSignedUrl(path, 3600); return data?.signedUrl || ''; },
     async menuCards() { return ok(await sb.from('menu_cards').select('*').order('sort').order('title')) || []; },
+    async myProfile() { return ok(await sb.rpc('my_profile')); },
+    async saveMyProfile(v) { ok(await sb.rpc('save_my_profile', { p_phone: v.phone, p_birth: v.birth_date, p_emergency: v.emergency || [], p_shirt: v.shirt_size || null, p_share: !!v.share_phone })); },
+    async profileOf(id) { return ok(await sb.from('employee_profile').select('*').eq('employee_id', id).maybeSingle()); },
+    async emergencyContacts() { return ok(await sb.rpc('emergency_contacts')) || []; },
+    async teamPhones() { return ok(await sb.rpc('team_phones')) || []; },
     async saveMenuCard(c) {
       const row = { title: c.title, file_path: c.file_path, file_name: c.file_name, file_type: c.file_type, updated_at: new Date().toISOString(), updated_by: S.me.id };
       if ('items' in c) row.items = c.items;   // eigen gerechtenlijst (null = weer uit de pdf lezen)
@@ -1106,6 +1128,49 @@ async function handleSession(r) {
   const hv = location.hash.slice(1).split(':');
   if (tabsFor().some(([k]) => k === hv[0]) || hv[0] === 'lijsten' || (isMgr() && hv[0] === 'instellingen')) { S.view = hv[0]; if (hv[1]) S.reqTab = hv[1]; }
   renderShell();
+  checkProfile();
+}
+// Eerste keer (of nog niet ingevuld): "Maak je profiel af"
+async function checkProfile() {
+  try { const p = await store.myProfile(); if (p && !p.done_at && !document.querySelector('dialog[open]')) profileDialog(p, true); } catch (e) { /* database nog niet bijgewerkt: niet storen */ }
+}
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
+async function profileDialog(p, first = false) {
+  if (!p) { try { p = await store.myProfile(); } catch (e) { return toast(errMsg(e), 'error'); } }
+  p ||= {};
+  const em = [...(p.emergency || []), {}, {}].slice(0, 2);
+  const ice = (x, i) => `<div class="icebox"><div class="row keep"><label class="field">Naam<input name="ice_name${i}" maxlength="60" value="${esc(x.name || '')}" placeholder="bv. Anna"></label><label class="field">Relatie<input name="ice_rel${i}" maxlength="30" value="${esc(x.relation || '')}" placeholder="bv. moeder"></label></div>
+    <label class="field">Telefoon<input type="tel" name="ice_phone${i}" maxlength="20" value="${esc(x.phone || '')}" placeholder="06 12345678"></label></div>`;
+  openDialog(first ? 'Maak je profiel af' : 'Mijn profiel', `
+    ${first ? `<p style="margin:0">Welkom${S.me?.name ? ', ' + esc(S.me.name.split(' ')[0]) : ''}! Vul dit één keer in. Aanpassen kan later altijd via <strong>Meer → Mijn profiel</strong>.</p>` : ''}
+    <div class="row keep"><label class="field">Telefoonnummer<input type="tel" name="phone" required maxlength="20" value="${esc(p.phone || '')}" placeholder="06 12345678"></label>
+      <label class="field">Geboortedatum<input type="date" name="birth_date" required value="${esc(p.birth_date || '')}"></label></div>
+    <label class="field">Maat blouse<select name="shirt_size" required><option value="">Kies je maat</option>${SIZES.map(z => `<option ${p.shirt_size === z ? 'selected' : ''}>${z}</option>`).join('')}</select></label>
+    <fieldset class="choice"><legend>Noodcontact</legend><p class="hint" style="margin:0 0 6px">Wie bellen we als je op je werk onwel wordt of iets overkomt?</p>
+      ${ice(em[0], 0)}
+      <details class="ice2" ${em[1].name ? 'open' : ''}><summary>Tweede noodcontact (optioneel)</summary>${ice(em[1], 1)}</details></fieldset>
+    <label class="check"><input type="checkbox" name="share_phone" ${p.share_phone ? 'checked' : ''}> <span>Collega's mogen mijn telefoonnummer zien in de <strong>telefoonlijst</strong> (handig om diensten te ruilen)</span></label>
+    <p class="hint">Je noodcontact zien alleen de directie en de shiftleader. Je geboortedatum en maat ziet alleen de directie. Medische informatie hoort hier niet in. Meer in de <a href="privacy.html" target="_blank" rel="noopener">privacyverklaring</a>.</p>
+    <div class="dlg-foot"><button type="button" class="btn" data-close>${first ? 'Later' : 'Annuleren'}</button><button class="btn primary" value="save">Opslaan</button></div>`, {
+    async onSubmit(fd) {
+      const g = k => String(fd.get(k) || '').trim();
+      const emergency = [0, 1].map(i => ({ name: g('ice_name' + i), relation: g('ice_rel' + i), phone: g('ice_phone' + i) })).filter(x => x.name || x.phone);
+      await store.saveMyProfile({ phone: g('phone'), birth_date: g('birth_date'), shirt_size: g('shirt_size'), emergency, share_phone: !!fd.get('share_phone') });
+      S.me.phone = g('phone');
+      toast(first ? 'Dank je! Je profiel is klaar.' : 'Profiel opgeslagen');
+    },
+  });
+}
+const waLink = t => { let d = String(t || '').replace(/[^\d+]/g, ''); if (d.startsWith('+')) d = d.slice(1); else if (d.startsWith('00')) d = d.slice(2); else if (d.startsWith('0')) d = '31' + d.slice(1); return 'https://wa.me/' + d; };
+async function phonesDialog() {
+  let list = [], me = null;
+  try { [list, me] = await Promise.all([store.teamPhones(), store.myProfile().catch(() => null)]); } catch (e) { return toast(errMsg(e), 'error'); }
+  openDialog('Telefoonlijst', `${list.length ? `<ul class="phonelist">${list.map(x => `<li><span><strong>${esc(x.name)}</strong><small>${esc(x.position || '')}</small></span>
+      <a class="btn sm" href="tel:${esc(String(x.phone).replace(/[^\d+]/g, ''))}">${ico('phone')}Bellen</a><a class="btn sm" href="${esc(waLink(x.phone))}" target="_blank" rel="noopener">WhatsApp</a></li>`).join('')}</ul>`
+      : '<p class="hint">Nog niemand deelt zijn nummer.</p>'}
+    <p class="hint">Alleen collega's die dat zelf hebben aangezet staan hier.${me && !me.share_phone ? ' Jouw nummer staat er nog niet in: zet het aan bij <button type="button" class="linkbtn" data-goprof>Mijn profiel</button>.' : ''}</p>
+    <div class="dlg-foot"><button type="button" class="btn primary" data-close>Sluiten</button></div>`,
+  { onReady: d => { const b = $('[data-goprof]', d); if (b) b.onclick = () => { d.close(); profileDialog(); }; } });
 }
 
 /* ================= Shell ================= */
@@ -1125,7 +1190,7 @@ function renderShell() {
     <header class="topbar"><div class="topbar-inner">
       <div class="brand">${CFG.logo ? `<div class="stack-brand"><img class="wordmark light" src="${esc(CFG.logo)}" alt="${esc(CFG.bedrijf)}"><img class="wordmark dark" src="${esc(CFG.logoDark || CFG.logo)}" alt="${esc(CFG.bedrijf)}"><div class="sub">Rooster · ${isMgr() ? 'Leiding' : S.me.role === 'planner' ? 'Shiftleader' : esc(S.me.position || 'Team')}</div></div>` : `<div class="logo">${letter}</div><div><strong>${esc(CFG.appName)}</strong><small>${isMgr() ? 'Leidinggevende' : esc(S.me.position || 'Medewerker')}</small></div>`}</div>
       <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !canPlan() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l === 'Mijn rooster' ? 'Rooster' : l}</span>${(isMgr() ? k === 'aanvragen' : k === 'diensten') ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}<button class="tab tab-more" data-more aria-label="Meer" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg><span class="tl">Meer</span><span class="ts">Meer</span></button></nav>
-      <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon bell" data-bell title="Meldingen" aria-label="Meldingen">${ICON.bell}<span class="ncount hidden" data-ncount></span></button>${isMgr() ? `<button class="btn ghost icon" data-gosettings title="Instellingen" aria-label="Instellingen">${ICON.settings}</button>` : ''}<button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
+      <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon bell" data-bell title="Meldingen" aria-label="Meldingen">${ICON.bell}<span class="ncount hidden" data-ncount></span></button>${isMgr() ? `<button class="btn ghost icon" data-gosettings title="Instellingen" aria-label="Instellingen">${ICON.settings}</button>` : ''}<button class="btn ghost icon" data-myprofile title="Mijn profiel" aria-label="Mijn profiel">${ico('user')}</button><button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
     </div></header>
     <main id="view"></main>
     ${store.demo ? '' : `<footer class="app-foot">${LEGAL}</footer>`}`;
@@ -1133,6 +1198,7 @@ function renderShell() {
   const mb = $('[data-more]'); if (mb) mb.onclick = moreSheet;
   const gs = $('[data-gosettings]'); if (gs) gs.onclick = () => go('instellingen');
   $('[data-logout]').onclick = signOut;
+  $('[data-myprofile]').onclick = () => profileDialog();
   $('[data-bell]').onclick = notifPanel;
   clearInterval(S.poll); S.poll = setInterval(refreshBadge, 60000);
   go(S.view);
@@ -1453,8 +1519,10 @@ function moreSheet() {
     ...rest.map(([k, l]) => row(`data-mgo="${k}"`, ICON[k === 'planning' && !canPlan() ? 'team' : k] || '', esc(l))),
     ...(isMgr() ? [] : [row('data-mgo="mijnuren"', ico('clock'), 'Mijn gewerkte uren')]),
     ...(isMgr() ? [row('data-mgo="instellingen"', ICON.settings, 'Instellingen')] : []),
+    row('data-mprofile', ico('user'), 'Mijn profiel'),
+    row('data-mphones', ico('phone'), 'Telefoonlijst'),
     row('data-mrules', ico('book'), 'Afspraken'),
-    row('data-mnood', ico('phone'), 'Noodnummers'),
+    row('data-mnood', ico('alert'), 'Noodnummers'),
     row('data-mout', ICON.logout, 'Uitloggen'),
   ];
   const dlg = document.createElement('dialog');
@@ -1468,6 +1536,8 @@ function moreSheet() {
     const g = ev.target.closest('[data-mgo]'); if (g) { dlg.close(); return go(g.dataset.mgo); }
     if (ev.target.closest('[data-mrules]')) { dlg.close(); return rulesViewer(); }
     if (ev.target.closest('[data-mnood]')) { dlg.close(); return noodDialog(); }
+    if (ev.target.closest('[data-mprofile]')) { dlg.close(); return profileDialog(); }
+    if (ev.target.closest('[data-mphones]')) { dlg.close(); return phonesDialog(); }
     if (ev.target.closest('[data-mout]')) { dlg.close(); return signOut(); }
   });
   dlg.showModal();
@@ -2066,8 +2136,17 @@ function noodDialog() {
     <div class="noodtips"><p><strong>Brand:</strong> alarm slaan, gasten rustig naar buiten, deuren dicht, verzamelen buiten. Nooit terug naar binnen.</p>
     <p><strong>Gaslucht:</strong> geen schakelaars of vuur, ramen open, gaskraan dicht, iedereen naar buiten, dan bellen.</p>
     <p><strong>Allergische reactie:</strong> bel 112, help met de adrenalinepen, haal de BHV'er en bewaar het gerecht en de bon.</p></div>
+    ${canPlan() ? '<div class="icelist" data-icelist><h3 class="small-h">Noodcontact van een medewerker</h3><p class="hint">Laden…</p></div>' : ''}
     <div class="dlg-foot"><button type="button" class="btn" data-noodrules>Alle afspraken</button><button type="button" class="btn primary" data-close>Sluiten</button></div>`,
-  { onReady: dlg => { $('[data-noodrules]', dlg).onclick = () => { dlg.close(); rulesViewer({ hash: 'veiligheid' }); }; } });
+  { onReady: dlg => {
+    $('[data-noodrules]', dlg).onclick = () => { dlg.close(); rulesViewer({ hash: 'veiligheid' }); };
+    const box = $('[data-icelist]', dlg);
+    if (box) store.emergencyContacts().then(list => {
+      box.innerHTML = `<h3 class="small-h">Noodcontact van een medewerker</h3>${list.length ? `<label class="field"><span class="sr">Kies een medewerker</span><select data-icesel><option value="">Kies een medewerker…</option>${list.map(x => `<option value="${esc(x.employee_id)}">${esc(x.name)}</option>`).join('')}</select></label><div data-iceout></div>` : '<p class="hint">Nog niemand heeft een noodcontact ingevuld.</p>'}`;
+      const sel = $('[data-icesel]', box);
+      if (sel) sel.onchange = () => { const x = list.find(y => y.employee_id === sel.value); $('[data-iceout]', box).innerHTML = x ? x.emergency.map(c => `<a class="nood" href="tel:${esc(String(c.phone).replace(/[^\d+]/g, ''))}"><span>${esc(c.name)}${c.relation ? ' · ' + esc(c.relation) : ''}</span><strong>${esc(c.phone)}</strong></a>`).join('') : ''; };
+    }).catch(() => { box.innerHTML = '<p class="hint">Noodcontacten konden niet worden geladen.</p>'; });
+  } });
 }
 // De afspraken in de app zelf openen; medewerkers tekenen onderaan voor gelezen en akkoord
 function rulesViewer({ ack = false, hash = '' } = {}) {
@@ -3149,6 +3228,7 @@ async function viewMine(el) {
     ${sel ? '' : `<div class="homemore">
       <button type="button" class="card lhome" data-gohours><span><strong>${ico('clock')}Mijn gewerkte uren</strong><small>Per week, met je kloktijden en wat is goedgekeurd</small></span><span class="chev">›</span></button>
       <button type="button" class="card lhome" data-gokaarten><span><strong>${ico('book')}Menukaart & wijnkaart</strong><small>Snel even kijken wat er op de kaart staat</small></span><span class="chev">›</span></button>
+      <button type="button" class="card lhome" data-phones><span><strong>${ico('user')}Telefoonlijst</strong><small>Collega's die hun nummer delen, met Bellen en WhatsApp</small></span><span class="chev">›</span></button>
       <button type="button" class="card lhome" data-nood><span><strong>${ico('phone')}Noodnummers</strong><small>112, gaslucht, huisartsenpost${CFG.sickPhone ? ', ziek melden' : ''}</small></span><span class="chev">›</span></button>
       ${rulesH ? '' : `<button type="button" class="card lhome" data-rulesview><span><strong>${ico('book')}Afspraken</strong><small>Alle regels: service, allergenen, hygiëne en meer</small></span><span class="chev">›</span></button>`}
     </div>`}
@@ -3168,6 +3248,7 @@ async function viewMine(el) {
     if (ev.target.closest('[data-gohours]')) return go('mijnuren');
     if (ev.target.closest('[data-nood]')) return noodDialog();
     if (ev.target.closest('[data-gokaarten]')) return go('kaarten');
+    if (ev.target.closest('[data-phones]')) return phonesDialog();
     if (ev.target.closest('[data-allweeks]')) return $('#weken', el)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (ev.target.closest('[data-rulesread]')) return rulesViewer({ ack: true });
     if (ev.target.closest('[data-rulesview]')) return rulesViewer();
@@ -3493,6 +3574,7 @@ function employeeDialog(e, priv = {}, reqs = []) {
       </div>
       ${isNew ? '' : `<p class="hint">Verlof ${bal.year}: ${fmtH(bal.opening)} meegenomen uit ${bal.year - 1} + ${fmtH(bal.entitlement)} recht − ${fmtH(bal.used)} opgenomen = <strong>${fmtH(bal.rest)} uur over</strong>${bal.pending ? ` · ${bal.pending} ${bal.pending === 1 ? 'aanvraag' : 'aanvragen'} open` : ''}</p>`}
       <p class="hint">De geboortedatum gebruikt de app voor de jongerenregels uit de Arbeidstijdenwet.</p>
+      ${isNew ? '' : '<div class="profbox" data-profbox><span class="hint">Profiel laden…</span></div>'}
     </fieldset>
     ${isNew ? '' : `<div class="futbox"><div class="req-actions"><button type="button" class="btn sm" data-allshifts>${ico('user')}Alle diensten bekijken</button><button type="button" class="btn sm" data-futshifts>🗓️ Komende diensten uit het rooster halen…</button></div><span class="hint">Bijvoorbeeld als iemand stopt of langere tijd niet werkt. Alles vanaf een datum in één keer.</span></div>`}
     ${isNew ? '' : '<details class="history" data-history><summary>Geschiedenis van wijzigingen</summary><div class="hint">Laden…</div></details>'}
@@ -3503,6 +3585,12 @@ function employeeDialog(e, priv = {}, reqs = []) {
       <span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button>
     </div>`, {
     onReady(dlg) {
+      const pb = $('[data-profbox]', dlg);
+      if (pb) store.profileOf(e.id).then(f => {
+        pb.innerHTML = !f || !f.done_at ? '<p class="hint" style="margin:0"><strong>Profiel:</strong> nog niet ingevuld door de medewerker.</p>'
+          : `<p class="hint" style="margin:0"><strong>Profiel</strong> (ingevuld door ${esc((e.name || '').split(' ')[0])}): maat blouse <strong>${esc(f.shirt_size || '—')}</strong> · nummer gedeeld met collega's: ${f.share_phone ? 'ja' : 'nee'}</p>
+             ${(f.emergency || []).length ? `<ul class="icemini">${f.emergency.map(c => `<li>Noodcontact: <strong>${esc(c.name)}</strong>${c.relation ? ' (' + esc(c.relation) + ')' : ''} · <a href="tel:${esc(String(c.phone).replace(/[^\d+]/g, ''))}">${esc(c.phone)}</a></li>`).join('')}</ul>` : '<p class="hint" style="margin:4px 0 0">Geen noodcontact ingevuld.</p>'}`;
+      }).catch(() => { pb.innerHTML = ''; });
       const ctSel = $('[name=contract_type]', dlg);
       const CTHINT = { vast: '', minmax: 'Min-max: je plant tussen het minimum en maximum. De planning waarschuwt bij te weinig of te veel uren.', nuluren: 'Nuluren: geen vaste uren. Roep minstens 4 dagen vooraf op en betaal per oproep minimaal 3 uur. Na 12 maanden moet je een contract met vaste uren aanbieden.', oproep: 'Oproep: geen vaste uren. Roep minstens 4 dagen vooraf op en betaal per oproep minimaal 3 uur. Na 12 maanden moet je een contract met vaste uren aanbieden.', stage: 'Stage of BBL: vul de uren per week in volgens de stage- of leerovereenkomst.' };
       const ctUpd = () => { const v = ctSel.value; $('[data-minrow]', dlg).style.display = v === 'minmax' ? '' : 'none'; $('[data-hlabel]', dlg).textContent = v === 'minmax' ? 'Maximum uren per week' : isFlex({ contract_type: v }) ? 'Gemiddelde uren per week (voor verlof)' : 'Uren per week'; $('[data-cthint]', dlg).textContent = CTHINT[v]; $('[data-cthint]', dlg).style.display = CTHINT[v] ? '' : 'none'; };

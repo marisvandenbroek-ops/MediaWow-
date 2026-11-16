@@ -1201,3 +1201,19 @@ button.ml-item.ml-ed:hover, button.ml-item.ml-ed:focus-visible { border-color: v
   .mhome .mcol > :first-child { margin-top: 0; }
   .mhome .clock-hero { margin-bottom: 18px; }
 }
+
+/* Profiel, telefoonlijst, noodcontacten */
+.icebox { display: grid; gap: 4px; }
+details.ice2 { margin-top: 6px; }
+details.ice2 summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 14px; padding: 6px 0; }
+.phonelist { list-style: none; margin: 0; padding: 0; }
+.phonelist li { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line); }
+.phonelist li:first-child { border-top: 0; }
+.phonelist li > span { flex: 1; min-width: 0; }
+.phonelist strong { display: block; }
+.phonelist small { color: var(--muted); font-size: 13px; }
+.phonelist .btn .ico { width: 15px; height: 15px; }
+.icelist { margin-top: 14px; }
+.icelist .nood { margin-top: 6px; }
+.profbox { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line-strong); }
+.icemini { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }

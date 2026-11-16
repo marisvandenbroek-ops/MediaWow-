@@ -809,6 +809,26 @@ async function test(name, fn) {
     assert.ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'startscherm breder dan de telefoon');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('profiel: nieuwe medewerker maakt profiel af, telefoonlijst en noodcontact voor de leiding', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne');
+    await setDemoDb(p, `const s = db.employees.find(e => e.name.startsWith('Sanne')); db.profiles ||= {}; db.profiles[s.id] = { employee_id: s.id, emergency: [], share_phone: false };`);
+    await p.reload(); if (await p.$('[data-demo]')) await login(p, 'Sanne');
+    await p.waitForSelector('dialog:has-text("Maak je profiel af")');
+    await p.fill('dialog [name=phone]', 'abc'); await p.fill('dialog [name=birth_date]', '2001-04-12'); await p.selectOption('dialog [name=shirt_size]', 'M');
+    await p.click('dialog button[value=save]'); await p.waitForSelector('dialog .dlgerr:has-text("telefoonnummer")');
+    await p.fill('dialog [name=phone]', '06 1234 5678'); await p.fill('dialog [name=ice_name0]', 'Anna'); await p.fill('dialog [name=ice_rel0]', 'moeder'); await p.fill('dialog [name=ice_phone0]', '06 9999 0000');
+    await p.check('dialog [name=share_phone]'); await p.click('dialog button[value=save]'); await p.waitForSelector('.toast:has-text("profiel is klaar")');
+    // telefoonlijst via Meer
+    await p.click('[data-more]'); await p.click('dialog.moresheet [data-mphones]'); await p.waitForSelector('dialog .phonelist li:has-text("Sanne") a[href^="https://wa.me/31612345678"]');
+    await p.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    // directie ziet het noodcontact bij Noodnummers
+    const m = watch(await ctx.newPage()); await m.goto(URL + '#directie'); await m.waitForSelector('[data-demo]'); await login(m, 'Mark');
+    await m.waitForSelector('.dhome'); await m.click('.hlinks [data-nood]'); await m.waitForSelector('dialog [data-icesel]');
+    const sid = (await demoDb(m)).db.employees.find(e => e.name.startsWith('Sanne')).id;
+    await m.selectOption('dialog [data-icesel]', sid); await m.waitForSelector('dialog [data-iceout] a:has-text("Anna")');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1); pages.splice(pages.indexOf(m), 1);
+  });
   await test('kaarten: directie uploadt de menukaart, medewerker opent hem in de app', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#directie'); await login(p, 'Mark');
