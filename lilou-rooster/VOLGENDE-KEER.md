@@ -53,3 +53,9 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Supabase Auth: leaked password protection aan, OTP/e-maillink ≤ 1 uur.
 - Volgende ronde functies: (1) meerdaagse ziekte tot "Ik ben weer beter" + diensten open zetten, (2) startscherm medewerkers: inklokken + volgende dienst bovenaan, (3) shiftleader ziet wie ingeklokt is, (4) Overzicht: Aandacht boven cijfers, (5) settings afschermen voor medewerkers (staff_settings-RPC).
 - Ontwerp (controleur 6,5/10): serif-koppen (Fraunces), uitgeschakelde knoppen, lijn-iconen i.p.v. emoji, Aandacht als takenlijst, compacte Klokken op telefoon, donkere modus-accent, contrast pills. Voor/na en CSS: scratchpad/design-review/ (css1-5.css, voorna.js ICONS, fontdl/ voor Fraunces).
+
+## Stand 16 november
+- Update 28 LIVE (bestanden gecontroleerd, database-migratie update_28_afspraken_controle_instellingen toegepast).
+- Open: Mariëlle moet haar account nog activeren (link in mail of Wachtwoord vergeten).
+- Open: los testaccount (niet gekoppeld) opruimen na akkoord; leaked password protection en e-maillink ≤ 1 uur in Supabase Auth.
+- Volgende ideeën: presentatie aanvullen (fooien, rookplek, schenkmaten, vertrouwenspersoon, eigen foto's), documentenset, Lightspeed-grafiek, recepten-app.
