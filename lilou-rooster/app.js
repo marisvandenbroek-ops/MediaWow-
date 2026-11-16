@@ -1207,7 +1207,9 @@ async function parseMenuPdf(path) {
     const page = await doc.getPage(pn);
     const vh = page.getViewport({ scale: 1 }).height;
     const tc = await page.getTextContent();
-    const parts = tc.items.filter(t => t.str && t.str.trim()).map(t => ({ s: t.str, x: t.transform[4], w: t.width || 0, y: vh - t.transform[5], size: Math.round(Math.hypot(t.transform[2], t.transform[3]) * 10) / 10 }));
+    // ligaturen (ft, fi, fl) die als los teken in de pdf staan weer als letters lezen
+    const LIG = { '\ufb00': 'ff', '\ufb01': 'fi', '\ufb02': 'fl', '\ufb03': 'ffi', '\ufb04': 'ffl', '\ufb05': 'ft', '\ufb06': 'st', '\uf037': 'ft' };
+    const parts = tc.items.map(t => ({ ...t, str: (t.str || '').replace(/[\ufb00-\ufb06\uf037]/g, c => LIG[c]) })).filter(t => t.str && t.str.trim()).map(t => ({ s: t.str, x: t.transform[4], w: t.width || 0, y: vh - t.transform[5], size: Math.round(Math.hypot(t.transform[2], t.transform[3]) * 10) / 10 }));
     if (parts.some(t => t.size >= 28)) { push(); continue; }   // voorpagina of inhoud
     parts.sort((a, b) => a.y - b.y || a.x - b.x);
     const lines = [];
@@ -1233,6 +1235,15 @@ async function parseMenuPdf(path) {
       prevName = false;
       if (/^ALLERGENEN\b/i.test(txt)) { if (item) item.allergens = txt.replace(/^ALLERGENEN\s*/i, ''); continue; }
       if (/€/.test(txt)) {
+        // "4 gangen  € 79" is zelf een regel op de kaart; "Wijnarrangement + € 44" hoort bij de regel erboven
+        const before = txt.split('€')[0].trim();
+        const isLabel = !before || before.split(/\s+/).every(w => /^(glas|fles|½|prijs|karaf|p\.p\.|pp)$/i.test(w));
+        if (!isLabel && /\+$/.test(before) && item) { item.price = (item.price ? item.price + ' · ' : '') + txt.replace(/\s+/g, ' ').replace(/\b([A-Z])([A-Z]{2,})\b/g, (m, a, b) => a + b.toLowerCase()); continue; }
+        if (!isLabel && !/\+$/.test(before)) {
+          push(); afterSection = false;
+          item = { row: true, group, section, name: before, tag: '', lines: [], price: (txt.match(/€\s*[\d.,]+/g) || []).map(v => v.replace(/\s+/, ' ')).join(' · '), allergens: '' };
+          continue;
+        }
         // labels (GLAS, FLES, PRIJS, ½ FLES) en bedragen staan los in de pdf: op volgorde koppelen
         const labels = (txt.replace(/€\s*[\d.,]+/g, ' ').match(/½\s*FLES|[A-Za-zÀ-ÿ]+/gi) || []).map(x => x.trim());
         const vals = txt.match(/€\s*[\d.,]+/g) || [];
@@ -1243,11 +1254,14 @@ async function parseMenuPdf(path) {
       }
       if (afterSection && !item) { continue; }                     // ondertitel bij een kopje (bv. "To start")
       if (!item) continue;
+      // onder een prijsregel ("4 gangen € 79") alleen een korte toevoeging; een lange toelichting (bv. "Allergie of dieetwens?…") hoort er niet bij
+      if (item.row && (item.closed || txt.length > 30)) { item.closed = true; continue; }
       const last = item.lines[item.lines.length - 1];
       if (last && last.length > 38 && !/[.:]$/.test(last)) item.lines[item.lines.length - 1] = last + ' ' + txt; else item.lines.push(txt);
     }
   }
   push();
+  out.forEach(it => { delete it.row; delete it.closed; });
   return (_menuCache[path] = out);
 }
 async function menuList(c) {

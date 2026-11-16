@@ -798,6 +798,9 @@ async function test(name, fn) {
     await s2.click('.kcard:has-text("Menukaart") [data-kopen]');   // standaardkaart uit de map kaarten/: als lijst met filter
     await s2.waitForSelector('dialog.menulist[open] .ml-item', { timeout: 15000 });
     const all = await s2.$$eval('.ml-item', x => x.length);
+    const txt = await s2.$eval('dialog.menulist .ml-body', e => e.innerText);
+    assert.ok(/Kreeft & langoustine/.test(txt), 'ligatuur ft valt weg (Kree)');
+    assert.ok(/4 gangen[\s\S]{0,40}€ 79/.test(txt) && !/Allergie of dieetwens/.test(txt), 'menuprijzen per aantal gangen kloppen niet');
     await s2.click('dialog.menulist [data-mlsec]:text-is("Hoofd")');
     const hoofd = await s2.$$eval('.ml-item', x => x.length);
     assert.ok(hoofd > 0 && hoofd < all, `filter Hoofd werkt niet (${hoofd} van ${all})`);
