@@ -1473,3 +1473,15 @@ fieldset.choice[hidden] { display: none; }
 
 .backlink { background: none; border: 0; padding: 6px 0; min-height: 40px; font: inherit; font-size: 15px; color: var(--accent); cursor: pointer; }
 .backlink:hover { text-decoration: underline; }
+
+/* rooster altijd in beeld op het startscherm */
+.homeroster { margin: 18px 0 8px; }
+.homeroster .weekblock { margin-bottom: 14px; }
+.wk-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 2px 6px; }
+.wk-title h2 { margin: 0; font-size: 19px; }
+.wk-title h2 small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+.wk-title .muted { font-size: 13px; }
+.homeroster .daylist li.today { background: var(--accent-soft, #f6e9e6); }
+.homeroster .daylist li.today .d b, .homeroster .daylist li.today .d span { color: var(--accent); }
+.homeroster .allwk { display: block; margin: 0 auto; }
+.wk-empty { margin: 0; padding: 14px 16px; color: var(--muted); font-size: 14.5px; }

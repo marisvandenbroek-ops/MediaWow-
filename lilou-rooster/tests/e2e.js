@@ -348,7 +348,7 @@ async function test(name, fn) {
     if (await p.$('th.closedday')) assert.strictEqual(await p.$$eval('th.closedday', x => x.length), 7);
     const s2 = watch(await ctx.newPage()); await s2.setViewportSize({ width: 390, height: 844 });
     await s2.goto(URL + '#personeel'); await s2.waitForSelector('[data-demo]'); await login(s2, 'Sanne');
-    await s2.waitForSelector('.closednote:has-text("Zomervakantie")');   // startscherm: melding gesloten
+    await s2.waitForSelector('.closednote:has-text("Zomervakantie"), .daylist li.weekclosed:has-text("Zomervakantie")');   // startscherm: gesloten zichtbaar
     await s2.click('[data-allweeks]');
     for (let i = 0; i < 6 && !(await s2.$('.daylist li.weekclosed:has-text("Zomervakantie")')); i++) { await s2.click('[data-w="1"]'); await s2.waitForTimeout(200); }
     await s2.waitForSelector('.daylist li.weekclosed:has-text("Zomervakantie")');

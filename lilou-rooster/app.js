@@ -3381,8 +3381,7 @@ async function viewMine(el) {
   const [clockHTML, boardH, rulesH] = await Promise.all([sel ? '' : clockHero(todayShift, { mates: todayShift ? withWho(todayShift) : [], next: nextAfter }), boardHTML().catch(() => ''), sel ? '' : rulesBannerHTML()]);
   const srow = (x, withDate) => `<li class="srow k-${shiftKind(x)}">${withDate ? `<span class="sdate ${x.date === today ? 'istoday' : ''}"><small>${x.date === today ? 'vandaag' : DAG[dayIdx(parse(x.date))]}</small><b>${parse(x.date).getDate()}</b></span>` : ''}<span class="sbar"></span><span class="sinfo"><strong>${esc(shiftKindLabel(x))}${x.position ? ` <span class="muted">· ${esc(x.position)}</span>` : ''}</strong><small>${hm(x.start_time)} – ${hm(x.end_time)}${withWho(x).length ? ` · met ${esc(withWho(x).slice(0, 3).join(', '))}${withWho(x).length > 3 ? ' e.a.' : ''}` : ''}</small></span><span class="shrs">${fmtH(shiftHours(x))}u${withDate && shiftWindow(x)[0] > new Date() ? (swapOf(x.id) ? '<small class="swp">ruil loopt</small>' : `<button type="button" class="linkbtn swl" data-swap="${x.id}">Ruilen</button>`) : ''}</span></li>`;
   const upcoming = mine.filter(s => s.date >= today).slice(0, 4);   // vandaag telt mee, ook als de dienst al voorbij is
-  const todayHTML = sel ? '' : `<section class="homesec" hidden><div class="hs-head"><h2>Vandaag</h2><span class="muted small">${esc(fmtShort(today))}</span></div>${todayShift ? `<ul class="srows card">${srow(todayShift, false)}</ul>` : '<p class="hint hs-empty">Geen dienst vandaag.</p>'}</section>
-    <section class="homesec"><div class="hs-head"><h2>Mijn diensten</h2><button type="button" class="linkbtn" data-allweeks>Alle weken ›</button></div>${closedRuns(CFG.specialDays, today, iso(addDays(new Date(), 42))).map(r => `<p class="closednote">${ico('lock')}<span><strong>Gesloten: ${esc(r.label)}</strong> ${esc(r.n > 1 ? fmtShort(r.from) + ' – ' + fmtShort(r.to) : fmtShort(r.from))}</span></p>`).join('')}${upcoming.length ? `<ul class="srows card">${upcoming.map(x => srow(x, true)).join('')}</ul>` : '<p class="hint hs-empty">Diensten verschijnen hier zodra de week is gepubliceerd.</p>'}</section>`;
+  const todayHTML = sel ? '' : `<section class="homesec" hidden><div class="hs-head"><h2>Vandaag</h2><span class="muted small">${esc(fmtShort(today))}</span></div>${todayShift ? `<ul class="srows card">${srow(todayShift, false)}</ul>` : '<p class="hint hs-empty">Geen dienst vandaag.</p>'}</section>`;
   let workedHTML = '';
   if (sel) {
     const [ents0, stM] = await Promise.all([store.entries(iso(sel), iso(addDays(sel, 6))), store.settings()]);
@@ -3394,7 +3393,7 @@ async function viewMine(el) {
     }
   }
 
-  const weekBlock = (mon, showOff, compact) => {
+  const weekBlock = (mon, showOff, compact, title) => {
     const wFrom = iso(mon), wTo = iso(addDays(mon, 6));
     const ws = mine.filter(s => s.date >= wFrom && s.date <= wTo);
     const wl = myLeaves.filter(r => overlaps(r.start_date, r.end_date, wFrom, wTo));
@@ -3416,10 +3415,12 @@ async function viewMine(el) {
       if (lv) items.push(`<li class="off ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${esc(REQ[lv.type])}</strong></div><div class="h"><span class="pill ok">vrij</span></div></li>`);
       else if (showOff) items.push(`<li class="off free ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>Vrij</strong>${fd ? `<small>${esc(fd)}</small>` : ''}</div><div class="h"></div></li>`);
     }
-    if (compact) return `<section class="weekblock"><div class="weekblock-head"><span>${ws.length} dienst${ws.length === 1 ? '' : 'en'}</span><span><strong style="color:var(--text)">${fmtH(h)} uur</strong></span></div><div class="card"><ul class="daylist">${items.join('')}</ul></div></section>`;
+    if (compact) return `<section class="weekblock">${title ? `<div class="wk-title"><h2>${title}</h2><span class="muted">${fmt(mon, { day: 'numeric', month: 'short' })} – ${fmt(addDays(mon, 6), { day: 'numeric', month: 'short' })}</span></div>` : ''}<div class="weekblock-head"><span>${ws.length} dienst${ws.length === 1 ? '' : 'en'}</span><span><strong style="color:var(--text)">${fmtH(h)} uur</strong></span></div><div class="card"><ul class="daylist">${items.join('')}</ul></div></section>`;
     return `<section class="weekblock"><div class="weekblock-head"><h3>Week ${weekNr(mon)} <span class="muted" style="font-family:var(--font);font-weight:400;font-size:13px">· ${fmt(mon, { day: 'numeric', month: 'short' })} – ${fmt(addDays(mon, 6), { day: 'numeric', month: 'short' })}</span></h3><span>${ws.length} dienst${ws.length === 1 ? '' : 'en'} · ${fmtH(h)} uur</span></div><div class="card"><ul class="daylist">${items.join('')}</ul></div></section>`;
   };
 
+  const rosterHTML = sel ? '' : `<div class="homeroster">${weekBlock(start, true, true, `Deze week <small>wk ${weekNr(start)}</small>`)}${(() => { const n0 = addDays(start, 7), f = iso(n0), t = iso(addDays(n0, 6)); const any = mine.some(x => x.date >= f && x.date <= t) || myLeaves.some(r => overlaps(r.start_date, r.end_date, f, t)) || closedRuns(CFG.specialDays, f, t).length;
+      return any ? weekBlock(n0, true, true, `Volgende week <small>wk ${weekNr(n0)}</small>`) : `<section class="weekblock"><div class="wk-title"><h2>Volgende week <small>wk ${weekNr(n0)}</small></h2><span class="muted">${fmt(n0, { day: 'numeric', month: 'short' })} – ${fmt(addDays(n0, 6), { day: 'numeric', month: 'short' })}</span></div><p class="card wk-empty">Nog niet gepubliceerd. Je krijgt een melding zodra het rooster klaar is.</p></section>`; })()}${closedRuns(CFG.specialDays, iso(addDays(start, 14)), iso(addDays(new Date(), 70))).map(r => `<p class="closednote">${ico('lock')}<span><strong>Gesloten: ${esc(r.label)}</strong> ${esc(r.n > 1 ? fmtShort(r.from) + ' – ' + fmtShort(r.to) : fmtShort(r.from))}</span></p>`).join('')}<button type="button" class="linkbtn allwk" data-allweeks>Alle weken bekijken ›</button></div>`;
   let body;
   if (sel) {
     const wl = weekLabel(sel);
@@ -3442,6 +3443,7 @@ async function viewMine(el) {
     ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     <div class="mhome ${sel ? 'sel' : ''}"><div class="mcol">
     ${clockHTML}
+    ${rosterHTML}
     ${todayHTML}
     ${repCard}
     </div><div class="mcol">
