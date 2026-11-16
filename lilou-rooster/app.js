@@ -1175,7 +1175,11 @@ async function checkMe(force = false) {
   }
   Object.assign(S.me, emp); return true;
 }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.me) checkMe(true); });
+const calmRerender = () => { if (document.querySelector('dialog[open]') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return; rerender(); };
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || !S.me) return;
+  if (await checkMe(true) && ['mijn', 'overzicht'].includes(S.view)) calmRerender();   // terug in de app: actuele diensten tonen
+});
 
 // Standaardwaarden uit config.js; de directie kan ze overschrijven op de pagina Instellingen
 const CFG_DEFAULTS = { posities: [...(CFG.posities || [])], diensten: (CFG.diensten || []).map(d => ({ ...d })), toeslagen: { ...(CFG.toeslagen || {}) } };
@@ -4819,7 +4823,11 @@ function ringInfo(d) {
   const dur = ms => { const t = Math.max(0, Math.round(ms / 60000)); return `${Math.floor(t / 60)}:${pad(t % 60)}`; };
   if (m.mode === 'voor') {
     const left = Number(m.start) - now;
-    if (left <= 0) return { big: 'Nu', small: 'je dienst is begonnen', frac: 1, late: true };
+    if (left <= 0) {
+      const end = Number(m.end) || 0, st = Number(m.start);
+      if (end > now) return { big: dur(end - now), small: 'nog te gaan · niet ingeklokt', frac: Math.min(1, Math.max(0.02, (now - st) / (end - st))), late: true };
+      return { big: '0:00', small: 'je dienst zit erop', frac: 1 };
+    }
     return { big: dur(left), small: 'tot je dienst', frac: Math.max(0.04, 1 - left / (3 * 3600e3)) };
   }
   if (m.mode === 'in') {
@@ -4849,7 +4857,7 @@ async function clockHero(todayShift, { mates = [], next = null } = {}) {
   const win = todayShift ? shiftWindow(todayShift) : null;
   let ring = '';
   if (open) ring = `data-mode="in" data-from="${new Date(open.clock_in).getTime()}" data-to="${win && win[1] > new Date(open.clock_in) ? win[1].getTime() : 0}" ${onBreak ? 'data-brk="1"' : ''}`;
-  else if (win && win[1] > new Date()) ring = `data-mode="voor" data-start="${win[0].getTime()}"`;
+  else if (win && win[1] > new Date()) ring = `data-mode="voor" data-start="${win[0].getTime()}" data-end="${win[1].getTime()}"`;
   const ringHTML = ring ? `<div class="ring" data-ring ${ring}><svg viewBox="0 0 160 160" aria-hidden="true"><circle class="ring-track" cx="80" cy="80" r="${RING_R}"/><circle class="ring-arc" cx="80" cy="80" r="${RING_R}" style="stroke-dasharray:${RING_C.toFixed(1)};stroke-dashoffset:${RING_C.toFixed(1)}"/></svg>
       <div class="ring-in"><b data-ringbig></b><small data-ringsmall></small></div></div>` : '';
   const met = mates.length ? 'met ' + (mates.length > 1 ? mates.slice(0, -1).join(', ') + ' en ' + mates[mates.length - 1] : mates[0]) : '';
@@ -4894,7 +4902,17 @@ function bindClock(el) {
   if (!el.isConnected) return;   // oudere laadactie: niet de klok van het huidige scherm stoppen
   clearInterval(S.timer); clearInterval(S.tick);
   paintRing(el);
-  if ($('[data-ring]', el)) { const id = setInterval(() => { if (!el.isConnected) return clearInterval(id); paintRing(el); }, 30000); S.tick = id; }
+  if ($('[data-clockcard]', el)) {
+    let n = 0;
+    const id = setInterval(() => {
+      if (!el.isConnected) return clearInterval(id);
+      paintRing(el); n++;
+      const r = $('[data-ring]', el), now = Date.now();
+      // dienst begint of eindigt, of elke 2 minuten: opnieuw ophalen (rooster kan intussen zijn aangepast)
+      const crossed = r && ((r.dataset.start && Math.abs(now - Number(r.dataset.start)) < 31000) || (r.dataset.end && Math.abs(now - Number(r.dataset.end)) < 31000) || (r.dataset.to && Math.abs(now - Number(r.dataset.to)) < 31000));
+      if (crossed || n % 4 === 0) calmRerender();
+    }, 30000); S.tick = id;
+  }
   if ($('[data-tick]', el)) { const id = setInterval(() => {
     const a = $('[data-tick]', el), b = $('[data-ticks]', el); if (!a || !a.isConnected) return clearInterval(id);
     const d = new Date(); a.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`; b.textContent = `:${pad(d.getSeconds())}`;
