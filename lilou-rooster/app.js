@@ -1388,7 +1388,7 @@ async function viewWeek(el, editable) {
         ${editable || isOpen ? '<span class="chev" aria-hidden="true">›</span>' : ''}</${tag}>`; }).join('');
     const availFree = editable ? avail.filter(a => a.date === ds && a.kind !== 'niet' && !list.some(s => s.employee_id === a.employee_id)) : [];
     const leaveHTML = lv.length ? `<div class="mleaves">${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}</div>` : '';
-    return `<div class="daystrip">${strip}</div>
+    return `<div class="dsrow"><button type="button" class="dsnav" data-wk="-1" aria-label="Vorige week">‹</button><div class="daystrip">${strip}</div><button type="button" class="dsnav" data-wk="1" aria-label="Volgende week">›</button></div>
       <div class="dayhead"><div><h2>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}</h2>${specialDay(ds)?.kind === 'gesloten' ? `<span class="fdtag cl">${ico('lock')}Gesloten · ${esc(specialDay(ds).label)}</span>` : fd ? `<span class="fdtag">${esc(fd)}</span>` : ''}</div><span>${list.length ? `${new Set(list.filter(s => s.employee_id).map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
       ${moneyOn ? moneyHTML(ds, true) : ''}
       ${covOn ? `<div class="cov mcov">${covHTML(ds)}</div>` : ''}
@@ -1458,6 +1458,7 @@ async function viewWeek(el, editable) {
     if (act === 'prev') { S.week = addDays(S.week, -7); S.sel = new Set(); return rerender(); }
     if (act === 'next') { S.week = addDays(S.week, 7); S.sel = new Set(); return rerender(); }
     if (act === 'today') { S.week = mondayOf(new Date()); S.dayWeek = null; S.sel = new Set(); return rerender(); }
+    const wkB = ev.target.closest('[data-wk]'); if (wkB) { S.week = addDays(S.week, 7 * Number(wkB.dataset.wk)); S.dayNext = S.dayI; return rerender(); }
     const dayB = ev.target.closest('[data-day]'); if (dayB) { S.dayI = Number(dayB.dataset.day); return rerender(); }
     const pv = ev.target.closest('[data-pv]'); if (pv) { S.planView = pv.dataset.pv; try { localStorage.setItem('rooster-planview', S.planView); } catch (x) { /* geen opslag */ } return rerender(); }
     if (ev.target.closest('[data-personpick]')) return personPicker(people.filter(e => e.active !== false));

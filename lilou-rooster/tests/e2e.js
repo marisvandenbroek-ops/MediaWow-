@@ -718,6 +718,8 @@ async function test(name, fn) {
     const w1 = await wk(), d1 = await day();
     await swipe('.mlist, .dayhead'); await p.waitForFunction(d => document.querySelector('.dayhead h2')?.textContent !== d, d1);
     assert.strictEqual(await wk(), w1, 'vegen over diensten mag de week niet wisselen (behalve op zondag)');
+    const w2 = await wk(), d2 = await day(); await p.click('[data-wk="1"]'); await p.waitForFunction(w => document.querySelector('.weeknav .label strong')?.textContent !== w, w2);
+    assert.strictEqual((await day()).split(' ')[0], d2.split(' ')[0], 'pijltje: niet dezelfde weekdag');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
   await test('dienst op een vrije dag: vraagt eerst, en waarschuwing in de planning', async () => {

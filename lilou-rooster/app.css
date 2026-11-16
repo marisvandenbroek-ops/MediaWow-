@@ -1091,3 +1091,10 @@ dialog.moresheet::backdrop { background: rgba(43, 22, 17, .35); }
 .clock-hero .demo-loc { border: 0; color: #f9efe6; }
 .clock-hero .demo-loc span { color: #f9efe6; opacity: .9; }
 .clock-hero .demo-loc .filters { background: rgba(0, 0, 0, .15); border: 1px solid rgba(255, 255, 255, .3); }
+
+/* Planning telefoon: pijltjes naast de dagenbalk voor de vorige/volgende week */
+.dsrow { display: flex; align-items: stretch; gap: 4px; margin: 0 0 16px; }
+.dsrow .daystrip { flex: 1; min-width: 0; margin: 0; gap: 3px; }
+.dsnav { flex: none; width: 30px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; color: var(--accent); font-size: 22px; line-height: 1; cursor: pointer; padding: 0; }
+.dsnav:active { background: var(--accent-soft); }
+@media (max-width: 380px) { .dsnav { width: 26px; } .dsrow .ds b { font-size: 17px; } }
