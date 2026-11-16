@@ -4078,7 +4078,7 @@ async function clockHero(todayShift) {
     <p class="ch-sub">${open ? `<span class="ch-dot"></span>` : ''}${sub}</p>
     <div class="ch-btns">${noLoc ? '<p class="ch-note">De werklocatie is nog niet ingesteld. Vraag de directie om dit te doen.</p>' : btns}</div>
     <p class="ch-note">${hasWifi(st) ? ico('wifi') + 'Op de wifi van de zaak of op locatie' : ico('pin') + 'Alleen op de werklocatie'}</p>
-    ${store.demo ? `<div class="demo-loc"><span>Demo – doe alsof ik ben:</span><div class="filters"><button data-demoloc="wifi" class="${S.demoLoc === 'wifi' ? 'active' : ''}">Op de wifi</button><button data-demoloc="op" class="${!S.demoLoc || S.demoLoc === 'op' ? 'active' : ''}">Op locatie (gps)</button><button data-demoloc="thuis" class="${S.demoLoc === 'thuis' ? 'active' : ''}">Thuis</button></div></div>` : ''}
+    ${store.demo ? `<div class="demo-loc"><span>Demo – doe alsof ik ben:</span><div class="filters"><button data-demoloc="wifi" class="${S.demoLoc === 'wifi' ? 'active' : ''}">Op de wifi</button><button data-demoloc="op" class="${!S.demoLoc || S.demoLoc === 'op' ? 'active' : ''}">Op locatie (gps)</button><button data-demoloc="buiten" class="${S.demoLoc === 'buiten' ? 'active' : ''}">Thuis</button></div></div>` : ''}
   </div>`;
 }
 async function clockCard(todayShift) {

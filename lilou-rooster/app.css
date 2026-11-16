@@ -1088,3 +1088,6 @@ dialog.moresheet::backdrop { background: rgba(43, 22, 17, .35); }
 .mrow .chev { color: var(--muted); font-size: 20px; }
 .clock-hero .demo-loc .filters { background: transparent; border-color: rgba(255, 255, 255, .3); }
 @media (max-width: 760px) { .page-head [data-rulesmgr], .page-head [data-nood] { display: none; } }
+.clock-hero .demo-loc { border: 0; color: #f9efe6; }
+.clock-hero .demo-loc span { color: #f9efe6; opacity: .9; }
+.clock-hero .demo-loc .filters { background: rgba(0, 0, 0, .15); border: 1px solid rgba(255, 255, 255, .3); }
