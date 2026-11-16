@@ -3218,10 +3218,11 @@ async function viewMine(el) {
   const nowHM = `${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
   const next = mine.find(s => s.date > today || (s.date === today && hm(s.end_time) > nowHM) || (s.date === today && mins(s.end_time) <= mins(s.start_time)));
   const todayShift = mine.find(s => s.date === today);
-  const [clockHTML, boardH, rulesH] = await Promise.all([sel ? '' : clockHero(todayShift), boardHTML().catch(() => ''), sel ? '' : rulesBannerHTML()]);
+  const nextAfter = mine.find(s => s.date > today);
+  const [clockHTML, boardH, rulesH] = await Promise.all([sel ? '' : clockHero(todayShift, { mates: todayShift ? withWho(todayShift) : [], next: nextAfter }), boardHTML().catch(() => ''), sel ? '' : rulesBannerHTML()]);
   const srow = (x, withDate) => `<li class="srow k-${shiftKind(x)}">${withDate ? `<span class="sdate"><small>${DAG[dayIdx(parse(x.date))]}</small><b>${parse(x.date).getDate()}</b></span>` : ''}<span class="sbar"></span><span class="sinfo"><strong>${esc(shiftKindLabel(x))}${x.position ? ` <span class="muted">· ${esc(x.position)}</span>` : ''}</strong><small>${hm(x.start_time)} – ${hm(x.end_time)}${withWho(x).length ? ` · met ${esc(withWho(x).slice(0, 3).join(', '))}${withWho(x).length > 3 ? ' e.a.' : ''}` : ''}</small></span><span class="shrs">${fmtH(shiftHours(x))}u</span></li>`;
   const upcoming = mine.filter(s => s.date > today).slice(0, 3);
-  const todayHTML = sel ? '' : `<section class="homesec"><div class="hs-head"><h2>Vandaag</h2><span class="muted small">${esc(fmtShort(today))}</span></div>${todayShift ? `<ul class="srows card">${srow(todayShift, false)}</ul>` : '<p class="hint hs-empty">Geen dienst vandaag.</p>'}</section>
+  const todayHTML = sel ? '' : `<section class="homesec" hidden><div class="hs-head"><h2>Vandaag</h2><span class="muted small">${esc(fmtShort(today))}</span></div>${todayShift ? `<ul class="srows card">${srow(todayShift, false)}</ul>` : '<p class="hint hs-empty">Geen dienst vandaag.</p>'}</section>
     <section class="homesec"><div class="hs-head"><h2>Komende diensten</h2>${upcoming.length ? '<button type="button" class="linkbtn" data-allweeks>Alles bekijken</button>' : ''}</div>${upcoming.length ? `<ul class="srows card">${upcoming.map(x => srow(x, true)).join('')}</ul>` : '<p class="hint hs-empty">Diensten verschijnen hier zodra de week is gepubliceerd.</p>'}</section>`;
   let workedHTML = '';
   if (sel) {
@@ -3279,7 +3280,7 @@ async function viewMine(el) {
   }
 
   el.innerHTML = `
-    <div class="page-head greet"><div>${sel ? '' : `<p class="g-date">${esc(fmtLong(todayIso()))}</p>`}<h1>${sel ? 'Je rooster' : `${new Date().getHours() < 5 || new Date().getHours() >= 17 ? 'Bonsoir' : 'Bonjour'}, ${esc(S.me.name.split(' ')[0])}.`}</h1>${sel ? '<p>Per week.</p>' : ''}</div>
+    <div class="page-head greet ${sel ? '' : 'center'}"><div>${sel ? '' : `<p class="g-date">${esc(fmtLong(todayIso()))}</p>`}<h1>${sel ? 'Je rooster' : `${new Date().getHours() < 5 || new Date().getHours() >= 17 ? 'Bonsoir' : 'Bonjour'}, ${esc(S.me.name.split(' ')[0])}.`}</h1>${sel ? '<p>Per week.</p>' : ''}</div>
       <div class="head-actions"><button class="btn" data-ics>${ico('cal')}Agenda</button>${sickNow ? '' : `<button class="btn" data-sick>${ico('therm')}Ik ben ziek</button>`}</div></div>
     ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     <div class="mhome ${sel ? 'sel' : ''}"><div class="mcol">
@@ -4629,7 +4630,7 @@ function paintRing(el) {
   const arc = $('.ring-arc', d); arc.style.strokeDashoffset = String(RING_C * (1 - r.frac));
   d.classList.toggle('late', !!r.late);
 }
-async function clockHero(todayShift) {
+async function clockHero(todayShift, { mates = [], next = null } = {}) {
   const [open] = await store.openEntries().then(l => l.filter(e => e.employee_id === S.me.id));
   const st = await store.settings();
   const onBreak = open && open.break_started_at;
@@ -4640,8 +4641,9 @@ async function clockHero(todayShift) {
   else if (win && win[1] > new Date()) ring = `data-mode="voor" data-start="${win[0].getTime()}"`;
   const ringHTML = ring ? `<div class="ring" data-ring ${ring}><svg viewBox="0 0 160 160" aria-hidden="true"><circle class="ring-track" cx="80" cy="80" r="${RING_R}"/><circle class="ring-arc" cx="80" cy="80" r="${RING_R}" style="stroke-dasharray:${RING_C.toFixed(1)};stroke-dashoffset:${RING_C.toFixed(1)}"/></svg>
       <div class="ring-in"><b data-ringbig></b><small data-ringsmall></small></div></div>` : '';
+  const met = mates.length ? 'met ' + (mates.length > 1 ? mates.slice(0, -1).join(', ') + ' en ' + mates[mates.length - 1] : mates[0]) : '';
   const title = todayShift
-    ? `<p class="ch-shift"><strong>${esc(shiftKindLabel(todayShift))} <span class="nowrap">${hm(todayShift.start_time)} – ${hm(todayShift.end_time)}</span></strong>${todayShift.position ? `<small>${esc(todayShift.position)}</small>` : ''}</p>`
+    ? `<p class="ch-shift"><strong>${esc(shiftKindLabel(todayShift))} <span class="nowrap">${hm(todayShift.start_time)} – ${hm(todayShift.end_time)}</span></strong><small>${esc([todayShift.position, met].filter(Boolean).join(' · '))}</small></p>`
     : `<p class="ch-shift"><strong>Geen dienst vandaag</strong><small>Je kunt wel inklokken als je toch werkt.</small></p>`;
   const status = open ? `<p class="ch-status"><span class="ch-dot ${onBreak ? 'brk' : ''}"></span>${onBreak ? 'Pauze sinds ' + tHM(open.break_started_at) : 'Ingeklokt sinds ' + tHM(open.clock_in)} · <span data-live="${open.id}">${fmtDur(entryHours(open))} gewerkt</span></p>` : '';
   const btns = !open
@@ -4651,6 +4653,7 @@ async function clockHero(todayShift) {
     ${ringHTML}${title}${status}
     <div class="ch-btns">${noLoc ? '<p class="ch-note">De werklocatie is nog niet ingesteld. Vraag de directie om dit te doen.</p>' : btns}</div>
     <p class="ch-note">${hasWifi(st) ? ico('wifi') + 'Op de wifi van de zaak of op locatie' : ico('pin') + 'Alleen op de werklocatie'}</p>
+    ${next ? `<p class="ch-next">Volgende: ${esc(fmtShort(next.date))} · ${esc(shiftKindLabel(next).toLowerCase())} <span class="nowrap">${hm(next.start_time)} – ${hm(next.end_time)}</span></p>` : ''}
     ${store.demo ? `<div class="demo-loc"><span>Demo – doe alsof ik ben:</span><div class="filters"><button data-demoloc="wifi" class="${S.demoLoc === 'wifi' ? 'active' : ''}">Op de wifi</button><button data-demoloc="op" class="${!S.demoLoc || S.demoLoc === 'op' ? 'active' : ''}">Op locatie (gps)</button><button data-demoloc="buiten" class="${S.demoLoc === 'buiten' ? 'active' : ''}">Thuis</button></div></div>` : ''}
   </div>`;
 }
