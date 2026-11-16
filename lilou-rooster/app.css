@@ -1193,3 +1193,11 @@ button.ml-item.ml-ed:hover, button.ml-item.ml-ed:focus-visible { border-color: v
 :root[data-theme="dark"] .dhome > .hcard:first-child { background: linear-gradient(135deg, #6e1c06 0%, #8f2d12 100%); box-shadow: none; }
 .mk b { white-space: nowrap; }
 @media (max-width: 440px) { .dhome .minikpis { gap: 5px; } .dhome .minikpis .mk { padding: 8px 7px; } .mk b { font-size: 17px; } .mk span { font-size: 11.5px; } }
+
+/* Startscherm medewerker op laptop: twee rustige kolommen, niet over de hele breedte */
+#view > .page-head, #view > .sickbanner, #view > .mhome, #view > .mine-filter { max-width: 1100px; }
+@media (min-width: 900px) {
+  .mhome:not(.sel) { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0 28px; align-items: start; max-width: 1100px; }
+  .mhome .mcol > :first-child { margin-top: 0; }
+  .mhome .clock-hero { margin-bottom: 18px; }
+}
