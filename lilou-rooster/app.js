@@ -567,6 +567,7 @@ function demoStore() {
     async notifications() { return clone(db.notifications.filter(n => n.employee_id === mem)).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 60); },
     async markRead(ids) { const t = new Date().toISOString(); db.notifications.forEach(n => { if (n.employee_id === mem && !n.read_at && (!ids || ids.includes(n.id))) n.read_at = t; }); save(); },
     async savePushSub() { /* demo: niets */ },
+    async pushTest() { notify(mem, 'Testmelding', 'Zie je dit als melding op je telefoon? Dan werken de pushmeldingen op dit toestel.', ''); save(); },
     async deleteRequest(id) { db.requests = db.requests.filter(r => r.id !== id); save(); },
     // --- klokken
     async settings() {
@@ -907,6 +908,7 @@ async function supabaseStore() {
       ok(await q);
     },
     async savePushSub(sub) { ok(await sb.from('push_subscriptions').upsert({ ...sub, employee_id: S.me.id })); },
+    async pushTest() { ok(await sb.rpc('push_test')); },
     async entries(from, to) {
       return ok(await sb.from('time_entries').select('*').gte('clock_in', parse(from).toISOString()).lt('clock_in', addDays(parse(to), 1).toISOString()).order('clock_in'));
     },
@@ -1129,6 +1131,18 @@ async function handleSession(r) {
   if (tabsFor().some(([k]) => k === hv[0]) || hv[0] === 'lijsten' || (isMgr() && hv[0] === 'instellingen')) { S.view = hv[0]; if (hv[1]) S.reqTab = hv[1]; }
   renderShell();
   checkProfile();
+  syncPush();
+}
+// De pushkoppeling van dit toestel bij elke start opnieuw doorgeven (een telefoon kan het adres stilletjes vernieuwen)
+async function syncPush() {
+  try {
+    if (store.demo || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window) || Notification.permission !== 'granted') return;
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) { const key = await store.vapidKey(); if (!key) return; sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(key) }); }
+    const j = sub.toJSON();
+    await store.savePushSub({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, user_agent: navigator.userAgent.slice(0, 200) });
+  } catch (e) { /* niet kritiek */ }
 }
 // Eerste keer (of nog niet ingevuld): "Maak je profiel af"
 async function checkProfile() {
@@ -3758,13 +3772,15 @@ async function notifPanel() {
   const [list, ps] = await Promise.all([store.notifications(), pushState()]);
   const unread = list.filter(n => !n.read_at).length;
   openDialog('Meldingen', `
-    <div class="pushbox ${ps.state === 'on' ? 'on' : ''}">${ps.state === 'off' ? '<span>Krijg een melding op je telefoon bij een nieuw rooster, wijziging of ruilverzoek.</span><button type="button" class="btn primary sm" data-push>Pushmeldingen aanzetten</button>' : `<span>${esc(PUSHTXT[ps.state])}</span>`}</div>
+    <div class="pushbox ${ps.state === 'on' ? 'on' : ''}">${ps.state === 'off' ? '<span>Krijg een melding op je telefoon bij een nieuw rooster, wijziging of ruilverzoek.</span><button type="button" class="btn primary sm" data-push>Pushmeldingen aanzetten</button>' : `<span>${esc(PUSHTXT[ps.state])}</span>${ps.state === 'on' ? '<button type="button" class="btn sm" data-pushtest>Stuur testmelding</button>' : ''}`}</div>
     ${list.length ? `<ul class="notifs">${list.map(n => `<li class="${n.read_at ? '' : 'unread'}"><button type="button" data-nid="${n.id}" data-nview="${esc(n.view || '')}"><strong>${esc(n.title)}</strong>${n.body ? `<span>${esc(n.body)}</span>` : ''}<small>${timeAgo(n.created_at)}</small></button></li>`).join('')}</ul>` : '<div class="empty">Nog geen meldingen.</div>'}
     <div class="dlg-foot">${unread ? '<button type="button" class="btn" data-readall>Alles gelezen</button>' : ''}<span class="spacer"></span><button type="button" class="btn" data-close>Sluiten</button></div>`, {
     onReady(dlg) {
       dlg.addEventListener('click', async ev => {
         const p = ev.target.closest('[data-push]');
         if (p) { p.disabled = true; try { await enablePush(); toast('Pushmeldingen staan aan'); dlg.close(); } catch (e) { toast(errMsg(e), 'error'); p.disabled = false; } return; }
+        const pt = ev.target.closest('[data-pushtest]');
+        if (pt) { pt.disabled = true; try { await syncPush(); await store.pushTest(); toast('Testmelding verstuurd. Binnen een paar seconden zou hij op je scherm moeten verschijnen; app even sluiten helpt.'); } catch (e) { toast(errMsg(e), 'error'); } pt.disabled = false; return; }
         if (ev.target.closest('[data-readall]')) { await store.markRead(null); dlg.close(); refreshBadge(); return; }
         const n = ev.target.closest('[data-nid]');
         if (n) { await store.markRead([n.dataset.nid]); dlg.close(); if (n.dataset.nview) openView(n.dataset.nview); else refreshBadge(); }
