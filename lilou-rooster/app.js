@@ -273,14 +273,14 @@ function demoStore() {
       if (!v.birth_date || v.birth_date < '1930-01-01' || v.birth_date > iso(addDays(new Date(), -365.25 * 13))) throw new Error('Vul een geldige geboortedatum in.');
       const em = (v.emergency || []).filter(x => (x.name || '').trim() || (x.phone || '').trim());
       if (em.some(x => !(x.name || '').trim() || !okTel(x.phone))) throw new Error('Vul bij een noodcontact een naam en een geldig telefoonnummer in.');
-      const e = db.employees.find(x => x.id === mem); e.phone = v.phone.trim();
+      const e = db.employees.find(x => x.id === mem); e.phone = v.phone.trim();   // eigen nummer
       db.private ||= {}; db.private[mem] = { ...(db.private[mem] || { employee_id: mem }), birth_date: v.birth_date };
       const pr = this._profiles(); pr[mem] = { employee_id: mem, emergency: em.slice(0, 2), shirt_size: v.shirt_size || null, share_phone: !!v.share_phone, done_at: pr[mem]?.done_at || new Date().toISOString() };
       save();
     },
     async profileOf(id) { if (!isMgr()) return null; return clone(this._profiles()[id] || null); },
     async emergencyContacts() { if (!canPlan()) return []; const pr = this._profiles(); return clone(db.employees.filter(e => e.active !== false && pr[e.id]?.emergency?.length).map(e => ({ employee_id: e.id, name: e.name, emergency: pr[e.id].emergency })).sort((a, b) => a.name.localeCompare(b.name))); },
-    async teamPhones() { const pr = this._profiles(); return clone(db.employees.filter(e => e.active !== false && pr[e.id]?.share_phone && e.phone).map(e => ({ employee_id: e.id, name: e.name, position: e.position, phone: e.phone })).sort((a, b) => a.name.localeCompare(b.name))); },
+    async teamPhones() { const pr = this._profiles(); db.employees.forEach((e, i) => { if (!e.phone && pr[e.id]?.share_phone) e.phone = '06 2345 67' + String(10 + i); }); return clone(db.employees.filter(e => e.active !== false && pr[e.id]?.share_phone && e.phone).map(e => ({ employee_id: e.id, name: e.name, position: e.position, phone: e.phone })).sort((a, b) => a.name.localeCompare(b.name))); },
     async savePrivate(p) {
       if (!isMgr()) throw new Error('Geen rechten');
       db.private ||= {};
@@ -1146,6 +1146,8 @@ async function syncPush() {
 }
 // Eerste keer (of nog niet ingevuld): "Maak je profiel af"
 async function checkProfile() {
+  let snooze = 0; try { snooze = Number(localStorage.getItem('profileLater:' + S.me.id)) || 0; } catch (e) { /* geen opslag */ }
+  if (Date.now() - snooze < 20 * 3600e3) return;
   try { const p = await store.myProfile(); if (p && !p.done_at && !document.querySelector('dialog[open]')) profileDialog(p, true); } catch (e) { /* database nog niet bijgewerkt: niet storen */ }
 }
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
@@ -1155,7 +1157,7 @@ async function profileDialog(p, first = false) {
   const em = [...(p.emergency || []), {}, {}].slice(0, 2);
   const ice = (x, i) => `<div class="icebox"><div class="row keep"><label class="field">Naam<input name="ice_name${i}" maxlength="60" value="${esc(x.name || '')}" placeholder="bv. Anna"></label><label class="field">Relatie<input name="ice_rel${i}" maxlength="30" value="${esc(x.relation || '')}" placeholder="bv. moeder"></label></div>
     <label class="field">Telefoon<input type="tel" name="ice_phone${i}" maxlength="20" value="${esc(x.phone || '')}" placeholder="06 12345678"></label></div>`;
-  openDialog(first ? 'Maak je profiel af' : 'Mijn profiel', `
+  const dlgP = openDialog(first ? 'Maak je profiel af' : 'Mijn profiel', `
     ${first ? `<p style="margin:0">Welkom${S.me?.name ? ', ' + esc(S.me.name.split(' ')[0]) : ''}! Vul dit één keer in. Aanpassen kan later altijd via <strong>Meer → Mijn profiel</strong>.</p>` : ''}
     <div class="row keep"><label class="field">Telefoonnummer<input type="tel" name="phone" required maxlength="20" value="${esc(p.phone || '')}" placeholder="06 12345678"></label>
       <label class="field">Geboortedatum<input type="date" name="birth_date" required value="${esc(p.birth_date || '')}"></label></div>
@@ -1172,8 +1174,11 @@ async function profileDialog(p, first = false) {
       await store.saveMyProfile({ phone: g('phone'), birth_date: g('birth_date'), shirt_size: g('shirt_size'), emergency, share_phone: !!fd.get('share_phone') });
       S.me.phone = g('phone');
       toast(first ? 'Dank je! Je profiel is klaar.' : 'Profiel opgeslagen');
+      saved = true;
     },
   });
+  let saved = false;
+  if (first) dlgP.addEventListener('close', () => { if (!saved) try { localStorage.setItem('profileLater:' + S.me.id, String(Date.now())); } catch (e) { /* geen opslag */ } });
 }
 const waLink = t => { let d = String(t || '').replace(/[^\d+]/g, ''); if (d.startsWith('+')) d = d.slice(1); else if (d.startsWith('00')) d = d.slice(2); else if (d.startsWith('0')) d = '31' + d.slice(1); return 'https://wa.me/' + d; };
 async function phonesDialog() {
@@ -1253,7 +1258,7 @@ async function go(view) {
   const tok = (S.renderTok = (S.renderTok || 0) + 1);
   // het gekozen scherm meteen vastleggen: een rerender() van een eerdere actie gaat dan naar dit scherm, niet terug
   const changed = S.view !== view;
-  if (changed && view === 'overzicht') { S.dashTab = ''; S.dashAll = false; }   // via het menu altijd naar het startscherm
+  if (changed && view === 'overzicht') { S.dashTab = ''; S.dashAll = false; S.dashWeek = mondayOf(new Date()); }   // via het menu altijd naar het startscherm
   S.view = view;
   $$('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === view));
   $('[data-gosettings]')?.classList.toggle('active', view === 'instellingen');
@@ -1445,7 +1450,7 @@ async function menuList(c) {
         if (fd.get('sec') === '__new') { section = String(fd.get('newsec') || '').trim(); group = ''; if (!section) throw new Error('Geef de nieuwe categorie een naam.'); }
         else { const x = secs.find(y => y.k === fd.get('sec')); group = x.group; section = x.section === x.group && !items.some(i => keyOf(i) === x.k && i.section) ? '' : x.section; }
         let price = String(fd.get('price') || '').trim();
-        if (/^\d+([.,]\d{1,2})?$/.test(price)) price = '€ ' + price;
+        if (/^\d+([.,]\d{1,2})?$/.test(price)) price = '€ ' + price.replace('.', ',').replace(/,(\d)$/, ',$10');
         const rec = { group, section, name, tag: String(fd.get('tag') || '').trim(), lines: String(fd.get('lines') || '').split('\n').map(l => l.trim()).filter(Boolean), price, allergens: String(fd.get('allergens') || '').trim() };
         const k = keyOf(rec);
         if (idx != null && keyOf(next[idx]) === k) next[idx] = rec;   // zelfde categorie: op zijn plek laten
@@ -2551,7 +2556,7 @@ async function viewDashboard(el) {
     concepts && `<div class="hrow act"><span class="ht"><strong>${S.dashWeek.getTime() === mondayOf(new Date()).getTime() ? 'Deze week' : esc(wl.title)}: ${concepts} ${concepts === 1 ? 'dienst' : 'diensten'} nog niet gepubliceerd</strong><small>Het team ziet ze pas na publiceren</small></span><button type="button" class="btn sm primary" data-hpub>Publiceer</button></div>`,
     ...att.filter(([, v]) => !['aanvragen:verlof', 'aanvragen:ruilen', 'planning'].includes(v) || (v === 'planning' && /bezetting/.test(att.find(x => x[1] === v)?.[0] || ''))).map(([t, v]) => {
       const m = String(t).match(/^(\d+)(×)?\s+(.*)$/);
-      return `<button type="button" class="hrow" data-goto2="${v}">${m ? `<span class="hn num">${m[1]}${m[2] || ''}</span><span class="ht"><strong>${esc(m[3].charAt(0).toUpperCase() + m[3].slice(1))}</strong></span>` : `<span class="ht"><strong>${esc(t)}</strong></span>`}<span class="chev" aria-hidden="true">›</span></button>`;
+      return `<button type="button" class="hrow" data-goto2="${v}">${m ? `<span class="hn num">${m[1]}${m[2] || ''}</span><span class="ht"><strong>${esc(m[3])}</strong></span>` : `<span class="ht"><strong>${esc(t)}</strong></span>`}<span class="chev" aria-hidden="true">›</span></button>`;
     }),
   ].filter(Boolean);
   const SHOW = 4;
@@ -2615,7 +2620,7 @@ async function viewDashboard(el) {
   el.onkeydown = ev => { if (ev.target.matches('.revin')) S.lastKey = ev.key; };
   el.onchange = async ev => {
     const gt = ev.target.closest('[data-gtoday]');
-    if (gt) { const v = gt.value.trim(); try { await store.saveDay(gt.dataset.gtoday, v === '' ? null : Math.max(0, Math.round(Number(v)) || 0)); toast('Gasten opgeslagen'); } catch (x) { toast(errMsg(x), 'error'); } return; }
+    if (gt) { const v = gt.value.trim(); if (v !== '' && !(Number(v) >= 0)) { gt.value = ''; return toast('Vul een aantal gasten in van 0 of meer.', 'error'); } try { await store.saveDay(gt.dataset.gtoday, v === '' ? null : Math.max(0, Math.round(Number(v)) || 0)); toast('Gasten opgeslagen'); } catch (x) { toast(errMsg(x), 'error'); } return; }
     const f2 = ev.target.closest('[data-revf]'), a2 = ev.target.closest('[data-reva]');
     const t = f2 || a2; if (!t) return;
     if (['Tab', 'Enter'].includes(S.lastKey)) S.refocus = { attr: f2 ? 'data-revf' : 'data-reva', date: t.dataset.revf || t.dataset.reva, back: S.lastKey === 'Tab' && ev.shiftKey };

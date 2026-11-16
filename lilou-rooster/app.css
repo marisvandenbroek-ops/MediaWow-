@@ -1217,3 +1217,5 @@ details.ice2 summary { cursor: pointer; color: var(--accent); font-weight: 600; 
 .icelist .nood { margin-top: 6px; }
 .profbox { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line-strong); }
 .icemini { margin: 6px 0 0; padding-left: 18px; font-size: 14px; }
+/* rooster-lijst onder het startscherm van medewerkers ook niet over de hele breedte */
+#view > .mine-filter ~ * { max-width: 1100px; }
