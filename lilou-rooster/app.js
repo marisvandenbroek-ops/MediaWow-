@@ -299,7 +299,7 @@ function demoStore() {
       if (!canPlan()) throw new Error('Alleen de leiding kan een dagrapport maken.');
       const bd = bizToday(); if (!isMgr() && (r.date < iso(addDays(parse(bd), -1)) || r.date > bd)) throw new Error('Een dagrapport kun je alleen voor vandaag of gisteren invullen.');
       db.dayreports ||= {}; const old = db.dayreports[r.date], tx = v => (v || '').trim() || null;
-      db.dayreports[r.date] = { date: r.date, busy: r.busy || null, notes: tx(r.notes), sold_out: tx(r.sold_out), team: tx(r.team), employee_id: old ? old.employee_id : mem, updated_by: old ? mem : null, created_at: old?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+      db.dayreports[r.date] = { date: r.date, busy: r.busy || null, notes: tx(r.notes), sold_out: tx(r.sold_out), team: tx(r.team), employee_id: old ? old.employee_id : mem, updated_by: old ? (old.employee_id === mem ? old.updated_by || null : mem) : null, created_at: old?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
       if (!old) notifyMgrs(`Dagrapport ${r.date.slice(8, 10)}-${r.date.slice(5, 7)}`, `Van ${fname(mem)}${tx(r.notes) ? ': ' + tx(r.notes).slice(0, 120) : '.'}`, 'overzicht:rapport:' + r.date, mem);
       save();
     },
@@ -1197,7 +1197,7 @@ async function handleSession(r) {
   try { applySettings(await store.settings()); } catch (e) { /* standaardwaarden blijven gelden */ }
   S.view = isMgr() ? 'overzicht' : canPlan() ? 'planning' : 'mijn';
   const hv = location.hash.slice(1).split(':');
-  if (tabsFor().some(([k]) => k === hv[0]) || hv[0] === 'lijsten' || (isMgr() && hv[0] === 'instellingen')) { S.view = hv[0]; if (hv[1]) S.reqTab = hv[1]; }
+  if (tabsFor().some(([k]) => k === hv[0]) || hv[0] === 'lijsten' || (isMgr() && hv[0] === 'instellingen')) { S.view = hv[0]; if (hv[1]) S.reqTab = hv[1]; if (hv[2]) S.repDate = hv[2]; }
   renderShell();
   checkProfile();
   syncPush();

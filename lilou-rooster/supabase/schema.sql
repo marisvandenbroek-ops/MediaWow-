@@ -2313,7 +2313,7 @@ begin
   insert into public.day_reports (date, busy, notes, sold_out, team, employee_id)
   values (p_date, nullif(p_busy, ''), nullif(btrim(coalesce(p_notes, '')), ''), nullif(btrim(coalesce(p_sold_out, '')), ''), nullif(btrim(coalesce(p_team, '')), ''), me)
   on conflict (date) do update set busy = excluded.busy, notes = excluded.notes, sold_out = excluded.sold_out, team = excluded.team,
-                                   updated_by = me, updated_at = now();   -- de schrijver blijft staan; wie het aanpaste staat erbij
+                                   updated_by = case when day_reports.employee_id = me then day_reports.updated_by else me end, updated_at = now();   -- de schrijver blijft staan; wie het aanpaste staat erbij
   if isnew then
     perform public.notify_managers('Dagrapport ' || to_char(p_date, 'DD-MM'), 'Van ' || public.first_name(me) || coalesce(': ' || left(nullif(btrim(coalesce(p_notes, '')), ''), 120), '.'), 'overzicht:rapport:' || p_date::text, me);
   end if;
