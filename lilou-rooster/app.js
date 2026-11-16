@@ -249,13 +249,15 @@ function demoStore() {
       if (db.employees.some(x => x.email.toLowerCase() === e.email.toLowerCase() && x.id !== e.id)) throw new Error('Dit e-mailadres is al in gebruik.');
       let id = e.id;
       if (id) {
-        const cur = db.employees.find(x => x.id === id), old = { ...cur }; Object.assign(cur, e); cur.role = effRole(cur, db.settings.position_rights || {}); audit('employees', id, 'update', old, { ...cur });
+        const cur = db.employees.find(x => x.id === id), old = { ...cur }; Object.assign(cur, e); cur.plan_mode = planModeOf({ ...old, ...e, role: e.plan_mode ? 'staff' : old.role }); cur.role = effRole(cur, db.settings.position_rights || {});
+        if (old.role === 'manager' && cur.role !== 'manager' && !db.employees.some(x => x.id !== id && x.role === 'manager' && x.active !== false)) { Object.assign(cur, old); throw new Error('Er moet altijd minstens één directielid overblijven.'); }
+        audit('employees', id, 'update', old, { ...cur });
         if (old.active !== false && cur.active === false) {   // uit dienst: aanmeldingen en ruilverzoeken vervallen
           db.applications.filter(a => a.employee_id === id && a.status === 'pending').forEach(a => (a.status = 'rejected'));
           db.swaps.filter(w => ['open', 'accepted'].includes(w.status) && [w.from_employee, w.to_employee, w.taken_by].includes(id)).forEach(w => (w.status = 'cancelled'));
         }
       }
-      else { id = uid(); const ne = { ...e, id, user_id: null }; ne.role = effRole(ne, db.settings.position_rights || {}); db.employees.push(ne); audit('employees', id, 'insert', null, ne); }   // net als echt: pas actief na activeren
+      else { id = uid(); const ne = { ...e, id, user_id: null }; ne.plan_mode = e.plan_mode || 'functie'; ne.role = effRole(ne, db.settings.position_rights || {}); db.employees.push(ne); audit('employees', id, 'insert', null, ne); }   // net als echt: pas actief na activeren
       save(); return id;
     },
     async inviteEmployee(id) {
@@ -577,7 +579,7 @@ function demoStore() {
       st.has_wifi = !!(db.settings.wifi_ips || []).length;
       return st;
     },
-    async saveSettings(st) { Object.assign(db.settings, st); if ('position_rights' in st) db.employees.forEach(e => { if (e.role !== 'manager') e.role = effRole(e, st.position_rights || {}); }); save(); },
+    async saveSettings(st) { Object.assign(db.settings, st); if ('position_rights' in st) db.employees.forEach(e => { e.plan_mode = planModeOf(e); e.role = effRole(e, st.position_rights || {}); }); save(); },
     async registerWifi() { const ip = '84.12.34.56'; db.settings.wifi_ips = [...new Set([...(db.settings.wifi_ips || []), ip])]; save(); return ip; },
     async entries(from, to) {
       const a = new Date(parse(from)).toISOString(), b = addDays(parse(to), 1).toISOString();
@@ -943,7 +945,14 @@ let store;
 const isMgr = () => S.me?.role === 'manager';
 const canPlan = () => S.me?.role === 'manager' || S.me?.role === 'planner';
 // Rol afleiden zoals de database doet: directie blijft directie; anders uitzondering per persoon, anders het recht van de functie
-const effRole = (e, rights = CFG.posRights || {}) => e.role === 'manager' ? 'manager' : e.plan_mode === 'ja' ? 'planner' : e.plan_mode === 'nee' ? 'staff' : rights[e.position || '']?.plan ? 'planner' : 'staff';   // shiftleader mag plannen, ziet geen lonen
+const LEVEL = { medewerker: 'Medewerker', shiftleader: 'Shiftleader', directie: 'Directie' };
+const levelOf = r => (r && (r.level || (r.plan ? 'shiftleader' : ''))) || 'medewerker';
+const planModeOf = e => e.plan_mode || (e.role === 'manager' ? 'directie' : e.role === 'planner' ? 'ja' : 'functie');
+const effRole = (e, rights = CFG.posRights || {}) => {
+  const pm = planModeOf(e);
+  if (pm === 'directie') return 'manager'; if (pm === 'ja') return 'planner'; if (pm === 'nee') return 'staff';
+  const l = levelOf(rights[e.position || '']); return l === 'directie' ? 'manager' : l === 'shiftleader' ? 'planner' : 'staff';
+};   // shiftleader mag plannen, ziet geen lonen
 const KLOK_DELETE = 'Deze medewerker heeft kloktijden. Die horen bij de loonadministratie en moeten bewaard blijven. Zet de medewerker op inactief in plaats van te verwijderen.';
 const CT = { vast: 'Vaste uren', minmax: 'Min-max', nuluren: 'Nuluren', oproep: 'Oproep', stage: 'Stage / BBL' };
 const isFlex = e => ['nuluren', 'oproep'].includes(e?.contract_type);
@@ -2989,7 +2998,7 @@ async function viewSettings(el) {
     <div class="settings">
       <details class="card pad setsec" data-k="1"><summary><h2>Functies</h2></summary>
         <p class="hint">De functies waarvoor je inplant, zoals Bediening, Keuken of Afwas. Per functie stel je de rechten in; bij Team kun je per persoon een uitzondering maken. Bestaande diensten en medewerkers houden hun functie als je er een weghaalt.</p>
-        <div class="posrows">${pos.map((p, i) => { const r = (CFG.posRights || {})[p] || {}; return `<div class="posrow"><span class="pn"><strong>${esc(p)}</strong><small>${r.plan ? 'Mag plannen' : 'Niet plannen'}${(r.lists || []).length ? ' · ook lijsten van ' + esc(r.lists.join(', ')) : ''}</small></span>
+        <div class="posrows">${pos.map((p, i) => { const r = (CFG.posRights || {})[p] || {}; return `<div class="posrow"><span class="pn"><strong>${esc(p)}</strong><small>${LEVEL[levelOf(r)]}${levelOf(r) === 'medewerker' && (r.lists || []).length ? ' · ook lijsten van ' + esc(r.lists.join(', ')) : ''}</small></span>
           <button type="button" class="btn sm" data-posrights="${i}">${ico('lock')}Rechten</button><button type="button" class="linkbtn small danger" data-posdel="${i}" aria-label="${esc(p)} verwijderen">Verwijderen</button></div>`; }).join('') || '<span class="muted small">Nog geen functies.</span>'}</div>
         <form class="addrow" data-posadd><input class="input" name="pos" placeholder="Nieuwe functie, bv. Afwas" maxlength="30" required><button class="btn">Toevoegen</button></form>
       </details>
@@ -3074,13 +3083,18 @@ async function viewSettings(el) {
     if (prb) {
       const p = pos[Number(prb.dataset.posrights)], all = { ...(CFG.posRights || {}) }, r = all[p] || {};
       return openDialog(`Rechten: ${p}`, `
-        <label class="check"><input type="checkbox" name="plan" ${r.plan ? 'checked' : ''}> <span><strong>Mag plannen</strong> (shiftleader-rechten)<br><span class="hint">Rooster maken en publiceren, alle lijsten zien en nalopen, noodcontacten bekijken, herinneringen over de lijsten krijgen. Ziet geen lonen, uren of instellingen.</span></span></label>
-        <fieldset class="choice"><legend>Ziet en vinkt ook lijsten af van</legend><div class="chkgrid">${pos.filter(x => x !== p).map(x => `<label class="check"><input type="checkbox" name="lists" value="${esc(x)}" ${(r.lists || []).includes(x) ? 'checked' : ''}> ${esc(x)}</label>`).join('') || '<span class="muted small">Geen andere functies.</span>'}</div>
+        <fieldset class="choice"><legend>Toegang</legend>
+          <label class="check"><input type="radio" name="level" value="medewerker" ${levelOf(r) === 'medewerker' ? 'checked' : ''}> <span><strong>Medewerker</strong><br><span class="hint">Eigen rooster, ruilen, verlof, de lijsten van de eigen afdeling.</span></span></label>
+          <label class="check"><input type="radio" name="level" value="shiftleader" ${levelOf(r) === 'shiftleader' ? 'checked' : ''}> <span><strong>Shiftleader</strong><br><span class="hint">Rooster maken en publiceren, alle lijsten nalopen, noodcontacten, herinneringen over de lijsten. Geen lonen, uren of instellingen.</span></span></label>
+          <label class="check"><input type="radio" name="level" value="directie" ${levelOf(r) === 'directie' ? 'checked' : ''}> <span><strong>Directie</strong><br><span class="hint">Alles, ook lonen, team, uren & export en instellingen.</span></span></label>
+        </fieldset>
+        <fieldset class="choice" data-lvllists><legend>Ziet en vinkt ook lijsten af van</legend><div class="chkgrid">${pos.filter(x => x !== p).map(x => `<label class="check"><input type="checkbox" name="lists" value="${esc(x)}" ${(r.lists || []).includes(x) ? 'checked' : ''}> ${esc(x)}</label>`).join('') || '<span class="muted small">Geen andere functies.</span>'}</div>
           <p class="hint" style="margin:4px 0 0">De lijsten van ${esc(p)} zelf en van de functie waarin iemand die dag is ingeroosterd, ziet iedereen altijd.</p></fieldset>
         <p class="hint">Geldt voor iedereen met deze functie, behalve bij een uitzondering bij Team.</p>
         <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
+        onReady(d) { const f = () => { $('[data-lvllists]', d).hidden = ($('[name=level]:checked', d)?.value || 'medewerker') !== 'medewerker'; }; $$('[name=level]', d).forEach(x => x.addEventListener('change', f)); f(); },
         async onSubmit(fd) {
-          all[p] = { plan: !!fd.get('plan'), lists: fd.getAll('lists') };
+          all[p] = { level: fd.get('level') || 'medewerker', lists: fd.get('level') === 'medewerker' ? fd.getAll('lists') : [] };
           Object.keys(all).forEach(k => { if (!pos.includes(k)) delete all[k]; });
           await store.saveSettings({ position_rights: all }); applySettings(await store.settings()); toast(`Rechten voor ${p} opgeslagen`); rerender();
         },
@@ -3598,12 +3612,11 @@ function employeeDialog(e, priv = {}, reqs = []) {
     <label class="field">Einddatum contract <span class="muted small">(leeg = onbepaalde tijd)</span><input type="date" name="contract_end" value="${esc(e.contract_end || '')}"></label>
     <p class="hint" data-cthint></p>
     <div class="row">
-      <label class="field">Rol<select name="role"><option value="staff" ${e.role !== 'manager' ? 'selected' : ''}>Medewerker</option><option value="manager" ${e.role === 'manager' ? 'selected' : ''}>Directie (alles)</option></select></label>
+      <label class="field">Toegang<select name="plan_mode">${[['functie', 'Volgt de functie'], ['nee', 'Medewerker'], ['ja', 'Shiftleader (plannen, geen lonen)'], ['directie', 'Directie (alles)']].map(([v, l]) => `<option value="${v}" ${planModeOf(e) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
       <label class="field">Kleur in rooster<input type="color" name="color" value="${esc(e.color || COLORS[0])}"></label>
     </div>
+    <p class="hint" data-planhint style="margin-top:-4px"></p>
     <div class="rightsbox" data-rightsbox>
-      <label class="field">Plannen (shiftleader-rechten)<select name="plan_mode"><option value="functie" ${(e.plan_mode || 'functie') === 'functie' && e.role !== 'planner' ? 'selected' : ''}>Volgt de functie</option><option value="ja" ${e.plan_mode === 'ja' || (e.role === 'planner' && !e.plan_mode) ? 'selected' : ''}>Altijd (uitzondering)</option><option value="nee" ${e.plan_mode === 'nee' ? 'selected' : ''}>Nooit (uitzondering)</option></select></label>
-      <p class="hint" data-planhint></p>
       <fieldset class="choice"><legend>Ziet en vinkt ook lijsten af van</legend><div class="chkgrid">${(CFG.posities || []).map(p => `<label class="check"><input type="checkbox" name="extra_lists" value="${esc(p)}" ${(e.extra_lists || []).includes(p) ? 'checked' : ''}> ${esc(p)}</label>`).join('')}</div>
         <p class="hint" style="margin:4px 0 0" data-listhint></p></fieldset>
     </div>
@@ -3632,12 +3645,14 @@ function employeeDialog(e, priv = {}, reqs = []) {
     onReady(dlg) {
       const fm = $('form', dlg), rb = $('[data-rightsbox]', dlg);
       const upd = () => {
-        const mgr = fm.role.value === 'manager'; rb.hidden = mgr;
-        const pos = fm.position.value, r = (CFG.posRights || {})[pos] || {};
-        $('[data-planhint]', dlg).textContent = fm.plan_mode.value === 'functie' ? (pos ? `Functie ${pos}: ${r.plan ? 'mag plannen' : 'mag niet plannen'}. Pas dat aan bij Instellingen → Functies.` : 'Kies eerst een functie.') : fm.plan_mode.value === 'ja' ? 'Mag plannen, alle lijsten zien en noodcontacten bekijken. Ziet geen lonen.' : 'Mag niet plannen, ook al geeft de functie dat recht.';
+        const pos = fm.position.value, r = (CFG.posRights || {})[pos] || {}, pm = fm.plan_mode.value;
+        const lvl = pm === 'functie' ? levelOf(r) : pm === 'directie' ? 'directie' : pm === 'ja' ? 'shiftleader' : 'medewerker';
+        rb.hidden = lvl !== 'medewerker';
+        $('[data-planhint]', dlg).textContent = (pm === 'functie' ? (pos ? `Functie ${pos} geeft: ${LEVEL[lvl]}. Aanpassen bij Instellingen → Functies.` : 'Kies een functie; die bepaalt de toegang.') : 'Uitzondering voor deze persoon, los van de functie.')
+          + (lvl === 'directie' ? ' Directie ziet alles, ook lonen, team en instellingen.' : lvl === 'shiftleader' ? ' Shiftleader plant, ziet alle lijsten en noodcontacten, maar geen lonen.' : '');
         $('[data-listhint]', dlg).textContent = pos ? `Altijd: lijsten van ${pos}${(r.lists || []).length ? ' en (via de functie) ' + r.lists.join(', ') : ''}, plus waar iemand die dag is ingeroosterd.` : '';
       };
-      fm.role.addEventListener('change', upd); fm.position.addEventListener('change', upd); fm.plan_mode.addEventListener('change', upd); upd();
+      fm.position.addEventListener('change', upd); fm.plan_mode.addEventListener('change', upd); upd();
       const pb = $('[data-profbox]', dlg);
       if (pb) store.profileOf(e.id).then(f => {
         pb.innerHTML = !f || !f.done_at ? '<p class="hint" style="margin:0"><strong>Profiel:</strong> nog niet ingevuld door de medewerker.</p>'
@@ -3667,14 +3682,14 @@ function employeeDialog(e, priv = {}, reqs = []) {
         await store.deleteEmployee(e.id); toast('Medewerker verwijderd'); return rerender();
       }
       if (e.id === S.me.id && fd.get('active') !== 'on') throw new Error('Je kunt jezelf niet op inactief zetten. Laat dat een andere directielid doen.');
-      const newRole = fd.get('role') === 'manager' ? 'manager' : effRole({ role: 'staff', plan_mode: fd.get('plan_mode') || 'functie', position: fd.get('position') || null });
+      const newRole = effRole({ role: 'staff', plan_mode: fd.get('plan_mode') || 'functie', position: fd.get('position') || null });
       if (e.id === S.me.id && newRole !== 'manager' && !await ask(newRole === 'planner' ? 'Je maakt jezelf shiftleader: je ziet daarna geen lonen, team, uren en instellingen meer. Zeker weten?' : 'Je haalt je eigen directierechten en planrechten weg. Zeker weten?')) throw 'cancel';
       const payload = {
         name: fd.get('name').trim(), email: fd.get('email').trim().toLowerCase(), phone: fd.get('phone').trim() || null,
         position: fd.get('position') || null, contract_hours: fd.get('contract_hours') ? Number(fd.get('contract_hours')) : null,
         contract_type: fd.get('contract_type') || 'vast', contract_min_hours: fd.get('contract_type') === 'minmax' && fd.get('contract_min_hours') ? Number(fd.get('contract_min_hours')) : null,
         contract_end: fd.get('contract_end') || null,
-        role: fd.get('role') === 'manager' ? 'manager' : 'staff', plan_mode: fd.get('plan_mode') || 'functie', extra_lists: fd.getAll('extra_lists'),
+        plan_mode: fd.get('plan_mode') || 'functie', extra_lists: fd.getAll('extra_lists'),
         color: fd.get('color'), active: fd.get('active') === 'on',
       };
       if (!isNew) payload.id = e.id;

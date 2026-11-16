@@ -1243,3 +1243,4 @@ dialog.menulist .ml-tools .ml-chips { width: 100%; justify-content: flex-start; 
 .chkgrid { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 .rightsbox { display: grid; gap: 4px; padding: 10px 12px; border: 1px dashed var(--line-strong); border-radius: 12px; margin: 4px 0; }
 .rightsbox[hidden] { display: none; }
+fieldset.choice[hidden] { display: none; }

@@ -517,5 +517,19 @@ update employees set plan_mode = 'functie' where id = 'a0000000-0000-0000-0000-0
 select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000001') = 'manager', 'directie blijft directie');
 update settings set position_rights = '{}' where id = 1;
 
+\echo '== Update 42: toegang per functie (directie), altijd een directielid'
+update settings set position_rights = '{"Manager": {"level": "directie"}, "Shiftleader": {"level": "shiftleader"}}' where id = 1;
+update employees set position = 'Manager', plan_mode = 'functie' where id = 'a0000000-0000-0000-0000-000000000003';
+select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000003') = 'manager', 'functie Manager geeft directierechten');
+update employees set position = 'Shiftleader' where id = 'a0000000-0000-0000-0000-000000000003';
+select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000003') = 'planner', 'functie Shiftleader geeft shiftleader-rechten');
+update employees set position = 'Bediening' where id = 'a0000000-0000-0000-0000-000000000003';
+select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000003') = 'staff', 'andere functie: medewerker');
+select t_ok((select plan_mode from employees where id = 'a0000000-0000-0000-0000-000000000001') = 'directie', 'bestaande directie blijft directie (uitzondering)');
+-- laatste directielid kan niet worden weggehaald
+update employees set plan_mode = 'nee' where role = 'manager' and id <> 'a0000000-0000-0000-0000-000000000001';
+select t_fails($$update employees set plan_mode = 'nee' where id = 'a0000000-0000-0000-0000-000000000001'$$, 'laatste directielid blijft directie');
+update settings set position_rights = '{}' where id = 1;
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

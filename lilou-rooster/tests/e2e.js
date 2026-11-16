@@ -835,8 +835,8 @@ async function test(name, fn) {
     await p.click('[data-gosettings]'); await p.waitForSelector('.posrow', { state: 'attached' });
     await p.evaluate(() => { document.querySelector('details.setsec[data-k="1"]').open = true; });
     await p.click('.posrow:has-text("Bar") [data-posrights]'); await p.waitForSelector('dialog:has-text("Rechten: Bar")');
-    await p.check('dialog [name=plan]'); await p.check('dialog [name=lists][value="Keuken"]'); await p.click('dialog button[value=save]');
-    await p.waitForSelector('.posrow:has-text("Bar"):has-text("Mag plannen")');
+    await p.check('dialog [name=lists][value="Keuken"]'); await p.check('dialog [name=level][value="shiftleader"]'); await p.click('dialog button[value=save]');
+    await p.waitForSelector('.posrow:has-text("Bar"):has-text("Shiftleader")');
     let db = (await demoDb(p)).db;
     assert.equal(db.employees.find(e => e.name.startsWith('Daan')).role, 'planner', 'Daan (Bar) is geen shiftleader geworden');
     // Daan logt in: planning als shiftleader, keukenlijsten zichtbaar
