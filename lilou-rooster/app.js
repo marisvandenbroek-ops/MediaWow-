@@ -2517,12 +2517,12 @@ async function viewSettings(el) {
       <details class="card pad setsec" data-k="4"><summary><h2>Bezetting per dag</h2></summary>
         <p class="hint">Hoeveel mensen je per functie nodig hebt. De planning laat per dag zien of je genoeg mensen hebt ingepland, bijvoorbeeld <span class="covp short">Bediening 2/4</span>. Leeg of 0 betekent: geen norm.</p>
         <form data-staffform>
-          <div class="table-wrap"><table class="stafftable">
-            <thead><tr><th></th>${pos.map(p => `<th>${esc(p)}</th>`).join('')}</tr></thead>
-            <tbody>${DAG.map((dn, wd) => `<tr><th>${dn}</th>${pos.map(p => `<td><input type="number" min="0" max="50" inputmode="numeric" data-staff="${wd}" data-pos="${esc(p)}" value="${(st.staffing || {})[wd]?.[p] || ''}"></td>`).join('')}</tr>`).join('')}</tbody>
-            <tfoot><tr><th title="Optioneel">1 per … gasten</th>${pos.map(p => `<td><input type="number" min="0" max="500" inputmode="numeric" data-ratio="${esc(p)}" value="${(st.guest_ratios || {})[p] || ''}" placeholder="–"></td>`).join('')}</tr></tfoot>
-          </table></div>
-          <p class="hint" style="margin-top:8px"><strong>Optioneel, de onderste regel:</strong> vul je bijvoorbeeld 20 in bij Bediening, dan kun je in de planning per dag het aantal gasten of reserveringen invullen. De app rekent dan uit hoeveel mensen je nodig hebt: 80 gasten is 4 bediening. De norm per weekdag blijft het minimum.</p>
+          <table class="stafftable">
+            <colgroup><col class="c-pos">${DAG.map(() => '<col>').join('')}<col class="c-ratio"></colgroup>
+            <thead><tr><th></th>${DAG.map(dn => `<th>${dn}</th>`).join('')}<th class="ratio" title="Optioneel: 1 medewerker per zoveel gasten">1 per<br>gasten</th></tr></thead>
+            <tbody>${pos.map(p => `<tr><th>${esc(p)}</th>${DAG.map((dn, wd) => `<td><input type="number" min="0" max="50" inputmode="numeric" aria-label="${esc(p)} ${dn}" data-staff="${wd}" data-pos="${esc(p)}" value="${(st.staffing || {})[wd]?.[p] || ''}"></td>`).join('')}<td class="ratio"><input type="number" min="0" max="500" inputmode="numeric" aria-label="${esc(p)}: 1 per zoveel gasten" data-ratio="${esc(p)}" value="${(st.guest_ratios || {})[p] || ''}" placeholder="–"></td></tr>`).join('')}</tbody>
+          </table>
+          <p class="hint" style="margin-top:8px"><strong>Optioneel, de laatste kolom:</strong> vul je bijvoorbeeld 20 in bij Bediening, dan kun je in de planning per dag het aantal gasten of reserveringen invullen. De app rekent dan uit hoeveel mensen je nodig hebt: 80 gasten is 4 bediening. De norm per weekdag blijft het minimum.</p>
           <div class="actions"><button class="btn primary">Opslaan</button></div>
         </form>
       </details>

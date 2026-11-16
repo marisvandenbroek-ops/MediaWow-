@@ -486,16 +486,17 @@ dialog.dlg:has(.exportprev) { width: min(900px, calc(100vw - 32px)); }
 .mcov .covp { font-size: 13px; padding: 3px 9px; }
 .settings > * { min-width: 0; }   /* een brede tabel mag de pagina nooit breder maken dan het scherm */
 .settings .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.stafftable { border-collapse: collapse; width: 100%; font-size: 14px; }
-.stafftable thead th { overflow-wrap: anywhere; hyphens: auto; line-height: 1.2; }
-.stafftable tfoot th { white-space: normal !important; max-width: 70px; line-height: 1.2; }
-@media (max-width: 520px) { .stafftable th, .stafftable td { padding: 3px 2px; } .stafftable thead th { font-size: 11px; } .stafftable input { padding: 6px 2px; min-width: 34px; } }
-.stafftable th, .stafftable td { padding: 4px; text-align: center; }
-.stafftable thead th { font-size: 12px; color: var(--muted); font-weight: 600; }
-.stafftable tbody th, .stafftable tfoot th { text-align: left; font-weight: 600; white-space: nowrap; }
-.stafftable tfoot th { font-size: 12px; color: var(--muted); }
-.stafftable tfoot td, .stafftable tfoot th { border-top: 1px solid var(--line); padding-top: 8px; }
-.stafftable input { width: 100%; max-width: 64px; text-align: center; padding: 6px 4px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); }
+.stafftable { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 14px; }
+.stafftable col.c-pos { width: 96px; }
+.stafftable col.c-ratio { width: 54px; }
+.stafftable th, .stafftable td { padding: 3px; text-align: center; }
+.stafftable thead th { font-size: 12px; color: var(--muted); font-weight: 600; line-height: 1.15; padding-bottom: 6px; }
+.stafftable tbody th { text-align: left; font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px; }
+.stafftable tbody tr + tr th, .stafftable tbody tr + tr td { border-top: 1px solid var(--line); }
+.stafftable .ratio { border-left: 1px solid var(--line); padding-left: 6px; }
+.stafftable input { width: 100%; height: 38px; text-align: center; padding: 0 2px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); font-size: 15px; -moz-appearance: textfield; }
+.stafftable input::-webkit-outer-spin-button, .stafftable input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+@media (max-width: 520px) { .stafftable col.c-pos { width: 74px; } .stafftable col.c-ratio { width: 50px; } .stafftable thead th.ratio { font-size: 10.5px; padding-left: 4px; } .stafftable th, .stafftable td { padding: 4px 1px; } .stafftable tbody th { font-size: 12px; } .stafftable input { height: 36px; font-size: 14px; border-radius: 7px; } }
 .daylist2 { display: grid; gap: 10px; }
 .spdrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; }
 @media (max-width: 600px) { .spdrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-bottom: 10px; border-bottom: 1px solid var(--line); } .spdrow .field:nth-child(2) { grid-column: span 2; order: -1; } }
