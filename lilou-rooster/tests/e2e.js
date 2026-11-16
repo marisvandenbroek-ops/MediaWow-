@@ -239,7 +239,10 @@ async function test(name, fn) {
     await p.close();
   });
   await test('klokregistratie aanpassen komt in de geschiedenis', async () => {
-    await shared.click('[data-tab=klokken]'); await shared.click('[data-cf=all]'); await shared.click('article.entry [data-eedit] >> nth=0');
+    await shared.click('[data-tab=klokken]'); await shared.click('[data-cf=all]');
+    // op maandagochtend staan er deze week nog geen registraties: dan de vorige week
+    for (let i = 0; i < 2 && !(await shared.waitForSelector('article.entry [data-eedit]', { timeout: 1500 }).catch(() => null)); i++) { await shared.click('[data-act=prev]'); }
+    await shared.click('article.entry [data-eedit] >> nth=0');
     await shared.waitForSelector('dialog [name=break_minutes]'); await shared.fill('dialog [name=manager_note]', 'Testnotitie'); await shared.click('dialog button[value=save]'); await shared.waitForTimeout(200);
     await shared.click('article.entry:has-text("Testnotitie") [data-eedit]'); await shared.click('dialog [data-history] summary'); await shared.waitForSelector('dialog .auditlist');
     assert.match(await shared.textContent('dialog .auditlist'), /Testnotitie/);
