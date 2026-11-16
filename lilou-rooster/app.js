@@ -1184,6 +1184,7 @@ document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible' || !S.me) return;
   if (todayIso() !== lastDay) { lastDay = todayIso(); S.dashWeek = mondayOf(new Date()); S.week = mondayOf(new Date()); S.homeWeek = null; S.homeMonth = null; }
   if (await checkMe(true) && ['mijn', 'overzicht'].includes(S.view)) calmRerender();   // terug in de app: actuele diensten tonen
+  setTimeout(checkRules, 800);
 });
 
 // Standaardwaarden uit config.js; de directie kan ze overschrijven op de pagina Instellingen
@@ -1208,8 +1209,28 @@ async function handleSession(r) {
   const hv = location.hash.slice(1).split(':');
   if (tabsFor().some(([k]) => k === hv[0]) || hv[0] === 'lijsten' || (isMgr() && hv[0] === 'instellingen')) { S.view = hv[0]; if (hv[1]) S.reqTab = hv[1]; if (hv[2]) S.repDate = hv[2]; }
   renderShell();
-  checkProfile();
+  checkProfile().then(() => setTimeout(checkRules, 600));
   syncPush();
+}
+// Afspraken nog niet gelezen en akkoord: elke dag één keer een herinnering (niet voor de directie)
+async function checkRules() {
+  if (!S.me || isMgr() || document.querySelector('dialog[open]')) return;
+  const key = 'rulesNag:' + S.me.id; let last = '';
+  try { last = localStorage.getItem(key) || ''; } catch (e) { /* geen opslag */ }
+  if (last === todayIso()) return;
+  try {
+    const [st, acks] = await Promise.all([store.settings(), store.rulesAcks()]);
+    const v = st.rules_version || 1;
+    if (acks.some(r => r.employee_id === S.me.id && r.version === v)) return;
+    try { localStorage.setItem(key, todayIso()); } catch (e) { /* geen opslag */ }
+    if (document.querySelector('dialog[open]')) return;
+    openDialog(v > 1 ? 'De afspraken zijn bijgewerkt' : 'Lees de afspraken van Lilou', `
+      <p style="margin:0">${v > 1 ? 'Er is iets veranderd in de afspraken.' : 'Je hebt de afspraken nog niet gelezen.'} Lees ze rustig door en tik onderaan op <strong>Gelezen en akkoord</strong>. Dat duurt ongeveer 10 minuten.</p>
+      <p class="hint" style="margin:0">Je krijgt deze herinnering elke dag tot je akkoord hebt gegeven.</p>
+      <div class="dlg-foot"><button type="button" class="btn" data-close>Later</button><button type="button" class="btn primary" data-rulesnow>Nu lezen</button></div>`, {
+      onReady(dlg) { $('[data-rulesnow]', dlg).onclick = () => { dlg.close(); rulesViewer({ ack: true }); }; },
+    });
+  } catch (e) { /* niet storen */ }
 }
 // De pushkoppeling van dit toestel bij elke start opnieuw doorgeven (een telefoon kan het adres stilletjes vernieuwen)
 async function syncPush() {
@@ -2298,7 +2319,7 @@ async function rulesDialog() {
   openDialog('Afspraken: gelezen en akkoord', `<p class="hint" style="margin:0">Iedereen behalve de directie tekent in de app voor de afspraken. Na een wijziging tekent iedereen opnieuw. Versie ${v}.</p>
     <div><h3 class="small-h">Nog niet gelezen en akkoord (${no.length})</h3><p style="margin:0">${no.map(e => esc(e.name)).join(', ') || '<span class="muted">Iedereen heeft gelezen en akkoord gegeven</span>'}</p></div>
     <div><h3 class="small-h">Getekend (${yes.length})</h3>${yes.length ? `<ul class="acklist">${yes.sort((a, b) => at[b.id].localeCompare(at[a.id])).map(e => `<li><span>${esc(e.name)}</span><small class="muted">${esc(when(at[e.id]))}</small></li>`).join('')}</ul>` : '<p class="muted" style="margin:0">Nog niemand</p>'}</div>
-    <div class="dlg-foot"><button type="button" class="btn ghost" data-rulesview>Afspraken bekijken</button><button type="button" class="btn" data-rulesbump>Afspraken gewijzigd</button><button type="button" class="btn primary" data-close>Sluiten</button></div>`,
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-rulesview>Afspraken bekijken</button><button type="button" class="btn" data-rulesbump>Afspraken gewijzigd</button></div>`,
   { onReady: dlg => {
     $('[data-rulesview]', dlg).onclick = () => rulesViewer();
     $('[data-rulesbump]', dlg).onclick = async () => {

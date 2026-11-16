@@ -44,7 +44,10 @@ async function test(name, fn) {
   const fresh = async (page, hash) => { await page.goto(URL + hash); await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); }); await page.reload(); await page.waitForSelector('[data-demo]'); };
   // tabblad openen; op de telefoon staan sommige tabbladen onder 'Meer'
   const tab = async (page, t) => { const b = await page.$(`[data-tab=${t}]`); if (b && await b.isVisible()) return b.click(); await page.click('[data-more]'); await page.click(`dialog.moresheet [data-mgo=${t}]`); };
-  const login = async (page, name) => { await page.click(`[data-demo]:has-text("${name}")`); await page.waitForSelector('#view > *', { state: 'attached' }); await page.waitForTimeout(200); };
+  // na het inloggen: de dagelijkse herinnering voor de afspraken wegtikken (eigen test hieronder)
+  const login = async (page, name) => { await page.click(`[data-demo]:has-text("${name}")`); await page.waitForSelector('#view > *', { state: 'attached' }); await page.waitForTimeout(200);
+    await page.evaluate(() => { try { const id = window.__rooster?.S?.me?.id; if (id) localStorage.setItem('rulesNag:' + id, new Date().toISOString().slice(0, 10)); } catch (e) { /* */ } });
+    await page.waitForTimeout(700); const n = await page.$('dialog[open] [data-rulesnow]'); if (n) await page.click('dialog[open] [data-close]:has-text("Later")'); };
   const logout = async (page, hash) => { await page.click('[data-logout]'); await page.goto(URL + hash); await page.waitForSelector('[data-demo]'); };
   const noViewError = async page => assert.ok(!(await page.$('#view .msg.err')), 'foutmelding op de pagina: ' + (await page.$eval('#view .msg.err', e => e.textContent).catch(() => '')));
   const demoDb = page => page.evaluate(() => { const k = Object.keys(localStorage).find(x => x.startsWith('lilou-rooster-demo-')); return { k, db: JSON.parse(localStorage.getItem(k)) }; });
@@ -1052,6 +1055,17 @@ async function test(name, fn) {
     await p.fill('#reqform [name=start_date]', a); await p.dispatchEvent('#reqform [name=start_date]', 'change');
     await p.fill('#reqform [name=end_date]', b); await p.dispatchEvent('#reqform [name=end_date]', 'change');
     await p.waitForSelector('[data-cost]:has-text("5 dagen")');
+    await ctx.close();
+  });
+  await test('afspraken: dagelijkse herinnering tot gelezen en akkoord', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await p.click('[data-demo]:has-text("Sanne")');
+    await p.waitForSelector('dialog[open] [data-rulesnow]', { timeout: 8000 });
+    await p.click('dialog[open] [data-close]:has-text("Later")');
+    await p.reload(); await p.waitForTimeout(1500);
+    assert.ok(!(await p.$('dialog[open] [data-rulesnow]')), 'herinnering vaker dan één keer per dag');
+    await p.evaluate(() => { Object.keys(localStorage).filter(k => k.startsWith('rulesNag:')).forEach(k => localStorage.setItem(k, '2000-01-01')); });
+    await p.reload(); await p.waitForSelector('dialog[open] [data-rulesnow]', { timeout: 8000 });
     await ctx.close();
   });
   await test('geen JavaScript-fouten', async () => assert.deepStrictEqual(errors, []));
