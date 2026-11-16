@@ -1,5 +1,5 @@
 // Eenvoudige service worker: app-bestanden offline beschikbaar, data altijd live.
-const CACHE = 'rooster-v74';
+const CACHE = 'rooster-v75';
 const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'config.js', 'icon-192-v2.png', 'brand/lilou-wordmark-rood.png', 'brand/lilou-wordmark-creme.png', 'manifest.webmanifest', 'vendor/fonts.css', 'vendor/supabase.min.js'];
 
 self.addEventListener('install', e => {
@@ -13,7 +13,7 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET' || url.origin !== location.origin) return; // API-verkeer niet cachen
   e.respondWith(
     fetch(e.request, { cache: 'no-cache' })   // altijd de nieuwste versie van de server; de cache alleen als er geen verbinding is
-      .then(res => { if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); } return res; })
+      .then(res => { if (res.ok && !url.searchParams.has('check')) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); } return res; })
       .catch(() => caches.match(e.request, { ignoreSearch: true }).then(r => r || (e.request.mode === 'navigate' ? caches.match('index.html') : Response.error())))
   );
 });

@@ -1176,8 +1176,11 @@ async function checkMe(force = false) {
   Object.assign(S.me, emp); return true;
 }
 const calmRerender = () => { if (document.querySelector('dialog[open]') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return; rerender(); };
+setInterval(() => { if (document.visibilityState === 'visible' && S.me && ['overzicht', 'klokken'].includes(S.view)) calmRerender(); }, 2 * 60000);
+let lastDay = todayIso();
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible' || !S.me) return;
+  if (todayIso() !== lastDay) { lastDay = todayIso(); S.dashWeek = mondayOf(new Date()); S.week = mondayOf(new Date()); S.homeWeek = null; S.homeMonth = null; }
   if (await checkMe(true) && ['mijn', 'overzicht'].includes(S.view)) calmRerender();   // terug in de app: actuele diensten tonen
 });
 
@@ -2491,7 +2494,7 @@ async function viewDashboard(el) {
   const [emps0, shifts, ents, privList, st, revRows, reqs, apps, openE, avail, board, ahead, swapsAll] = await Promise.all([
     store.employees(), store.shifts(from, to), soft(store.entries(from, to), []), soft(store.privates(), []), store.settings(), soft(store.revenue(from, to), []),
     soft(store.requests(), []), soft(store.applications(), []), soft(store.openEntries(), []), soft(store.availability(from, to), []), soft(store.announcements(), { list: [], reads: [] }),
-    soft(store.shifts(todayIso(), iso(addDays(new Date(), 70))), []), soft(store.swaps(), [])]);
+    soft(store.shifts(iso(addDays(parse(bizToday()), -1)), iso(addDays(new Date(), 70))), []), soft(store.swaps(), [])]);
   applySettings(st);
   const emps = sortEmps(emps0), byId = Object.fromEntries(emps.map(e => [e.id, e]));
   const privs = Object.fromEntries(privList.map(p => [p.employee_id, p]));
@@ -3374,8 +3377,12 @@ async function viewMine(el) {
   const nowHM = `${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
   const next = mine.find(s => s.date > today || (s.date === today && hm(s.end_time) > nowHM) || (s.date === today && mins(s.end_time) <= mins(s.start_time)));
   const nowMs = Date.now();
-  const todayShift = mine.find(s => { const w = shiftWindow(s); return w[0] <= nowMs && w[1] > nowMs; }) || mine.find(s => s.date === today);
-  const nextAfter = mine.find(s => s !== todayShift && shiftWindow(s)[0] > nowMs);
+  const byStartM = [...mine].sort((a, b) => shiftWindow(a)[0] - shiftWindow(b)[0]);
+  const todayShift = byStartM.find(s => { const w = shiftWindow(s); return w[0] <= nowMs && w[1] > nowMs; })   // loopt nu
+    || byStartM.find(s => s.date === today && shiftWindow(s)[0] > nowMs)                                        // komt nog vandaag
+    || [...byStartM].reverse().find(s => (s.date === today || s.date === bizToday()) && shiftWindow(s)[1] <= nowMs && nowMs - shiftWindow(s)[1] < 5 * 3600e3)   // net afgelopen (ook nachtdienst)
+    || byStartM.find(s => s.date === today);
+  const nextAfter = byStartM.find(s => s !== todayShift && shiftWindow(s)[0] > nowMs);
   const bdM = bizToday();
   let gSub = '';
   if (!sel) {
@@ -4895,12 +4902,13 @@ function ringInfo(d) {
       if (end > now) return { big: dur(end - now), small: 'nog te gaan · niet ingeklokt'.replace(' · ', '\n'), frac: Math.min(1, Math.max(0.02, (now - st) / (end - st))), late: true };
       return { big: '0:00', small: 'je dienst zit erop', frac: 1 };
     }
+    if (left > 3 * 3600e3) { const t = new Date(Number(m.start)); return { big: `${pad(t.getHours())}:${pad(t.getMinutes())}`, small: left > 20 * 3600e3 ? 'je dienst begint' : 'over ' + Math.round(left / 3600e3) + ' uur', frac: 0.04 }; }
     return { big: dur(left), small: 'tot je dienst', frac: Math.max(0.04, 1 - left / (3 * 3600e3)) };
   }
   if (m.mode === 'in') {
     const from = Number(m.from), to = Number(m.to);
-    if (to > from) { const left = to - now; return left > 0 ? { big: dur(left), small: m.brk ? 'pauze · nog te gaan' : 'nog te gaan', frac: Math.min(1, (now - from) / (to - from)) } : { big: dur(now - to), small: 'over je eindtijd', frac: 1, late: true }; }
-    return { big: dur(now - from), small: m.brk ? 'pauze · gewerkt' : 'gewerkt', frac: Math.max(0.02, Math.min(1, (now - from) / (8 * 3600e3))) };
+    if (to > from) { const left = to - now; return left > 0 ? { big: dur(left), small: m.brk ? 'pauze\nnog te gaan' : 'nog te gaan', frac: Math.min(1, (now - from) / (to - from)) } : { big: dur(now - to), small: 'over je eindtijd', frac: 1, late: true }; }
+    return { big: dur(now - from), small: m.brk ? 'pauze\ngewerkt' : 'gewerkt', frac: Math.max(0.02, Math.min(1, (now - from) / (8 * 3600e3))) };
   }
   return null;
 }
@@ -4933,6 +4941,7 @@ async function clockHero(todayShift, { mates = [], next = null } = {}) {
     ? `<p class="ch-shift"><strong>Je dienst zit erop</strong><small>${esc(shiftKindLabel(todayShift))} ${hm(todayShift.start_time)} – ${hm(todayShift.end_time)} · ${new Date().getHours() >= 17 || new Date().getHours() < 5 ? 'fijne avond verder' : 'fijne dag verder'}</small></p>`
     : todayShift
     ? `<p class="ch-shift"><strong>${esc(shiftKindLabel(todayShift))} <span class="nowrap">${hm(todayShift.start_time)} – ${hm(todayShift.end_time)}</span></strong><small>${esc([todayShift.position, met].filter(Boolean).join(' · '))}</small></p>`
+    : open ? `<p class="ch-shift"><strong>Extra dienst</strong><small>Ingeklokt zonder geplande dienst</small></p>`
     : `<p class="ch-shift"><strong>Geen dienst vandaag</strong><small>Je kunt wel inklokken als je toch werkt.</small></p>`;
   const status = open ? `<p class="ch-status"><span class="ch-dot ${onBreak ? 'brk' : ''}"></span>${onBreak ? 'Pauze sinds ' + tHM(open.break_started_at) : 'Ingeklokt om ' + tHM(open.clock_in)}<span data-live="${open.id}" hidden></span></p>` : '';
   const btns = !open
@@ -4942,7 +4951,7 @@ async function clockHero(todayShift, { mates = [], next = null } = {}) {
     ${ringHTML}${title}${status}
     <div class="ch-btns">${noLoc ? '<p class="ch-note">De werklocatie is nog niet ingesteld. Vraag de directie om dit te doen.</p>' : btns}</div>
     <p class="ch-note">${hasWifi(st) ? ico('wifi') + 'Op de wifi van de zaak of op locatie' : ico('pin') + 'Alleen op de werklocatie'}</p>
-    ${next ? `<p class="ch-next">Volgende: ${esc(fmtShort(next.date))} · ${esc(shiftKindLabel(next).toLowerCase())} <span class="nowrap">${hm(next.start_time)} – ${hm(next.end_time)}</span></p>` : ''}
+    ${next ? `<p class="ch-next">Volgende: ${next.date === todayIso() ? 'vandaag' : next.date === iso(addDays(new Date(), 1)) ? 'morgen' : esc(fmtShort(next.date))} · ${esc(shiftKindLabel(next).toLowerCase())} <span class="nowrap">${hm(next.start_time)} – ${hm(next.end_time)}</span></p>` : ''}
     ${store.demo ? `<div class="demo-loc"><span>Demo – doe alsof ik ben:</span><div class="filters"><button data-demoloc="wifi" class="${S.demoLoc === 'wifi' ? 'active' : ''}">Op de wifi</button><button data-demoloc="op" class="${!S.demoLoc || S.demoLoc === 'op' ? 'active' : ''}">Op locatie (gps)</button><button data-demoloc="buiten" class="${S.demoLoc === 'buiten' ? 'active' : ''}">Thuis</button></div></div>` : ''}
   </div>`;
 }
@@ -5298,9 +5307,12 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
   const check = async () => {
     if (busy || !navigator.onLine) return; busy = true;
     try {
-      const html = await (await fetch('index.html?check=' + Date.now(), { cache: 'no-store' })).text();
+      const html = await (await fetch('./?check=' + Date.now(), { cache: 'no-store' })).text();
       const live = html.match(/app\.js\?v=(\d+)/)?.[1];
-      if (live && live !== mine) {
+      let last = null; try { last = JSON.parse(localStorage.getItem('rooster-reload-to') || 'null'); } catch (e) { /* geen opslag */ }
+      const tried = last && last.v === live && Date.now() - last.at < 30 * 60000;   // al geprobeerd: niet blijven herladen
+      if (live && live !== mine && !tried) {
+        try { localStorage.setItem('rooster-reload-to', JSON.stringify({ v: live, at: Date.now() })); } catch (e) { /* geen opslag */ }
         try { const reg = await navigator.serviceWorker?.getRegistration(); await reg?.update(); } catch (e) { /* geen service worker */ }
         reload();
       }
@@ -5309,7 +5321,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
   };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
   setInterval(() => { if (pending) reload(); else if (document.visibilityState === 'visible') check(); }, 5 * 60000);
-  document.addEventListener('focusout', () => { if (pending) setTimeout(reload, 500); });
+  document.addEventListener('focusout', () => { if (pending) setTimeout(reload, 4000); });
   try { if (sessionStorage.getItem('rooster-updated')) { sessionStorage.removeItem('rooster-updated'); setTimeout(() => toast('De app is bijgewerkt naar de nieuwste versie'), 1500); } } catch (e) { /* geen opslag */ }
 })();
 // Alleen in de demo: haakje voor de automatische tests
