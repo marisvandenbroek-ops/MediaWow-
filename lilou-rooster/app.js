@@ -1286,7 +1286,7 @@ function renderShell() {
     </div></header>
     <main id="view"></main>
     ${store.demo ? '' : `<footer class="app-foot">${LEGAL}</footer>`}`;
-  $$('[data-tab]').forEach(b => (b.onclick = () => go(b.dataset.tab)));
+  $$('[data-tab]').forEach(b => (b.onclick = () => { if (b.dataset.tab === 'mijn') S.mineWeek = null; go(b.dataset.tab); }));   // tik op Rooster = terug naar het startscherm
   const mb = $('[data-more]'); if (mb) mb.onclick = moreSheet;
   const gs = $('[data-gosettings]'); if (gs) gs.onclick = () => go('instellingen');
   $('[data-logout]').onclick = signOut;
@@ -3437,7 +3437,7 @@ async function viewMine(el) {
   }
 
   el.innerHTML = `
-    <div class="page-head greet ${sel ? '' : 'center'}"><div>${sel ? '' : `<p class="g-date">${esc(fmtLong(todayIso()))}</p>`}<h1>${sel ? 'Je rooster' : `${new Date().getHours() < 5 || new Date().getHours() >= 17 ? 'Bonsoir' : 'Bonjour'}, ${esc(S.me.name.split(' ')[0])}.`}</h1>${sel ? '<p>Per week.</p>' : gSub ? `<p class="g-sub">${gSub}</p>` : ''}</div>
+    <div class="page-head greet ${sel ? '' : 'center'}"><div>${sel ? '<button type="button" class="backlink" data-mf="all">‹ Terug</button>' : `<p class="g-date">${esc(fmtLong(todayIso()))}</p>`}<h1>${sel ? 'Je rooster' : `${new Date().getHours() < 5 || new Date().getHours() >= 17 ? 'Bonsoir' : 'Bonjour'}, ${esc(S.me.name.split(' ')[0])}.`}</h1>${sel ? '' : gSub ? `<p class="g-sub">${gSub}</p>` : ''}</div>
       <div class="head-actions"><button class="btn" data-ics>${ico('cal')}Agenda</button>${sickNow ? '' : `<button class="btn" data-sick>${ico('therm')}Ik ben ziek</button>`}</div></div>
     ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     <div class="mhome ${sel ? 'sel' : ''}"><div class="mcol">
@@ -3448,7 +3448,7 @@ async function viewMine(el) {
     ${false ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
     ${rulesH}
     ${sel ? '' : await listsHomeHTML()}
-    ${boardH}
+    ${sel ? '' : boardH}
     ${sel ? '' : `<div class="homemore tiles">
       <button type="button" class="card lhome" data-gohours><span><strong>${ico('clock')}Mijn gewerkte uren</strong><small>Per week, met je kloktijden en wat is goedgekeurd</small></span><span class="chev">›</span></button>
       <button type="button" class="card lhome" data-gokaarten><span><strong>${ico('book')}Menukaart & wijnkaart</strong><small>Snel even kijken wat er op de kaart staat</small></span><span class="chev">›</span></button>
@@ -3457,7 +3457,7 @@ async function viewMine(el) {
       ${rulesH ? '' : `<button type="button" class="card lhome" data-rulesview><span><strong>${ico('book')}Afspraken</strong><small>Alle regels: service, allergenen, hygiëne en meer</small></span><span class="chev">›</span></button>`}
     </div>`}
     </div></div>
-    ${sel ? '<div class="filters mine-filter" id="weken"><button data-mf="all">‹ Terug naar start</button></div>' : ''}
+
     ${body}
   `;
   bindClock(el);

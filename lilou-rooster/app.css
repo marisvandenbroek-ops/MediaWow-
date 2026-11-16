@@ -1470,3 +1470,6 @@ fieldset.choice[hidden] { display: none; }
 /* tekst in de ring blijft binnen de cirkel */
 .champ .ring-in small { max-width: 68%; text-align: center; line-height: 1.25; white-space: normal; }
 .champ .ring-in small { white-space: pre-line; }
+
+.backlink { background: none; border: 0; padding: 6px 0; min-height: 40px; font: inherit; font-size: 15px; color: var(--accent); cursor: pointer; }
+.backlink:hover { text-decoration: underline; }
