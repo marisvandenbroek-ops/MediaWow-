@@ -1485,3 +1485,20 @@ fieldset.choice[hidden] { display: none; }
 .homeroster .daylist li.today .d b, .homeroster .daylist li.today .d span { color: var(--accent); }
 .homeroster .allwk { display: block; margin: 0 auto; }
 .wk-empty { margin: 0; padding: 14px 16px; color: var(--muted); font-size: 14.5px; }
+
+/* Overzicht directie: rooster van vandaag bovenaan */
+.rlist { list-style: none; margin: 4px 0 8px; padding: 0; }
+.rrow { display: grid; grid-template-columns: 10px 1fr auto; grid-template-areas: "dot who time" "dot who stat"; column-gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.rrow:last-child { border-bottom: 0; }
+.rdot { grid-area: dot; width: 10px; height: 10px; border-radius: 5px; }
+.rwho { grid-area: who; display: flex; flex-direction: column; min-width: 0; }
+.rwho strong { font-size: 16px; }
+.rwho small { color: var(--muted); font-size: 13px; }
+.rtime { grid-area: time; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.rstat { grid-area: stat; justify-self: end; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.rstat.in { color: var(--ok, #3f7d58); font-weight: 600; }
+.rstat.late { color: var(--bad, #b3261e); font-weight: 600; }
+.rtmr { margin: 2px 0 10px; }
+.rtmr > summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; color: var(--muted); font-size: 14px; }
+.rbtn { min-height: 46px; gap: 8px; }
+.rbtn .ico { width: 18px; height: 18px; }

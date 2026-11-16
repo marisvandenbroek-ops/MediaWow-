@@ -2653,6 +2653,19 @@ async function viewDashboard(el) {
     }),
   ].filter(Boolean);
   const SHOW = 4;
+  const tmr = iso(addDays(parse(bd), 1));
+  const tmrShifts = ahead.filter(x => x.date === tmr && x.employee_id && x.published);
+  const stOf = x => { const w = shiftWindow(x), o = inNow.find(e => e.employee_id === x.employee_id);
+    if (o) return '<span class="rstat in">ingeklokt</span>';
+    if (w[1] <= now) return '<span class="rstat done">klaar</span>';
+    if (w[0] <= now) return now - w[0] > 10 * 60e3 ? '<span class="rstat late">niet ingeklokt</span>' : '<span class="rstat">begint nu</span>';
+    return ''; };
+  const rRow = x => `<li class="rrow"><span class="rdot" style="background:${esc(byId[x.employee_id]?.color || COLORS[0])}"></span><span class="rwho"><strong>${esc(fnm(x.employee_id))}</strong><small>${esc(x.position || '')}</small></span><span class="rtime">${hm(x.start_time)} – ${hm(x.end_time)}</span>${stOf(x)}</li>`;
+  const byStart = (a, b) => shiftWindow(a)[0] - shiftWindow(b)[0] || fnm(a.employee_id).localeCompare(fnm(b.employee_id));
+  const rosterCard = `<section class="card hcard rostercard"><div class="hhead"><h2>Rooster vandaag</h2><span class="muted small">${todayShifts.length} ${todayShifts.length === 1 ? 'dienst' : 'diensten'}</span></div>
+    ${spToday?.kind === 'gesloten' ? `<p class="hint" style="margin:6px 0">Gesloten · ${esc(spToday.label || '')}</p>` : todayShifts.length ? `<ul class="rlist">${[...todayShifts].sort(byStart).map(rRow).join('')}</ul>` : '<p class="hint" style="margin:6px 0">Niemand ingeroosterd vandaag.</p>'}
+    ${tmrShifts.length ? `<details class="rtmr"><summary>Morgen · ${tmrShifts.length} ${tmrShifts.length === 1 ? 'dienst' : 'diensten'}</summary><ul class="rlist">${[...tmrShifts].sort(byStart).map(x => rRow(x).replace(/<span class="rstat[^<]*<\/span>/, '')).join('')}</ul></details>` : ''}
+    <button type="button" class="btn block rbtn" data-goto2="planning">${ico('cal')}Hele weekrooster</button></section>`;
   const greet = hr < 5 || hr >= 17 ? 'Bonsoir' : 'Bonjour';
   const latest = board.list.slice(0, 2);
   const kpiMini = (v, l, kind) => `<div class="mk"><b class="${kind ? goalColor(kind, v.raw, st) : ''}">${v.txt}</b><span>${l}</span></div>`;
@@ -2660,7 +2673,8 @@ async function viewDashboard(el) {
     ${S.dashPartial ? '<p class="msg err">Niet alle gegevens konden worden geladen; sommige cijfers kunnen ontbreken. Tik opnieuw op Overzicht.</p>' : ''}
     <div class="page-head dhead greet"><div><p class="g-date">${esc(fmtLong(bd))}</p><h1>${greet}, ${esc((S.me.name || '').split(' ')[0])}.</h1>${people ? `<p>${people} ${people === 1 ? 'persoon werkt' : 'mensen werken'} vandaag</p>` : ''}</div></div>
     <div class="dhome">
-      <section class="card hcard"><div class="hhead"><h2>Vandaag</h2><button type="button" class="linkbtn" data-goto2="planning">Rooster ›</button></div>
+      ${rosterCard}
+      <section class="card hcard"><div class="hhead"><h2>Aandacht</h2></div>
         ${staffRow}${listRow}${repRow}${guestRow}</section>
       <section class="card hcard"><div class="hhead"><h2>Te doen</h2>${todo.length > SHOW ? `<button type="button" class="linkbtn" data-hall>${S.dashAll ? 'Minder' : `Alles (${todo.length})`}</button>` : ''}</div>
         ${todo.length ? (S.dashAll ? todo : todo.slice(0, SHOW)).join('') : '<p class="hint" style="margin:6px 0 2px">Alles is bij. ✓</p>'}</section>
