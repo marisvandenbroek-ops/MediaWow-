@@ -348,6 +348,9 @@ async function test(name, fn) {
     if (await p.$('th.closedday')) assert.strictEqual(await p.$$eval('th.closedday', x => x.length), 7);
     const s2 = watch(await ctx.newPage()); await s2.setViewportSize({ width: 390, height: 844 });
     await s2.goto(URL + '#personeel'); await s2.waitForSelector('[data-demo]'); await login(s2, 'Sanne');
+    await s2.waitForSelector('.closednote:has-text("Zomervakantie")');   // startscherm: melding gesloten
+    await s2.click('[data-allweeks]');
+    for (let i = 0; i < 6 && !(await s2.$('.daylist li.weekclosed:has-text("Zomervakantie")')); i++) { await s2.click('[data-w="1"]'); await s2.waitForTimeout(200); }
     await s2.waitForSelector('.daylist li.weekclosed:has-text("Zomervakantie")');
     await tab(s2, 'planning'); await s2.click('[data-act=today]');
     for (let i = 0; i < 4 && !(await s2.$('.closedbar:has-text("Zomervakantie")')); i++) { await s2.click('[data-act=next]'); await s2.waitForTimeout(250); }
@@ -381,7 +384,7 @@ async function test(name, fn) {
     const tabs = await p.$$eval('[data-tab]', a => a.map(x => x.dataset.tab));
     assert.ok(!tabs.includes('uren') && !tabs.includes('team') && !tabs.includes('klokken'), 'shiftleader ziet directietabs: ' + tabs.join(','));
     assert.ok(!(await p.$('[data-gosettings]')), 'shiftleader ziet instellingen');
-    await tab(p, 'planning'); await p.waitForSelector('[data-act=publish]');
+    await tab(p, 'planning'); await p.waitForSelector('[data-act=publish], .pubstate');
     assert.ok(!(await p.$('.cost')), 'shiftleader ziet loonkosten');
     await p.close(); pages.splice(pages.indexOf(p), 1);
   });
@@ -585,8 +588,8 @@ async function test(name, fn) {
       for (let i = 1; i <= 30; i++) { const d = new Date(Date.now() + i * 2 * 864e5); db.shifts.push({ id: 'noor-' + i, employee_id: e.id, date: d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()), start_time: '14:00', end_time: '22:00', break_minutes: 0, position: 'Keuken', note: '', published: true }); }
       db.notifications = [];`);
     await p.reload(); await p.waitForSelector('[data-tab=planning]');
-    await tab(p, 'planning'); await p.waitForSelector('[data-personpick]');
-    await p.click('[data-personpick]'); await p.click('dialog [data-pick]:has-text("Noor")');
+    await tab(p, 'planning'); await p.waitForSelector('[data-planmore]');   // telefoon: via 'Meer'
+    await p.click('[data-planmore]'); await p.click('dialog [data-more=personpick]'); await p.click('dialog [data-pick]:has-text("Noor")');
     await p.waitForSelector('dialog:has-text("Diensten van Noor") .psweek');
     assert.ok((await p.$$('dialog .psweek')).length >= 8, 'niet alle weken zichtbaar');
     const n = (await p.$$('dialog input[name=ids]:not(:disabled)')).length; assert.ok(n >= 30, 'te weinig diensten: ' + n);
@@ -972,6 +975,86 @@ async function test(name, fn) {
     await shared.waitForSelector('dialog .dlgerr');
   });
 
+  await test('dagrapport: shiftleader vult in, directie leest het met de cijfers', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Daan');
+    await setDemoDb(p, `const d = db.employees.find(x => x.name.startsWith('Daan')); d.role = 'planner'; d.plan_mode = 'ja';
+      const b = new Date(Date.now() - 5 * 3600e3), bd = b.getFullYear() + '-' + String(b.getMonth() + 1).padStart(2, '0') + '-' + String(b.getDate()).padStart(2, '0');
+      db.shifts.push({ id: 'rep-1', employee_id: d.id, date: bd, start_time: '00:00', end_time: '23:59', break_minutes: 0, position: 'Bar', note: '', published: true });`);
+    await p.reload(); await p.waitForSelector('#view > *', { state: 'attached' }); await p.waitForTimeout(400);
+    await tab(p, 'mijn');
+    await p.waitForSelector('[data-drepnew]'); await p.click('[data-drepnew]'); await p.waitForSelector('dialog textarea[name=notes]');
+    await p.click('dialog .busyopt:has-text("Druk")'); await p.fill('dialog textarea[name=notes]', 'Terras vol, keuken liep goed.'); await p.fill('dialog input[name=sold_out]', 'Tarte tatin');
+    await p.click('dialog button[value=save]'); await p.waitForSelector('.toast:has-text("Dagrapport verstuurd")');
+    const { db } = await demoDb(p);
+    const r = Object.values(db.dayreports)[0];
+    assert.ok(r && r.busy === 'druk' && /Terras vol/.test(r.notes) && r.sold_out === 'Tarte tatin', 'dagrapport niet opgeslagen');
+    assert.ok(db.notifications.some(n => /^Dagrapport/.test(n.title) && n.view === 'overzicht:rapport'), 'directie krijgt geen melding');
+    const m = watch(await ctx.newPage()); await m.setViewportSize({ width: 1280, height: 900 });
+    await m.goto(URL + '#directie'); await m.waitForSelector('[data-demo]'); await login(m, 'Mark');
+    await m.waitForSelector('[data-dreps]'); await m.click('[data-dreps]'); await m.click('dialog [data-drep]');
+    await m.waitForSelector('dialog .reptxt:has-text("Terras vol")');
+    assert.ok(await m.$('dialog .minikpis.static'), 'cijfers ontbreken in het dagrapport');
+    await ctx.close();
+  });
+  await test('diploma: toevoegen in team, planning waarschuwt zonder SVH, melding bij verlopen', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await tab(p, 'team'); await p.click('tr:has-text("Sanne")'); await p.waitForSelector('dialog [data-certadd]');
+    await p.selectOption('dialog [data-certkind]', 'svh');
+    const soon = new Date(Date.now() + 20 * 864e5).toISOString().slice(0, 10);
+    await p.fill('dialog [data-certexp]', soon); await p.click('dialog [data-certadd]');
+    await p.waitForSelector('dialog .certlist li:has-text("Sociale Hygiëne")');
+    let { db } = await demoDb(p);
+    assert.strictEqual(db.certs.length, 1, 'diploma niet opgeslagen');
+    await p.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+    // een dag waarop Sanne niet werkt maar een ander wel: planning laat 'Geen SVH' zien
+    await setDemoDb(p, `const s = db.employees.find(x => x.name.startsWith('Sanne')); const o = db.employees.find(x => x.name.startsWith('Noor'));
+      const d = new Date(Date.now() + 864e5), ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      db.shifts = db.shifts.filter(x => x.date !== ds); db.shifts.push({ id: 'svh-1', employee_id: o.id, date: ds, start_time: '12:00', end_time: '20:00', break_minutes: 0, position: 'Keuken', note: '', published: true });`);
+    await p.reload(); await p.waitForSelector('#view > *', { state: 'attached' }); await p.waitForTimeout(400);
+    ({ db } = await demoDb(p));
+    assert.ok(db.notifications.some(n => /verloopt binnenkort/.test(n.title)), 'medewerker krijgt geen melding voor het verlopen');
+    assert.ok(db.notifications.some(n => /^Diploma verloopt: Sanne/.test(n.title)), 'directie krijgt geen melding voor het verlopen');
+    await tab(p, 'planning'); await p.click('[data-act=today]');
+    let found = await p.$('.covp:has-text("Geen SVH")');
+    if (!found) { await p.click('[data-act=next]'); found = await p.waitForSelector('.covp:has-text("Geen SVH")'); }
+    assert.ok(found, 'planning waarschuwt niet');
+    await ctx.close();
+  });
+  await test('niet ingeklokt: melding aan de leiding en de medewerker', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await setDemoDb(p, `const e = db.employees.find(x => x.name.startsWith('Eva')); const st = new Date(Date.now() - 20 * 60000), en = new Date(Date.now() + 3 * 3600e3);
+      const f = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), t = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      db.entries = db.entries.filter(x => x.employee_id !== e.id); db.requests = db.requests.filter(x => x.employee_id !== e.id); db.notifications = [];
+      db.shifts.push({ id: 'late-1', employee_id: e.id, date: f(st), start_time: t(st), end_time: t(en) > t(st) ? t(en) : '23:59', break_minutes: 0, position: 'Bediening', note: '', published: true });`);
+    await p.reload(); await p.waitForSelector('#view > *', { state: 'attached' }); await p.waitForTimeout(400);
+    const { db } = await demoDb(p);
+    assert.ok(db.notifications.some(n => n.title === 'Eva is nog niet ingeklokt'), 'leiding krijgt geen melding');
+    assert.ok(db.notifications.some(n => n.title === 'Je bent nog niet ingeklokt'), 'medewerker krijgt geen melding');
+    const before = db.notifications.length; await p.reload(); await p.waitForSelector('#view > *', { state: 'attached' }); await p.waitForTimeout(400);
+    assert.strictEqual((await demoDb(p)).db.notifications.filter(n => /nog niet ingeklokt/.test(n.title)).length, db.notifications.filter(n => /nog niet ingeklokt/.test(n.title)).length, 'melding dubbel');
+    await ctx.close();
+  });
+  await test('beschikbaarheid: nogmaals tikken maakt de dag leeg, opmerking op verzoek', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne'); await tab(p, 'beschikbaar');
+    await p.click('.avrow:first-child .av-avond span'); assert.ok(await p.isChecked('.avrow:first-child .av-avond input'));
+    await p.click('.avrow:first-child .av-avond span'); assert.ok(await p.isChecked('.avrow:first-child .av-leeg input'), 'nogmaals tikken maakt niet leeg');
+    assert.ok(!(await p.isVisible('.avrow:first-child .avnote')), 'opmerking staat al open');
+    await p.click('.avrow:first-child [data-addnote]'); assert.ok(await p.isVisible('.avrow:first-child .avnote'));
+    await ctx.close();
+  });
+  await test('verlof: kosten in uren zichtbaar voor versturen', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne'); await tab(p, 'aanvragen');
+    const a = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), b = new Date(Date.now() + 34 * 864e5).toISOString().slice(0, 10);
+    await p.fill('#reqform [name=start_date]', a); await p.dispatchEvent('#reqform [name=start_date]', 'change');
+    await p.fill('#reqform [name=end_date]', b); await p.dispatchEvent('#reqform [name=end_date]', 'change');
+    await p.waitForSelector('[data-cost]:has-text("5 dagen")');
+    await ctx.close();
+  });
   await test('geen JavaScript-fouten', async () => assert.deepStrictEqual(errors, []));
   await browser.close(); server.close();
   console.log(`\n${passed} tests geslaagd${process.exitCode ? ', maar er zijn FOUTEN' : ''}`);

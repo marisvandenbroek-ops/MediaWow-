@@ -1370,3 +1370,91 @@ fieldset.choice[hidden] { display: none; }
 :root[data-theme="dark"] .page-head.greet .g-date { color: #C9B08A; }
 .stack-brand .sub { white-space: nowrap; letter-spacing: .18em; }
 .logbtns .btn .ico, .hrow .ht strong .ico, .tlog strong .ico { width: 16px; height: 16px; margin-right: 6px; vertical-align: -3px; }
+
+/* update 44: diploma's en dagrapport */
+.certbox { margin: 10px 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+.certh { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 15px; }
+.certh .ico { width: 16px; height: 16px; }
+.certlist { list-style: none; margin: 0 0 8px; padding: 0; }
+.certlist li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.certlist li span { display: flex; flex-direction: column; }
+.certlist small { color: var(--muted); }
+.certlist small.warn { color: #a6650f; font-weight: 600; }
+.certlist small.bad { color: var(--bad, #b3261e); font-weight: 600; }
+.certadd { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.certadd select, .certadd input { flex: 1 1 140px; min-height: 40px; }
+.busyrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.busyopt { position: relative; }
+.busyopt input { position: absolute; opacity: 0; inset: 0; }
+.busyopt span { display: flex; align-items: center; justify-content: center; min-height: 44px; border: 1.5px solid var(--line-strong, var(--line)); border-radius: 10px; font-size: 14px; text-align: center; }
+.busyopt input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink, #fff); font-weight: 600; }
+.busyopt input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.reph { font-size: 14px; margin: 14px 0 4px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.reptxt { margin: 0; white-space: pre-wrap; }
+.replist { margin: 0; padding-left: 18px; }
+.minikpis.static { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; margin: 8px 0; cursor: default; }
+.hlist .hrow { width: 100%; }
+.hn .ico { width: 15px; height: 15px; }
+
+/* beschikbaarheid compact: één rij keuzes, leeg = nogmaals tikken, opmerking op verzoek, opslaan altijd zichtbaar */
+.avopt.av-leeg { display: none; }
+.avopts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+.avopt span { width: 100%; min-height: 40px; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.15; padding: 4px 3px !important; }
+.avaddnote { font-size: 13px; justify-self: start; min-height: 36px; }
+.avrow .avnote[hidden], .avaddnote[hidden] { display: none; }
+.avform .avfoot { position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); border-radius: 0 0 var(--radius, 14px) var(--radius, 14px); z-index: 2; }
+@media (max-width: 760px) { .avform .avfoot { bottom: calc(64px + env(safe-area-inset-bottom)); flex-wrap: wrap; } .avrow { padding: 10px 14px; } }
+
+/* startscherm medewerker: korter, tegels, ruilen bij de dienst */
+.homemore.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.homemore.tiles .lhome { margin: 0; min-height: 76px; padding: 12px 14px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; }
+.homemore.tiles .lhome small, .homemore.tiles .lhome .chev { display: none; }
+.homemore.tiles .lhome strong { display: flex; flex-direction: column; gap: 6px; font-size: 14.5px; line-height: 1.2; }
+.homemore.tiles .lhome strong .ico { width: 20px; height: 20px; }
+.srow .shrs { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.srow .swl { font-size: 13px; min-height: 32px; padding: 0 2px; }
+.srow .swp { font-size: 11.5px; color: var(--muted); }
+.closednote { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 8px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2, var(--surface)); font-size: 14px; }
+.closednote .ico { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--accent); }
+.page-head.greet .g-sub { margin: 4px 0 0; color: var(--muted); font-size: 14.5px; }
+.mine-filter button { min-height: 44px; }
+
+/* planning op de telefoon: minder knoppen, zwevende + Dienst */
+.mob-only { display: none; }
+.pill.pubstate { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 12px; }
+.pill.pubstate .ico { width: 14px; height: 14px; }
+@media (max-width: 760px) {
+  .mob-hide { display: none !important; }
+  .mob-only { display: inline-flex; }
+  .btn.madd { position: fixed; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom)); width: auto; z-index: 30; border-radius: 28px; padding: 0 20px; min-height: 52px; box-shadow: 0 6px 18px rgba(0, 0, 0, .22); }
+  .mplan, .mlist { padding-bottom: 72px; }
+}
+/* knoppen en tikvlakken minstens 44px */
+.seg button, .filters button { min-height: 44px; }
+.hcard .linkbtn, .homesec .linkbtn, .hlinks .linkbtn { min-height: 44px; }
+.pinitem > summary, .unreaditem > summary { min-height: 44px; display: flex; align-items: center; gap: 6px; }
+.costline { margin: -2px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft, #f6e9e6); font-size: 14px; }
+.req.flash { animation: reqflash 2.4s ease-out 1; }
+@keyframes reqflash { 0%, 30% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .req.flash { animation: none; outline: 2px solid var(--accent); } }
+
+/* lijsten: voortgang en compacte knoppen */
+.lcard > summary { position: relative; }
+.lprog { position: absolute; left: 16px; right: 16px; bottom: 4px; height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.lprog i { display: block; height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
+.logbtns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.logbtns .btn { justify-content: center; min-height: 44px; padding: 0 8px; white-space: nowrap; }
+
+/* één regel voor knoppen: positieve actie = wijnrood, groen alleen voor status */
+.btn.ok { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.ok { background: #9E2218; border-color: #9E2218; color: #fff; } }
+:root[data-theme="dark"] .btn.ok { background: #9E2218; border-color: #9E2218; color: #fff; }
+
+/* laptop: inhoud niet breder dan 1100px */
+@media (min-width: 900px) {
+  #view { max-width: 1100px; }
+}
+.logbtns .btn { min-width: 0; font-size: 14px; gap: 5px; }
+.logbtns .btn .ico { width: 16px; height: 16px; flex: none; }
+@media (max-width: 380px) { .logbtns .btn { font-size: 13px; padding: 0 4px; } .logbtns .btn .ico { display: none; } }
+.avrow .avaddnote { grid-column: -2 / -1; white-space: nowrap; text-align: left; }

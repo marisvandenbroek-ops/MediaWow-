@@ -549,5 +549,53 @@ select sick_recover((select id from requests where employee_id = 'a0000000-0000-
 reset role;
 select t_ok((select recovered_at is not null and end_date = today_nl() from requests where employee_id = 'a0000000-0000-0000-0000-000000000003' and type = 'ziek' and start_date = today_nl() order by created_at desc limit 1), 'weer beter op de dag zelf: tijdstip bewaard');
 
+\echo '== Update 44: diplomas, dagrapport, niet ingeklokt'
+reset role;
+update employees set plan_mode = 'ja', position = null where id = 'a0000000-0000-0000-0000-000000000004';
+update employees set plan_mode = 'nee', position = null where id = 'a0000000-0000-0000-0000-000000000002';
+select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000004') = 'planner', 'testopzet: Eva is shiftleader');
+-- diploma's
+set role authenticated; select as_user(1);
+insert into employee_certs (employee_id, kind, expires) values ('a0000000-0000-0000-0000-000000000002', 'svh', today_nl() + 30), ('a0000000-0000-0000-0000-000000000003', 'bhv', today_nl() + 400);
+select as_user(2);
+select t_ok(t_count('select * from employee_certs') = 1, 'medewerker ziet alleen zijn eigen diploma');
+select t_fails($$insert into employee_certs (employee_id, kind, expires) values ('a0000000-0000-0000-0000-000000000002', 'bhv', today_nl() + 999)$$, 'medewerker kan zelf geen diploma toevoegen (fout)');
+reset role;
+select t_ok((select count(*) from employee_certs where employee_id = 'a0000000-0000-0000-0000-000000000002') = 1, 'medewerker kan zelf geen diploma toevoegen');
+set role authenticated; select as_user(4);
+select t_ok(t_count('select * from employee_certs') = 2, 'shiftleader ziet alle diploma''s voor de planning');
+reset role;
+select cert_reminders();
+select t_ok(exists (select 1 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000002' and title like '%verloopt binnenkort'), 'medewerker krijgt melding: diploma verloopt binnenkort');
+select t_ok(exists (select 1 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000001' and title like 'Diploma verloopt%'), 'directie krijgt melding over het diploma');
+select t_ok(cert_reminders() = 0, 'diplomamelding niet dubbel');
+select t_ok(not exists (select 1 from notifications where body like '%Daan Jansen is geldig%'), 'geen melding voor diploma dat nog lang geldig is');
+-- dagrapport
+set role authenticated; select as_user(4);
+select save_day_report(business_day(), 'druk', 'Goede avond, terras vol.', 'Tarte tatin', 'Sanne top');
+select t_ok(t_count('select * from day_reports') = 1, 'shiftleader kan een dagrapport maken en lezen');
+select t_fails($$select save_day_report(business_day() - 5, 'rustig', 'x', null, null)$$, 'shiftleader kan geen oud dagrapport aanpassen');
+select as_user(2);
+select t_fails($$select save_day_report(business_day(), 'rustig', 'x', null, null)$$, 'medewerker kan geen dagrapport maken');
+select t_ok(t_count('select * from day_reports') = 0, 'medewerker leest geen dagrapporten');
+reset role;
+select t_ok((select count(*) from notifications where employee_id = 'a0000000-0000-0000-0000-000000000001' and title like 'Dagrapport%') = 1, 'directie krijgt melding van het dagrapport');
+set role authenticated; select as_user(4);
+select save_day_report(business_day(), 'heel druk', 'Aangepast', null, null);
+reset role;
+select t_ok((select count(*) from notifications where employee_id = 'a0000000-0000-0000-0000-000000000001' and title like 'Dagrapport%') = 1 and (select notes from day_reports where date = business_day()) = 'Aangepast', 'aanpassen geeft geen tweede melding');
+-- niet ingeklokt
+delete from time_entries where employee_id = 'a0000000-0000-0000-0000-000000000002';
+delete from requests where employee_id = 'a0000000-0000-0000-0000-000000000002';
+insert into shifts (id, employee_id, date, start_time, end_time, published) values
+  ('50000000-0000-0000-0000-000000000044', 'a0000000-0000-0000-0000-000000000002',
+   ((now() - interval '20 minutes') at time zone 'Europe/Amsterdam')::date, (((now() - interval '20 minutes') at time zone 'Europe/Amsterdam')::time(0)), (((now() + interval '3 hours') at time zone 'Europe/Amsterdam')::time(0)), true);
+select late_reminders();
+select t_ok(exists (select 1 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000002' and title = 'Je bent nog niet ingeklokt'), 'medewerker krijgt melding: nog niet ingeklokt');
+select t_ok(exists (select 1 from notifications where title = 'Sanne is nog niet ingeklokt'), 'leiding krijgt melding: Sanne is nog niet ingeklokt');
+select t_ok(late_reminders() = 0, 'niet-ingeklokt-melding niet dubbel');
+select t_ok(not has_function_privilege('authenticated', 'public.late_reminders()', 'execute') and not has_function_privilege('authenticated', 'public.cert_reminders()', 'execute'), 'herinneringen alleen via run_jobs');
+select t_ok(run_jobs() >= 0, 'run_jobs draait met de nieuwe stappen');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

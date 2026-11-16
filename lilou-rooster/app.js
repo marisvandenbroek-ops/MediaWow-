@@ -94,6 +94,12 @@ const IC = {
 };
 const hasWifi = st => !!((st && st.wifi_ips && st.wifi_ips.length) || (st && st.has_wifi));   // medewerkers krijgen alleen has_wifi, niet de adressen
 const ico = n => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${IC[n] || ''}</svg>`;
+// Diploma's (update 44)
+const CERT = { svh: 'Sociale Hygiëne (SVH)', bhv: 'BHV', haccp: 'HACCP', ehbo: 'EHBO', anders: 'Ander diploma' };
+const certLabel = c => c.label || CERT[c.kind] || 'Diploma';
+const certValid = (c, ds) => !c.expires || c.expires >= ds;
+const dmy = ds => String(ds || '').split('-').reverse().join('-');
+const BUSY = ['rustig', 'normaal', 'druk', 'heel druk'];
 const ICON = {
   kaarten: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5 9 3l6 2.5L21 3v15.5L15 21l-6-2.5L3 21z"/><path d="M9 3v15.5M15 5.5V21"/></svg>',
   planning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 14h3M13.5 14h3M7.5 17.5h3"/></svg>',
@@ -281,6 +287,22 @@ function demoStore() {
       save();
     },
     async profileOf(id) { if (!isMgr()) return null; return clone(this._profiles()[id] || null); },
+    async certs() { db.certs ||= []; return clone(db.certs.filter(c => canPlan() || c.employee_id === mem)); },
+    async saveCert(c) {
+      if (!isMgr()) throw new Error('Alleen de directie kan diploma\'s aanpassen.');
+      db.certs ||= []; const v = { id: c.id || uid(), employee_id: c.employee_id, kind: c.kind, label: c.label || null, expires: c.expires || null, created_at: new Date().toISOString() };
+      const i = db.certs.findIndex(x => x.id === v.id); if (i >= 0) db.certs[i] = v; else db.certs.push(v); save();
+    },
+    async deleteCert(id) { if (!isMgr()) throw new Error('Geen rechten'); db.certs = (db.certs || []).filter(x => x.id !== id); save(); },
+    async dayReports(from, to) { if (!canPlan()) return []; db.dayreports ||= {}; return clone(Object.values(db.dayreports).filter(r => r.date >= from && r.date <= to)).sort((a, b) => b.date.localeCompare(a.date)); },
+    async saveDayReport(r) {
+      if (!canPlan()) throw new Error('Alleen de leiding kan een dagrapport maken.');
+      const bd = bizToday(); if (!isMgr() && (r.date < iso(addDays(parse(bd), -1)) || r.date > bd)) throw new Error('Een dagrapport kun je alleen voor vandaag of gisteren invullen.');
+      db.dayreports ||= {}; const old = db.dayreports[r.date], tx = v => (v || '').trim() || null;
+      db.dayreports[r.date] = { date: r.date, busy: r.busy || null, notes: tx(r.notes), sold_out: tx(r.sold_out), team: tx(r.team), employee_id: mem, created_at: old?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+      if (!old) notifyMgrs(`Dagrapport ${r.date.slice(8, 10)}-${r.date.slice(5, 7)}`, `Van ${fname(mem)}${tx(r.notes) ? ': ' + tx(r.notes).slice(0, 120) : '.'}`, 'overzicht:rapport', mem);
+      save();
+    },
     async emergencyContacts() { if (!canPlan()) return []; const pr = this._profiles(); return clone(db.employees.filter(e => e.active !== false && pr[e.id]?.emergency?.length).map(e => ({ employee_id: e.id, name: e.name, emergency: pr[e.id].emergency })).sort((a, b) => a.name.localeCompare(b.name))); },
     async teamPhones() { const pr = this._profiles(); db.employees.forEach((e, i) => { if (!e.phone && pr[e.id]?.share_phone) e.phone = '06 2345 67' + String(10 + i); }); return clone(db.employees.filter(e => e.active !== false && pr[e.id]?.share_phone && e.phone).map(e => ({ employee_id: e.id, name: e.name, position: e.position, phone: e.phone })).sort((a, b) => a.name.localeCompare(b.name))); },
     async savePrivate(p) {
@@ -689,6 +711,28 @@ function demoStore() {
           });
         });
       }
+      // niet ingeklokt 10 minuten na het begin van de dienst (zelfde regels als public.late_reminders)
+      db.shifts.filter(x => x.published && x.employee_id).forEach(x => {
+        const st = shiftWindow(x)[0].getTime();
+        if (now - st < 10 * 60000 || now - st > 60 * 60000 || db.reminders['t' + x.id]) return;
+        if (db.requests.some(r => r.employee_id === x.employee_id && r.status !== 'rejected' && ['vakantie', 'vrij', 'onbeschikbaar', 'ziek'].includes(r.type) && x.date >= r.start_date && x.date <= r.end_date)) return;
+        if (db.entries.some(e => e.employee_id === x.employee_id && new Date(e.clock_in).getTime() >= st - 3 * 3600e3 && new Date(e.clock_in).getTime() <= now)) return;
+        db.reminders['t' + x.id] = 1;
+        let ls = leads().filter(e => e.id !== x.employee_id && db.shifts.some(y => y.published && y.employee_id === e.id && now >= shiftWindow(y)[0].getTime() - 30 * 60000 && now <= shiftWindow(y)[1].getTime()));
+        if (!ls.length) ls = db.employees.filter(e => e.role === 'manager' && e.active !== false && e.id !== x.employee_id);
+        ls.forEach(e => notify(e.id, `${fname(x.employee_id)} is nog niet ingeklokt`, `Dienst begon om ${hm(x.start_time)}${x.position ? ' · ' + x.position : ''}. Even bellen?`, 'planning'));
+        notify(x.employee_id, 'Je bent nog niet ingeklokt', `Je dienst begon om ${hm(x.start_time)}. Vergeet niet in te klokken.`, 'mijn');
+      });
+      // diploma's die bijna verlopen (zelfde regels als public.cert_reminders)
+      const td = todayIso();
+      (db.certs || []).forEach(c => {
+        const emp = db.employees.find(e => e.id === c.employee_id); if (!c.expires || !emp || emp.active === false) return;
+        if (c.expires < iso(addDays(parse(td), -7)) || c.expires > iso(addDays(parse(td), 60))) return;
+        const k = (c.expires < td ? 'c0' : 'c60') + c.id; if (db.reminders[k]) return; db.reminders[k] = 1;
+        const lab = certLabel(c), gone = c.expires < td;
+        notify(c.employee_id, lab + (gone ? ' is verlopen' : ' verloopt binnenkort'), `Geldig tot ${dmy(c.expires)}. Regel op tijd een herhaling en geef het nieuwe diploma door aan de directie.`, 'mijn');
+        notifyMgrs(`Diploma ${gone ? 'verlopen' : 'verloopt'}: ${fname(c.employee_id)}`, `${lab} van ${emp.name} is geldig tot ${dmy(c.expires)}.`, 'team', c.employee_id);
+      });
       save(); return n;
     },
   };
@@ -799,6 +843,11 @@ async function supabaseStore() {
     async myProfile() { return ok(await sb.rpc('my_profile')); },
     async saveMyProfile(v) { ok(await sb.rpc('save_my_profile', { p_phone: v.phone, p_birth: v.birth_date, p_emergency: v.emergency || [], p_shirt: v.shirt_size || null, p_share: !!v.share_phone })); },
     async profileOf(id) { return ok(await sb.from('employee_profile').select('*').eq('employee_id', id).maybeSingle()); },
+    async certs() { return ok(await sb.from('employee_certs').select('*')) || []; },
+    async saveCert(c) { const v = { employee_id: c.employee_id, kind: c.kind, label: c.label || null, expires: c.expires || null }; ok(c.id ? await sb.from('employee_certs').update(v).eq('id', c.id) : await sb.from('employee_certs').insert(v)); },
+    async deleteCert(id) { ok(await sb.from('employee_certs').delete().eq('id', id)); },
+    async dayReports(from, to) { if (!canPlan()) return []; return ok(await sb.from('day_reports').select('*').gte('date', from).lte('date', to).order('date', { ascending: false })) || []; },
+    async saveDayReport(r) { ok(await sb.rpc('save_day_report', { p_date: r.date, p_busy: r.busy || null, p_notes: r.notes || null, p_sold_out: r.sold_out || null, p_team: r.team || null })); },
     async emergencyContacts() { return ok(await sb.rpc('emergency_contacts')) || []; },
     async teamPhones() { return ok(await sb.rpc('team_phones')) || []; },
     async saveMenuCard(c) {
@@ -1597,6 +1646,7 @@ async function viewWeek(el, editable) {
   const from = iso(S.week), to = iso(addDays(S.week, 6));
   const [emps0, shifts, reqs, avail, apps, privList, stW, around, dayRows, revRows] = await Promise.all([store.employees(), store.shifts(from, to), store.requests(), canPlan() ? store.availability(from, to) : Promise.resolve([]), store.applications(),
     isMgr() ? store.privates() : Promise.resolve([]), canPlan() ? store.settings() : Promise.resolve({}), canPlan() ? store.shifts(iso(addDays(S.week, -1)), iso(addDays(S.week, 7))) : Promise.resolve([]), canPlan() ? store.dayInfo(from, to) : Promise.resolve([]), isMgr() ? store.revenue(from, to) : Promise.resolve([])]);
+  const certs = canPlan() ? await store.certs().catch(() => []) : [];
   const emps = sortEmps(emps0);
   const privs = Object.fromEntries(privList.map(p => [p.employee_id, p]));
   // Shiftleader (niet de directie, die heeft Klokken): wie staat er vandaag en is die al binnen?
@@ -1673,12 +1723,18 @@ async function viewWeek(el, editable) {
     return out;
   };
   const haveOf = (ds, p) => shifts.filter(x => x.date === ds && x.employee_id && x.position === p).length;
-  const covOn = editable && (guestMode || Object.values(staffing).some(o => Object.values(o || {}).some(n => Number(n) > 0)) || (CFG.specialDays || []).some(x => x.kind === 'gesloten' && x.date >= from && x.date <= to));
+  const certKinds = ['svh', 'bhv'].filter(k => certs.some(c => c.kind === k));
+  const certHTML = ds => {
+    const on = shifts.filter(x => x.date === ds && x.employee_id); if (!on.length || specialDay(ds)?.kind === 'gesloten') return '';
+    return certKinds.filter(k => !on.some(x => certs.some(c => c.employee_id === x.employee_id && c.kind === k && certValid(c, ds))))
+      .map(k => `<span class="covp short" title="Niemand met een geldig ${k === 'svh' ? 'diploma Sociale Hygiëne' : 'BHV-diploma'} ingepland deze dag">Geen ${k.toUpperCase()}</span>`).join('');
+  };
+  const covOn = editable && (certKinds.length > 0 || guestMode || Object.values(staffing).some(o => Object.values(o || {}).some(n => Number(n) > 0)) || (CFG.specialDays || []).some(x => x.kind === 'gesloten' && x.date >= from && x.date <= to));
   const covHTML = ds => {
     const sp = specialDay(ds);
     if (sp?.kind === 'gesloten') return `<span class="covp closed">Gesloten · ${esc(sp.label)}</span>`;
     const need = needOf(ds);
-    return `${guestMode ? `<label class="guests" title="Verwachte gasten (optioneel)">Gasten<input type="number" min="0" step="5" inputmode="numeric" data-guests="${ds}" value="${dayMap[ds]?.guests ?? ''}" placeholder="–"></label>` : ''}${Object.entries(need).map(([p, n]) => { const h = haveOf(ds, p); return `<span class="covp ${h >= n ? 'ok' : 'short'}" title="${h} van ${n} ingepland">${esc(p)} ${h}/${n}</span>`; }).join('')}`;
+    return `${guestMode ? `<label class="guests" title="Verwachte gasten (optioneel)">Gasten<input type="number" min="0" step="5" inputmode="numeric" data-guests="${ds}" value="${dayMap[ds]?.guests ?? ''}" placeholder="–"></label>` : ''}${Object.entries(need).map(([p, n]) => { const h = haveOf(ds, p); return `<span class="covp ${h >= n ? 'ok' : 'short'}" title="${h} van ${n} ingepland">${esc(p)} ${h}/${n}</span>`; }).join('')}${certHTML(ds)}`;
   };
   // Directie: verwachte omzet en personeelskosten per dag, gekleurd tegen het doel
   const revMap = Object.fromEntries((revRows || []).map(r => [r.date, r]));
@@ -1787,7 +1843,7 @@ async function viewWeek(el, editable) {
       <div class="mlist">${items || `<div class="card empty">${editable ? 'Nog niemand ingepland.' : 'Geen diensten op deze dag.'}</div>`}</div>
       ${availFree.length ? `<p class="hint mavail">Beschikbaar, nog niet ingepland: ${availFree.map(a => `<strong>${esc((byId[a.employee_id]?.name || '').split(' ')[0])}</strong> (${AVAIL[a.kind].toLowerCase()})`).join(', ')}</p>` : ''}
       ${editable ? '<button class="btn primary block madd" data-addday>+ Dienst toevoegen</button>' : ''}
-      <p class="hint swipehint">Veeg over de dagen bovenin voor een andere week, over de diensten voor een andere dag · week totaal ${fmtH(totalH)} u</p>`;
+      <p class="hint swipehint">${(() => { let seen = false; try { seen = !!localStorage.getItem('rooster-swipehint'); localStorage.setItem('rooster-swipehint', '1'); } catch (x) { /* geen opslag */ } return seen ? '' : 'Veeg over de dagen bovenin voor een andere week, over de diensten voor een andere dag · '; })()}week totaal ${fmtH(totalH)} u</p>`;
   };
 
   el.innerHTML = `
@@ -1802,14 +1858,14 @@ async function viewWeek(el, editable) {
       </div>
       ${editable ? `<div class="actions">
         <button class="btn hide-sm" data-act="print">Afdrukken / PDF</button>
-        <button class="btn" data-act="copy">Kopieer vorige week</button>
-        <button class="btn primary" data-act="publish" ${concept ? '' : 'disabled'}>${concept ? `Publiceer ${concept} dienst${concept > 1 ? 'en' : ''}` : shifts.length ? 'Week gepubliceerd ✓' : 'Nog geen diensten'}</button>
+        <button class="btn mob-hide" data-act="copy">Kopieer vorige week</button>
+        ${concept ? `<button class="btn primary" data-act="publish">Publiceer ${concept} dienst${concept > 1 ? 'en' : ''}</button>` : `<span class="pill pubstate ${shifts.length ? 'ok' : ''}">${shifts.length ? ico('check') + 'Week gepubliceerd' : 'Nog geen diensten'}</span>`}
       </div>` : ''}
     </div>
     ${closedBanner(iso(days[0]), iso(days[days.length - 1]))}
-    ${todayPanel}
+    ${mobile && isMgr() ? '' : todayPanel}
     ${elsewhere ? `<div class="pubbar"><span>Nog <strong>${future.length} concept${future.length > 1 ? 'en' : ''}</strong> in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} (${futureWeeks.map(w => 'wk ' + weekNr(parse(w))).join(', ')})</span><button class="btn sm primary" data-act="publishall">Alles publiceren</button></div>` : ''}
-    ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : ''}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><button type="button" class="btn sm" data-personpick>${ico('user')}Diensten per persoon</button></div>` : ''}
+    ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : 'mob-hide'}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><button type="button" class="btn sm mob-hide" data-personpick>${ico('user')}Diensten per persoon</button>${S.selMode ? '' : '<button type="button" class="btn sm mob-only" data-planmore aria-label="Meer acties">⋯ Meer</button>'}</div>` : ''}
     ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren${listView ? ', of kies "Hele dag selecteren" onder een dag' : ''}. Met "Hele week" in de balk onderin selecteer je alles van deze week.</p>` : ''}
     ${editable && !mobile && !listView ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span><span class="av av-avond">✓ avond</span> <span class="av av-niet">✕ niet</span> doorgegeven beschikbaarheid</span></div>` : ''}
     ${people.length && listView ? listHTML() + '<p class="hint swipehint">Veeg naar links of rechts voor een andere week</p>' : ''}
@@ -1853,6 +1909,12 @@ async function viewWeek(el, editable) {
     const dayB = ev.target.closest('[data-day]'); if (dayB) { S.dayI = Number(dayB.dataset.day); return rerender(); }
     const pv = ev.target.closest('[data-pv]'); if (pv) { S.planView = pv.dataset.pv; try { localStorage.setItem('rooster-planview', S.planView); } catch (x) { /* geen opslag */ } return rerender(); }
     if (ev.target.closest('[data-personpick]')) return personPicker(people.filter(e => e.active !== false));
+    if (ev.target.closest('[data-planmore]')) {
+      const acts = [['copy', 'Kopieer vorige week'], ['selmode', 'Diensten selecteren'], ['personpick', 'Diensten per persoon'], ['print', 'Afdrukken / PDF']];
+      return openDialog('Meer acties', `<div class="hlist">${acts.map(([k, l]) => `<button type="button" class="hrow" data-more="${k}"><span class="ht"><strong>${l}</strong></span><span class="chev" aria-hidden="true">›</span></button>`).join('')}</div>`, {
+        onReady(dlg) { dlg.addEventListener('click', e2 => { const b = e2.target.closest('[data-more]'); if (!b) return; dlg.close(); const k = b.dataset.more; const t = k === 'copy' || k === 'print' ? $(`[data-act="${k}"]`, el) : $(`[data-${k}]`, el); if (k === 'print') window.print(); else if (t) t.click(); }); },
+      });
+    }
     if (ev.target.closest('[data-selmode]')) { S.selMode = !S.selMode; S.sel = new Set(); return rerender(); }
     if (S.selMode) {
       const sc = ev.target.closest('[data-shift]');
@@ -2544,7 +2606,7 @@ async function viewDashboard(el) {
   const late = started.filter(x => !inIds.has(x.employee_id) && now - shiftWindow(x)[0] > 10 * 60e3);
   const nextUp = todayShifts.filter(x => shiftWindow(x)[0] > now).sort((a, b) => shiftWindow(a)[0] - shiftWindow(b)[0]);
   const people = new Set(todayShifts.map(x => x.employee_id)).size;
-  const vRow = (kind, title, sub, attr) => `<button type="button" class="hrow" ${attr}><span class="hn ${kind}">${kind === 'ok' ? '✓' : kind === 'bad' ? '!' : kind === 'info' ? '·' : '!'}</span><span class="ht"><strong>${title}</strong>${sub ? `<small>${sub}</small>` : ''}</span><span class="chev" aria-hidden="true">›</span></button>`;
+  const vRow = (kind, title, sub, attr) => `<button type="button" class="hrow" ${attr}><span class="hn ${kind}">${kind === 'ok' ? '✓' : kind === 'bad' ? '!' : kind === 'info' ? ico('clock') : '!'}</span><span class="ht"><strong>${title}</strong>${sub ? `<small>${sub}</small>` : ''}</span><span class="chev" aria-hidden="true">›</span></button>`;
   let staffRow;
   if (spToday?.kind === 'gesloten') staffRow = vRow('info', 'Vandaag gesloten', esc(spToday.label || ''), 'data-goto2="planning"');
   else if (!todayShifts.length) staffRow = vRow('info', 'Niemand ingeroosterd vandaag', '', 'data-goto2="planning"');
@@ -2561,6 +2623,13 @@ async function viewDashboard(el) {
   const op = listStat(['opening']), cl = listStat(['dag', 'sluiting']);
   const listRow = !todayShifts.length || spToday?.kind === 'gesloten' ? ''
     : vRow(op.full === op.n ? 'ok' : hr >= 12 ? 'bad' : 'warn', op.n ? (op.full === op.n ? 'Openingslijsten af' : `Opening: ${op.full} van ${op.n} lijsten af`) : 'Geen openingslijsten', cl.n ? `Sluiting en dag: ${cl.full} van ${cl.n} af` : '', 'data-goto2="lijsten"');
+  const yd = iso(addDays(parse(bd), -1));
+  const reps = await store.dayReports(yd, bd).catch(() => []);
+  const repT = reps.find(x => x.date === bd), repY = reps.find(x => x.date === yd);
+  const repSub = x => esc([x.busy, (x.notes || '').slice(0, 60)].filter(Boolean).join(' · '));
+  const repRow = repT ? vRow('ok', `Dagrapport van ${esc(fnm(repT.employee_id))}`, repSub(repT), `data-drep="${bd}"`)
+    : (hr >= 17 || hr < 5) && todayShifts.length ? vRow('info', 'Dagrapport nog niet ingevuld', 'De shiftleader vult het in na de dienst', `data-drepnew="${bd}"`)
+    : repY ? vRow('ok', `Dagrapport gisteren van ${esc(fnm(repY.employee_id))}`, repSub(repY), `data-drep="${yd}"`) : '';
   const guests = dayToday[0]?.guests;
   const guestRow = spToday?.kind === 'gesloten' ? '' : `<div class="hrow static"><span class="hn info">${ico('user')}</span><span class="ht"><strong>Gasten vandaag</strong><small>${Object.values(st.guest_ratios || {}).some(v => Number(v) > 0) ? 'De bezetting in de planning rekent hiermee' : 'Vul in uit Zenchef'}</small></span><input class="guestin" type="number" min="0" step="1" inputmode="numeric" aria-label="Aantal gasten vandaag" data-gtoday="${bd}" value="${guests ?? ''}" placeholder="—"></div>`;
   // te doen: met de knoppen erbij
@@ -2586,7 +2655,7 @@ async function viewDashboard(el) {
     <div class="page-head dhead greet"><div><p class="g-date">${esc(fmtLong(bd))}</p><h1>${greet}, ${esc((S.me.name || '').split(' ')[0])}.</h1>${people ? `<p>${people} ${people === 1 ? 'persoon werkt' : 'mensen werken'} vandaag</p>` : ''}</div></div>
     <div class="dhome">
       <section class="card hcard"><div class="hhead"><h2>Vandaag</h2><button type="button" class="linkbtn" data-goto2="planning">Rooster ›</button></div>
-        ${staffRow}${listRow}${guestRow}</section>
+        ${staffRow}${listRow}${repRow}${guestRow}</section>
       <section class="card hcard"><div class="hhead"><h2>Te doen</h2>${todo.length > SHOW ? `<button type="button" class="linkbtn" data-hall>${S.dashAll ? 'Minder' : `Alles (${todo.length})`}</button>` : ''}</div>
         ${todo.length ? (S.dashAll ? todo : todo.slice(0, SHOW)).join('') : '<p class="hint" style="margin:6px 0 2px">Alles is bij. ✓</p>'}</section>
       <section class="card hcard"><div class="hhead"><h2>${S.dashWeek.getTime() === mondayOf(new Date()).getTime() ? 'Deze week' : esc(wl.title)}</h2><button type="button" class="linkbtn" data-dcijfers>Cijfers ›</button></div>
@@ -2600,13 +2669,17 @@ async function viewDashboard(el) {
         ${latest.length ? latest.map(a => { const aud = annAudience(a, emps); const n = board.reads.filter(r => r.announcement_id === a.id && aud.some(e => e.id === r.employee_id)).length;
           return `<button type="button" class="hrow" data-annall><span class="ht"><strong>${a.pinned ? ico('pinned') : ''}${esc(a.title)}</strong><small>${esc(fmtShort(iso(new Date(a.created_at))))} · gelezen door ${n} van ${aud.length}</small></span><span class="chev" aria-hidden="true">›</span></button>`; }).join('')
           : '<p class="hint" style="margin:6px 0 2px">Deel hier nieuws met het team, zoals een nieuwe kaart of een proeverij.</p>'}</section>
-      <div class="hlinks"><button type="button" class="linkbtn" data-rulesmgr>${ico('book')}Afspraken</button><button type="button" class="linkbtn" data-nood>${ico('phone')}Noodnummers</button><button type="button" class="linkbtn" data-myagenda>${ico('cal')}Mijn diensten in agenda</button></div>
+      <div class="hlinks"><button type="button" class="linkbtn" data-rulesmgr>${ico('book')}Afspraken</button><button type="button" class="linkbtn" data-nood>${ico('phone')}Noodnummers</button><button type="button" class="linkbtn" data-dreps>${ico('file')}Dagrapporten</button><button type="button" class="linkbtn" data-myagenda>${ico('cal')}Mijn diensten in agenda</button></div>
     </div>`;
   el.innerHTML = S.dashTab === 'cijfers' ? cijfersHTML : homeHTML;
   fillAnnFiles(el);
+  if (S.reqTab === 'rapport') { S.reqTab = ''; const last = repT || repY; if (last) dayReportView(last.date); else dayReportsList(); }
   if (S.refocus) { const { attr, date } = S.refocus; S.refocus = null; const ins = $$(`[${attr}]`, el); const i = ins.findIndex(x => x.getAttribute(attr) === date); const nx = ins[i + 1]; if (nx) nx.focus(); }
   el.onclick = ev => {
     if (ev.target.closest('[data-annnew]')) return annDialog();
+    const drp = ev.target.closest('[data-drep]'); if (drp) return dayReportView(drp.dataset.drep);
+    const drn = ev.target.closest('[data-drepnew]'); if (drn) return dayReportDialog(drn.dataset.drepnew);
+    if (ev.target.closest('[data-dreps]')) return dayReportsList();
     if (ev.target.closest('[data-annallmgr]') || ev.target.closest('[data-annall]')) return annAllDialog(board, emps, true);
     if (ev.target.closest('[data-dcijfers]')) { S.dashTab = 'cijfers'; return rerender(); }
     if (ev.target.closest('[data-dhome]')) { S.dashTab = ''; S.dashWeek = mondayOf(new Date()); return rerender(); }
@@ -2754,7 +2827,7 @@ async function viewLijsten(el) {
     }).join('');
     const isOpen = S.lOpen ? S.lOpen.has(l.id) : (!lead && l.id === firstOpen);
     return `<details class="card lcard ${full ? 'full' : ''} ${flagged ? 'flag' : ''}" ${isOpen ? 'open' : ''} data-list="${l.id}">
-      <summary><span class="lname">${esc(l.name)}${l.department ? ` <small>${esc(l.department)}</small>` : ''}</span>${stat}</summary>
+      <summary><span class="lname">${esc(l.name)}${l.department ? ` <small>${esc(l.department)}</small>` : ''}</span>${stat}${items.length && !full ? `<span class="lprog" aria-hidden="true"><i style="width:${Math.round(100 * done / items.length)}%"></i></span>` : ''}</summary>
       <div class="lrows">${rows || '<p class="hint">Nog geen onderdelen.</p>'}${isMgr() ? `<div class="ledit"><button type="button" class="linkbtn small" data-ledit2="${l.id}">${ico('pen')}Deze lijst aanpassen</button></div>` : ''}</div></details>`;
   };
   // medewerkers: alleen de eerste lijst die nog niet af is staat open; de rest ingeklapt (blijft zo bij het afvinken)
@@ -2770,7 +2843,7 @@ async function viewLijsten(el) {
       ${lead ? `<div class="weeknav"><button class="btn icon" data-lday="-1" aria-label="Vorige dag">‹</button><div class="label"><strong>${ds === today ? 'Vandaag' : esc(fmtLong(ds))}</strong><span>${ds === today ? esc(fmtLong(ds)) : ''}</span></div><button class="btn icon" data-lday="1" aria-label="Volgende dag" ${ds >= today ? 'disabled' : ''}>›</button></div>` : ''}</div>
     ${lead ? `<div class="filters ldeps">${deps.map(d => `<button type="button" class="${S.lDep === d ? 'active' : ''}" data-ldep="${esc(d)}">${d === 'alle' ? 'Alles' : esc(d)}</button>`).join('')}</div>` : ''}
     ${isMgr() ? '<div class="lmanage"><button type="button" class="btn" data-lmanage>' + ico('pen') + 'Lijsten aanpassen</button><button type="button" class="btn" data-lnew2>+ Nieuwe lijst</button></div>' : ''}
-    ${past ? '' : `<div class="logbtns"><button class="btn" data-newlog="ontvangst">${ico('box')}Ontvangst goederen</button><button class="btn" data-newlog="kern">${ico('therm')}Kerntemperatuur</button><button class="btn" data-newlog="melding">${ico('alert')}Melding maken</button></div>`}
+    ${past ? '' : `<div class="logbtns"><button class="btn" data-newlog="ontvangst" title="Ontvangst goederen">${ico('box')}Ontvangst</button><button class="btn" data-newlog="kern" title="Kerntemperatuur">${ico('therm')}Kerntemp.</button><button class="btn" data-newlog="melding" title="Melding maken">${ico('alert')}Melding</button></div>`}
     ${group(ds === today ? 'Vandaag' : 'Deze dag', dayLists)}
     ${group('Deze week', lists.filter(l => l.moment === 'week'))}
     ${group('Deze maand', lists.filter(l => l.moment === 'maand'))}
@@ -2778,6 +2851,7 @@ async function viewLijsten(el) {
     <section class="lgroup"><h2>Registraties ${ds === today ? 'vandaag' : 'deze dag'}</h2>${logs.length ? `<ul class="card loglist">${logs.map(logRow).join('')}</ul>` : '<p class="hint">Nog niets geregistreerd.</p>'}</section>
     ${lead ? '<section class="lgroup" data-lopen></section><section class="lgroup" data-lstats></section>' : ''}`;
   if (lead) fillLeadPanels(el, byId, fn).catch(() => {});
+  if (S.lFocus) { const d = $(`details.lcard[data-list="${S.lFocus}"]`, el); S.lFocus = null; if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); } }
 
   const tickIt = async (cid, iid, value, note) => {
     const l = lists.find(x => x.id === cid), it = (l.items || []).find(x => x.id === iid);
@@ -2789,7 +2863,11 @@ async function viewLijsten(el) {
         async onSubmit(fd) { await tickIt(cid, iid, value, String(fd.get('note') || '').trim()); },
       });
     }
-    try { await store.tick({ checklist_id: cid, period: periodOf(l.moment, ds), item_id: iid, ...(value != null ? { value } : {}), ...(note ? { note } : {}) }); }
+    try {
+      await store.tick({ checklist_id: cid, period: periodOf(l.moment, ds), item_id: iid, ...(value != null ? { value } : {}), ...(note ? { note } : {}) });
+      const left = itemsOn(l, ds).filter(x => x.id !== iid && !tk(l, x)).length;
+      if (!left) toast(/zaal|bediening|opening/i.test(l.name) && l.moment === 'opening' ? 'Zaal staat klaar. Chapeau!' : `${l.name} is af. Chapeau!`);
+    }
     catch (e) { toast(/duplicate|unique|23505/i.test(errMsg(e) + (e.code || '')) ? 'Iemand anders heeft dit net afgevinkt' : errMsg(e), 'error'); }
     rerender();
   };
@@ -2924,7 +3002,7 @@ async function listsHomeHTML() {
     const ticks = await store.ticks([...new Set(lists.map(l => periodOf(l.moment, today)))]);
     const st = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).map(l => { const its = itemsOn(l, today), n = its.length, d = its.filter(it => ticks.some(t => t.checklist_id === l.id && t.period === today && t.item_id === it.id)).length; return { l, n, d }; });
     const open = st.filter(x => x.d < x.n);
-    return `<button type="button" class="card lhome" data-golists><span><strong>${ico('clip')}Lijsten vandaag</strong><small>${open.length ? open.slice(0, 3).map(x => `${esc(x.l.name)} ${x.d}/${x.n}`).join(' · ') : 'Alles afgevinkt ✓'}</small></span><span class="chev">›</span></button>`;
+    return `<button type="button" class="card lhome" data-golists="${open[0]?.l.id || ''}"><span><strong>${ico('clip')}Lijsten vandaag</strong><small>${open.length ? open.slice(0, 3).map(x => `${esc(x.l.name)} ${x.d}/${x.n}`).join(' · ') : 'Alles afgevinkt ✓'}</small></span><span class="chev">›</span></button>`;
   } catch (e) { return ''; }
 }
 // lijst bewerken (directie)
@@ -3199,6 +3277,59 @@ async function viewSettings(el) {
   };
 }
 
+/* ================= Dagrapport (shiftleader → directie) ================= */
+async function dayReportDialog(date) {
+  let r = null;
+  try { [r] = await store.dayReports(date, date); } catch (x) { return toast(/day_reports|schema cache|does not exist/i.test(x.message || '') ? 'Het dagrapport werkt na database-update 44.' : errMsg(x), 'error'); }
+  openDialog(`Dagrapport · ${fmtLong(date)}`, `
+    <p class="hint" style="margin-top:0">Voor de directie: hoe ging het? Gasten, omzet, uren en meldingen komen er vanzelf bij.</p>
+    <fieldset class="choice"><legend>Hoe druk was het?</legend><div class="busyrow">${BUSY.map(b => `<label class="busyopt"><input type="radio" name="busy" value="${b}" ${r?.busy === b ? 'checked' : ''}><span>${b[0].toUpperCase() + b.slice(1)}</span></label>`).join('')}</div></fieldset>
+    <label class="field">Hoe ging het?<textarea name="notes" rows="4" maxlength="4000" placeholder="Bijzonderheden, sfeer, gasten, wat ging goed of mis">${esc(r?.notes || '')}</textarea></label>
+    <label class="field">Uitverkocht of bijna op<input name="sold_out" maxlength="1000" value="${esc(r?.sold_out || '')}" placeholder="Bijv. tarte tatin, Chablis"></label>
+    <label class="field">Team<textarea name="team" rows="2" maxlength="2000" placeholder="Complimenten, wie viel op, wat kan beter">${esc(r?.team || '')}</textarea></label>
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">${r ? 'Bijwerken' : 'Versturen'}</button></div>`, {
+    async onSubmit(fd) {
+      await store.saveDayReport({ date, busy: fd.get('busy') || null, notes: fd.get('notes'), sold_out: fd.get('sold_out'), team: fd.get('team') });
+      toast(r ? 'Dagrapport bijgewerkt' : 'Merci! Dagrapport verstuurd naar de directie'); rerender();
+    },
+  });
+}
+async function dayReportView(date) {
+  const soft = (pr, fb) => pr.catch(() => fb);
+  const [reps, emps, logs, di, rev, ents, shifts, privs, st] = await Promise.all([soft(store.dayReports(date, date), []), store.employees(), soft(store.logs(date, date), []), soft(store.dayInfo(date, date), []),
+    soft(store.revenue(date, date), []), soft(store.entries(date, date), []), soft(store.shifts(date, date), []), isMgr() ? soft(store.privates(), []) : [], store.settings()]);
+  const r = reps[0]; if (!r) return dayReportDialog(date);
+  const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+  const worked = ents.filter(x => x.clock_out).map(x => entryAsShift(x, matchShift(x, shifts), st));
+  const rv = rev[0] || {}, omzet = Number(rv.actual ?? rv.forecast) || 0;
+  const P = kpiOf(worked.length ? worked : shifts.filter(x => x.employee_id), Object.fromEntries(privs.map(p => [p.employee_id, p])), st, omzet);
+  const meld = logs.filter(x => x.kind === 'melding');
+  const kp = (v, l) => `<div class="mk"><b>${v}</b><span>${l}</span></div>`;
+  const sec = (t, v) => v ? `<h3 class="reph">${t}</h3><p class="reptxt">${esc(v)}</p>` : '';
+  const canEdit = canPlan() && (isMgr() || date >= iso(addDays(parse(bizToday()), -1)));
+  openDialog(`Dagrapport · ${fmtLong(date)}`, `
+    <p class="hint" style="margin-top:0">Van ${esc((byId[r.employee_id]?.name || '?').split(' ')[0])}, ${tTime(r.updated_at || r.created_at)}${r.busy ? ` · <strong>${esc(r.busy)}</strong>` : ''}</p>
+    <div class="minikpis static">${kp(di[0]?.guests ?? '—', 'gasten')}${isMgr() ? kp(omzet ? euro0(omzet) : '—', rv.actual != null ? 'omzet' : 'omzet (verwacht)') + kp(P.pct != null ? pct1(P.pct) : '—', 'kosten') : ''}${kp(Math.round(P.hours) + ' u', worked.length ? 'gewerkt' : 'gepland')}</div>
+    ${sec('Hoe ging het?', r.notes)}${sec('Uitverkocht of bijna op', r.sold_out)}${sec('Team', r.team)}
+    ${meld.length ? `<h3 class="reph">Meldingen van die dag</h3><ul class="replist">${meld.map(x => `<li>${tTime(x.at)} · ${esc((x.data?.tekst || x.data?.soort || 'Melding').slice(0, 200))}${x.resolved_at ? ' <span class="pill ok">opgelost</span>' : ''}</li>`).join('')}</ul>` : ''}
+    <div class="dlg-foot"><button type="button" class="btn" data-dreps>Alle dagrapporten</button><span class="spacer"></span>${canEdit ? '<button type="button" class="btn" data-drepedit>Aanpassen</button>' : ''}<button type="button" class="btn primary" data-close>Sluiten</button></div>`, {
+    onReady(dlg) {
+      dlg.addEventListener('click', ev => {
+        if (ev.target.closest('[data-drepedit]')) { dlg.close(); dayReportDialog(date); }
+        if (ev.target.closest('[data-dreps]')) { dlg.close(); dayReportsList(); }
+      });
+    },
+  });
+}
+async function dayReportsList() {
+  const [reps, emps] = await Promise.all([store.dayReports(iso(addDays(new Date(), -60)), todayIso()).catch(() => []), store.employees()]);
+  const byId = Object.fromEntries(emps.map(e => [e.id, e]));
+  openDialog('Dagrapporten', reps.length ? `<div class="hlist">${reps.map(r => `<button type="button" class="hrow" data-drep="${r.date}"><span class="ht"><strong>${esc(fmtLong(r.date))}</strong><small>${esc([(byId[r.employee_id]?.name || '').split(' ')[0], r.busy, (r.notes || '').slice(0, 70)].filter(Boolean).join(' · '))}</small></span><span class="chev" aria-hidden="true">›</span></button>`).join('')}</div>`
+    : '<p class="hint">Nog geen dagrapporten. De shiftleader vult het in na de dienst, via het startscherm.</p>', {
+    onReady(dlg) { dlg.addEventListener('click', ev => { const b = ev.target.closest('[data-drep]'); if (b) { dlg.close(); dayReportView(b.dataset.drep); } }); },
+  });
+}
+
 /* ================= My schedule ================= */
 async function viewMine(el) {
   const start = mondayOf(new Date());
@@ -3220,11 +3351,26 @@ async function viewMine(el) {
   const nowMs = Date.now();
   const todayShift = mine.find(s => { const w = shiftWindow(s); return w[0] <= nowMs && w[1] > nowMs; }) || mine.find(s => s.date === today);
   const nextAfter = mine.find(s => s !== todayShift && shiftWindow(s)[0] > nowMs);
+  const bdM = bizToday();
+  let gSub = '';
+  if (!sel) {
+    try {
+      const hrM = new Date().getHours();
+      S.myBirth ??= (await store.myProfile().catch(() => null))?.birth_date || '';
+      const ents = (await store.entries(iso(addDays(new Date(), -730)), todayIso()).catch(() => [])).filter(x => x.employee_id === S.me.id && x.clock_out);
+      const lastE = ents.map(x => x.clock_out).sort().pop();
+      if (S.myBirth && S.myBirth.slice(5) === todayIso().slice(5)) gSub = `Joyeux anniversaire! Fijne verjaardag, ${esc(S.me.name.split(' ')[0])}.`;
+      else if (ents.length && ents.length % 25 === 0 && lastE && Date.now() - new Date(lastE) < 36 * 3600e3) gSub = `Je ${ents.length}e dienst bij ${esc(CFG.bedrijf || 'ons')} zit erop. Merci!`;
+      else if (canPlan() && (hrM >= 14 || hrM < 2)) { const g = (await store.dayInfo(bdM, bdM).catch(() => []))[0]?.guests; if (g) gSub = `${hrM >= 17 || hrM < 5 ? 'Vanavond' : 'Vandaag'} ${g} gasten verwacht`; }
+    } catch (x) { /* niet belangrijk */ }
+  }
+  const repMine = !sel && canPlan() && (mine.some(s => s.date === bdM) || isMgr()) ? await store.dayReports(bdM, bdM).then(l => ({ r: l[0] || null })).catch(() => null) : null;
+  const repCard = repMine ? `<section class="homesec"><div class="hs-head"><h2>Dagrapport</h2></div><button type="button" class="card lhome" data-drepnew="${bdM}"><span><strong>${ico('file')}${repMine.r ? 'Dagrapport ingevuld ✓' : 'Hoe ging de dienst?'}</strong><small>${repMine.r ? 'Tik om aan te passen' : 'Vul na de dienst het dagrapport in voor de directie'}</small></span><span class="chev">›</span></button></section>` : '';
   const [clockHTML, boardH, rulesH] = await Promise.all([sel ? '' : clockHero(todayShift, { mates: todayShift ? withWho(todayShift) : [], next: nextAfter }), boardHTML().catch(() => ''), sel ? '' : rulesBannerHTML()]);
-  const srow = (x, withDate) => `<li class="srow k-${shiftKind(x)}">${withDate ? `<span class="sdate"><small>${DAG[dayIdx(parse(x.date))]}</small><b>${parse(x.date).getDate()}</b></span>` : ''}<span class="sbar"></span><span class="sinfo"><strong>${esc(shiftKindLabel(x))}${x.position ? ` <span class="muted">· ${esc(x.position)}</span>` : ''}</strong><small>${hm(x.start_time)} – ${hm(x.end_time)}${withWho(x).length ? ` · met ${esc(withWho(x).slice(0, 3).join(', '))}${withWho(x).length > 3 ? ' e.a.' : ''}` : ''}</small></span><span class="shrs">${fmtH(shiftHours(x))}u</span></li>`;
+  const srow = (x, withDate) => `<li class="srow k-${shiftKind(x)}">${withDate ? `<span class="sdate"><small>${DAG[dayIdx(parse(x.date))]}</small><b>${parse(x.date).getDate()}</b></span>` : ''}<span class="sbar"></span><span class="sinfo"><strong>${esc(shiftKindLabel(x))}${x.position ? ` <span class="muted">· ${esc(x.position)}</span>` : ''}</strong><small>${hm(x.start_time)} – ${hm(x.end_time)}${withWho(x).length ? ` · met ${esc(withWho(x).slice(0, 3).join(', '))}${withWho(x).length > 3 ? ' e.a.' : ''}` : ''}</small></span><span class="shrs">${fmtH(shiftHours(x))}u${withDate && shiftWindow(x)[0] > new Date() ? (swapOf(x.id) ? '<small class="swp">ruil loopt</small>' : `<button type="button" class="linkbtn swl" data-swap="${x.id}">Ruilen</button>`) : ''}</span></li>`;
   const upcoming = mine.filter(s => s.date > today).slice(0, 3);
   const todayHTML = sel ? '' : `<section class="homesec" hidden><div class="hs-head"><h2>Vandaag</h2><span class="muted small">${esc(fmtShort(today))}</span></div>${todayShift ? `<ul class="srows card">${srow(todayShift, false)}</ul>` : '<p class="hint hs-empty">Geen dienst vandaag.</p>'}</section>
-    <section class="homesec"><div class="hs-head"><h2>Komende diensten</h2>${upcoming.length ? '<button type="button" class="linkbtn" data-allweeks>Alles bekijken</button>' : ''}</div>${upcoming.length ? `<ul class="srows card">${upcoming.map(x => srow(x, true)).join('')}</ul>` : '<p class="hint hs-empty">Diensten verschijnen hier zodra de week is gepubliceerd.</p>'}</section>`;
+    <section class="homesec"><div class="hs-head"><h2>Komende diensten</h2><button type="button" class="linkbtn" data-allweeks>Per week</button></div>${closedRuns(CFG.specialDays, today, iso(addDays(new Date(), 42))).map(r => `<p class="closednote">${ico('lock')}<span><strong>Gesloten: ${esc(r.label)}</strong> ${esc(r.n > 1 ? fmtShort(r.from) + ' – ' + fmtShort(r.to) : fmtShort(r.from))}</span></p>`).join('')}${upcoming.length ? `<ul class="srows card">${upcoming.map(x => srow(x, true)).join('')}</ul>` : '<p class="hint hs-empty">Diensten verschijnen hier zodra de week is gepubliceerd.</p>'}</section>`;
   let workedHTML = '';
   if (sel) {
     const [ents0, stM] = await Promise.all([store.entries(iso(sel), iso(addDays(sel, 6))), store.settings()]);
@@ -3275,24 +3421,23 @@ async function viewMine(el) {
       ${workedHTML}
       ${sel > addDays(start, 7 * 5) || !mine.some(s => s.date >= iso(sel) && s.date <= iso(addDays(sel, 6))) ? '<p class="hint" style="text-align:center">Diensten verschijnen hier zodra de week is gepubliceerd.</p>' : ''}`;
   } else {
-    let weeks = '';
-    for (let w = 0; w < 6; w++) weeks += weekBlock(addDays(start, w * 7), false);
-    body = weeks || '<div class="card empty">Er staan nog geen gepubliceerde diensten voor je ingepland.</div>';
+    body = '';   // het startscherm blijft kort; alle weken staan onder 'Alles bekijken'
   }
 
   el.innerHTML = `
-    <div class="page-head greet ${sel ? '' : 'center'}"><div>${sel ? '' : `<p class="g-date">${esc(fmtLong(todayIso()))}</p>`}<h1>${sel ? 'Je rooster' : `${new Date().getHours() < 5 || new Date().getHours() >= 17 ? 'Bonsoir' : 'Bonjour'}, ${esc(S.me.name.split(' ')[0])}.`}</h1>${sel ? '<p>Per week.</p>' : ''}</div>
+    <div class="page-head greet ${sel ? '' : 'center'}"><div>${sel ? '' : `<p class="g-date">${esc(fmtLong(todayIso()))}</p>`}<h1>${sel ? 'Je rooster' : `${new Date().getHours() < 5 || new Date().getHours() >= 17 ? 'Bonsoir' : 'Bonjour'}, ${esc(S.me.name.split(' ')[0])}.`}</h1>${sel ? '<p>Per week.</p>' : gSub ? `<p class="g-sub">${gSub}</p>` : ''}</div>
       <div class="head-actions"><button class="btn" data-ics>${ico('cal')}Agenda</button>${sickNow ? '' : `<button class="btn" data-sick>${ico('therm')}Ik ben ziek</button>`}</div></div>
     ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     <div class="mhome ${sel ? 'sel' : ''}"><div class="mcol">
     ${clockHTML}
     ${todayHTML}
+    ${repCard}
     </div><div class="mcol">
     ${false ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
     ${rulesH}
     ${sel ? '' : await listsHomeHTML()}
     ${boardH}
-    ${sel ? '' : `<div class="homemore">
+    ${sel ? '' : `<div class="homemore tiles">
       <button type="button" class="card lhome" data-gohours><span><strong>${ico('clock')}Mijn gewerkte uren</strong><small>Per week, met je kloktijden en wat is goedgekeurd</small></span><span class="chev">›</span></button>
       <button type="button" class="card lhome" data-gokaarten><span><strong>${ico('book')}Menukaart & wijnkaart</strong><small>Snel even kijken wat er op de kaart staat</small></span><span class="chev">›</span></button>
       <button type="button" class="card lhome" data-phones><span><strong>${ico('user')}Telefoonlijst</strong><small>Collega's die hun nummer delen, met Bellen en WhatsApp</small></span><span class="chev">›</span></button>
@@ -3300,7 +3445,7 @@ async function viewMine(el) {
       ${rulesH ? '' : `<button type="button" class="card lhome" data-rulesview><span><strong>${ico('book')}Afspraken</strong><small>Alle regels: service, allergenen, hygiëne en meer</small></span><span class="chev">›</span></button>`}
     </div>`}
     </div></div>
-    <div class="filters mine-filter" id="weken"><button data-mf="all" class="${sel ? '' : 'active'}">Komende weken</button><button data-mf="week" class="${sel ? 'active' : ''}">Per week</button></div>
+    ${sel ? '<div class="filters mine-filter" id="weken"><button data-mf="all">‹ Terug naar start</button></div>' : ''}
     ${body}
   `;
   bindClock(el);
@@ -3311,12 +3456,13 @@ async function viewMine(el) {
     const sw = ev.target.closest('[data-swap]'); if (sw) return swapDialog(mine, emps, all, sw.dataset.swap, swaps);
     if (ev.target.closest('[data-ics]')) agendaDialog(mine);
     if (ev.target.closest('[data-sick]')) return sickDialog();
-    if (ev.target.closest('[data-golists]')) return go('lijsten');
+    const gl = ev.target.closest('[data-golists]'); if (gl) { if (gl.dataset.golists) { S.lFocus = gl.dataset.golists; S.lOpen = new Set([gl.dataset.golists]); S.lKey = bizToday() + (canPlan() ? (S.lDep ?? 'alle') : ''); } return go('lijsten'); }
+    const drn = ev.target.closest('[data-drepnew]'); if (drn) return dayReportDialog(drn.dataset.drepnew);
     if (ev.target.closest('[data-gohours]')) return go('mijnuren');
     if (ev.target.closest('[data-nood]')) return noodDialog();
     if (ev.target.closest('[data-gokaarten]')) return go('kaarten');
     if (ev.target.closest('[data-phones]')) return phonesDialog();
-    if (ev.target.closest('[data-allweeks]')) return $('#weken', el)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (ev.target.closest('[data-allweeks]')) { S.mineWeek = start; window.scrollTo(0, 0); return rerender(); }
     if (ev.target.closest('[data-rulesread]')) return rulesViewer({ ack: true });
     if (ev.target.closest('[data-rulesview]')) return rulesViewer();
     const bt = ev.target.closest('[data-better]');
@@ -3443,12 +3589,13 @@ async function viewRequestsStaff(el) {
           <label class="field">Van<input type="date" name="start_date" min="${t}" required></label>
           <label class="field">Tot en met<input type="date" name="end_date" min="${t}" required></label>
         </div>
+        <p class="costline" data-cost hidden></p>
         <label class="field">Toelichting<textarea name="note" placeholder="Optioneel"></textarea></label>
-        <button class="btn primary">Versturen</button>
+        <button class="btn primary">Aanvraag versturen</button>
       </form>
       <div>
         ${reqs.length ? `<div class="reqs">${reqs.map(r => `
-          <article class="card req"><div class="req-head"><strong>${esc(REQ[r.type])}</strong><span class="status ${r.status}">${stLabel(r)}</span></div>
+          <article class="card req ${S.flashReq && S.flashReq === r.start_date + r.type ? 'flash' : ''}"><div class="req-head"><strong>${esc(REQ[r.type])}</strong><span class="status ${r.status}">${stLabel(r)}</span></div>
           <p class="dates">${reqDates(r)}</p>${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}
           ${r.status === 'approved' && r.leave_hours ? `<p class="hint">${fmtH(Number(r.leave_hours))} verlofuren afgeschreven</p>` : ''}
           ${r.manager_note ? `<p class="reply"><strong>Reactie:</strong> ${esc(r.manager_note)}</p>` : ''}
@@ -3457,14 +3604,31 @@ async function viewRequestsStaff(el) {
       </div>
     </div>`;
   const f = $('#reqform');
-  f.start_date.onchange = () => { f.end_date.min = f.start_date.value; if (f.end_date.value < f.start_date.value) f.end_date.value = f.start_date.value; };
+  // direct zien wat de aanvraag kost: dagen en verlofuren tegenover je saldo
+  let myShifts = null;
+  const cost = async () => {
+    const box = $('[data-cost]', f), a = f.start_date.value, b = f.end_date.value || a;
+    if (!a || b < a) { box.hidden = true; return; }
+    const days = daysBetween(a, b);
+    let txt = `${days} ${days === 1 ? 'dag' : 'dagen'}: ${esc(fmtShort(a))}${days > 1 ? ' – ' + esc(fmtShort(b)) : ''}`;
+    if (['vakantie', 'vrij'].includes(f.type.value) && showBal) {
+      myShifts ||= await store.shifts(t, iso(addDays(new Date(), 400))).then(l => l.filter(x => x.employee_id === S.me.id)).catch(() => []);
+      const h = estimateLeaveHours({ employee_id: S.me.id, start_date: a, end_date: b }, S.me, myShifts);
+      txt += ` · ongeveer <strong>${fmtH(h)} uur</strong> van je ${fmtH(bal.rest)} uur`;
+    }
+    box.innerHTML = txt; box.hidden = false;
+  };
+  f.start_date.onchange = () => { f.end_date.min = f.start_date.value; if (!f.end_date.value || f.end_date.value < f.start_date.value) f.end_date.value = f.start_date.value; cost(); };
+  f.end_date.onchange = cost; f.type.onchange = cost;
+  if (S.flashReq) { const fl = $('.req.flash', el); S.flashReq = null; if (fl) setTimeout(() => fl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50); }
   f.onsubmit = async ev => {
     ev.preventDefault();
     const fd = new FormData(f);
     if (fd.get('end_date') < fd.get('start_date')) return toast('De einddatum ligt voor de begindatum', 'error');
     try {
       await store.saveRequest({ employee_id: S.me.id, type: fd.get('type'), start_date: fd.get('start_date'), end_date: fd.get('end_date'), note: fd.get('note').trim() || null });
-      toast('Aanvraag verstuurd'); rerender();
+      S.flashReq = fd.get('start_date') + fd.get('type');
+      toast('Aanvraag verstuurd. De directie krijgt een melding.'); rerender();
     } catch (e) { toast(errMsg(e), 'error'); }
   };
   el.onclick = async ev => {
@@ -3648,6 +3812,7 @@ function employeeDialog(e, priv = {}, reqs = []) {
       <p class="hint">De geboortedatum gebruikt de app voor de jongerenregels uit de Arbeidstijdenwet.</p>
       ${isNew ? '' : '<div class="profbox" data-profbox><span class="hint">Profiel laden…</span></div>'}
     </fieldset>
+    ${isNew ? '' : '<div class="certbox" data-certbox><span class="hint">Diploma\'s laden…</span></div>'}
     ${isNew ? '' : `<div class="futbox"><div class="req-actions"><button type="button" class="btn sm" data-allshifts>${ico('user')}Alle diensten bekijken</button><button type="button" class="btn sm" data-futshifts>🗓️ Komende diensten uit het rooster halen…</button></div><span class="hint">Bijvoorbeeld als iemand stopt of langere tijd niet werkt. Alles vanaf een datum in één keer.</span></div>`}
     ${isNew ? '' : '<details class="history" data-history><summary>Geschiedenis van wijzigingen</summary><div class="hint">Laden…</div></details>'}
     ${isNew ? `<label class="check"><input type="checkbox" name="send_invite" checked> Stuur meteen een uitnodiging per e-mail</label>` : !e.user_id && e.active !== false ? `<div class="invitebox"><span class="hint">${e.invited_at ? `Uitgenodigd op ${esc(fmtShort(iso(new Date(e.invited_at))))} ${tHM(e.invited_at)}, nog niet geactiveerd.` : 'Nog niet uitgenodigd.'}</span>
@@ -3673,6 +3838,29 @@ function employeeDialog(e, priv = {}, reqs = []) {
           : `<p class="hint" style="margin:0"><strong>Profiel</strong> (ingevuld door ${esc((e.name || '').split(' ')[0])}): maat blouse <strong>${esc(f.shirt_size || '—')}</strong> · nummer gedeeld met collega's: ${f.share_phone ? 'ja' : 'nee'}</p>
              ${(f.emergency || []).length ? `<ul class="icemini">${f.emergency.map(c => `<li>Noodcontact: <strong>${esc(c.name)}</strong>${c.relation ? ' (' + esc(c.relation) + ')' : ''} · <a href="tel:${esc(String(c.phone).replace(/[^\d+]/g, ''))}">${esc(c.phone)}</a></li>`).join('')}</ul>` : '<p class="hint" style="margin:4px 0 0">Geen noodcontact ingevuld.</p>'}`;
       }).catch(() => { pb.innerHTML = ''; });
+      const cb = $('[data-certbox]', dlg);
+      const drawCerts = async () => {
+        const list = await store.certs().catch(() => null);
+        if (!list) { cb.innerHTML = '<p class="hint" style="margin:0">Diploma\'s bijhouden kan na database-update 44.</p>'; return; }
+        const mine = list.filter(c => c.employee_id === e.id).sort((a, b) => (a.expires || '9999').localeCompare(b.expires || '9999'));
+        const td = todayIso(), soon = iso(addDays(new Date(), 60));
+        cb.innerHTML = `<h3 class="certh">${ico('file')}Diploma's</h3>
+          ${mine.length ? `<ul class="certlist">${mine.map(c => `<li><span><strong>${esc(certLabel(c))}</strong><small class="${c.expires && c.expires < td ? 'bad' : c.expires && c.expires <= soon ? 'warn' : ''}">${c.expires ? (c.expires < td ? 'verlopen op ' : 'geldig tot ') + dmy(c.expires) : 'geen verloopdatum'}</small></span><button type="button" class="btn sm" data-certdel="${c.id}">Verwijderen</button></li>`).join('')}</ul>`
+            : '<p class="hint" style="margin:0 0 8px">Nog geen diploma\'s. Voeg SVH (Sociale Hygiëne) en BHV toe: de planning waarschuwt dan als er niemand met dat diploma werkt, en 60 dagen voor het verlopen krijg je een melding.</p>'}
+          <div class="certadd"><select data-certkind aria-label="Soort diploma">${Object.entries(CERT).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select><input type="date" data-certexp aria-label="Geldig tot (leeg = verloopt niet)" title="Geldig tot (leeg = verloopt niet)"><button type="button" class="btn sm" data-certadd>Toevoegen</button></div>`;
+      };
+      if (cb) {
+        drawCerts();
+        cb.addEventListener('click', async ev => {
+          const del = ev.target.closest('[data-certdel]'), add = ev.target.closest('[data-certadd]');
+          try {
+            if (del) { await store.deleteCert(del.dataset.certdel); toast('Diploma verwijderd'); }
+            else if (add) { await store.saveCert({ employee_id: e.id, kind: $('[data-certkind]', cb).value, expires: $('[data-certexp]', cb).value || null }); toast('Diploma toegevoegd'); }
+            else return;
+            drawCerts();
+          } catch (x) { toast(errMsg(x), 'error'); }
+        });
+      }
       const ctSel = $('[name=contract_type]', dlg);
       const CTHINT = { vast: '', minmax: 'Min-max: je plant tussen het minimum en maximum. De planning waarschuwt bij te weinig of te veel uren.', nuluren: 'Nuluren: geen vaste uren. Roep minstens 4 dagen vooraf op en betaal per oproep minimaal 3 uur. Na 12 maanden moet je een contract met vaste uren aanbieden.', oproep: 'Oproep: geen vaste uren. Roep minstens 4 dagen vooraf op en betaal per oproep minimaal 3 uur. Na 12 maanden moet je een contract met vaste uren aanbieden.', stage: 'Stage of BBL: vul de uren per week in volgens de stage- of leerovereenkomst.' };
       const ctUpd = () => { const v = ctSel.value; $('[data-minrow]', dlg).style.display = v === 'minmax' ? '' : 'none'; $('[data-hlabel]', dlg).textContent = v === 'minmax' ? 'Maximum uren per week' : isFlex({ contract_type: v }) ? 'Gemiddelde uren per week (voor verlof)' : 'Uren per week'; $('[data-cthint]', dlg).textContent = CTHINT[v]; $('[data-cthint]', dlg).style.display = CTHINT[v] ? '' : 'none'; };
@@ -3930,7 +4118,7 @@ async function viewDiensten(el) {
     const s = sh(w.shift_id), s2 = w.swap_shift_id ? sh(w.swap_shift_id) : null, clash = s && workDay(s.date);
     return `<article class="card req"><div class="req-head"><span class="dot" style="background:${esc(byId[w.from_employee]?.color || COLORS[0])};margin:0"></span><strong>${esc(fn(w.from_employee))} ${s2 ? 'wil ruilen' : w.to_employee ? 'vraagt jou' : 'biedt aan'}</strong></div>
       <p class="dates">${L(s)}</p>${s2 ? `<p class="note">In ruil voor jouw dienst: <strong>${L(s2)}</strong></p>` : ''}${w.note ? `<p class="note">“${esc(w.note)}”</p>` : ''}
-      ${clash && !s2 ? `<p class="conflict">Je werkt die dag al ${hm(clash.start_time)}–${hm(clash.end_time)}.</p>` : ''}
+      ${clash && !s2 ? `<p class="conflict">Je werkt die dag al ${hm(clash.start_time)}–${hm(clash.end_time)}. Dan werk je die dag ${fmtH(shiftHours(clash) + shiftHours(s))} uur.</p>` : ''}
       <div class="req-actions"><button class="btn sm ok" data-accept="${w.id}">${s2 ? 'Ruil accepteren' : 'Overnemen'}</button>${w.to_employee ? `<button class="btn sm danger" data-decline="${w.id}">Weigeren</button>` : ''}</div></article>`;
   };
   const myCard = w => {
@@ -3980,7 +4168,7 @@ async function viewBeschikbaar(el) {
     const ds = iso(addDays(mon, i)), a = get(ds), work = shifts.find(s => s.employee_id === S.me.id && s.date === ds);
     return `<div class="avrow"><div class="d"><span>${DAG[i]}</span><b>${addDays(mon, i).getDate()}</b></div>
       <div class="avopts"><label class="avopt av-leeg"><input type="radio" name="k-${i}" value="" ${a ? '' : 'checked'}><span>Leeg</span></label>${Object.keys(AVAIL).map(k => `<label class="avopt av-${k}"><input type="radio" name="k-${i}" value="${k}" ${a?.kind === k ? 'checked' : ''}><span>${k === 'niet' ? 'Niet' : AVAIL[k]}</span></label>`).join('')}</div>
-      <input class="input avnote" name="n-${i}" placeholder="Opmerking (optioneel)" value="${esc(a?.note || '')}">
+      <input class="input avnote" name="n-${i}" placeholder="Opmerking, bijv. pas vanaf 18:00" aria-label="Opmerking ${DAG[i]}" value="${esc(a?.note || '')}" ${a?.note ? '' : 'hidden'}>${a?.note ? '' : `<button type="button" class="linkbtn avaddnote" data-addnote="${i}">+ opmerking</button>`}
       ${work ? `<small class="hint">Ingepland: ${hm(work.start_time)}–${hm(work.end_time)}</small>` : ''}</div>`;
   }).join('');
   el.innerHTML = `
@@ -4013,7 +4201,15 @@ async function viewBeschikbaar(el) {
       rerender();
     } catch (e) { toast(errMsg(e), 'error'); }
   };
+  // nogmaals tikken op de gekozen optie maakt de dag weer leeg
+  f.addEventListener('pointerdown', ev => { const lb = ev.target.closest('.avopt'); if (lb) lb.dataset.was = $('input', lb).checked ? '1' : ''; });
+  f.addEventListener('click', ev => {
+    const lb = ev.target.closest('.avopt'); if (!lb || ev.target.tagName !== 'INPUT') return;
+    if (lb.dataset.was === '1') { const leeg = $('.av-leeg input', lb.closest('.avopts')); if (leeg) leeg.checked = true; }
+    lb.dataset.was = '';
+  });
   el.onclick = ev => {
+    const an = ev.target.closest('[data-addnote]'); if (an) { const inp = f[`n-${an.dataset.addnote}`]; inp.hidden = false; an.remove(); return inp.focus(); }
     const w = ev.target.closest('[data-w]'); if (w) { S.avWeek = addDays(S.avWeek, 7 * Number(w.dataset.w)); return rerender(); }
     const fill = ev.target.closest('[data-fill]'); if (fill) { $$(`input[value="${fill.dataset.fill}"]`, f).forEach(r => (r.checked = true)); return toast('Ingevuld — vergeet niet op te slaan'); }
     if (ev.target.closest('[data-copyprev]')) {
@@ -4706,7 +4902,8 @@ async function doClock(action, btn) {
   const needLoc = action === 'in' || action === 'uit';
   const label = btn.textContent;
   btn.disabled = true;
-  const done = { in: 'Ingeklokt — fijne dienst!', uit: 'Uitgeklokt — tot de volgende keer!', pauze_start: 'Pauze gestart', pauze_eind: 'Pauze gestopt' };
+  const fn0 = (S.me.name || '').split(' ')[0], late0 = new Date().getHours() >= 17 || new Date().getHours() < 5;
+  const done = { in: 'Ingeklokt. Bon service!', uit: `Uitgeklokt. Merci, ${fn0}. ${late0 ? 'Bonne soirée.' : 'Bonne journée.'}`, pauze_start: 'Pauze gestart. Bon appétit!', pauze_eind: 'Pauze gestopt' };
   let st0 = {};
   try { st0 = needLoc ? await store.settings() : {}; } catch (e) { btn.disabled = false; btn.textContent = label; return toast(errMsg(e), 'err'); }
   let pos = null, ot = null;
