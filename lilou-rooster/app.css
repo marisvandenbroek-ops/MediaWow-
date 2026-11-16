@@ -28,8 +28,8 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #1a1210; --surface: #241917; --surface-2: #1f1613; --line: #3a2a25; --line-strong: #4c3832;
-    --text: #f6ebe3; --muted: #b39a8f; --accent: #e08a6c; --accent-ink: #1a1210; --accent-soft: #42221a;
+    --bg: #121011; --surface: #1D191A; --surface-2: #181415; --line: #2F2829; --line-strong: #45393A;
+    --text: #F4EEEC; --muted: #B5A8A6; --accent: #F2A6A0; --accent-ink: #1A1012; --accent-soft: #3A2224;
     --ok: #7cc297; --ok-soft: #1f3327; --warn: #e3ac55; --warn-soft: #3a2d17; --bad: #f08c84; --bad-soft: #3f201d;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
     --logo-light: none; --logo-dark: block;
@@ -37,8 +37,8 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #1a1210; --surface: #241917; --surface-2: #1f1613; --line: #3a2a25; --line-strong: #4c3832;
-  --text: #f6ebe3; --muted: #b39a8f; --accent: #e08a6c; --accent-ink: #1a1210; --accent-soft: #42221a;
+  --bg: #121011; --surface: #1D191A; --surface-2: #181415; --line: #2F2829; --line-strong: #45393A;
+  --text: #F4EEEC; --muted: #B5A8A6; --accent: #F2A6A0; --accent-ink: #1A1012; --accent-soft: #3A2224;
   --ok: #7cc297; --ok-soft: #1f3327; --warn: #e3ac55; --warn-soft: #3a2d17; --bad: #f08c84; --bad-soft: #3f201d;
   --logo-light: none; --logo-dark: block;
   color-scheme: dark;
@@ -1012,14 +1012,14 @@ th.closedday { background: var(--surface-2); }
 
 /* Donkere modus: accent dichter bij het merk */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --accent: #d0694a; --accent-soft: #3d1d15; }
-  :root:not([data-theme="light"]) .demo-banner { background: #5a1a0a; }
+  :root:not([data-theme="light"]) { --accent: #F2A6A0; --accent-soft: #3A2224; }
+  :root:not([data-theme="light"]) .demo-banner { background: #5E1410; }
 }
 
 /* Kleine verfijningen */
 .ds b, .weekblock-head, .daylist .d b, .kpi > b { font-variant-numeric: tabular-nums; }
 .nood:first-child ~ .dlg-foot { gap: 8px; }
-:root[data-theme="dark"] { --accent: #d0694a; --accent-soft: #3d1d15; }
+:root[data-theme="dark"] { --accent: #F2A6A0; --accent-soft: #3A2224; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn[data-act="publish"]:disabled { color: var(--ok); } }
 :root[data-theme="dark"] .btn[data-act="publish"]:disabled { color: var(--ok); }
 
@@ -1246,8 +1246,8 @@ dialog.menulist .ml-tools .ml-chips { width: 100%; justify-content: flex-start; 
 fieldset.choice[hidden] { display: none; }
 
 /* ===== Wijnrood (i.p.v. oranjerood) en menu onderin in wijnrood ===== */
-:root:not([data-theme="dark"]) { --brand: #8E1B14; --accent: #8E1B14; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --brand: #8E1B14; } }
+@media not (prefers-color-scheme: dark) { :root:not([data-theme="dark"]) { --brand: #8E1B14; --accent: #8E1B14; } }
+:root[data-theme="light"] { --brand: #8E1B14; --accent: #8E1B14; }
 .clock-hero, .dhome > .hcard:first-child { background: linear-gradient(135deg, #8E1B14 0%, #74140F 100%); box-shadow: 0 10px 30px rgba(142, 27, 20, .22); }
 .clock-hero.is-on { background: linear-gradient(135deg, #2f5d43 0%, #3f7d58 100%); }
 .clock-hero.is-break { background: linear-gradient(135deg, #7a4a10 0%, #a6650f 100%); }
@@ -1260,3 +1260,22 @@ fieldset.choice[hidden] { display: none; }
   .tab .count { background: #FFFFFF; color: #8E1B14; box-shadow: 0 0 0 2px #8E1B14; }
   .tab.active .count { background: #8E1B14; color: #fff; box-shadow: 0 0 0 2px #fff; }
 }
+
+/* Avondmodus 'rustig': bijna zwart, hetzelfde wijnrode blok, menu donker met wijnrood gekozen tabblad */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .clock-hero, :root:not([data-theme="light"]) .dhome > .hcard:first-child { background: linear-gradient(135deg, #9E2218 0%, #7E1A13 100%); box-shadow: none; } }
+:root[data-theme="dark"] .clock-hero, :root[data-theme="dark"] .dhome > .hcard:first-child { background: linear-gradient(135deg, #9E2218 0%, #7E1A13 100%); box-shadow: none; }
+@media (max-width: 760px) and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tabs { background: #1D191A; border-top: 1px solid #2F2829; box-shadow: none; }
+  :root:not([data-theme="light"]) .tab { color: #B5A8A6; }
+  :root:not([data-theme="light"]) .tab.active { background: #9E2218; color: #fff; }
+  :root:not([data-theme="light"]) .tab .count { background: #9E2218; color: #fff; box-shadow: 0 0 0 2px #1D191A; }
+}
+@media (max-width: 760px) {
+  :root[data-theme="dark"] .tabs { background: #1D191A; border-top: 1px solid #2F2829; box-shadow: none; }
+  :root[data-theme="dark"] .tab { color: #B5A8A6; }
+  :root[data-theme="dark"] .tab.active { background: #9E2218; color: #fff; }
+}
+
+/* Avondmodus: hoofdknoppen in wijnrood met witte tekst (geen roze vlakken) */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { background: #9E2218; border-color: #9E2218; color: #fff; } }
+:root[data-theme="dark"] .btn.primary { background: #9E2218; border-color: #9E2218; color: #fff; }
