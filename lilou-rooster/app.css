@@ -954,14 +954,6 @@ th.closedday { background: var(--surface-2); }
 .ledit { padding: 8px 2px 2px; border-top: 1px dashed var(--line); margin-top: 6px; }
 
 /* ================= Ontwerp update 28 (onafhankelijke ontwerpcontrole) ================= */
-/* 1. Koppen in een sierlijke letter (Fraunces); kaarttitels blijven Inter */
-:root { --serif: 'Fraunces', Georgia, 'Times New Roman', serif; }
-h1, .page-head h1 { font-family: var(--serif); font-weight: 400; letter-spacing: -.015em; }
-.page-head h1 { font-size: 34px; line-height: 1.1; }
-h2, .dash2 h2, .dsect h2 { font-family: var(--serif); font-weight: 600; letter-spacing: -.005em; }
-h3, .card h3, .ann h3, .lhome strong, .lgroup h2 + * h3 { font-family: var(--font); }
-@media (max-width: 560px) { .page-head h1 { font-size: 30px; } }
-
 /* 2. Uitgeschakelde knoppen: rustig en leesbaar, nooit halfdoorzichtig merkrood */
 .btn:disabled, .selbar .btn:disabled { opacity: 1; background: transparent; border-color: var(--line); color: var(--muted); }
 .btn.primary:disabled { background: var(--surface-2); border-color: var(--line); color: var(--muted); }
@@ -1029,3 +1021,9 @@ h3, .card h3, .ann h3, .lhome strong, .lgroup h2 + * h3 { font-family: var(--fon
 :root[data-theme="dark"] { --accent: #d0694a; --accent-soft: #3d1d15; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn[data-act="publish"]:disabled { color: var(--ok); } }
 :root[data-theme="dark"] .btn[data-act="publish"]:disabled { color: var(--ok); }
+
+.meldlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.meldlist li { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 0; }
+.meldlist li + li { border-top: 1px solid var(--line); }
+.meldlist p { margin: 2px 0 0; }
+.meldlist .btn { flex: none; }
