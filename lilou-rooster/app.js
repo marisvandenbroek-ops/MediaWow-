@@ -2578,12 +2578,12 @@ async function viewDashboard(el) {
     }),
   ].filter(Boolean);
   const SHOW = 4;
-  const greet = hr < 6 ? 'Goedenacht' : hr < 12 ? 'Goedemorgen' : hr < 18 ? 'Goedemiddag' : 'Goedenavond';
+  const greet = hr < 5 || hr >= 17 ? 'Bonsoir' : 'Bonjour';
   const latest = board.list.slice(0, 2);
   const kpiMini = (v, l, kind) => `<div class="mk"><b class="${kind ? goalColor(kind, v.raw, st) : ''}">${v.txt}</b><span>${l}</span></div>`;
   const homeHTML = `
     ${S.dashPartial ? '<p class="msg err">Niet alle gegevens konden worden geladen; sommige cijfers kunnen ontbreken. Tik opnieuw op Overzicht.</p>' : ''}
-    <div class="page-head dhead"><div><h1>${greet}, ${esc((S.me.name || '').split(' ')[0])}</h1><p>${esc(fmtLong(bd))}${people ? ` · ${people} ${people === 1 ? 'persoon werkt' : 'mensen werken'} vandaag` : ''}</p></div></div>
+    <div class="page-head dhead greet"><div><p class="g-date">${esc(fmtLong(bd))}</p><h1>${greet}, ${esc((S.me.name || '').split(' ')[0])}.</h1>${people ? `<p>${people} ${people === 1 ? 'persoon werkt' : 'mensen werken'} vandaag</p>` : ''}</div></div>
     <div class="dhome">
       <section class="card hcard"><div class="hhead"><h2>Vandaag</h2><button type="button" class="linkbtn" data-goto2="planning">Rooster ›</button></div>
         ${staffRow}${listRow}${guestRow}</section>

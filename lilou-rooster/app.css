@@ -1315,3 +1315,17 @@ fieldset.choice[hidden] { display: none; }
 :root[data-theme="dark"] .ring-track { stroke: #3A2E2C; }
 :root[data-theme="dark"] .ch-main { background: #9E2218; border-color: #9E2218; box-shadow: none; }
 .ch-main .ico { color: #fff !important; stroke: #fff; }
+
+/* Directie: Vandaag-kaart weer wit (achtergrond van de app blijft crème) */
+.dhome > .hcard:first-child, .dhome > .hcard:first-child { background: var(--surface) !important; color: var(--text) !important; border: 1px solid var(--line) !important; box-shadow: var(--shadow) !important; }
+.dhome > .hcard:first-child .hhead h2 { color: var(--muted) !important; }
+.dhome > .hcard:first-child .linkbtn { color: var(--accent) !important; }
+.dhome > .hcard:first-child .hrow { color: var(--text) !important; border-color: var(--line) !important; }
+.dhome > .hcard:first-child .hrow small, .dhome > .hcard:first-child .chev { color: var(--muted) !important; }
+.dhome > .hcard:first-child .hn { background: var(--accent-soft) !important; color: var(--accent) !important; }
+.dhome > .hcard:first-child .hn.ok { background: var(--ok-soft) !important; color: var(--ok) !important; }
+.dhome > .hcard:first-child .hn.bad { background: var(--bad-soft) !important; color: var(--bad) !important; }
+.dhome > .hcard:first-child .hn.warn { background: var(--warn-soft) !important; color: var(--warn) !important; }
+.dhome > .hcard:first-child .guestin { background: var(--surface) !important; border-color: var(--line-strong) !important; color: var(--text) !important; }
+.dhome > .hcard:first-child .guestin::placeholder { color: var(--muted) !important; }
+#view > .page-head.dhead.greet p { display: block; }
