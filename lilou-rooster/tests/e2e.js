@@ -239,8 +239,11 @@ async function test(name, fn) {
     await p.close();
   });
   await test('klokregistratie aanpassen komt in de geschiedenis', async () => {
+    // zorg voor een afgeronde registratie van vandaag (op maandagochtend is er anders nog niets)
+    await setDemoDb(shared, `const e = db.employees.find(x => x.name.startsWith('Sanne')); const now = Date.now();
+      db.entries.push({ id: 't-clk', employee_id: e.id, clock_in: new Date(now - 3 * 3600e3).toISOString(), clock_out: new Date(now - 2 * 3600e3).toISOString(), break_minutes: 0, break_started_at: null, flags: [], status: 'pending', edited: false });`);
+    await shared.reload(); await shared.waitForSelector('[data-tab=klokken]');
     await shared.click('[data-tab=klokken]'); await shared.click('[data-cf=all]');
-    // op maandagochtend staan er deze week nog geen registraties: dan de vorige week
     for (let i = 0; i < 2 && !(await shared.waitForSelector('article.entry [data-eedit]', { timeout: 1500 }).catch(() => null)); i++) { await shared.click('[data-act=prev]'); }
     await shared.click('article.entry [data-eedit] >> nth=0');
     await shared.waitForSelector('dialog [name=break_minutes]'); await shared.fill('dialog [name=manager_note]', 'Testnotitie'); await shared.click('dialog button[value=save]'); await shared.waitForTimeout(200);
