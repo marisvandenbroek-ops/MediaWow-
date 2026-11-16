@@ -703,6 +703,23 @@ async function test(name, fn) {
     await p.click('[data-pv=grid]');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('planning telefoon: vegen over de dagenbalk = andere week, over de diensten = andere dag', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await tab(p, 'planning'); await p.click('[data-pv=grid]'); await p.waitForSelector('.daystrip');
+    const swipe = sel => p.evaluate(sel => { const t = document.querySelector(sel), v = document.getElementById('view');
+      const mk = x => new Touch({ identifier: 1, target: t, clientX: x, clientY: 200 });
+      t.dispatchEvent(new TouchEvent('touchstart', { touches: [mk(320)], changedTouches: [mk(320)], bubbles: true }));
+      t.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [mk(80)], bubbles: true })); }, sel);
+    const wk = () => p.textContent('.weeknav .label strong'), day = () => p.textContent('.dayhead h2');
+    const w0 = await wk(), d0 = await day();
+    await swipe('.daystrip'); await p.waitForFunction(w => document.querySelector('.weeknav .label strong')?.textContent !== w, w0);
+    assert.notStrictEqual(await wk(), w0, 'week niet gewisseld');
+    const w1 = await wk(), d1 = await day();
+    await swipe('.mlist, .dayhead'); await p.waitForFunction(d => document.querySelector('.dayhead h2')?.textContent !== d, d1);
+    assert.strictEqual(await wk(), w1, 'vegen over diensten mag de week niet wisselen (behalve op zondag)');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1);
+  });
   await test('dienst op een vrije dag: vraagt eerst, en waarschuwing in de planning', async () => {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#directie'); await login(p, 'Mark');

@@ -1396,7 +1396,7 @@ async function viewWeek(el, editable) {
       <div class="mlist">${items || `<div class="card empty">${editable ? 'Nog niemand ingepland.' : 'Geen diensten op deze dag.'}</div>`}</div>
       ${availFree.length ? `<p class="hint mavail">Beschikbaar, nog niet ingepland: ${availFree.map(a => `<strong>${esc((byId[a.employee_id]?.name || '').split(' ')[0])}</strong> (${AVAIL[a.kind].toLowerCase()})`).join(', ')}</p>` : ''}
       ${editable ? '<button class="btn primary block madd" data-addday>+ Dienst toevoegen</button>' : ''}
-      <p class="hint swipehint">Veeg naar links of rechts voor een andere dag, ook naar de volgende week · week totaal ${fmtH(totalH)} u</p>`;
+      <p class="hint swipehint">Veeg over de dagen bovenin voor een andere week, over de diensten voor een andere dag · week totaal ${fmtH(totalH)} u</p>`;
   };
 
   el.innerHTML = `
@@ -1522,10 +1522,11 @@ async function viewWeek(el, editable) {
   {
     // vegen: in de dagweergave (telefoon) naar de volgende dag en over de weekgrens heen; in lijst en agenda naar de volgende week
     const dayMode = mobile && !listView;
-    let x0 = null, y0 = null;
+    let x0 = null, y0 = null, onStrip = false;
     el.ontouchstart = ev => {
       x0 = null;
       if (ev.target.closest('dialog, input, select, textarea')) return;
+      onStrip = !!ev.target.closest('.daystrip');   // vegen over de dagenbalk = andere week
       const tw = ev.target.closest('.table-wrap');   // een agenda die zelf opzij scrolt: dat vegen is voor de tabel
       if (tw && tw.scrollWidth > tw.clientWidth + 4) return;
       x0 = ev.touches[0].clientX; y0 = ev.touches[0].clientY;
@@ -1534,7 +1535,7 @@ async function viewWeek(el, editable) {
       if (x0 == null) return;
       const dx = ev.changedTouches[0].clientX - x0, dy = ev.changedTouches[0].clientY - y0; x0 = null;
       if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-      if (!dayMode) { S.week = addDays(S.week, dx < 0 ? 7 : -7); toast(`Week ${weekNr(S.week)}`); return rerender(); }
+      if (!dayMode || onStrip) { S.week = addDays(S.week, dx < 0 ? 7 : -7); if (dayMode) S.dayNext = S.dayI; toast(`Week ${weekNr(S.week)}`); return rerender(); }
       const dir = dx < 0 ? 1 : -1, n = S.dayI + dir;
       if (n < 0) { S.week = addDays(S.week, -7); S.dayNext = 6; }
       else if (n > 6) { S.week = addDays(S.week, 7); S.dayNext = 0; }
