@@ -1502,3 +1502,23 @@ fieldset.choice[hidden] { display: none; }
 .rtmr > summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; color: var(--muted); font-size: 14px; }
 .rbtn { min-height: 46px; gap: 8px; }
 .rbtn .ico { width: 18px; height: 18px; }
+
+/* startscherm: rooster per week of maand */
+.homeroster { margin: 20px 0 8px; }
+.hr-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 2px 10px; }
+.hr-top h2 { margin: 0; font-size: 21px; }
+.hr-top .seg button { min-height: 38px; padding: 0 16px; }
+.hr-nav { margin-bottom: 6px; }
+.hr-today { text-align: center; margin: -2px 0 6px; }
+.mcal { padding: 8px; }
+.mcal-h, .mcal-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.mcal-h span { text-align: center; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 2px 0 6px; }
+.mc { border: 1px solid transparent; background: none; border-radius: 10px; min-height: 58px; padding: 4px 2px; display: flex; flex-direction: column; align-items: center; gap: 1px; font: inherit; color: var(--text); cursor: pointer; }
+.mc b { font-size: 15px; font-weight: 600; }
+.mc small { font-size: 10.5px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.mc.out { opacity: .35; }
+.mc.has { background: var(--accent-soft, #f6e9e6); }
+.mc.has b { color: var(--accent); }
+.mc.leave small, .mc.closed small { color: var(--muted); }
+.mc.today { border-color: var(--accent); }
+.mc:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

@@ -3356,8 +3356,11 @@ async function dayReportsList() {
 async function viewMine(el) {
   const start = mondayOf(new Date());
   const sel = S.mineWeek || null; // null = komende weken, anders maandag van gekozen week
-  const fromD = sel && sel < start ? sel : addDays(start, -1);   // -1: een nachtdienst van gisteren kan nog lopen
-  const toD = sel && addDays(sel, 6) > addDays(start, 41) ? addDays(sel, 6) : addDays(start, 41);
+  S.homeMode ||= 'week'; S.homeWeek ||= start; S.homeMonth ||= todayIso().slice(0, 7);
+  const hm0 = parse(S.homeMonth + '-01'), hmFrom = mondayOf(hm0), hmTo = addDays(mondayOf(new Date(hm0.getFullYear(), hm0.getMonth() + 1, 0)), 6);
+  const want = sel ? [sel, addDays(sel, 6)] : S.homeMode === 'maand' ? [hmFrom, hmTo] : [S.homeWeek, addDays(S.homeWeek, 6)];
+  const fromD = new Date(Math.min(addDays(start, -1), want[0]));   // -1: een nachtdienst van gisteren kan nog lopen
+  const toD = new Date(Math.max(addDays(start, 41), want[1]));
   const from = iso(fromD), to = iso(toD);
   const [all, reqs, emps, swaps] = await Promise.all([store.shifts(from, to), store.requests(), store.employees(), store.swaps()]);
   const tdy = todayIso();
@@ -3433,8 +3436,33 @@ async function viewMine(el) {
     return `<section class="weekblock"><div class="weekblock-head"><h3>Week ${weekNr(mon)} <span class="muted" style="font-family:var(--font);font-weight:400;font-size:13px">· ${fmt(mon, { day: 'numeric', month: 'short' })} – ${fmt(addDays(mon, 6), { day: 'numeric', month: 'short' })}</span></h3><span>${ws.length} dienst${ws.length === 1 ? '' : 'en'} · ${fmtH(h)} uur</span></div><div class="card"><ul class="daylist">${items.join('')}</ul></div></section>`;
   };
 
-  const rosterHTML = sel ? '' : `<div class="homeroster">${weekBlock(start, true, true, `Deze week <small>wk ${weekNr(start)}</small>`)}${(() => { const n0 = addDays(start, 7), f = iso(n0), t = iso(addDays(n0, 6)); const any = mine.some(x => x.date >= f && x.date <= t) || myLeaves.some(r => overlaps(r.start_date, r.end_date, f, t)) || closedRuns(CFG.specialDays, f, t).length;
-      return any ? weekBlock(n0, true, true, `Volgende week <small>wk ${weekNr(n0)}</small>`) : `<section class="weekblock"><div class="wk-title"><h2>Volgende week <small>wk ${weekNr(n0)}</small></h2><span class="muted">${fmt(n0, { day: 'numeric', month: 'short' })} – ${fmt(addDays(n0, 6), { day: 'numeric', month: 'short' })}</span></div><p class="card wk-empty">Nog niet gepubliceerd. Je krijgt een melding zodra het rooster klaar is.</p></section>`; })()}${closedRuns(CFG.specialDays, iso(addDays(start, 14)), iso(addDays(new Date(), 70))).map(r => `<p class="closednote">${ico('lock')}<span><strong>Gesloten: ${esc(r.label)}</strong> ${esc(r.n > 1 ? fmtShort(r.from) + ' – ' + fmtShort(r.to) : fmtShort(r.from))}</span></p>`).join('')}<button type="button" class="linkbtn allwk" data-allweeks>Alle weken bekijken ›</button></div>`;
+  // Rooster op het startscherm: week of maand, met pijltjes en vegen
+  const curWeek = iso(S.homeWeek) === iso(start), curMonth = S.homeMonth === todayIso().slice(0, 7);
+  const monthHTML = () => {
+    const y = hm0.getFullYear(), m = hm0.getMonth(), days = new Date(y, m + 1, 0).getDate();
+    const mf = S.homeMonth + '-01', mt = S.homeMonth + '-' + pad(days);
+    const ms = mine.filter(x => x.date >= mf && x.date <= mt), tot = ms.reduce((t, x) => t + shiftHours(x), 0);
+    const cells = [];
+    for (let d = new Date(hmFrom); d <= hmTo; d = addDays(d, 1)) {
+      const ds = iso(d), inM = ds.slice(0, 7) === S.homeMonth, sh = mine.filter(x => x.date === ds);
+      const lv = myLeaves.find(r => r.start_date <= ds && r.end_date >= ds), cl = specialDay(ds)?.kind === 'gesloten';
+      cells.push(`<button type="button" class="mc ${inM ? '' : 'out'} ${ds === today ? 'today' : ''} ${sh.length ? 'has k-' + shiftKind(sh[0]) : ''} ${lv ? 'leave' : ''} ${cl ? 'closed' : ''}" data-mday="${ds}" aria-label="${esc(fmtLong(ds))}${sh.length ? ': ' + sh.map(x => hm(x.start_time) + '–' + hm(x.end_time)).join(', ') : ''}">
+        <b>${d.getDate()}</b>${sh.length ? `<small>${hm(sh[0].start_time)}</small><small>${hm(sh[0].end_time)}</small>` : lv ? '<small>vrij</small>' : cl ? '<small>dicht</small>' : ''}</button>`);
+    }
+    return `<div class="weekblock-head"><span>${ms.length} dienst${ms.length === 1 ? '' : 'en'}</span><span><strong style="color:var(--text)">${fmtH(tot)} uur</strong></span></div>
+      <div class="card mcal"><div class="mcal-h">${DAG.map(d => `<span>${d}</span>`).join('')}</div><div class="mcal-g">${cells.join('')}</div></div>
+      <p class="hint" style="text-align:center;margin:6px 0 0">Tik op een dag voor de week.</p>`;
+  };
+  const navTitle = S.homeMode === 'maand'
+    ? `<strong>${esc(fmt(hm0, { month: 'long', year: 'numeric' }))}</strong><span>${curMonth ? 'deze maand' : '&nbsp;'}</span>`
+    : `<strong>${curWeek ? 'Deze week' : iso(S.homeWeek) === iso(addDays(start, 7)) ? 'Volgende week' : 'Week ' + weekNr(S.homeWeek)}</strong><span>${fmt(S.homeWeek, { day: 'numeric', month: 'short' })} – ${fmt(addDays(S.homeWeek, 6), { day: 'numeric', month: 'short' })} · wk ${weekNr(S.homeWeek)}</span>`;
+  const weekEmpty = () => { const f = iso(S.homeWeek), t = iso(addDays(S.homeWeek, 6)); return !mine.some(x => x.date >= f && x.date <= t) && !myLeaves.some(r => overlaps(r.start_date, r.end_date, f, t)) && !closedRuns(CFG.specialDays, f, t).length && f > today; };
+  const rosterHTML = sel ? '' : `<section class="homeroster" data-hroster>
+    <div class="hr-top"><h2>Mijn rooster</h2><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${S.homeMode === 'week' ? 'on' : ''}" data-hmode="week">Week</button><button type="button" class="${S.homeMode === 'maand' ? 'on' : ''}" data-hmode="maand">Maand</button></div></div>
+    <div class="weeknav hr-nav"><button class="btn icon" data-hnav="-1" aria-label="${S.homeMode === 'maand' ? 'Vorige maand' : 'Vorige week'}">‹</button><div class="label">${navTitle}</div><button class="btn icon" data-hnav="1" aria-label="${S.homeMode === 'maand' ? 'Volgende maand' : 'Volgende week'}">›</button></div>
+    ${(S.homeMode === 'maand' ? !curMonth : !curWeek) ? '<div class="hr-today"><button type="button" class="linkbtn" data-hnav="0">Terug naar vandaag</button></div>' : ''}
+    ${S.homeMode === 'maand' ? monthHTML() : weekEmpty() ? '<p class="card wk-empty">Nog niet gepubliceerd. Je krijgt een melding zodra het rooster klaar is.</p>' : weekBlock(S.homeWeek, true, true)}
+  </section>`;
   let body;
   if (sel) {
     const wl = weekLabel(sel);
@@ -3496,10 +3524,33 @@ async function viewMine(el) {
     const bt = ev.target.closest('[data-better]');
     if (bt) { if (!await ask('Ben je weer beter? De directie krijgt een melding en je ziekmelding stopt vandaag.', 'Ik ben weer beter')) return; try { await store.sickRecover(bt.dataset.better); toast('Fijn dat je weer beter bent!'); rerender(); } catch (x) { toast(errMsg(x), 'error'); } return; }
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
+    const hmB = ev.target.closest('[data-hmode]'); if (hmB) { S.homeMode = hmB.dataset.hmode; return rerender(); }
+    const hn = ev.target.closest('[data-hnav]');
+    if (hn) {
+      const n = Number(hn.dataset.hnav);
+      if (S.homeMode === 'maand') { const d = parse(S.homeMonth + '-01'); S.homeMonth = n ? iso(new Date(d.getFullYear(), d.getMonth() + n, 1)).slice(0, 7) : todayIso().slice(0, 7); }
+      else S.homeWeek = n ? addDays(S.homeWeek, 7 * n) : start;
+      return rerender();
+    }
+    const md = ev.target.closest('[data-mday]'); if (md) { S.homeMode = 'week'; S.homeWeek = mondayOf(parse(md.dataset.mday)); return rerender(); }
     const mf = ev.target.closest('[data-mf]'); if (mf) { S.mineWeek = mf.dataset.mf === 'week' ? start : null; return rerender(); }
     const w = ev.target.closest('[data-w]');
     if (w) { const n = Number(w.dataset.w); S.mineWeek = n === 0 ? start : addDays(S.mineWeek, 7 * n); return rerender(); }
   };
+  const hr0 = $('[data-hroster]', el);
+  if (hr0) {
+    let x0 = null, y0 = null;
+    hr0.addEventListener('touchstart', ev => { x0 = ev.touches[0].clientX; y0 = ev.touches[0].clientY; }, { passive: true });
+    hr0.addEventListener('touchend', ev => {
+      if (x0 == null) return;
+      const dx = ev.changedTouches[0].clientX - x0, dy = ev.changedTouches[0].clientY - y0; x0 = null;
+      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      const n = dx < 0 ? 1 : -1;
+      if (S.homeMode === 'maand') { const d = parse(S.homeMonth + '-01'); S.homeMonth = iso(new Date(d.getFullYear(), d.getMonth() + n, 1)).slice(0, 7); }
+      else S.homeWeek = addDays(S.homeWeek, 7 * n);
+      rerender();
+    }, { passive: true });
+  }
   if (sel) {
     let x0 = null, y0 = null;
     el.ontouchstart = ev => { x0 = ev.touches[0].clientX; y0 = ev.touches[0].clientY; };

@@ -348,9 +348,8 @@ async function test(name, fn) {
     if (await p.$('th.closedday')) assert.strictEqual(await p.$$eval('th.closedday', x => x.length), 7);
     const s2 = watch(await ctx.newPage()); await s2.setViewportSize({ width: 390, height: 844 });
     await s2.goto(URL + '#personeel'); await s2.waitForSelector('[data-demo]'); await login(s2, 'Sanne');
-    await s2.waitForSelector('.closednote:has-text("Zomervakantie"), .daylist li.weekclosed:has-text("Zomervakantie")');   // startscherm: gesloten zichtbaar
-    await s2.click('[data-allweeks]');
-    for (let i = 0; i < 6 && !(await s2.$('.daylist li.weekclosed:has-text("Zomervakantie")')); i++) { await s2.click('[data-w="1"]'); await s2.waitForTimeout(200); }
+    // startscherm: met de pijltjes naar de gesloten week
+    for (let i = 0; i < 8 && !(await s2.$('.daylist li.weekclosed:has-text("Zomervakantie")')); i++) { await s2.click('[data-hnav="1"]'); await s2.waitForTimeout(200); }
     await s2.waitForSelector('.daylist li.weekclosed:has-text("Zomervakantie")');
     await tab(s2, 'planning'); await s2.click('[data-act=today]');
     for (let i = 0; i < 4 && !(await s2.$('.closedbar:has-text("Zomervakantie")')); i++) { await s2.click('[data-act=next]'); await s2.waitForTimeout(250); }
