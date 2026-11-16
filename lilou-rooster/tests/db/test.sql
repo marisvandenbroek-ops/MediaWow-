@@ -475,5 +475,25 @@ set role authenticated; select as_user(3);
 select t_fails('select lists_reminders()', 'medewerker kan de herinnering niet zelf starten');
 reset role;
 
+\echo '== Update 39: profiel, noodcontact, telefoonlijst'
+set role authenticated; select as_user(3);
+select t_fails($$select save_my_profile('abc', '2000-01-01', '[]', 'M', false)$$, 'ongeldig telefoonnummer geweigerd');
+select t_fails($$select save_my_profile('0612345678', '2020-01-01', '[]', 'M', false)$$, 'te jonge geboortedatum geweigerd');
+select t_fails($$select save_my_profile('0612345678', '2000-01-01', '[{"name":"Ma","phone":"x"}]', 'M', false)$$, 'noodcontact zonder geldig nummer geweigerd');
+select save_my_profile('06 1234 5678', '2000-05-01', '[{"name":"Anna","relation":"moeder","phone":"0611111111"}]', 'M', true);
+select t_ok((my_profile()->>'shirt_size') = 'M' and (my_profile()->'emergency'->0->>'name') = 'Anna' and (my_profile()->>'done_at') is not null, 'eigen profiel opgeslagen en terug te lezen');
+select t_ok(t_count('select * from emergency_contacts()') = 0, 'medewerker ziet geen noodcontacten');
+select t_ok(t_count('select * from team_phones()') >= 1, 'collega ziet gedeeld nummer');
+select t_ok(t_count('select * from employee_profile') = 1, 'medewerker ziet alleen het eigen profiel');
+update employee_profile set shirt_size = 'XL';   -- RLS: wijzigt niets
+reset role;
+select t_ok((select shirt_size from employee_profile where employee_id = 'a0000000-0000-0000-0000-000000000003') = 'M', 'maat ongewijzigd na directe poging');
+set role authenticated; select as_user(4);
+select t_ok(t_count('select * from emergency_contacts()') >= 1, 'shiftleader ziet noodcontacten');
+reset role;
+update employees set active = false where id = 'a0000000-0000-0000-0000-000000000003';
+select t_ok((select emergency = '[]'::jsonb and not share_phone from employee_profile where employee_id = 'a0000000-0000-0000-0000-000000000003'), 'uit dienst: noodcontact en delen vervallen');
+update employees set active = true where id = 'a0000000-0000-0000-0000-000000000003';
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'
