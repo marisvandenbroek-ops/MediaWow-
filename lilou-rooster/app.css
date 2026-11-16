@@ -1467,3 +1467,6 @@ fieldset.choice[hidden] { display: none; }
   .dlg-foot .btn[data-dreps] { order: 3; }
 }
 .sdate.istoday small { color: var(--accent); font-weight: 700; }
+/* tekst in de ring blijft binnen de cirkel */
+.champ .ring-in small { max-width: 68%; text-align: center; line-height: 1.25; white-space: normal; }
+.champ .ring-in small { white-space: pre-line; }

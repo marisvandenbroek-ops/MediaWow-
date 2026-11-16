@@ -4825,7 +4825,7 @@ function ringInfo(d) {
     const left = Number(m.start) - now;
     if (left <= 0) {
       const end = Number(m.end) || 0, st = Number(m.start);
-      if (end > now) return { big: dur(end - now), small: 'nog te gaan · niet ingeklokt', frac: Math.min(1, Math.max(0.02, (now - st) / (end - st))), late: true };
+      if (end > now) return { big: dur(end - now), small: 'nog te gaan · niet ingeklokt'.replace(' · ', '\n'), frac: Math.min(1, Math.max(0.02, (now - st) / (end - st))), late: true };
       return { big: '0:00', small: 'je dienst zit erop', frac: 1 };
     }
     return { big: dur(left), small: 'tot je dienst', frac: Math.max(0.04, 1 - left / (3 * 3600e3)) };
