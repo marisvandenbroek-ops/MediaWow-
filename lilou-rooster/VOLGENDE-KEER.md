@@ -59,3 +59,10 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Open: Mariëlle moet haar account nog activeren (link in mail of Wachtwoord vergeten).
 - Open: los testaccount (niet gekoppeld) opruimen na akkoord; leaked password protection en e-maillink ≤ 1 uur in Supabase Auth.
 - Volgende ideeën: presentatie aanvullen (fooien, rookplek, schenkmaten, vertrouwenspersoon, eigen foto's), documentenset, Lightspeed-grafiek, recepten-app.
+
+## Stand 16 november (middag)
+- Update 30 LIVE: kaarten (menukaart, wijnkaart, bites, kerstmenu als app-pdf in map kaarten/, rijen in menu_cards), ziek tot beter gemeld (open_end), controle-fixes, keuken in afspraken. Database-migratie update_30_ziek_en_kaarten toegepast.
+- Presentatie: 2 keukendia's toegevoegd (keuken, keukenveilig).
+- Zenchef: mail aan Nina verstuurd; wachten op documentatie + aparte leessleutel. Plan: edge function haalt alleen aantallen per lunch/diner op; advies per functie.
+- Recepten-app: apart gesprek, briefing in RECEPTEN-BRIEFING.md.
+- Open: lunch/diner-splitsing met advies; Klokken in rustige stijl; Mariëlle activeren; Supabase Auth (leaked password, linkduur).
