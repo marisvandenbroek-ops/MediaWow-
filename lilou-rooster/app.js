@@ -421,7 +421,7 @@ function demoStore() {
     async clockedToday() {
       if (!canPlan()) return [];
       const lim = Date.now() - 20 * 3600e3;
-      return clone(db.entries.filter(x => new Date(x.clock_in).getTime() > lim).map(x => ({ employee_id: x.employee_id, clock_in: x.clock_in, clock_out: x.clock_out, on_break: !!x.break_started_at })));
+      return clone(db.entries.filter(x => new Date(x.clock_in).getTime() > lim && (!x.clock_out || tDate(x.clock_in) === todayIso())).map(x => ({ employee_id: x.employee_id, clock_in: x.clock_in, clock_out: x.clock_out, on_break: !!x.break_started_at })));
     },
     async ackRules() {
       db.rulesAcks ||= []; const v = db.settings.rules_version || 1;
@@ -436,7 +436,7 @@ function demoStore() {
     },
     async sickRecover(id) {
       const r = db.requests.find(x => x.id === id && x.employee_id === mem && x.type === 'ziek'); if (!r) throw new Error('Ziekmelding niet gevonden');
-      const t = todayIso(); if (r.end_date > t) r.end_date = r.start_date > t ? r.start_date : t;
+      const t = todayIso(); if (r.open_end || r.end_date > t) r.end_date = r.start_date > t ? r.start_date : t; r.open_end = false;
       db.employees.filter(e => ['manager', 'planner'].includes(e.role) && e.active !== false && e.id !== mem).forEach(e => notify(e.id, '💪 Weer beter', `${fname(mem)} is weer beter en kan weer werken.`, e.role === 'manager' ? 'aanvragen:verlof' : 'planning'));
       save();
     },
@@ -535,7 +535,13 @@ function demoStore() {
     async savePushSub() { /* demo: niets */ },
     async deleteRequest(id) { db.requests = db.requests.filter(r => r.id !== id); save(); },
     // --- klokken
-    async settings() { return clone(db.settings); },
+    async settings() {
+      if (!S.me || canPlan()) return clone(db.settings);
+      const st = clone(db.settings);   // zelfde als staff_settings() in de database
+      ['wifi_ips', 'goal_labor_pct', 'goal_productivity', 'goal_cost_hour', 'pct_avond', 'pct_nacht', 'pct_zondag', 'pct_feestdag', 'pct_vakantiegeld', 'pct_werkgever', 'staffing', 'guest_ratios', 'mail_on_publish'].forEach(k => delete st[k]);
+      st.has_wifi = !!(db.settings.wifi_ips || []).length;
+      return st;
+    },
     async saveSettings(st) { Object.assign(db.settings, st); save(); },
     async registerWifi() { const ip = '84.12.34.56'; db.settings.wifi_ips = [...new Set([...(db.settings.wifi_ips || []), ip])]; save(); return ip; },
     async entries(from, to) {
@@ -585,6 +591,7 @@ function demoStore() {
     // Automatische taken (in de echte versie: run_jobs() in de database, elke 15 min)
     async runJobs() {
       const now = Date.now(); db.reminders ||= {};
+      db.requests.forEach(r => { if (r.type === 'ziek' && r.open_end && r.status !== 'rejected' && r.end_date < todayIso()) r.end_date = todayIso(); });
       let n = 0;
       db.entries.filter(e => !e.clock_out).forEach(e => {
         const ds = tDate(e.clock_in);
@@ -1031,7 +1038,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 // Standaardwaarden uit config.js; de directie kan ze overschrijven op de pagina Instellingen
 const CFG_DEFAULTS = { posities: [...(CFG.posities || [])], diensten: (CFG.diensten || []).map(d => ({ ...d })), toeslagen: { ...(CFG.toeslagen || {}) } };
 function applySettings(st) {
-  if (!st) return;
+  if (!st || !Object.keys(st).length) return;
   CFG.posities = Array.isArray(st.positions) && st.positions.length ? st.positions : CFG_DEFAULTS.posities;
   CFG.diensten = Array.isArray(st.shift_templates) ? st.shift_templates : CFG_DEFAULTS.diensten;
   CFG.toeslagen = Object.assign({}, CFG_DEFAULTS.toeslagen, st.toeslag_windows || {});
@@ -1067,7 +1074,7 @@ function renderShell() {
     ${store.demo ? '<div class="demo-banner">Demo-modus<span class="hide-sm"> · gegevens worden alleen in deze browser bewaard</span></div>' : ''}
     <header class="topbar"><div class="topbar-inner">
       <div class="brand">${CFG.logo ? `<div class="stack-brand"><img class="wordmark light" src="${esc(CFG.logo)}" alt="${esc(CFG.bedrijf)}"><img class="wordmark dark" src="${esc(CFG.logoDark || CFG.logo)}" alt="${esc(CFG.bedrijf)}"><div class="sub">Rooster · ${isMgr() ? 'Leiding' : S.me.role === 'planner' ? 'Shiftleader' : esc(S.me.position || 'Team')}</div></div>` : `<div class="logo">${letter}</div><div><strong>${esc(CFG.appName)}</strong><small>${isMgr() ? 'Leidinggevende' : esc(S.me.position || 'Medewerker')}</small></div>`}</div>
-      <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !canPlan() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l === 'Mijn rooster' ? 'Rooster' : l}</span>${(isMgr() ? k === 'aanvragen' : k === 'diensten') ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}<button class="tab tab-more" data-more aria-label="Meer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg><span class="tl">Meer</span><span class="ts">Meer</span></button></nav>
+      <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !canPlan() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l === 'Mijn rooster' ? 'Rooster' : l}</span>${(isMgr() ? k === 'aanvragen' : k === 'diensten') ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}<button class="tab tab-more" data-more aria-label="Meer" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg><span class="tl">Meer</span><span class="ts">Meer</span></button></nav>
       <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon bell" data-bell title="Meldingen" aria-label="Meldingen">${ICON.bell}<span class="ncount hidden" data-ncount></span></button>${isMgr() ? `<button class="btn ghost icon" data-gosettings title="Instellingen" aria-label="Instellingen">${ICON.settings}</button>` : ''}<button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
     </div></header>
     <main id="view"></main>
@@ -1133,7 +1140,8 @@ async function go(view) {
   const slow = setTimeout(() => { if (el.isConnected && !el.childElementCount) el.innerHTML = '<p class="hint loading">Laden…</p>'; }, 400);
   const show = html => { if (el.isConnected && tok === S.renderTok) el.innerHTML = html; };
   try {
-    await Promise.race([renderView(view, el), new Promise((_, rej) => setTimeout(() => rej(new Error('Het laden duurt te lang. Controleer je verbinding.')), 20000))]);
+    let to;
+    await Promise.race([renderView(view, el), new Promise((_, rej) => { to = setTimeout(() => rej(new Error('Het laden duurt te lang. Controleer je verbinding.')), 20000); })]).finally(() => clearTimeout(to));
   } catch (e) {
     console.error(e);
     show(`<div class="card pad"><p class="msg err">Er ging iets mis bij het laden: ${esc(errMsg(e))}</p><button class="btn" data-retry>Opnieuw proberen</button></div>`);
@@ -1165,7 +1173,7 @@ function moreSheet() {
   const rest = tabsFor().slice(4);
   const ini = esc(S.me.name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase());
   const role = isMgr() ? 'Directie' : S.me.role === 'planner' ? 'Shiftleader' : esc(S.me.position || 'Team');
-  const row = (attr, iconHTML, label) => `<button type="button" class="mrow" ${attr}><span class="mic">${iconHTML}</span><span>${label}</span><span class="chev">›</span></button>`;
+  const row = (attr, iconHTML, label) => `<button type="button" class="mrow" ${attr}><span class="mic">${iconHTML}</span><span>${label}</span><span class="chev" aria-hidden="true">›</span></button>`;
   const items = [
     ...rest.map(([k, l]) => row(`data-mgo="${k}"`, ICON[k === 'planning' && !canPlan() ? 'team' : k] || '', esc(l))),
     ...(isMgr() ? [] : [row('data-mgo="mijnuren"', ico('clock'), 'Mijn gewerkte uren')]),
@@ -1176,7 +1184,8 @@ function moreSheet() {
   ];
   const dlg = document.createElement('dialog');
   dlg.className = 'moresheet';
-  dlg.innerHTML = `<div class="ms-head"><span class="ms-av">${ini}</span><div><strong>${esc(S.me.name)}</strong><small>${role}</small></div><button type="button" class="x" data-mclose aria-label="Sluiten">×</button></div><div class="ms-list">${items.join('')}</div>`;
+  dlg.setAttribute('aria-labelledby', 'ms-name');
+  dlg.innerHTML = `<div class="ms-head"><span class="ms-av" aria-hidden="true">${ini}</span><div><strong id="ms-name">${esc(S.me.name)}</strong><small>${role}</small></div><button type="button" class="x" data-mclose aria-label="Sluiten">×</button></div><div class="ms-list">${items.join('')}</div>`;
   document.body.append(dlg);
   dlg.addEventListener('close', () => { if (dlg.parentNode) dlg.parentNode.removeChild(dlg); });
   dlg.addEventListener('click', ev => {
@@ -1346,7 +1355,7 @@ async function viewWeek(el, editable) {
   const totalK = editable && hasWages ? days.reduce((t, d) => t + costDay(iso(d)), 0) : 0;
   const mobile = isMobile();
   if (S.dayWeek !== from) { S.dayWeek = from; const ti = days.findIndex(d => iso(d) === today); S.dayI = S.dayNext ?? (ti >= 0 ? ti : 0); }
-  S.dayNext = undefined;
+  if (S.dayWeek === from && S.dayNext !== undefined && S.dayI === S.dayNext) S.dayNext = undefined;
   const byId = Object.fromEntries(emps.map(e => [e.id, e]));
   if (!S.planView) { try { S.planView = localStorage.getItem('rooster-planview') || 'grid'; } catch (x) { S.planView = 'grid'; } }
   const listView = editable && S.planView === 'list';
@@ -1842,7 +1851,7 @@ const annAudience = (a, emps) => emps.filter(e => e.active !== false && e.role !
 function annCard(a, { read, mgr, readInfo } = {}) {
   const img = /^image\//.test(a.attachment_type || '');
   return `<article class="ann card ${a.pinned ? 'pinned' : ''} ${read ? 'read' : 'unread'}" data-ann="${a.id}">
-    <div class="ann-head"><div><h3>${a.pinned ? '<span title="Vastgezet">' + ico('pinned') + '</span>' : ''}${esc(a.title)}</h3><small class="muted">${esc(fmtShort(iso(new Date(a.created_at))))}${a.updated_at && new Date(a.updated_at) - new Date(a.created_at) > 60000 ? ` · bijgewerkt ${esc(fmtShort(iso(new Date(a.updated_at))))}` : ''}</small></div>
+    <div class="ann-head"><div><h3>${a.pinned ? '<span title="Vastgezet">' + ico('pinned') + '<span class="sr">Vastgezet: </span></span>' : ''}${esc(a.title)}</h3><small class="muted">${esc(fmtShort(iso(new Date(a.created_at))))}${a.updated_at && new Date(a.updated_at) - new Date(a.created_at) > 60000 ? ` · bijgewerkt ${esc(fmtShort(iso(new Date(a.updated_at))))}` : ''}</small></div>
       ${mgr ? `<div class="ann-tools"><button type="button" class="btn sm ghost" data-annedit="${a.id}">Bewerken</button></div>` : ''}</div>
     ${a.body ? `<p class="ann-body">${annBody(a.body)}</p>` : ''}
     ${a.attachment_path ? (img ? `<button type="button" class="ann-img" data-annview="${esc(a.attachment_path)}" data-annname="${esc(a.attachment_name || 'Afbeelding')}" data-anntype="${esc(a.attachment_type || '')}" aria-label="${esc(a.attachment_name || 'Afbeelding')} openen"><img data-annimg="${esc(a.attachment_path)}" alt="${esc(a.attachment_name || 'Afbeelding')}"></button>`
@@ -2252,6 +2261,7 @@ async function viewLijsten(el) {
   if (!canPlan() || !S.lDate) S.lDate = today;
   const ds = S.lDate, lead = canPlan();
   S.lDep ??= lead ? 'alle' : '';
+  if (!lead) S.lDep = '';
   if (S.lKey !== ds + S.lDep) { S.lKey = ds + S.lDep; S.lOpen = null; }   // andere dag of afdeling: standaard open/dicht
   const [lists0, emps] = await Promise.all([store.checklists(), store.employees(), lead ? null : loadMyDeps(ds)]);
   const lists = myLists(lists0, lead ? S.lDep : '');
@@ -2293,7 +2303,7 @@ async function viewLijsten(el) {
   const dayLists = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).sort((a, b) => (['opening', 'dag', 'sluiting'].indexOf(a.moment) - ['opening', 'dag', 'sluiting'].indexOf(b.moment)) || a.sort - b.sort);
   const logRow = x => `<li class="logrow ${x.flagged && !x.resolved_at ? 'flag' : ''}"><strong>${LOGK[x.kind]}</strong> · ${tTime(x.at)} · ${esc(fn(x.employee_id))}<br>${logText(x)}${x.resolved_at ? `<br><span class="muted small">✓ Afgehandeld door ${esc(fn(x.resolved_by))}${x.resolution ? `: ${esc(x.resolution)}` : ''}</span>` : lead && x.kind === 'melding' ? ` <button type="button" class="btn sm" data-resolve="${x.id}">Afhandelen</button>` : ''}</li>`;
   const deps = ['alle', ...CFG.posities.filter(p => lists0.some(l => l.active !== false && l.department === p))];
-  if (!deps.includes(S.lDep)) S.lDep = 'alle';
+  if (lead && !deps.includes(S.lDep)) { S.lDep = 'alle'; S.lKey = ds + S.lDep; }
   el.innerHTML = `
     <div class="page-head"><div><h1>Lijsten</h1><p>${lead ? 'Wie wat afvinkt, met tijd. Rood = niet gedaan of buiten de norm.' : 'Vink af wat je gedaan hebt. Je naam en de tijd worden bewaard.'}</p></div>
       ${lead ? `<div class="weeknav"><button class="btn icon" data-lday="-1" aria-label="Vorige dag">‹</button><div class="label"><strong>${ds === today ? 'Vandaag' : esc(fmtLong(ds))}</strong><span>${ds === today ? esc(fmtLong(ds)) : ''}</span></div><button class="btn icon" data-lday="1" aria-label="Volgende dag" ${ds >= today ? 'disabled' : ''}>›</button></div>` : ''}</div>
@@ -2710,7 +2720,7 @@ async function viewMine(el) {
   const from = iso(fromD), to = iso(toD);
   const [all, reqs, emps, swaps] = await Promise.all([store.shifts(from, to), store.requests(), store.employees(), store.swaps()]);
   const tdy = todayIso();
-  const sickNow = reqs.find(r => r.employee_id === S.me.id && r.type === 'ziek' && r.status !== 'rejected' && r.start_date <= tdy && r.end_date >= tdy);
+  const sickNow = reqs.find(r => r.employee_id === S.me.id && r.type === 'ziek' && r.status !== 'rejected' && r.start_date <= tdy && (r.end_date >= tdy || r.open_end));
   const swapOf = id => swaps.find(w => w.shift_id === id && w.from_employee === S.me.id && ['open', 'accepted'].includes(w.status));
   const nameOf = Object.fromEntries(emps.map(e => [e.id, e.name.split(' ')[0]]));
   const withWho = s => { const o = all.filter(x => x.date === s.date && x.employee_id !== S.me.id && x.published).map(x => nameOf[x.employee_id]).filter(Boolean); return [...new Set(o)]; };
@@ -2885,6 +2895,7 @@ function downloadIcs(shifts) {
 
 /* ================= Requests ================= */
 function reqDates(r) {
+  if (r.open_end) return `vanaf ${fmtShort(r.start_date)} <span class="muted">(nog ziek, tot beter gemeld)</span>`;
   const n = daysBetween(r.start_date, r.end_date);
   return r.start_date === r.end_date ? fmtLong(r.start_date) : `${fmtShort(r.start_date)} t/m ${fmtShort(r.end_date)} <span class="muted">(${n} dagen)</span>`;
 }
@@ -2908,10 +2919,11 @@ function sickDialog() {
       f.open_end.onchange = () => { f.end_date.disabled = f.open_end.checked; }; },
     async onSubmit(fd) {
       const start = fd.get('start_date');
-      // open einde: twee weken vooruit; "Ik ben weer beter" zet de einddatum op de dag van herstel
-      const end = fd.get('open_end') ? iso(addDays(parse(start), 13)) : fd.get('end_date');
+      // open einde: ziek tot 'Ik ben weer beter'; de server schuift de einddatum elke dag mee
+      const open = !!fd.get('open_end');
+      const end = open ? (start > todayIso() ? start : todayIso()) : fd.get('end_date');
       if (end < start) throw new Error('De einddatum ligt voor de begindatum');
-      await store.saveRequest({ employee_id: S.me.id, type: 'ziek', start_date: start, end_date: end, note: String(fd.get('note') || '').trim() || null });
+      await store.saveRequest({ employee_id: S.me.id, type: 'ziek', start_date: start, end_date: end, open_end: open, note: String(fd.get('note') || '').trim() || null });
       toast('Ziekmelding verstuurd. Beterschap!'); rerender();
     },
   });
@@ -4103,12 +4115,14 @@ async function clockCard(todayShift) {
 }
 
 function bindClock(el) {
+  if (!el.isConnected) return;   // oudere laadactie: niet de klok van het huidige scherm stoppen
   clearInterval(S.timer); clearInterval(S.tick);
-  if ($('[data-tick]', el)) S.tick = setInterval(() => {
-    const a = $('[data-tick]', el), b = $('[data-ticks]', el); if (!a || !a.isConnected) return clearInterval(S.tick);
+  if ($('[data-tick]', el)) { const id = setInterval(() => {
+    const a = $('[data-tick]', el), b = $('[data-ticks]', el); if (!a || !a.isConnected) return clearInterval(id);
     const d = new Date(); a.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`; b.textContent = `:${pad(d.getSeconds())}`;
-  }, 1000);
+  }, 1000); S.tick = id; }
   S.timer = setInterval(async () => {
+    if (!el.isConnected) return;
     const live = $('[data-live]', el); if (!live) return;
     const [open] = (await store.openEntries()).filter(e => e.id === live.dataset.live);
     if (open) live.textContent = `${fmtDur(entryHours(open))} gewerkt${open.break_minutes ? ` · ${open.break_minutes} min pauze` : ''}`;

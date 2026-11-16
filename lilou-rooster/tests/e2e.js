@@ -758,7 +758,11 @@ async function test(name, fn) {
     await p.click('dialog button[value=save]'); await p.waitForSelector('.sickbanner');
     const { db } = await demoDb(p); const noor = db.employees.find(e => e.name.startsWith('Noor'));
     const r = db.requests.filter(x => x.employee_id === noor.id && x.type === 'ziek').pop();
-    assert.ok(r && (new Date(r.end_date) - new Date(r.start_date)) / 864e5 === 13, 'ziekmelding niet open: ' + JSON.stringify(r && [r.start_date, r.end_date]));
+    assert.ok(r && r.open_end === true && r.end_date === r.start_date, 'ziekmelding niet open: ' + JSON.stringify(r && [r.start_date, r.end_date, r.open_end]));
+    // ook morgen nog ziek gemeld: de demo schuift de einddatum door zoals de server
+    await setDemoDb(p, `const r = db.requests.filter(x => x.type === 'ziek').pop(); const d = new Date(Date.now() - 864e5); const q = n => String(n).padStart(2, '0'); r.start_date = r.end_date = d.getFullYear() + '-' + q(d.getMonth() + 1) + '-' + q(d.getDate());`);
+    await p.reload(); await p.waitForSelector('[data-demo], #view > *', { state: 'attached' }); if (await p.$('[data-demo]')) await login(p, 'Noor');
+    await p.waitForSelector('.sickbanner');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
   await test('telefoon: geen enkel scherm loopt rechts van het scherm af', async () => {

@@ -436,5 +436,16 @@ select t_ok(t_count('select * from clocked_today()') >= 1, 'shiftleader ziet wie
 select t_ok(t_count('select * from settings') = 1, 'shiftleader leest de instellingen voor de planning');
 reset role;
 
+\echo '== Update 30: ziek tot beter gemeld'
+set role authenticated; select as_user(3);
+insert into requests (employee_id, type, start_date, end_date, status, open_end) values ('a0000000-0000-0000-0000-000000000003', 'ziek', today_nl() - 2, today_nl() - 2, 'pending', true);
+select run_jobs();
+reset role;
+select t_ok((select end_date = today_nl() from requests where employee_id = 'a0000000-0000-0000-0000-000000000003' and type = 'ziek' and open_end), 'open ziekmelding loopt elke dag door tot vandaag');
+set role authenticated; select as_user(3);
+select sick_recover((select id from requests where employee_id = 'a0000000-0000-0000-0000-000000000003' and type = 'ziek' and open_end));
+reset role;
+select t_ok((select not open_end and end_date = today_nl() from requests where employee_id = 'a0000000-0000-0000-0000-000000000003' and type = 'ziek' and start_date = today_nl() - 2), 'weer beter: open einde stopt vandaag');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

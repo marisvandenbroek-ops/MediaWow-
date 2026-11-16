@@ -1098,3 +1098,4 @@ dialog.moresheet::backdrop { background: rgba(43, 22, 17, .35); }
 .dsnav { flex: none; width: 30px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; color: var(--accent); font-size: 22px; line-height: 1; cursor: pointer; padding: 0; }
 .dsnav:active { background: var(--accent-soft); }
 @media (max-width: 380px) { .dsnav { width: 26px; } .dsrow .ds b { font-size: 17px; } }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
