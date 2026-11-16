@@ -64,7 +64,12 @@ function errMsg(e) {
     'Email not confirmed': 'Bevestig eerst je e-mailadres via de link in je mail.',
     'User already registered': 'Er bestaat al een account met dit e-mailadres. Log in of vraag een nieuw wachtwoord aan.',
   };
-  return map[m] || m;
+  if (map[m]) return map[m];
+  if (/known to be weak|pwned|weak_password|easy to guess/i.test(m + (e?.code || ''))) return 'Dit wachtwoord is te makkelijk of komt voor in gelekte lijsten op internet. Kies een ander wachtwoord, bijvoorbeeld een korte zin.';
+  if (/should be at least (\d+) characters/i.test(m)) return 'Je wachtwoord moet minimaal ' + m.match(/at least (\d+)/i)[1] + ' tekens hebben.';
+  if (/should be different from the old password/i.test(m)) return 'Kies een ander wachtwoord dan je huidige.';
+  if (/rate limit|too many requests/i.test(m)) return 'Even te vaak geprobeerd. Wacht een paar minuten en probeer het opnieuw.';
+  return m;
 }
 
 // Kleine lijn-iconen voor knoppen en kaarten (in plaats van emoji, die per telefoon anders ogen)
