@@ -2225,13 +2225,16 @@ create or replace function public.cert_label(k text, l text) returns text langua
                                          when 'ehbo' then 'EHBO' else 'Diploma' end)
 $$;
 
--- Herinnering 60 dagen (en nog eens rond 30 dagen) voor het verlopen, en op de dag zelf
+-- Herinnering 60 dagen (en nog eens rond 30 dagen) voor het verlopen, en de dag erna als hij verlopen is.
+-- Niet voor een oud diploma als er al een nieuwer diploma van dezelfde soort is (verlengd).
 create or replace function public.cert_reminders() returns int
 language plpgsql security definer set search_path = public as $$
 declare c record; n int := 0; d date := public.today_nl();
 begin
   for c in select x.*, e.name from public.employee_certs x join public.employees e on e.id = x.employee_id
-            where e.active and x.expires is not null and x.expires between d - 7 and d + 60 loop
+            where e.active and x.expires is not null and x.expires between d - 7 and d + 60
+              and not exists (select 1 from public.employee_certs z where z.employee_id = x.employee_id and z.kind = x.kind and z.id <> x.id
+                                and (z.expires is null or z.expires > x.expires)) loop
     insert into public.reminder_log (kind, ref) values (case when c.expires < d then 'diploma0' else 'diploma60' end, c.id) on conflict do nothing;
     if found then
       perform public.notify(c.employee_id, public.cert_label(c.kind, c.label) || case when c.expires < d then ' is verlopen' else ' verloopt binnenkort' end,
@@ -2256,7 +2259,8 @@ begin
               and not exists (select 1 from public.requests r where r.employee_id = y.employee_id and r.status <> 'rejected'
                                 and r.type in ('vakantie', 'vrij', 'onbeschikbaar', 'ziek') and y.date between r.start_date and r.end_date)
               and not exists (select 1 from public.time_entries t where t.employee_id = y.employee_id
-                                and t.clock_in between public.shift_start_ts(y) - interval '3 hours' and now()) loop
+                                and t.clock_in between public.shift_start_ts(y) - interval '3 hours' and now()
+                                and (t.clock_out is null or t.clock_out > public.shift_start_ts(y))) loop
     insert into public.reminder_log (kind, ref) values ('telaat', x.id) on conflict do nothing;
     continue when not found;
     -- de leiding die nu werkt; is er niemand, dan de directie
@@ -2286,9 +2290,11 @@ create table if not exists public.day_reports (
   sold_out    text check (sold_out is null or length(sold_out) <= 1000),
   team        text check (team is null or length(team) <= 2000),
   employee_id uuid references public.employees(id) on delete set null,
+  updated_by  uuid references public.employees(id) on delete set null,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+alter table public.day_reports add column if not exists updated_by uuid references public.employees(id) on delete set null;
 alter table public.day_reports enable row level security;
 drop policy if exists dayrep_select on public.day_reports;
 create policy dayrep_select on public.day_reports for select to authenticated using (public.is_planner());
@@ -2307,9 +2313,9 @@ begin
   insert into public.day_reports (date, busy, notes, sold_out, team, employee_id)
   values (p_date, nullif(p_busy, ''), nullif(btrim(coalesce(p_notes, '')), ''), nullif(btrim(coalesce(p_sold_out, '')), ''), nullif(btrim(coalesce(p_team, '')), ''), me)
   on conflict (date) do update set busy = excluded.busy, notes = excluded.notes, sold_out = excluded.sold_out, team = excluded.team,
-                                   employee_id = excluded.employee_id, updated_at = now();
+                                   updated_by = me, updated_at = now();   -- de schrijver blijft staan; wie het aanpaste staat erbij
   if isnew then
-    perform public.notify_managers('Dagrapport ' || to_char(p_date, 'DD-MM'), 'Van ' || public.first_name(me) || coalesce(': ' || left(nullif(btrim(coalesce(p_notes, '')), ''), 120), '.'), 'overzicht:rapport', me);
+    perform public.notify_managers('Dagrapport ' || to_char(p_date, 'DD-MM'), 'Van ' || public.first_name(me) || coalesce(': ' || left(nullif(btrim(coalesce(p_notes, '')), ''), 120), '.'), 'overzicht:rapport:' || p_date::text, me);
   end if;
 end $$;
 revoke execute on function public.save_day_report(date, text, text, text, text) from public, anon;

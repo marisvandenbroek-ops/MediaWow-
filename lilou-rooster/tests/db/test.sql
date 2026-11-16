@@ -595,6 +595,26 @@ select t_ok(exists (select 1 from notifications where employee_id = 'a0000000-00
 select t_ok(exists (select 1 from notifications where title = 'Sanne is nog niet ingeklokt'), 'leiding krijgt melding: Sanne is nog niet ingeklokt');
 select t_ok(late_reminders() = 0, 'niet-ingeklokt-melding niet dubbel');
 select t_ok(not has_function_privilege('authenticated', 'public.late_reminders()', 'execute') and not has_function_privilege('authenticated', 'public.cert_reminders()', 'execute'), 'herinneringen alleen via run_jobs');
+-- verlengd diploma: geen melding voor het oude
+insert into employee_certs (id, employee_id, kind, expires) values
+  ('c4400000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', 'svh', today_nl() - 1),
+  ('c4400000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', 'svh', today_nl() + 1800);
+select cert_reminders();
+select t_ok(not exists (select 1 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000003' and title like 'Sociale Hygiëne%verlopen'), 'geen melding voor een diploma dat al verlengd is');
+-- gesplitste dienst: eerder uitgeklokt telt niet als aanwezig
+delete from notifications where title like '%niet ingeklokt%';
+insert into time_entries (employee_id, clock_in, clock_out) values ('a0000000-0000-0000-0000-000000000004', now() - interval '3 hours', now() - interval '90 minutes');
+insert into shifts (id, employee_id, date, start_time, end_time, published) values
+  ('50000000-0000-0000-0000-000000000045', 'a0000000-0000-0000-0000-000000000004',
+   ((now() - interval '20 minutes') at time zone 'Europe/Amsterdam')::date, (((now() - interval '20 minutes') at time zone 'Europe/Amsterdam')::time(0)), (((now() + interval '3 hours') at time zone 'Europe/Amsterdam')::time(0)), true);
+select late_reminders();
+select t_ok(exists (select 1 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000004' and title = 'Je bent nog niet ingeklokt'), 'gesplitste dienst: melding ook als je eerder die dag al werkte');
+-- dagrapport: schrijver blijft staan, link naar de juiste dag
+select t_ok((select view from notifications where title like 'Dagrapport%' limit 1) = 'overzicht:rapport:' || business_day()::text, 'melding verwijst naar het rapport van die dag');
+set role authenticated; select as_user(1);
+select save_day_report(business_day(), 'rustig', 'Door directie aangepast', null, null);
+reset role;
+select t_ok((select employee_id = 'a0000000-0000-0000-0000-000000000004' and updated_by = 'a0000000-0000-0000-0000-000000000001' from day_reports where date = business_day()), 'schrijver blijft staan, aanpasser wordt bewaard');
 select t_ok(run_jobs() >= 0, 'run_jobs draait met de nieuwe stappen');
 
 \echo ''

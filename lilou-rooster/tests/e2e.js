@@ -989,7 +989,7 @@ async function test(name, fn) {
     const { db } = await demoDb(p);
     const r = Object.values(db.dayreports)[0];
     assert.ok(r && r.busy === 'druk' && /Terras vol/.test(r.notes) && r.sold_out === 'Tarte tatin', 'dagrapport niet opgeslagen');
-    assert.ok(db.notifications.some(n => /^Dagrapport/.test(n.title) && n.view === 'overzicht:rapport'), 'directie krijgt geen melding');
+    assert.ok(db.notifications.some(n => /^Dagrapport/.test(n.title) && n.view === 'overzicht:rapport:' + r.date), 'directie krijgt geen melding');
     const m = watch(await ctx.newPage()); await m.setViewportSize({ width: 1280, height: 900 });
     await m.goto(URL + '#directie'); await m.waitForSelector('[data-demo]'); await login(m, 'Mark');
     await m.waitForSelector('[data-dreps]'); await m.click('[data-dreps]'); await m.click('dialog [data-drep]');

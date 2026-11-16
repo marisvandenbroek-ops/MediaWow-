@@ -299,8 +299,8 @@ function demoStore() {
       if (!canPlan()) throw new Error('Alleen de leiding kan een dagrapport maken.');
       const bd = bizToday(); if (!isMgr() && (r.date < iso(addDays(parse(bd), -1)) || r.date > bd)) throw new Error('Een dagrapport kun je alleen voor vandaag of gisteren invullen.');
       db.dayreports ||= {}; const old = db.dayreports[r.date], tx = v => (v || '').trim() || null;
-      db.dayreports[r.date] = { date: r.date, busy: r.busy || null, notes: tx(r.notes), sold_out: tx(r.sold_out), team: tx(r.team), employee_id: mem, created_at: old?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
-      if (!old) notifyMgrs(`Dagrapport ${r.date.slice(8, 10)}-${r.date.slice(5, 7)}`, `Van ${fname(mem)}${tx(r.notes) ? ': ' + tx(r.notes).slice(0, 120) : '.'}`, 'overzicht:rapport', mem);
+      db.dayreports[r.date] = { date: r.date, busy: r.busy || null, notes: tx(r.notes), sold_out: tx(r.sold_out), team: tx(r.team), employee_id: old ? old.employee_id : mem, updated_by: old ? mem : null, created_at: old?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+      if (!old) notifyMgrs(`Dagrapport ${r.date.slice(8, 10)}-${r.date.slice(5, 7)}`, `Van ${fname(mem)}${tx(r.notes) ? ': ' + tx(r.notes).slice(0, 120) : '.'}`, 'overzicht:rapport:' + r.date, mem);
       save();
     },
     async emergencyContacts() { if (!canPlan()) return []; const pr = this._profiles(); return clone(db.employees.filter(e => e.active !== false && pr[e.id]?.emergency?.length).map(e => ({ employee_id: e.id, name: e.name, emergency: pr[e.id].emergency })).sort((a, b) => a.name.localeCompare(b.name))); },
@@ -716,7 +716,7 @@ function demoStore() {
         const st = shiftWindow(x)[0].getTime();
         if (now - st < 10 * 60000 || now - st > 60 * 60000 || db.reminders['t' + x.id]) return;
         if (db.requests.some(r => r.employee_id === x.employee_id && r.status !== 'rejected' && ['vakantie', 'vrij', 'onbeschikbaar', 'ziek'].includes(r.type) && x.date >= r.start_date && x.date <= r.end_date)) return;
-        if (db.entries.some(e => e.employee_id === x.employee_id && new Date(e.clock_in).getTime() >= st - 3 * 3600e3 && new Date(e.clock_in).getTime() <= now)) return;
+        if (db.entries.some(e => e.employee_id === x.employee_id && new Date(e.clock_in).getTime() >= st - 3 * 3600e3 && new Date(e.clock_in).getTime() <= now && (!e.clock_out || new Date(e.clock_out).getTime() > st))) return;
         db.reminders['t' + x.id] = 1;
         let ls = leads().filter(e => e.id !== x.employee_id && db.shifts.some(y => y.published && y.employee_id === e.id && now >= shiftWindow(y)[0].getTime() - 30 * 60000 && now <= shiftWindow(y)[1].getTime()));
         if (!ls.length) ls = db.employees.filter(e => e.role === 'manager' && e.active !== false && e.id !== x.employee_id);
@@ -727,6 +727,7 @@ function demoStore() {
       const td = todayIso();
       (db.certs || []).forEach(c => {
         const emp = db.employees.find(e => e.id === c.employee_id); if (!c.expires || !emp || emp.active === false) return;
+        if (db.certs.some(z => z.employee_id === c.employee_id && z.kind === c.kind && z.id !== c.id && (!z.expires || z.expires > c.expires))) return;   // al verlengd
         if (c.expires < iso(addDays(parse(td), -7)) || c.expires > iso(addDays(parse(td), 60))) return;
         const k = (c.expires < td ? 'c0' : 'c60') + c.id; if (db.reminders[k]) return; db.reminders[k] = 1;
         const lab = certLabel(c), gone = c.expires < td;
@@ -1725,7 +1726,8 @@ async function viewWeek(el, editable) {
   const haveOf = (ds, p) => shifts.filter(x => x.date === ds && x.employee_id && x.position === p).length;
   const certKinds = ['svh', 'bhv'].filter(k => certs.some(c => c.kind === k));
   const certHTML = ds => {
-    const on = shifts.filter(x => x.date === ds && x.employee_id); if (!on.length || specialDay(ds)?.kind === 'gesloten') return '';
+    const away = id => leaves.some(r => r.employee_id === id && ['vakantie', 'vrij', 'ziek'].includes(r.type) && r.start_date <= ds && r.end_date >= ds);
+    const on = shifts.filter(x => x.date === ds && x.employee_id && !away(x.employee_id)); if (!on.length || specialDay(ds)?.kind === 'gesloten') return '';
     return certKinds.filter(k => !on.some(x => certs.some(c => c.employee_id === x.employee_id && c.kind === k && certValid(c, ds))))
       .map(k => `<span class="covp short" title="Niemand met een geldig ${k === 'svh' ? 'diploma Sociale Hygiëne' : 'BHV-diploma'} ingepland deze dag">Geen ${k.toUpperCase()}</span>`).join('');
   };
@@ -1842,7 +1844,7 @@ async function viewWeek(el, editable) {
       ${leaveHTML}
       <div class="mlist">${items || `<div class="card empty">${editable ? 'Nog niemand ingepland.' : 'Geen diensten op deze dag.'}</div>`}</div>
       ${availFree.length ? `<p class="hint mavail">Beschikbaar, nog niet ingepland: ${availFree.map(a => `<strong>${esc((byId[a.employee_id]?.name || '').split(' ')[0])}</strong> (${AVAIL[a.kind].toLowerCase()})`).join(', ')}</p>` : ''}
-      ${editable ? '<button class="btn primary block madd" data-addday>+ Dienst toevoegen</button>' : ''}
+      ${editable && !S.selMode ? '<button class="btn primary block madd" data-addday>+ Dienst toevoegen</button>' : ''}
       <p class="hint swipehint">${(() => { let seen = false; try { seen = !!localStorage.getItem('rooster-swipehint'); localStorage.setItem('rooster-swipehint', '1'); } catch (x) { /* geen opslag */ } return seen ? '' : 'Veeg over de dagen bovenin voor een andere week, over de diensten voor een andere dag · '; })()}week totaal ${fmtH(totalH)} u</p>`;
   };
 
@@ -2673,7 +2675,7 @@ async function viewDashboard(el) {
     </div>`;
   el.innerHTML = S.dashTab === 'cijfers' ? cijfersHTML : homeHTML;
   fillAnnFiles(el);
-  if (S.reqTab === 'rapport') { S.reqTab = ''; const last = repT || repY; if (last) dayReportView(last.date); else dayReportsList(); }
+  if (S.reqTab === 'rapport') { S.reqTab = ''; const want = S.repDate; S.repDate = null; const last = repT || repY; if (want) dayReportView(want); else if (last) dayReportView(last.date); else dayReportsList(); }
   if (S.refocus) { const { attr, date } = S.refocus; S.refocus = null; const ins = $$(`[${attr}]`, el); const i = ins.findIndex(x => x.getAttribute(attr) === date); const nx = ins[i + 1]; if (nx) nx.focus(); }
   el.onclick = ev => {
     if (ev.target.closest('[data-annnew]')) return annDialog();
@@ -3297,10 +3299,12 @@ async function dayReportDialog(date) {
 async function dayReportView(date) {
   const soft = (pr, fb) => pr.catch(() => fb);
   const [reps, emps, logs, di, rev, ents, shifts, privs, st] = await Promise.all([soft(store.dayReports(date, date), []), store.employees(), soft(store.logs(date, date), []), soft(store.dayInfo(date, date), []),
-    soft(store.revenue(date, date), []), soft(store.entries(date, date), []), soft(store.shifts(date, date), []), isMgr() ? soft(store.privates(), []) : [], store.settings()]);
+    soft(store.revenue(date, date), []), soft(store.entries(date, iso(addDays(parse(date), 1))), []), soft(store.shifts(date, date), []), isMgr() ? soft(store.privates(), []) : [], store.settings()]);
   const r = reps[0]; if (!r) return dayReportDialog(date);
   const byId = Object.fromEntries(emps.map(e => [e.id, e]));
-  const worked = ents.filter(x => x.clock_out).map(x => entryAsShift(x, matchShift(x, shifts), st));
+  const dayEnts = ents.filter(x => iso(new Date(new Date(x.clock_in).getTime() - 5 * 3600e3)) === date);   // werkdag loopt tot 05:00
+  const stillIn = dayEnts.some(x => !x.clock_out);
+  const worked = stillIn ? [] : dayEnts.filter(x => x.clock_out).map(x => entryAsShift(x, matchShift(x, shifts), st));
   const rv = rev[0] || {}, omzet = Number(rv.actual ?? rv.forecast) || 0;
   const P = kpiOf(worked.length ? worked : shifts.filter(x => x.employee_id), Object.fromEntries(privs.map(p => [p.employee_id, p])), st, omzet);
   const meld = logs.filter(x => x.kind === 'melding');
@@ -3308,7 +3312,7 @@ async function dayReportView(date) {
   const sec = (t, v) => v ? `<h3 class="reph">${t}</h3><p class="reptxt">${esc(v)}</p>` : '';
   const canEdit = canPlan() && (isMgr() || date >= iso(addDays(parse(bizToday()), -1)));
   openDialog(`Dagrapport · ${fmtLong(date)}`, `
-    <p class="hint" style="margin-top:0">Van ${esc((byId[r.employee_id]?.name || '?').split(' ')[0])}, ${tTime(r.updated_at || r.created_at)}${r.busy ? ` · <strong>${esc(r.busy)}</strong>` : ''}</p>
+    <p class="hint" style="margin-top:0">Van ${esc((byId[r.employee_id]?.name || '?').split(' ')[0])}, ${tTime(r.created_at)}${r.updated_by ? ` · aangepast door ${esc((byId[r.updated_by]?.name || '?').split(' ')[0])} om ${tTime(r.updated_at)}` : ''}${r.busy ? ` · <strong>${esc(r.busy)}</strong>` : ''}</p>
     <div class="minikpis static">${kp(di[0]?.guests ?? '—', 'gasten')}${isMgr() ? kp(omzet ? euro0(omzet) : '—', rv.actual != null ? 'omzet' : 'omzet (verwacht)') + kp(P.pct != null ? pct1(P.pct) : '—', 'kosten') : ''}${kp(Math.round(P.hours) + ' u', worked.length ? 'gewerkt' : 'gepland')}</div>
     ${sec('Hoe ging het?', r.notes)}${sec('Uitverkocht of bijna op', r.sold_out)}${sec('Team', r.team)}
     ${meld.length ? `<h3 class="reph">Meldingen van die dag</h3><ul class="replist">${meld.map(x => `<li>${tTime(x.at)} · ${esc((x.data?.tekst || x.data?.soort || 'Melding').slice(0, 200))}${x.resolved_at ? ' <span class="pill ok">opgelost</span>' : ''}</li>`).join('')}</ul>` : ''}
@@ -4055,9 +4059,10 @@ async function notifPanel() {
 // "aanvragen:ruilen" → tabblad + subtabblad
 function openView(v) {
   if (v === 'mededelingen') v = isMgr() ? 'overzicht' : 'mijn';
-  const [view, sub] = String(v).split(':');
+  const [view, sub, arg] = String(v).split(':');
   if (!tabsFor().some(([k]) => k === view)) return refreshBadge();
   if (sub) S.reqTab = sub;
+  if (arg) S.repDate = arg;
   go(view);
 }
 
