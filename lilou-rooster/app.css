@@ -1342,3 +1342,21 @@ fieldset.choice[hidden] { display: none; }
 .ch-next { margin: 16px auto 0; padding-top: 12px; border-top: 1px solid #D8C29A; color: var(--muted); font-size: 14.5px; max-width: 340px; }
 .champ .demo-loc { background: var(--surface); }
 @media (min-width: 900px) { .champ { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); padding: 20px 18px 16px; } }
+
+/* Startscherm medewerker: compacter en rustiger */
+.page-head.greet h1 { font-size: 25px; }
+.page-head.greet .g-date { font-size: 11px; letter-spacing: .22em; }
+.page-head.greet.center { gap: 10px; margin-bottom: 6px; }
+.page-head.greet.center .head-actions .btn { height: 34px; font-size: 13.5px; padding: 0 12px; border-radius: 17px; }
+.page-head.greet.center .head-actions .btn .ico { width: 16px; height: 16px; }
+.champ .ring { width: 148px; height: 148px; margin: 0 auto 10px; }
+.champ .ring-track, .champ .ring-arc { stroke-width: 8; }
+.champ .ring-in b { font-size: 34px; }
+.champ .ring-in small { font-size: 12.5px; margin-top: 2px; }
+.champ .ch-shift strong { font-size: 17px; }
+.champ .ch-shift small { font-size: 13.5px; }
+.champ .ch-btns { margin-top: 12px; }
+.champ .ch-btns .btn { height: 50px; border-radius: 25px; font-size: 16px; }
+.champ .ch-note { margin-top: 8px; font-size: 12.5px; }
+.ch-next { margin-top: 12px; padding-top: 10px; font-size: 13.5px; }
+.page-head.greet.center .head-actions .btn { height: 34px !important; min-height: 34px !important; padding: 0 12px !important; font-size: 13.5px !important; }
