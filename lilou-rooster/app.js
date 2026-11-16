@@ -250,7 +250,7 @@ function demoStore() {
       let id = e.id;
       if (id) {
         const cur = db.employees.find(x => x.id === id), old = { ...cur }; Object.assign(cur, e); cur.plan_mode = planModeOf({ ...old, ...e, role: e.plan_mode ? 'staff' : old.role }); cur.role = effRole(cur, db.settings.position_rights || {});
-        if (old.role === 'manager' && cur.role !== 'manager' && !db.employees.some(x => x.id !== id && x.role === 'manager' && x.active !== false)) { Object.assign(cur, old); throw new Error('Er moet altijd minstens één directielid overblijven.'); }
+        if (old.role === 'manager' && old.active !== false && (cur.role !== 'manager' || cur.active === false) && !db.employees.some(x => x.id !== id && x.role === 'manager' && x.active !== false)) { Object.assign(cur, old); throw new Error('Er moet altijd minstens één directielid overblijven.'); }
         audit('employees', id, 'update', old, { ...cur });
         if (old.active !== false && cur.active === false) {   // uit dienst: aanmeldingen en ruilverzoeken vervallen
           db.applications.filter(a => a.employee_id === id && a.status === 'pending').forEach(a => (a.status = 'rejected'));
@@ -292,6 +292,7 @@ function demoStore() {
       save();
     },
     async deleteEmployee(id) {
+      { const d = db.employees.find(x => x.id === id); if (d?.role === "manager" && d.active !== false && !db.employees.some(x => x.id !== id && x.role === "manager" && x.active !== false)) throw new Error("Er moet altijd minstens één directielid overblijven."); }
       if (db.entries.some(x => x.employee_id === id)) throw new Error(KLOK_DELETE);
       db.employees = db.employees.filter(e => e.id !== id);
       db.shifts = db.shifts.filter(s => s.employee_id !== id);
@@ -579,7 +580,13 @@ function demoStore() {
       st.has_wifi = !!(db.settings.wifi_ips || []).length;
       return st;
     },
-    async saveSettings(st) { Object.assign(db.settings, st); if ('position_rights' in st) db.employees.forEach(e => { e.plan_mode = planModeOf(e); e.role = effRole(e, st.position_rights || {}); }); save(); },
+    async saveSettings(st) {
+      const before = { settings: clone(db.settings), emps: clone(db.employees) };
+      Object.assign(db.settings, st);
+      if ('position_rights' in st) db.employees.forEach(e => { e.plan_mode = planModeOf(e); if (e.plan_mode === 'functie') e.role = effRole(e, st.position_rights || {}); });
+      if (!db.employees.some(e => e.role === 'manager' && e.active !== false)) { db.settings = before.settings; db.employees = before.emps; throw new Error('Er moet altijd minstens één directielid overblijven.'); }
+      save();
+    },
     async registerWifi() { const ip = '84.12.34.56'; db.settings.wifi_ips = [...new Set([...(db.settings.wifi_ips || []), ip])]; save(); return ip; },
     async entries(from, to) {
       const a = new Date(parse(from)).toISOString(), b = addDays(parse(to), 1).toISOString();
@@ -3076,7 +3083,12 @@ async function viewSettings(el) {
 
   S.setOpen ||= new Set(['1']);
   $$('details.setsec', el).forEach(d => { d.open = S.setOpen.has(d.dataset.k); d.addEventListener('toggle', () => { d.open ? S.setOpen.add(d.dataset.k) : S.setOpen.delete(d.dataset.k); }); });
-  const savePos = async list => { await store.saveSettings({ positions: list }); applySettings(await store.settings()); toast('Functies opgeslagen'); rerender(); };
+  const savePos = async list => {
+    const rights = { ...(CFG.posRights || {}) }, gone = Object.keys(rights).filter(k => !list.includes(k));
+    gone.forEach(k => delete rights[k]);
+    try { await store.saveSettings(gone.length ? { positions: list, position_rights: rights } : { positions: list }); } catch (x) { return toast(errMsg(x), 'error'); }
+    applySettings(await store.settings()); toast('Functies opgeslagen'); rerender();
+  };
   const readTpl = () => $$('.tplrow', el).map(r => ({ label: $('[name=label]', r).value.trim(), start: $('[name=start]', r).value, end: $('[name=end]', r).value, pauze: Number($('[name=pauze]', r).value) || 0 }));
   el.onclick = async ev => {
     const prb = ev.target.closest('[data-posrights]');

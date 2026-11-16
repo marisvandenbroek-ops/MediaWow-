@@ -33,3 +33,29 @@ revoke execute on function public.trg_employee_role() from public, anon, authent
 drop trigger if exists employees_role on public.employees;
 create trigger employees_role before insert or update of role, position, plan_mode on public.employees
   for each row execute function public.trg_employee_role();
+
+-- Rechten van een functie gewijzigd: iedereen die de functie volgt opnieuw afleiden (ook wie via de functie directie was)
+create or replace function public.trg_rights_changed() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.position_rights is distinct from old.position_rights then
+    update public.employees set plan_mode = plan_mode where plan_mode = 'functie';
+  end if;
+  return null;
+end $$;
+revoke execute on function public.trg_rights_changed() from public, anon, authenticated;
+
+-- Ook uit dienst zetten of verwijderen mag het laatste actieve directielid niet weghalen
+create or replace function public.trg_keep_manager() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if old.role = 'manager' and old.active and (tg_op = 'DELETE' or not new.active)
+     and not exists (select 1 from public.employees where role = 'manager' and active and id <> old.id) then
+    raise exception 'Er moet altijd minstens één directielid overblijven.';
+  end if;
+  return case when tg_op = 'DELETE' then old else new end;
+end $$;
+revoke execute on function public.trg_keep_manager() from public, anon, authenticated;
+drop trigger if exists employees_keep_manager on public.employees;
+create trigger employees_keep_manager before update of active or delete on public.employees
+  for each row execute function public.trg_keep_manager();

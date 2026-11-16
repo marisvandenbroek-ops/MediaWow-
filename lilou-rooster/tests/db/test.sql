@@ -531,5 +531,16 @@ update employees set plan_mode = 'nee' where role = 'manager' and id <> 'a000000
 select t_fails($$update employees set plan_mode = 'nee' where id = 'a0000000-0000-0000-0000-000000000001'$$, 'laatste directielid blijft directie');
 update settings set position_rights = '{}' where id = 1;
 
+\echo '== Controle: functie terug van directie, laatste directielid uit dienst'
+update employees set position = 'Manager', plan_mode = 'functie' where id = 'a0000000-0000-0000-0000-000000000003';
+update settings set position_rights = '{"Manager": {"level": "directie"}}' where id = 1;
+select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000003') = 'manager', 'Manager is directie');
+update settings set position_rights = '{"Manager": {"level": "medewerker"}}' where id = 1;
+select t_ok((select role from employees where id = 'a0000000-0000-0000-0000-000000000003') = 'staff', 'functie terug naar medewerker haalt directierechten weg');
+select t_fails($$update employees set active = false where id = 'a0000000-0000-0000-0000-000000000001'$$, 'laatste directielid niet uit dienst');
+select t_fails($$delete from employees where id = 'a0000000-0000-0000-0000-000000000001'$$, 'laatste directielid niet verwijderen');
+update settings set position_rights = '{}' where id = 1;
+update employees set position = 'Bediening' where id = 'a0000000-0000-0000-0000-000000000003';
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'
