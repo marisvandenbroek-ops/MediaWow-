@@ -1458,3 +1458,11 @@ fieldset.choice[hidden] { display: none; }
 .logbtns .btn .ico { width: 16px; height: 16px; flex: none; }
 @media (max-width: 380px) { .logbtns .btn { font-size: 13px; padding: 0 4px; } .logbtns .btn .ico { display: none; } }
 .avrow .avaddnote { grid-column: -2 / -1; white-space: nowrap; text-align: left; }
+.certadd select, .certadd input { border: 1px solid var(--line-strong, var(--line)); border-radius: 10px; padding: 0 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 15px; }
+@media (max-width: 760px) {
+  .avform .avfoot { padding: 10px 12px; gap: 6px; }
+  .avform .avfoot > .hint { display: none; }
+  .avform .avfoot .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+  .avform .avfoot .actions .btn { min-height: 46px; font-size: 14px; line-height: 1.15; padding: 0 8px; white-space: normal; }
+  .dlg-foot .btn[data-dreps] { order: 3; }
+}
