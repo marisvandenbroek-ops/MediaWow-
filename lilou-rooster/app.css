@@ -1142,3 +1142,37 @@ button.ml-item.ml-ed:hover, button.ml-item.ml-ed:focus-visible { border-color: v
 .ml-pen .ico { width: 15px; height: 15px; margin: 0; }
 .field[hidden] { display: none; }
 .dlg .field small.hint { display: inline; font-weight: 400; }
+
+/* ===== Overzicht directie: startscherm (vandaag, te doen, week) ===== */
+.dhead h1 { letter-spacing: -.02em; }
+.dhome { display: grid; gap: 12px; max-width: 760px; }
+.hcard { padding: 6px 16px 8px; margin: 0; }
+.hhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 0 4px; }
+.hhead h2 { font-size: 12.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+.hhead .linkbtn { font-weight: 600; font-size: 14px; }
+.hrow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; min-height: 52px; }
+.hhead + .hrow { border-top: 0; }
+.hrow.static, .hrow.act { cursor: default; }
+.hrow .ht { flex: 1; min-width: 0; line-height: 1.3; }
+.hrow .ht strong { display: block; font-weight: 600; font-size: 15px; }
+.hrow .ht small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.hrow .chev { color: var(--muted); font-size: 20px; }
+.hrow .btn.sm { flex: none; min-width: 52px; }
+.hn { flex: none; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 15px; display: grid; place-items: center; font-weight: 700; font-size: 13px; background: var(--accent-soft); color: var(--accent); }
+.hn.ok { background: var(--ok-soft); color: var(--ok); }
+.hn.bad { background: var(--bad-soft); color: var(--bad); }
+.hn.warn { background: var(--warn-soft); color: var(--warn); }
+.hn.info { background: var(--accent-soft); color: var(--accent); }
+.hn .ico { width: 16px; height: 16px; margin: 0; }
+.guestin { width: 76px; height: 40px; border: 1px solid var(--line-strong); border-radius: 10px; text-align: center; font: inherit; font-size: 16px; font-weight: 600; background: var(--surface); color: var(--text); }
+.minikpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; padding: 6px 0 10px; border: 0; background: none; font: inherit; color: var(--text); text-align: left; cursor: pointer; }
+.mk b { display: block; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+.mk b.ok { color: var(--ok); } .mk b.warn { color: var(--warn); } .mk b.bad { color: var(--bad); }
+.mk span { font-size: 12px; color: var(--muted); }
+.hlinks { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 2px 4px 8px; }
+.hlinks .linkbtn { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.hlinks .ico { width: 16px; height: 16px; margin: 0; }
+.backlink { font-size: 14px; font-weight: 600; margin-bottom: 4px; display: inline-block; }
+@media (min-width: 900px) { .dhome { grid-template-columns: 1fr 1fr; max-width: 1100px; align-items: start; } .hlinks { grid-column: 1 / -1; } }
+@media (max-width: 380px) { .mk b { font-size: 17px; } }
+#view > .page-head.dhead p { display: block; }
