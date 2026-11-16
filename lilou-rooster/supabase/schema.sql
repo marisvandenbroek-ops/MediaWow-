@@ -1283,7 +1283,7 @@ begin
       'Afzuiging aan vóór het aansteken van gas', 'Apparatuur opgestart en werkt (oven, fornuis, plancha, friteuse, vaatwasser)',
       'Nooduitgang en blusdeken vrij', 'Houdbaarheid koelingen gecontroleerd, verlopen weg (waste)', 'Prikthermometer schoon en werkt',
       'Handenwasplaats: zeep, papier, desinfectie', 'Werkbanken, planken en messen schoon en gedesinfecteerd',
-      'Iedereen in schone keukenkleding, haar bedekt, geen sieraden', 'Gezondheidscheck: niemand met diarree, braken, koorts of open wond',
+      'Iedereen in schone keukenkleding, lang haar vast, geen sieraden', 'Gezondheidscheck: niemand met diarree, braken, koorts of open wond',
       'Reserveringen en allergieën doorgenomen', 'Mise-en-place-lijsten per partie klaar', 'Leveringen van vandaag bekend']),
     ('Sluiting keuken', 'Keuken', 'sluiting', 'check', 40, array[
       'Mise-en-place afgedekt, gelabeld en in de koeling', 'Terugkoelen gestart en geregistreerd', 'Niets buiten de koeling', 'Waste van vandaag geregistreerd',
