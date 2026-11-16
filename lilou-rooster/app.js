@@ -3357,8 +3357,12 @@ async function viewMine(el) {
     try {
       const hrM = new Date().getHours();
       S.myBirth ??= (await store.myProfile().catch(() => null))?.birth_date || '';
-      const ents = (await store.entries(iso(addDays(new Date(), -730)), todayIso()).catch(() => [])).filter(x => x.employee_id === S.me.id && x.clock_out);
-      const lastE = ents.map(x => x.clock_out).sort().pop();
+      // aantal diensten: één keer per dag ophalen (niet bij elke weergave)
+      if (!S.msCache || S.msCache.day !== todayIso()) {
+        const ents = (await store.entries(iso(addDays(new Date(), -730)), todayIso()).catch(() => [])).filter(x => x.employee_id === S.me.id && x.clock_out);
+        S.msCache = { day: todayIso(), n: ents.length, last: ents.map(x => x.clock_out).sort().pop() };
+      }
+      const ents = { length: S.msCache.n }, lastE = S.msCache.last;
       if (S.myBirth && S.myBirth.slice(5) === todayIso().slice(5)) gSub = `Joyeux anniversaire! Fijne verjaardag, ${esc(S.me.name.split(' ')[0])}.`;
       else if (ents.length && ents.length % 25 === 0 && lastE && Date.now() - new Date(lastE) < 36 * 3600e3) gSub = `Je ${ents.length}e dienst bij ${esc(CFG.bedrijf || 'ons')} zit erop. Merci!`;
       else if (canPlan() && (hrM >= 14 || hrM < 2)) { const g = (await store.dayInfo(bdM, bdM).catch(() => []))[0]?.guests; if (g) gSub = `${hrM >= 17 || hrM < 5 ? 'Vanavond' : 'Vandaag'} ${g} gasten verwacht`; }
@@ -4925,11 +4929,12 @@ async function doClock(action, btn) {
     // Eerst via de wifi van de zaak (geen locatievraag); lukt dat niet, dan via gps
     if (needLoc && hasWifi(st0)) {
       btn.textContent = 'Wifi controleren…';
-      try { await store.clock(action, null, null, ot); toast(done[action]); return rerender(); }
+      try { await store.clock(action, null, null, ot); if (action === 'uit') S.msCache = null; toast(done[action]); return rerender(); }
       catch (e) { if (e.code !== 'LC001') throw e; }
     }
     if (needLoc) { btn.textContent = 'Locatie bepalen…'; pos = await getPosition(); }
     await store.clock(action, pos, null, ot);
+    if (action === 'uit') S.msCache = null;
     toast(done[action]); rerender();
   } catch (e) {
     btn.disabled = false; btn.textContent = label;

@@ -81,3 +81,14 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - **App Store / Play Store** (na de opening): bestaande app verpakken met Capacitor; native push (APNs/FCM) zonder "from"; iOS als *unlisted* app voor het eigen team. Nodig: Apple Developer-account op bedrijfsnaam (€ 99/jaar, D-U-N-S-nummer aanvragen), Google Play (± € 25 eenmalig), Mac met Xcode (of cloud-build). Kleine wijzigingen blijven via de website binnenkomen.
 - **Horeca-product (white label)**: nieuw apart project met Lilou-code als basis; Lilou wordt later de eerste klant. Onderdelen: multi-tenant (org_id + RLS per zaak), huisstijl per zaak (naam, logo, kleuren) overal incl. icoon en mails, voorbeeldlijsten/afspraken als startpunt, mails als code-sjablonen met zaaknaam (Supabase Send Email Hook → eigen verzendfunctie), aanmelden + abonnement (Mollie/Stripe), beheer voor MediaWow, verwerkersovereenkomst/voorwaarden/privacy per zaak, back-ups en support.
 - Pushmeldingen iPhone: "from <app-naam>" komt van iOS zelf en is niet uit te zetten in een web-app.
+
+## Update 42–44 (16 nov) — klaar, nog niet live
+- Database: eerst update42 (rechten per functie, directie-niveau, laatste-directie-bewaking), dan update43 (weer beter op de dag zelf), dan update44 (diploma's, dagrapport, niet-ingeklokt-melding). Pas daarna de app-zip uploaden.
+- Na update42: in Instellingen → Functies Manager = Directie, Shiftleader = Shiftleader zetten.
+- Update 44: `employee_certs` (SVH/BHV/HACCP/EHBO, melding 60 en ±30 dagen voor verlopen, planning toont "Geen SVH/BHV"), `day_reports` + `save_day_report()` (shiftleader vandaag/gisteren, directie leest in Overzicht met gasten/omzet/uren/meldingen; 2 jaar bewaard), `late_reminders()` (10 min na start niet ingeklokt → leiding van dienst, anders directie, en de medewerker).
+- UX-ronde: startscherm medewerker korter (tegels, Ruilen bij komende diensten, weken via "Per week"), beschikbaarheid compact, planning op telefoon met "⋯ Meer" en zwevende "+ Dienst", verlofkosten in uren, lijstvoortgang + "Chapeau", Franse toasts, verjaardag/mijlpaal/gasten in de begroeting.
+- Niet gedaan (bewust): inkloktablet, contractbeheer (staat niet in de app). "Plat du jour" in de avondregel kan pas als de kaart een dagschotel kent.
+
+## Idee: app voor gasten (na de opening)
+- Advies: de website installeerbaar maken (PWA, zelfde techniek als het rooster) in plaats van een aparte App Store-app. Gasten kunnen hem op hun beginscherm zetten met het Lilou-icoon.
+- Mogelijk: pushberichten (spaarzaam: nieuwe kaart, wijndiner, laatste plekken), snel reserveren via Zenchef, actuele kaart met allergenen, later cadeaubon of spaarkaart. Let op privacy zodra gastgegevens bewaard worden.
