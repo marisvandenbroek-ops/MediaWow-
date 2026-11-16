@@ -71,3 +71,8 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Kaarten als filterbare lijst (parseMenuPdf/menuList), directie kan gerechten toevoegen/wijzigen/weghalen (`menu_cards.items`, update31.sql). Nieuwe pdf = lijst weer uit de pdf.
 - Herinnering aan shiftleader/directie van dienst als opening- of sluitingslijsten niet af zijn: `lists_reminders()` in `run_jobs` (update32.sql). Opening: 1 uur na eerste dienst; sluiting: 30 min voor einde laatste (of eigen) dienst.
 - App-versie v40 (zip rooster-update-33).
+
+## Let op: recepten-app deelt dezelfde Supabase (sinds 16 nov)
+- Van de recepten-app (ander gesprek), NIET aanpassen vanuit het rooster: tabellen `recipes`, `dishes`, `dish_components`, `prep_lists`, `recipe_views`; opslagmap `recepten`; functies `recipe_*`, `save_dish`, `merge_recipes`, `menu_allergens`, `prep_check`, `rename_category`.
+- Op `employees` staan nu ook `recipe_access` en `recipe_archive`, met trigger `guard_recipe_archive`: wijzigen van e-mail of account van iemand met archief-toegang mag alleen de beheerder (geeft anders een foutmelding in het rooster).
+- Zelfde Auth: één account voor beide apps; inlog- en uitnodigingsmails gebruiken dezelfde sjablonen. Redirect-URL van de recepten-app moet in Auth → URL Configuration staan.
