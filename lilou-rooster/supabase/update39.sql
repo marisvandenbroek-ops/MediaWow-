@@ -114,3 +114,4 @@ end $$;
 drop trigger if exists employees_profile_inactive on public.employees;
 create trigger employees_profile_inactive after update of active on public.employees
   for each row execute function public.trg_profile_inactive();
+revoke execute on function public.trg_profile_inactive() from public, anon, authenticated;
