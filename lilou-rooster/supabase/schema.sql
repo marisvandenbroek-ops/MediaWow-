@@ -1692,7 +1692,7 @@ grant execute on function public.clocked_today() to authenticated;
 insert into public.checklists (name, department, moment, kind, sort, items)
 select v.name, 'Afwas', v.mom, 'check', v.sort, v.items::jsonb
   from (values
-    ('Opening afwas', 'opening', 55, '[{"id":"i1","label":"Vaatwasser gevuld en op temperatuur"},{"id":"i2","label":"Naspoeltemperatuur gecontroleerd (ongeveer 82 °C)"},{"id":"i3","label":"Zeep en naglansmiddel voldoende"},{"id":"i4","label":"Rekken, korven en schone doeken klaar"},{"id":"i5","label":"Spoelbak en voorspoeldouche schoon"},{"id":"i6","label":"Afvalbakken leeg met nieuwe zak"},{"id":"i7","label":"Handenwasplaats: zeep, papier"}]'),
+    ('Opening afwas', 'opening', 55, '[{"id":"i1","label":"Vaatwasser aangezet en laten opwarmen vóór de eerste lading"},{"id":"i2","label":"Temperatuur op het display gecontroleerd (wassen ± 60 °C, naspoelen ± 82 °C)"},{"id":"i3","label":"Zeep en naglansmiddel voldoende"},{"id":"i4","label":"Rekken, korven en schone doeken klaar"},{"id":"i5","label":"Spoelbak en voorspoeldouche schoon"},{"id":"i6","label":"Afvalbakken leeg met nieuwe zak"},{"id":"i7","label":"Handenwasplaats: zeep, papier"}]'),
     ('Sluiting afwas', 'sluiting', 56, '[{"id":"i1","label":"Alle vaat schoon en op de vaste plek"},{"id":"i2","label":"Vaatwasser leeg, filters en zeven schoon, deur open"},{"id":"i3","label":"Machine van buiten afgenomen"},{"id":"i4","label":"Spoelbakken en werkbank schoon en gedesinfecteerd"},{"id":"i5","label":"Afval, glas en karton weg, bakken schoon"},{"id":"i6","label":"Vloer geveegd en gedweild, putjes leeg"},{"id":"i7","label":"Vuile doeken en schorten in de was"}]')
   ) as v(name, mom, sort, items)
  where not exists (select 1 from public.checklists c where c.name = v.name);
