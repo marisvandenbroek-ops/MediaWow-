@@ -5220,6 +5220,31 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
   // tik op een pushmelding: het juiste scherm openen
   try { navigator.serviceWorker.addEventListener('message', ev => { if (ev.data && ev.data.type === 'open' && S.me && ev.data.view) openView(ev.data.view); }); } catch (e) { /* ignore */ }
 }
+// Nieuwe versie op de server? Dan ververst de app zichzelf, zonder afsluiten.
+// Kijkt bij terugkomen in de app en elke 5 minuten; nooit midden in het invullen van een venster of veld.
+(() => {
+  const mine = (document.querySelector('script[src*="app.js"]')?.getAttribute('src') || '').match(/v=(\d+)/)?.[1];
+  if (!mine || (location.protocol !== 'https:' && location.hostname !== 'localhost')) return;
+  let busy = false, pending = false;
+  const quiet = () => !document.querySelector('dialog[open]') && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+  const reload = () => { if (quiet()) { try { sessionStorage.setItem('rooster-updated', '1'); } catch (e) { /* geen opslag */ } location.reload(); } else pending = true; };
+  const check = async () => {
+    if (busy || !navigator.onLine) return; busy = true;
+    try {
+      const html = await (await fetch('index.html?check=' + Date.now(), { cache: 'no-store' })).text();
+      const live = html.match(/app\.js\?v=(\d+)/)?.[1];
+      if (live && live !== mine) {
+        try { const reg = await navigator.serviceWorker?.getRegistration(); await reg?.update(); } catch (e) { /* geen service worker */ }
+        reload();
+      }
+    } catch (e) { /* geen verbinding: later opnieuw */ }
+    busy = false;
+  };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+  setInterval(() => { if (pending) reload(); else if (document.visibilityState === 'visible') check(); }, 5 * 60000);
+  document.addEventListener('focusout', () => { if (pending) setTimeout(reload, 500); });
+  try { if (sessionStorage.getItem('rooster-updated')) { sessionStorage.removeItem('rooster-updated'); setTimeout(() => toast('De app is bijgewerkt naar de nieuwste versie'), 1500); } } catch (e) { /* geen opslag */ }
+})();
 // Alleen in de demo: haakje voor de automatische tests
 if (DEMO) window.__rooster = { S, CFG, get store() { return store; }, agendaDialog, kpiOf };
 boot();
