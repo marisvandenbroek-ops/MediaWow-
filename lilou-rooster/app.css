@@ -1099,3 +1099,16 @@ dialog.moresheet::backdrop { background: rgba(43, 22, 17, .35); }
 .dsnav:active { background: var(--accent-soft); }
 @media (max-width: 380px) { .dsnav { width: 26px; } .dsrow .ds b { font-size: 17px; } }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Kaarten */
+.kgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.kcard { padding: 0; overflow: hidden; }
+.kopen { display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px; background: none; border: 0; text-align: left; font: inherit; color: var(--text); cursor: pointer; min-height: 64px; }
+.kic { width: 42px; height: 42px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+.kic .ico { margin: 0; width: 20px; height: 20px; color: var(--accent); }
+.kt { flex: 1; min-width: 0; }
+.kt strong { display: block; font-size: 16px; }
+.kt small { color: var(--muted); font-size: 12.5px; }
+.kopen .chev { color: var(--muted); font-size: 20px; }
+.kact { display: flex; gap: 14px; padding: 0 16px 12px 72px; }
+.linkbtn.danger { color: var(--bad); }

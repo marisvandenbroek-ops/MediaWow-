@@ -88,6 +88,7 @@ const IC = {
 const hasWifi = st => !!((st && st.wifi_ips && st.wifi_ips.length) || (st && st.has_wifi));   // medewerkers krijgen alleen has_wifi, niet de adressen
 const ico = n => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${IC[n] || ''}</svg>`;
 const ICON = {
+  kaarten: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5 9 3l6 2.5L21 3v15.5L15 21l-6-2.5L3 21z"/><path d="M9 3v15.5M15 5.5V21"/></svg>',
   planning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 14h3M13.5 14h3M7.5 17.5h3"/></svg>',
   diensten: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5"/></svg>',
   beschikbaar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M8.5 15l2.2 2.2 4.8-4.7"/></svg>',
@@ -351,6 +352,15 @@ function demoStore() {
       return { path, name: file.name, type: file.type };
     },
     async attachmentUrl(path) { return (db.files || {})[path] || ''; },
+    async menuCards() { db.menuCards ||= []; return clone(db.menuCards).sort((a, b) => a.sort - b.sort || a.title.localeCompare(b.title)); },
+    async saveMenuCard(c) {
+      if (!isMgr()) throw new Error('Alleen de directie kan dit');
+      db.menuCards ||= [];
+      const row = { ...c, updated_at: new Date().toISOString(), updated_by: mem };
+      if (c.id) Object.assign(db.menuCards.find(x => x.id === c.id), row); else db.menuCards.push({ sort: db.menuCards.length, ...row, id: uid() });
+      save();
+    },
+    async deleteMenuCard(id) { const c = (db.menuCards || []).find(x => x.id === id); db.menuCards = (db.menuCards || []).filter(x => x.id !== id); if (c && db.files) delete db.files[c.file_path]; save(); },
     async attachmentBlob(path) { const d = (db.files || {})[path]; if (!d) throw new Error('Bestand niet gevonden'); return (await fetch(d)).blob(); },
     async deleteAttachment(path) { if (db.files) { delete db.files[path]; save(); } },
     async renotifyAnnouncement(id) {
@@ -730,6 +740,17 @@ async function supabaseStore() {
       return { path, name: file.name, type: file.type };
     },
     async attachmentUrl(path) { const { data } = await sb.storage.from('mededelingen').createSignedUrl(path, 3600); return data?.signedUrl || ''; },
+    async menuCards() { return ok(await sb.from('menu_cards').select('*').order('sort').order('title')) || []; },
+    async saveMenuCard(c) {
+      const row = { title: c.title, file_path: c.file_path, file_name: c.file_name, file_type: c.file_type, updated_at: new Date().toISOString(), updated_by: S.me.id };
+      if (c.id) ok(await sb.from('menu_cards').update(row).eq('id', c.id));
+      else ok(await sb.from('menu_cards').insert({ ...row, sort: c.sort ?? 0 }));
+    },
+    async deleteMenuCard(id) {
+      const c = ok(await sb.from('menu_cards').select('file_path').eq('id', id).maybeSingle());
+      ok(await sb.from('menu_cards').delete().eq('id', id));
+      if (c?.file_path) await sb.storage.from('mededelingen').remove([c.file_path]);
+    },
     async attachmentBlob(path) { const { data, error } = await sb.storage.from('mededelingen').download(path); if (error) throw new Error('Bestand niet gevonden'); return data; },
     async deleteAttachment(path) { await sb.storage.from('mededelingen').remove([path]); },
     async renotifyAnnouncement(id) { const { error } = await sb.rpc('renotify_announcement', { p_id: id }); if (error) throw error; },
@@ -1061,10 +1082,10 @@ async function handleSession(r) {
 /* ================= Shell ================= */
 function tabsFor() {
   return isMgr()
-    ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['aanvragen', 'Aanvragen'], ['lijsten', 'Lijsten'], ['team', 'Team'], ['uren', 'Uren & export']]
+    ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['aanvragen', 'Aanvragen'], ['lijsten', 'Lijsten'], ['team', 'Team'], ['uren', 'Uren & export'], ['kaarten', 'Kaarten']]
     : canPlan()
-      ? [['mijn', 'Mijn rooster'], ['planning', 'Planning'], ['lijsten', 'Lijsten'], ['diensten', 'Diensten'], ['aanvragen', 'Verlof'], ['beschikbaar', 'Beschikbaar']]
-      : [['mijn', 'Mijn rooster'], ['diensten', 'Diensten'], ['lijsten', 'Lijsten'], ['aanvragen', 'Verlof'], ['planning', 'Team'], ['beschikbaar', 'Beschikbaar']];
+      ? [['mijn', 'Mijn rooster'], ['planning', 'Planning'], ['lijsten', 'Lijsten'], ['diensten', 'Diensten'], ['aanvragen', 'Verlof'], ['beschikbaar', 'Beschikbaar'], ['kaarten', 'Kaarten']]
+      : [['mijn', 'Mijn rooster'], ['diensten', 'Diensten'], ['lijsten', 'Lijsten'], ['aanvragen', 'Verlof'], ['planning', 'Team'], ['beschikbaar', 'Beschikbaar'], ['kaarten', 'Kaarten']];
 }
 
 function renderShell() {
@@ -1161,11 +1182,54 @@ async function renderView(view, el) {
     else if (view === 'beschikbaar') await viewBeschikbaar(el);
     else if (view === 'lijsten') await viewLijsten(el);
     else if (view === 'mijnuren') await viewMyHours(el);
+    else if (view === 'kaarten') await viewKaarten(el);
     else if (view === 'instellingen' && isMgr()) await viewSettings(el);
     else if (view === 'overzicht' && isMgr()) await viewDashboard(el);
   }
 }
 const rerender = () => go(S.view);
+
+/* ================= Kaarten (menukaart, wijnkaart) ================= */
+async function viewKaarten(el) {
+  const cards = await store.menuCards();
+  const mgr = isMgr();
+  const isImg = c => /^image\//.test(c.file_type || '');
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Kaarten</h1><p>De actuele menukaart, wijnkaart en bites. Tik om te openen.</p></div>${mgr ? '<button class="btn primary" data-kadd>+ Kaart toevoegen</button>' : ''}</div>
+    ${cards.length ? `<div class="kgrid">${cards.map(c => `<div class="card kcard">
+        <button type="button" class="kopen" data-kopen="${c.id}"><span class="kic">${isImg(c) ? ico('file') : ico('book')}</span><span class="kt"><strong>${esc(c.title)}</strong><small>Bijgewerkt ${esc(fmtShort(iso(new Date(c.updated_at))))}</small></span><span class="chev" aria-hidden="true">›</span></button>
+        ${mgr ? `<div class="kact"><button type="button" class="linkbtn small" data-kedit="${c.id}">Vervangen of naam wijzigen</button><button type="button" class="linkbtn small danger" data-kdel="${c.id}">Verwijderen</button></div>` : ''}
+      </div>`).join('')}</div>`
+      : `<div class="card empty">${mgr ? 'Nog geen kaarten. Tik op <strong>+ Kaart toevoegen</strong> en kies een pdf of foto van de menukaart, wijnkaart of bites.' : 'De kaarten staan hier zodra de directie ze heeft toegevoegd.'}</div>`}`;
+  el.onclick = async ev => {
+    const o = ev.target.closest('[data-kopen]'); if (o) { const c = cards.find(x => x.id === o.dataset.kopen); return fileViewer(c.file_path, c.title, c.file_type); }
+    if (ev.target.closest('[data-kadd]')) return menuCardDialog();
+    const e = ev.target.closest('[data-kedit]'); if (e) return menuCardDialog(cards.find(x => x.id === e.dataset.kedit));
+    const d = ev.target.closest('[data-kdel]');
+    if (d) { const c = cards.find(x => x.id === d.dataset.kdel); if (!await ask(`"${c.title}" verwijderen? Medewerkers zien hem dan niet meer.`, 'Verwijderen')) return; try { await store.deleteMenuCard(c.id); toast('Kaart verwijderd'); } catch (x) { toast(errMsg(x), 'error'); } return rerender(); }
+  };
+}
+function menuCardDialog(c = {}) {
+  const isNew = !c.id;
+  openDialog(isNew ? 'Kaart toevoegen' : 'Kaart bijwerken', `
+    <label class="field">Naam<input name="title" maxlength="60" required value="${esc(c.title || '')}" placeholder="bv. Menukaart, Wijnkaart, Bites, Kerstmenu"></label>
+    <label class="field">${isNew ? 'Bestand (pdf of foto)' : 'Nieuw bestand (laat leeg om alleen de naam te wijzigen)'}<input type="file" name="file" accept="application/pdf,image/*" ${isNew ? 'required' : ''}></label>
+    <p class="hint" style="margin:0">Maximaal 10 MB. Een pdf van de drukker of een scherpe foto van de kaart werkt het best.</p>
+    <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">${isNew ? 'Toevoegen' : 'Opslaan'}</button></div>`, {
+    async onSubmit(fd) {
+      const title = String(fd.get('title') || '').trim(); if (!title) throw new Error('Geef de kaart een naam.');
+      const file = fd.get('file'); let rec = { id: c.id, title, file_path: c.file_path, file_name: c.file_name, file_type: c.file_type };
+      if (file && file.size) {
+        if (!/^(application\/pdf|image\/)/.test(file.type || '')) throw new Error('Kies een pdf of een foto.');
+        const up = await store.uploadAttachment(file); const old = c.file_path;
+        rec = { ...rec, file_path: up.path, file_name: up.name, file_type: up.type };
+        await store.saveMenuCard(rec);
+        if (old && store.deleteAttachment) store.deleteAttachment(old).catch(() => {});
+      } else await store.saveMenuCard(rec);
+      toast(isNew ? 'Kaart toegevoegd' : 'Kaart bijgewerkt'); rerender();
+    },
+  });
+}
 
 /* ================= Meer (telefoon) ================= */
 function moreSheet() {
@@ -2802,6 +2866,7 @@ async function viewMine(el) {
     ${boardH}
     ${sel ? '' : `<div class="homemore">
       <button type="button" class="card lhome" data-gohours><span><strong>${ico('clock')}Mijn gewerkte uren</strong><small>Per week, met je kloktijden en wat is goedgekeurd</small></span><span class="chev">›</span></button>
+      <button type="button" class="card lhome" data-gokaarten><span><strong>${ico('book')}Menukaart & wijnkaart</strong><small>Snel even kijken wat er op de kaart staat</small></span><span class="chev">›</span></button>
       <button type="button" class="card lhome" data-nood><span><strong>${ico('phone')}Noodnummers</strong><small>112, gaslucht, huisartsenpost${CFG.sickPhone ? ', ziek melden' : ''}</small></span><span class="chev">›</span></button>
       ${rulesH ? '' : `<button type="button" class="card lhome" data-rulesview><span><strong>${ico('book')}Afspraken</strong><small>Alle regels: service, allergenen, hygiëne en meer</small></span><span class="chev">›</span></button>`}
     </div>`}
@@ -2819,6 +2884,7 @@ async function viewMine(el) {
     if (ev.target.closest('[data-golists]')) return go('lijsten');
     if (ev.target.closest('[data-gohours]')) return go('mijnuren');
     if (ev.target.closest('[data-nood]')) return noodDialog();
+    if (ev.target.closest('[data-gokaarten]')) return go('kaarten');
     if (ev.target.closest('[data-allweeks]')) return $('#weken', el)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (ev.target.closest('[data-rulesread]')) return rulesViewer({ ack: true });
     if (ev.target.closest('[data-rulesview]')) return rulesViewer();

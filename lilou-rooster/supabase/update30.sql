@@ -117,3 +117,26 @@ begin
 end $$;
 revoke execute on function public.run_jobs() from public, anon;
 grant execute on function public.run_jobs() to authenticated;
+
+-- =====================================================================
+--  KAARTEN: menukaart, wijnkaart, bites (pdf of foto), door de directie te uploaden
+-- =====================================================================
+create table if not exists public.menu_cards (
+  id         uuid primary key default gen_random_uuid(),
+  title      text not null check (length(title) between 1 and 60),
+  sort       int  not null default 0,
+  file_path  text not null,            -- bestand in opslag-map 'mededelingen' (map kaarten/)
+  file_name  text,
+  file_type  text,
+  updated_at timestamptz not null default now(),
+  updated_by uuid references public.employees(id) on delete set null
+);
+alter table public.menu_cards enable row level security;
+drop policy if exists mc_select on public.menu_cards;
+create policy mc_select on public.menu_cards for select to authenticated
+  using (public.my_employee_id() is not null or public.is_manager());
+drop policy if exists mc_write on public.menu_cards;
+create policy mc_write on public.menu_cards for all to authenticated
+  using (public.is_manager()) with check (public.is_manager());
+revoke all on public.menu_cards from public, anon;
+grant select, insert, update, delete on public.menu_cards to authenticated;

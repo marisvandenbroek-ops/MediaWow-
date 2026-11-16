@@ -765,6 +765,20 @@ async function test(name, fn) {
     await p.waitForSelector('.sickbanner');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
   });
+  await test('kaarten: directie uploadt de menukaart, medewerker opent hem in de app', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await tab(p, 'kaarten'); await p.click('[data-kadd]');
+    const pdf = '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 400]/Contents 4 0 R/Resources<<>>>>endobj\n4 0 obj<</Length 33>>stream\n0.57 0.15 0.03 rg 20 20 260 360 re f\nendstream endobj\ntrailer<</Root 1 0 R>>\n%%EOF';
+    await p.fill('dialog [name=title]', 'Menukaart'); await p.setInputFiles('dialog [name=file]', { name: 'menu.pdf', mimeType: 'application/pdf', buffer: Buffer.from(pdf) });
+    await p.click('dialog button[value=save]'); await p.waitForSelector('.kcard:has-text("Menukaart")');
+    const s2 = watch(await ctx.newPage()); await s2.setViewportSize({ width: 390, height: 844 });
+    await s2.goto(URL + '#personeel'); await s2.waitForSelector('[data-demo]'); await login(s2, 'Sanne');
+    await s2.click('[data-gokaarten]'); await s2.click('[data-kopen]');
+    await s2.waitForSelector('dialog.viewer[open] canvas.viewer-page', { timeout: 15000 });
+    assert.ok(!(await s2.$('[data-kadd]')), 'medewerker kan kaarten toevoegen');
+    await ctx.close(); pages.splice(pages.indexOf(p), 1); pages.splice(pages.indexOf(s2), 1);
+  });
   await test('telefoon: geen enkel scherm loopt rechts van het scherm af', async () => {
     // elk element binnen #view moet binnen de schermbreedte blijven (behalve in bewust scrollende tabellen)
     const outside = p => p.evaluate(() => { const W = document.documentElement.clientWidth, out = [];
