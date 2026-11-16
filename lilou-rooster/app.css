@@ -1232,3 +1232,14 @@ details.ice2 summary { cursor: pointer; color: var(--accent); font-weight: 600; 
   dialog.menulist .ml-tools .ml-chips { flex-wrap: wrap; }
 }
 dialog.menulist .ml-tools .ml-chips { width: 100%; justify-content: flex-start; }
+
+/* Rechten per functie */
+.posrows { display: grid; gap: 6px; margin: 8px 0; }
+.posrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.posrow .pn { flex: 1; min-width: 0; }
+.posrow .pn strong { display: block; }
+.posrow .pn small { color: var(--muted); font-size: 13px; }
+.posrow .btn .ico { width: 15px; height: 15px; }
+.chkgrid { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.rightsbox { display: grid; gap: 4px; padding: 10px 12px; border: 1px dashed var(--line-strong); border-radius: 12px; margin: 4px 0; }
+.rightsbox[hidden] { display: none; }

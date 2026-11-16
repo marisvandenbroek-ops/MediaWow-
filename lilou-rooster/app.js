@@ -249,13 +249,13 @@ function demoStore() {
       if (db.employees.some(x => x.email.toLowerCase() === e.email.toLowerCase() && x.id !== e.id)) throw new Error('Dit e-mailadres is al in gebruik.');
       let id = e.id;
       if (id) {
-        const cur = db.employees.find(x => x.id === id), old = { ...cur }; Object.assign(cur, e); audit('employees', id, 'update', old, { ...cur });
+        const cur = db.employees.find(x => x.id === id), old = { ...cur }; Object.assign(cur, e); cur.role = effRole(cur, db.settings.position_rights || {}); audit('employees', id, 'update', old, { ...cur });
         if (old.active !== false && cur.active === false) {   // uit dienst: aanmeldingen en ruilverzoeken vervallen
           db.applications.filter(a => a.employee_id === id && a.status === 'pending').forEach(a => (a.status = 'rejected'));
           db.swaps.filter(w => ['open', 'accepted'].includes(w.status) && [w.from_employee, w.to_employee, w.taken_by].includes(id)).forEach(w => (w.status = 'cancelled'));
         }
       }
-      else { id = uid(); db.employees.push({ ...e, id, user_id: null }); audit('employees', id, 'insert', null, e); }   // net als echt: pas actief na activeren
+      else { id = uid(); const ne = { ...e, id, user_id: null }; ne.role = effRole(ne, db.settings.position_rights || {}); db.employees.push(ne); audit('employees', id, 'insert', null, ne); }   // net als echt: pas actief na activeren
       save(); return id;
     },
     async inviteEmployee(id) {
@@ -577,7 +577,7 @@ function demoStore() {
       st.has_wifi = !!(db.settings.wifi_ips || []).length;
       return st;
     },
-    async saveSettings(st) { Object.assign(db.settings, st); save(); },
+    async saveSettings(st) { Object.assign(db.settings, st); if ('position_rights' in st) db.employees.forEach(e => { if (e.role !== 'manager') e.role = effRole(e, st.position_rights || {}); }); save(); },
     async registerWifi() { const ip = '84.12.34.56'; db.settings.wifi_ips = [...new Set([...(db.settings.wifi_ips || []), ip])]; save(); return ip; },
     async entries(from, to) {
       const a = new Date(parse(from)).toISOString(), b = addDays(parse(to), 1).toISOString();
@@ -941,7 +941,9 @@ const S = {
 };
 let store;
 const isMgr = () => S.me?.role === 'manager';
-const canPlan = () => S.me?.role === 'manager' || S.me?.role === 'planner';   // shiftleader mag plannen, ziet geen lonen
+const canPlan = () => S.me?.role === 'manager' || S.me?.role === 'planner';
+// Rol afleiden zoals de database doet: directie blijft directie; anders uitzondering per persoon, anders het recht van de functie
+const effRole = (e, rights = CFG.posRights || {}) => e.role === 'manager' ? 'manager' : e.plan_mode === 'ja' ? 'planner' : e.plan_mode === 'nee' ? 'staff' : rights[e.position || '']?.plan ? 'planner' : 'staff';   // shiftleader mag plannen, ziet geen lonen
 const KLOK_DELETE = 'Deze medewerker heeft kloktijden. Die horen bij de loonadministratie en moeten bewaard blijven. Zet de medewerker op inactief in plaats van te verwijderen.';
 const CT = { vast: 'Vaste uren', minmax: 'Min-max', nuluren: 'Nuluren', oproep: 'Oproep', stage: 'Stage / BBL' };
 const isFlex = e => ['nuluren', 'oproep'].includes(e?.contract_type);
@@ -1119,6 +1121,7 @@ function applySettings(st) {
   CFG.specialDays = Array.isArray(st.special_days) ? st.special_days : [];
   CFG.swapNeedsApproval = st.swap_needs_approval !== false;
   CFG.costSt = st;
+  CFG.posRights = st.position_rights && typeof st.position_rights === 'object' ? st.position_rights : {};
   CFG.sickName = st.sick_contact || ''; CFG.sickPhone = st.sick_phone || '';   // voor de kosten per dienst in het inplanvenster
 }
 async function handleSession(r) {
@@ -2693,8 +2696,9 @@ const MELD = { gebrek: 'Technisch gebrek', incident: 'Incident of ongeval', klac
 const myLists = (lists, dep) => lists.filter(l => l.active !== false && (dep === 'alle' ? true : dep ? (!l.department || l.department === dep) : (canPlan() || !l.department || (S.myDeps || [S.me.position]).includes(l.department))));
 // Medewerkers zien de lijsten van hun eigen functie én van de functies waarin ze vandaag zijn ingeroosterd (bv. bediening die vanavond achter de bar staat)
 async function loadMyDeps(ds) {
-  try { const sh = await store.shifts(ds, ds); S.myDeps = [...new Set([S.me.position, ...sh.filter(x => x.employee_id === S.me.id && x.position).map(x => x.position)].filter(Boolean))]; }
-  catch (e) { S.myDeps = [S.me.position]; }
+  const extra = [...((CFG.posRights || {})[S.me.position || '']?.lists || []), ...(S.me.extra_lists || [])];
+  try { const sh = await store.shifts(ds, ds); S.myDeps = [...new Set([S.me.position, ...extra, ...sh.filter(x => x.employee_id === S.me.id && x.position).map(x => x.position)].filter(Boolean))]; }
+  catch (e) { S.myDeps = [...new Set([S.me.position, ...extra].filter(Boolean))]; }
 }
 
 async function viewLijsten(el) {
@@ -2984,8 +2988,9 @@ async function viewSettings(el) {
     <div class="page-head"><div><h1>Instellingen</h1><p>Pas de app aan aan hoe jullie werken. Wijzigingen gelden meteen voor iedereen.</p></div></div>
     <div class="settings">
       <details class="card pad setsec" data-k="1"><summary><h2>Functies</h2></summary>
-        <p class="hint">De functies waarvoor je inplant, zoals Bediening, Keuken of Afwas. Bestaande diensten en medewerkers houden hun functie als je er een weghaalt.</p>
-        <div class="poslist">${pos.map((p, i) => `<span class="pill">${esc(p)} <button type="button" class="linkbtn small" data-posdel="${i}" aria-label="${esc(p)} verwijderen">✕</button></span>`).join('') || '<span class="muted small">Nog geen functies.</span>'}</div>
+        <p class="hint">De functies waarvoor je inplant, zoals Bediening, Keuken of Afwas. Per functie stel je de rechten in; bij Team kun je per persoon een uitzondering maken. Bestaande diensten en medewerkers houden hun functie als je er een weghaalt.</p>
+        <div class="posrows">${pos.map((p, i) => { const r = (CFG.posRights || {})[p] || {}; return `<div class="posrow"><span class="pn"><strong>${esc(p)}</strong><small>${r.plan ? 'Mag plannen' : 'Niet plannen'}${(r.lists || []).length ? ' · ook lijsten van ' + esc(r.lists.join(', ')) : ''}</small></span>
+          <button type="button" class="btn sm" data-posrights="${i}">${ico('lock')}Rechten</button><button type="button" class="linkbtn small danger" data-posdel="${i}" aria-label="${esc(p)} verwijderen">Verwijderen</button></div>`; }).join('') || '<span class="muted small">Nog geen functies.</span>'}</div>
         <form class="addrow" data-posadd><input class="input" name="pos" placeholder="Nieuwe functie, bv. Afwas" maxlength="30" required><button class="btn">Toevoegen</button></form>
       </details>
 
@@ -3065,6 +3070,22 @@ async function viewSettings(el) {
   const savePos = async list => { await store.saveSettings({ positions: list }); applySettings(await store.settings()); toast('Functies opgeslagen'); rerender(); };
   const readTpl = () => $$('.tplrow', el).map(r => ({ label: $('[name=label]', r).value.trim(), start: $('[name=start]', r).value, end: $('[name=end]', r).value, pauze: Number($('[name=pauze]', r).value) || 0 }));
   el.onclick = async ev => {
+    const prb = ev.target.closest('[data-posrights]');
+    if (prb) {
+      const p = pos[Number(prb.dataset.posrights)], all = { ...(CFG.posRights || {}) }, r = all[p] || {};
+      return openDialog(`Rechten: ${p}`, `
+        <label class="check"><input type="checkbox" name="plan" ${r.plan ? 'checked' : ''}> <span><strong>Mag plannen</strong> (shiftleader-rechten)<br><span class="hint">Rooster maken en publiceren, alle lijsten zien en nalopen, noodcontacten bekijken, herinneringen over de lijsten krijgen. Ziet geen lonen, uren of instellingen.</span></span></label>
+        <fieldset class="choice"><legend>Ziet en vinkt ook lijsten af van</legend><div class="chkgrid">${pos.filter(x => x !== p).map(x => `<label class="check"><input type="checkbox" name="lists" value="${esc(x)}" ${(r.lists || []).includes(x) ? 'checked' : ''}> ${esc(x)}</label>`).join('') || '<span class="muted small">Geen andere functies.</span>'}</div>
+          <p class="hint" style="margin:4px 0 0">De lijsten van ${esc(p)} zelf en van de functie waarin iemand die dag is ingeroosterd, ziet iedereen altijd.</p></fieldset>
+        <p class="hint">Geldt voor iedereen met deze functie, behalve bij een uitzondering bij Team.</p>
+        <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
+        async onSubmit(fd) {
+          all[p] = { plan: !!fd.get('plan'), lists: fd.getAll('lists') };
+          Object.keys(all).forEach(k => { if (!pos.includes(k)) delete all[k]; });
+          await store.saveSettings({ position_rights: all }); applySettings(await store.settings()); toast(`Rechten voor ${p} opgeslagen`); rerender();
+        },
+      });
+    }
     const pd = ev.target.closest('[data-posdel]');
     if (pd) { const p = pos[Number(pd.dataset.posdel)]; if (await ask(`Functie "${p}" verwijderen uit de lijst?`, 'Verwijderen')) await savePos(pos.filter((_, i) => i !== Number(pd.dataset.posdel))); return; }
     if (ev.target.closest('[data-tpladd]')) {
@@ -3577,8 +3598,14 @@ function employeeDialog(e, priv = {}, reqs = []) {
     <label class="field">Einddatum contract <span class="muted small">(leeg = onbepaalde tijd)</span><input type="date" name="contract_end" value="${esc(e.contract_end || '')}"></label>
     <p class="hint" data-cthint></p>
     <div class="row">
-      <label class="field">Rol<select name="role"><option value="staff" ${e.role !== 'manager' ? 'selected' : ''}>Medewerker</option><option value="planner" ${e.role === 'planner' ? 'selected' : ''}>Shiftleader (mag plannen, ziet geen lonen)</option><option value="manager" ${e.role === 'manager' ? 'selected' : ''}>Directie (alles)</option></select></label>
+      <label class="field">Rol<select name="role"><option value="staff" ${e.role !== 'manager' ? 'selected' : ''}>Medewerker</option><option value="manager" ${e.role === 'manager' ? 'selected' : ''}>Directie (alles)</option></select></label>
       <label class="field">Kleur in rooster<input type="color" name="color" value="${esc(e.color || COLORS[0])}"></label>
+    </div>
+    <div class="rightsbox" data-rightsbox>
+      <label class="field">Plannen (shiftleader-rechten)<select name="plan_mode"><option value="functie" ${(e.plan_mode || 'functie') === 'functie' && e.role !== 'planner' ? 'selected' : ''}>Volgt de functie</option><option value="ja" ${e.plan_mode === 'ja' || (e.role === 'planner' && !e.plan_mode) ? 'selected' : ''}>Altijd (uitzondering)</option><option value="nee" ${e.plan_mode === 'nee' ? 'selected' : ''}>Nooit (uitzondering)</option></select></label>
+      <p class="hint" data-planhint></p>
+      <fieldset class="choice"><legend>Ziet en vinkt ook lijsten af van</legend><div class="chkgrid">${(CFG.posities || []).map(p => `<label class="check"><input type="checkbox" name="extra_lists" value="${esc(p)}" ${(e.extra_lists || []).includes(p) ? 'checked' : ''}> ${esc(p)}</label>`).join('')}</div>
+        <p class="hint" style="margin:4px 0 0" data-listhint></p></fieldset>
     </div>
     <label class="check"><input type="checkbox" name="active" ${e.active !== false ? 'checked' : ''}> Actief (uit dienst? Zet dit uit, dan blijft de historie bewaard)</label>
     <fieldset class="privbox"><legend>${ico('lock')}Vertrouwelijk — alleen directie (en de medewerker zelf)</legend>
@@ -3603,6 +3630,14 @@ function employeeDialog(e, priv = {}, reqs = []) {
       <span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button>
     </div>`, {
     onReady(dlg) {
+      const fm = $('form', dlg), rb = $('[data-rightsbox]', dlg);
+      const upd = () => {
+        const mgr = fm.role.value === 'manager'; rb.hidden = mgr;
+        const pos = fm.position.value, r = (CFG.posRights || {})[pos] || {};
+        $('[data-planhint]', dlg).textContent = fm.plan_mode.value === 'functie' ? (pos ? `Functie ${pos}: ${r.plan ? 'mag plannen' : 'mag niet plannen'}. Pas dat aan bij Instellingen → Functies.` : 'Kies eerst een functie.') : fm.plan_mode.value === 'ja' ? 'Mag plannen, alle lijsten zien en noodcontacten bekijken. Ziet geen lonen.' : 'Mag niet plannen, ook al geeft de functie dat recht.';
+        $('[data-listhint]', dlg).textContent = pos ? `Altijd: lijsten van ${pos}${(r.lists || []).length ? ' en (via de functie) ' + r.lists.join(', ') : ''}, plus waar iemand die dag is ingeroosterd.` : '';
+      };
+      fm.role.addEventListener('change', upd); fm.position.addEventListener('change', upd); fm.plan_mode.addEventListener('change', upd); upd();
       const pb = $('[data-profbox]', dlg);
       if (pb) store.profileOf(e.id).then(f => {
         pb.innerHTML = !f || !f.done_at ? '<p class="hint" style="margin:0"><strong>Profiel:</strong> nog niet ingevuld door de medewerker.</p>'
@@ -3632,13 +3667,15 @@ function employeeDialog(e, priv = {}, reqs = []) {
         await store.deleteEmployee(e.id); toast('Medewerker verwijderd'); return rerender();
       }
       if (e.id === S.me.id && fd.get('active') !== 'on') throw new Error('Je kunt jezelf niet op inactief zetten. Laat dat een andere directielid doen.');
-      if (e.id === S.me.id && fd.get('role') !== 'manager' && !await ask(fd.get('role') === 'planner' ? 'Je maakt jezelf shiftleader: je ziet daarna geen lonen, team, uren en instellingen meer. Zeker weten?' : 'Je haalt je eigen directierechten en planrechten weg. Zeker weten?')) throw 'cancel';
+      const newRole = fd.get('role') === 'manager' ? 'manager' : effRole({ role: 'staff', plan_mode: fd.get('plan_mode') || 'functie', position: fd.get('position') || null });
+      if (e.id === S.me.id && newRole !== 'manager' && !await ask(newRole === 'planner' ? 'Je maakt jezelf shiftleader: je ziet daarna geen lonen, team, uren en instellingen meer. Zeker weten?' : 'Je haalt je eigen directierechten en planrechten weg. Zeker weten?')) throw 'cancel';
       const payload = {
         name: fd.get('name').trim(), email: fd.get('email').trim().toLowerCase(), phone: fd.get('phone').trim() || null,
         position: fd.get('position') || null, contract_hours: fd.get('contract_hours') ? Number(fd.get('contract_hours')) : null,
         contract_type: fd.get('contract_type') || 'vast', contract_min_hours: fd.get('contract_type') === 'minmax' && fd.get('contract_min_hours') ? Number(fd.get('contract_min_hours')) : null,
         contract_end: fd.get('contract_end') || null,
-        role: fd.get('role'), color: fd.get('color'), active: fd.get('active') === 'on',
+        role: fd.get('role') === 'manager' ? 'manager' : 'staff', plan_mode: fd.get('plan_mode') || 'functie', extra_lists: fd.getAll('extra_lists'),
+        color: fd.get('color'), active: fd.get('active') === 'on',
       };
       if (!isNew) payload.id = e.id;
       const id = await store.saveEmployee(payload);
@@ -3646,8 +3683,8 @@ function employeeDialog(e, priv = {}, reqs = []) {
       const pv = { employee_id: id || e.id, hourly_wage: num('hourly_wage'), birth_date: fd.get('birth_date') || null, leave_hours_year: num('leave_hours_year'), leave_opening: num('leave_opening') || 0, leave_year: new Date().getFullYear() };
       const changed = ['hourly_wage', 'birth_date', 'leave_hours_year'].some(k => (pv[k] ?? null) !== (priv[k] ?? null)) || pv.leave_opening !== (Number(priv.leave_year) === pv.leave_year ? Number(priv.leave_opening) || 0 : 0);
       if (changed && pv.employee_id) await store.savePrivate(pv);
-      const selfRole = e.id === S.me.id && payload.role !== S.me.role;
-      if (e.id === S.me.id && !selfRole) Object.assign(S.me, payload);
+      const selfRole = e.id === S.me.id && newRole !== S.me.role;
+      if (e.id === S.me.id && !selfRole) Object.assign(S.me, payload, { role: newRole });
       if (selfRole) { meCheckedAt = 0; setTimeout(() => checkMe(true), 50); }
       if (isNew && fd.get('send_invite') === 'on' && id) {
         try { const r = await store.inviteEmployee(id); toast(r?.demo ? 'Medewerker toegevoegd (demo: in de echte app gaat er nu een uitnodiging per mail)' : `Medewerker toegevoegd en uitnodiging verstuurd naar ${payload.email}`); }

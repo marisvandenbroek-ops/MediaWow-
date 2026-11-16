@@ -290,7 +290,7 @@ async function test(name, fn) {
   await test('instellingen: functie en snelkeuze-dienst toevoegen werkt door in het inplanvenster', async () => {
     await shared.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
     await shared.click('[data-gosettings]'); await shared.waitForSelector('[data-posadd]'); await shared.evaluate(() => document.querySelectorAll('details.setsec').forEach(d => (d.open = true)));
-    await shared.fill('[data-posadd] [name=pos]', 'Runner'); await shared.click('[data-posadd] button'); await shared.waitForSelector('.poslist:has-text("Runner")');
+    await shared.fill('[data-posadd] [name=pos]', 'Runner'); await shared.click('[data-posadd] button'); await shared.waitForSelector('.posrow:has-text("Runner")');
     await shared.click('[data-tpladd]'); await shared.fill('.tplrow >> nth=-1 >> [name=label]', 'Brunch'); await shared.fill('.tplrow >> nth=-1 >> [name=start]', '10:00'); await shared.fill('.tplrow >> nth=-1 >> [name=end]', '15:00');
     await shared.click('[data-tplform] button.primary'); await shared.waitForSelector('.toast:has-text("Snelkeuze")');
     await tab(shared, 'planning'); await shared.click('td.cell.editable >> nth=0'); await shared.waitForSelector('dialog [name=position]');
@@ -828,6 +828,28 @@ async function test(name, fn) {
     const sid = (await demoDb(m)).db.employees.find(e => e.name.startsWith('Sanne')).id;
     await m.selectOption('dialog [data-icesel]', sid); await m.waitForSelector('dialog [data-iceout] a:has-text("Anna")');
     await ctx.close(); pages.splice(pages.indexOf(p), 1); pages.splice(pages.indexOf(m), 1);
+  });
+  await test('rechten per functie: Bar mag plannen en ziet keukenlijsten; uitzondering per persoon', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await p.click('[data-gosettings]'); await p.waitForSelector('.posrow', { state: 'attached' });
+    await p.evaluate(() => { document.querySelector('details.setsec[data-k="1"]').open = true; });
+    await p.click('.posrow:has-text("Bar") [data-posrights]'); await p.waitForSelector('dialog:has-text("Rechten: Bar")');
+    await p.check('dialog [name=plan]'); await p.check('dialog [name=lists][value="Keuken"]'); await p.click('dialog button[value=save]');
+    await p.waitForSelector('.posrow:has-text("Bar"):has-text("Mag plannen")');
+    let db = (await demoDb(p)).db;
+    assert.equal(db.employees.find(e => e.name.startsWith('Daan')).role, 'planner', 'Daan (Bar) is geen shiftleader geworden');
+    // Daan logt in: planning als shiftleader, keukenlijsten zichtbaar
+    const d = watch(await ctx.newPage()); await d.goto(URL + '#personeel'); await d.waitForSelector('[data-demo]'); await login(d, 'Daan');
+    await d.waitForSelector('[data-tab="planning"]'); await d.click('[data-tab="lijsten"]'); await d.waitForSelector('.lcard');
+    assert.ok(await d.$('.lcard:has-text("keuken")') || await d.$('.lcard:has-text("Keuken")'), 'Daan ziet geen keukenlijst');
+    // uitzondering: Daan nooit plannen
+    await p.click('[data-tab="team"]'); await p.click('tr:has-text("Daan")'); await p.waitForSelector('dialog [name=plan_mode]');
+    await p.selectOption('dialog [name=plan_mode]', 'nee'); await p.click('dialog button[value=save]'); await p.waitForTimeout(400);
+    db = (await demoDb(p)).db;
+    const daan = db.employees.find(e => e.name.startsWith('Daan'));
+    assert.ok(daan.role === 'staff' && daan.plan_mode === 'nee', 'uitzondering Nooit werkt niet: ' + daan.role + '/' + daan.plan_mode);
+    await ctx.close(); pages.splice(pages.indexOf(p), 1); pages.splice(pages.indexOf(d), 1);
   });
   await test('kaarten: directie uploadt de menukaart, medewerker opent hem in de app', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
