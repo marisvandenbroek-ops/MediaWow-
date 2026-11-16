@@ -671,7 +671,7 @@ async function test(name, fn) {
     await p.waitForSelector('dialog.rulesview iframe');
     const fr = await (await p.$('dialog.rulesview iframe')).contentFrame(); await fr.waitForSelector('#allergenen');
     assert.ok(await fr.evaluate(() => document.documentElement.classList.contains('framed') && getComputedStyle(document.querySelector('.back')).display === 'none'), 'terug-link zichtbaar in de app');
-    await p.click('[data-rulesok]'); await p.waitForSelector('.toast:has-text("getekend")');
+    await p.click('[data-rulesok]'); await p.waitForSelector('.toast:has-text("akkoord")');
     await p.waitForSelector('.rulesbanner', { state: 'detached' });
     let { db } = await demoDb(p); const sanne = db.employees.find(e => e.name.startsWith('Sanne'));
     assert.ok(db.rulesAcks.some(r => r.employee_id === sanne.id && r.version === 1), 'tekenen niet opgeslagen');

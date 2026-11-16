@@ -1669,7 +1669,7 @@ async function viewWeek(el, editable) {
       ${editable ? `<div class="actions">
         <button class="btn hide-sm" data-act="print">Afdrukken / PDF</button>
         <button class="btn" data-act="copy">Kopieer vorige week</button>
-        <button class="btn primary" data-act="publish" ${concept ? '' : 'disabled'}>${concept ? `Publiceer ${concept} dienst${concept > 1 ? 'en' : ''}` : 'Week gepubliceerd ✓'}</button>
+        <button class="btn primary" data-act="publish" ${concept ? '' : 'disabled'}>${concept ? `Publiceer ${concept} dienst${concept > 1 ? 'en' : ''}` : shifts.length ? 'Week gepubliceerd ✓' : 'Nog geen diensten'}</button>
       </div>` : ''}
     </div>
     ${closedBanner(iso(days[0]), iso(days[days.length - 1]))}
@@ -2057,7 +2057,7 @@ function rulesViewer({ ack = false, hash = '' } = {}) {
   const okb = $('[data-rulesok]', dlg);
   if (okb) okb.onclick = async () => {
     okb.disabled = true;
-    try { await store.ackRules(); dlg.close(); toast('Dank je! Je hebt de afspraken getekend.'); rerender(); }
+    try { await store.ackRules(); dlg.close(); toast('Dank je! Je hebt de afspraken gelezen en akkoord gegeven.'); rerender(); }
     catch (x) { okb.disabled = false; toast(errMsg(x), 'error'); }
   };
   dlg.showModal();
@@ -2080,7 +2080,7 @@ async function rulesDialog() {
   const yes = team.filter(e => at[e.id]), no = team.filter(e => !at[e.id]);
   const when = t => { const d = new Date(t); return `${fmtShort(iso(d))} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
   openDialog('Afspraken: gelezen en akkoord', `<p class="hint" style="margin:0">Iedereen behalve de directie tekent in de app voor de afspraken. Na een wijziging tekent iedereen opnieuw. Versie ${v}.</p>
-    <div><h3 class="small-h">Nog niet getekend (${no.length})</h3><p style="margin:0">${no.map(e => esc(e.name)).join(', ') || '<span class="muted">Iedereen heeft getekend</span>'}</p></div>
+    <div><h3 class="small-h">Nog niet gelezen en akkoord (${no.length})</h3><p style="margin:0">${no.map(e => esc(e.name)).join(', ') || '<span class="muted">Iedereen heeft gelezen en akkoord gegeven</span>'}</p></div>
     <div><h3 class="small-h">Getekend (${yes.length})</h3>${yes.length ? `<ul class="acklist">${yes.sort((a, b) => at[b.id].localeCompare(at[a.id])).map(e => `<li><span>${esc(e.name)}</span><small class="muted">${esc(when(at[e.id]))}</small></li>`).join('')}</ul>` : '<p class="muted" style="margin:0">Nog niemand</p>'}</div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-rulesview>Afspraken bekijken</button><button type="button" class="btn" data-rulesbump>Afspraken gewijzigd</button><button type="button" class="btn primary" data-close>Sluiten</button></div>`,
   { onReady: dlg => {
@@ -2333,7 +2333,7 @@ async function viewDashboard(el) {
   openMeld = mlog.length;
   if (acks) { const v = st.rules_version || 1; rulesMiss = rulesTeam(emps).filter(e => !acks.some(r => r.employee_id === e.id && r.version === v)).length; }
   const att = [
-    rulesMiss && [`${rulesMiss} ${rulesMiss === 1 ? 'medewerker heeft' : 'medewerkers hebben'} de afspraken nog niet getekend`, 'afspraken'],
+    rulesMiss && [`${rulesMiss} ${rulesMiss === 1 ? 'medewerker heeft' : 'medewerkers hebben'} de afspraken nog niet gelezen en akkoord gegeven`, 'afspraken'],
     openMeld && [`${openMeld} open ${openMeld === 1 ? 'melding' : 'meldingen'} (gebrek, incident of klacht)`, 'meldingen'],
     listMiss && [`${listMiss} ${listMiss === 1 ? 'lijst' : 'lijsten'} gisteren niet helemaal afgevinkt`, 'lijsten-gisteren'],
     pendReq && [`${pendReq} ${pendReq === 1 ? 'aanvraag wacht' : 'aanvragen wachten'} op je beslissing`, 'aanvragen:verlof'],
@@ -4199,7 +4199,7 @@ async function viewHours(el) {
         <td class="num hide-sm">${fmtH(r.avond)}</td><td class="num hide-sm">${fmtH(r.nacht)}</td><td class="num hide-sm">${fmtH(r.zondag)}</td><td class="num hide-sm">${fmtH(r.feestdag)}</td>
         <td class="num hide-sm">${r.verlof ? r.verlof + ' d' : '—'}</td><td class="num hide-sm">${r.ziek ? r.ziek + ' d' : '—'}</td>
         <td class="num ${r.diff == null ? '' : r.diff >= 0 ? 'pos' : 'neg'}">${r.diff == null ? '—' : (r.diff > 0 ? '+' : '') + fmtH(r.diff) + ' u'}</td>${hasWages ? `<td class="num hide-sm">${r.lk ? euro(r.lk.bruto) : '<span class="muted">geen uurloon</span>'}</td><td class="num">${r.lk ? euro(r.lk.totaal) : '—'}</td>` : ''}</tr>`).join('')}</tbody>
-      <tfoot><tr><td>Totaal</td><td class="num">${T.n}</td><td class="num">${fmtH(T.h)}</td><td class="num hide-sm">${fmtH(T.avond)}</td><td class="num hide-sm">${fmtH(T.nacht)}</td><td class="num hide-sm">${fmtH(T.zondag)}</td><td class="num hide-sm">${fmtH(T.feestdag)}</td><td class="hide-sm"></td><td class="hide-sm"></td><td></td>${hasWages ? `<td class="num hide-sm">${euro(T.bruto)}</td><td class="num">${euro(T.totaal)}</td>` : ''}</tr></tfoot>
+      <tfoot><tr><td>Totaal</td><td class="num hide-sm">${T.n}</td><td class="num">${fmtH(T.h)}</td><td class="num hide-sm">${fmtH(T.avond)}</td><td class="num hide-sm">${fmtH(T.nacht)}</td><td class="num hide-sm">${fmtH(T.zondag)}</td><td class="num hide-sm">${fmtH(T.feestdag)}</td><td class="hide-sm"></td><td class="hide-sm"></td><td></td>${hasWages ? `<td class="num hide-sm">${euro(T.bruto)}</td><td class="num">${euro(T.totaal)}</td>` : ''}</tr></tfoot>
     </table></div>
     <h2 style="font-size:21px;margin:28px 0 12px">Exporteren</h2>
     <div class="exports">${Object.entries(EXPORTS).map(([k, [t, d]]) => `<div class="card pad export"><h3>${t}</h3><p class="hint">${d}</p><div class="req-actions"><button class="btn primary sm" data-csv="${k}">⬇︎ Download (Excel/CSV)</button><button class="btn sm" data-copy="${k}">Kopieer tabel</button></div></div>`).join('')}</div>
