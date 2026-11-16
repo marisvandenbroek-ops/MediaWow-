@@ -1111,13 +1111,15 @@ async function maybeRunJobs() {
 async function go(view) {
   clearInterval(S.timer);
   const tok = (S.renderTok = (S.renderTok || 0) + 1);
-  if (!(await checkMe())) return;
-  if (tok !== S.renderTok) return;   // intussen al naar een ander scherm gegaan
-  maybeRunJobs();   // niet op wachten: de database doet dit ook zelf
-  if (S.view !== view) window.scrollTo(0, 0);
+  // het gekozen scherm meteen vastleggen: een rerender() van een eerdere actie gaat dan naar dit scherm, niet terug
+  const changed = S.view !== view;
   S.view = view;
   $$('[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === view));
   $('[data-gosettings]')?.classList.toggle('active', view === 'instellingen');
+  if (!(await checkMe())) return;
+  if (tok !== S.renderTok) return;   // intussen al naar een ander scherm gegaan
+  maybeRunJobs();   // niet op wachten: de database doet dit ook zelf
+  if (changed) window.scrollTo(0, 0);
   // Nieuw element per keer: een tragere, oudere laadactie schrijft dan in een losgekoppeld element en niet over dit scherm
   const old = $('#view');
   if (!old) return;
