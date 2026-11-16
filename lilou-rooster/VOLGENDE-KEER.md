@@ -82,7 +82,7 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - **Horeca-product (white label)**: nieuw apart project met Lilou-code als basis; Lilou wordt later de eerste klant. Onderdelen: multi-tenant (org_id + RLS per zaak), huisstijl per zaak (naam, logo, kleuren) overal incl. icoon en mails, voorbeeldlijsten/afspraken als startpunt, mails als code-sjablonen met zaaknaam (Supabase Send Email Hook → eigen verzendfunctie), aanmelden + abonnement (Mollie/Stripe), beheer voor MediaWow, verwerkersovereenkomst/voorwaarden/privacy per zaak, back-ups en support.
 - Pushmeldingen iPhone: "from <app-naam>" komt van iOS zelf en is niet uit te zetten in een web-app.
 
-## Update 42–44 (16 nov) — klaar, nog niet live
+## Update 42–44 (16 nov) — LIVE (v66, zip rooster-update-57; rechten Manager/Eigenaar = directie, Shiftleader = shiftleader; Mariëlle volgt functie)
 - Database: eerst update42 (rechten per functie, directie-niveau, laatste-directie-bewaking), dan update43 (weer beter op de dag zelf), dan update44 (diploma's, dagrapport, niet-ingeklokt-melding). Pas daarna de app-zip uploaden.
 - Na update42: in Instellingen → Functies Manager = Directie, Shiftleader = Shiftleader zetten.
 - Update 44: `employee_certs` (SVH/BHV/HACCP/EHBO, melding 60 en ±30 dagen voor verlopen, planning toont "Geen SVH/BHV"), `day_reports` + `save_day_report()` (shiftleader vandaag/gisteren, directie leest in Overzicht met gasten/omzet/uren/meldingen; 2 jaar bewaard), `late_reminders()` (10 min na start niet ingeklokt → leiding van dienst, anders directie, en de medewerker).
