@@ -298,12 +298,11 @@ function demoStore() {
       const i = db.certs.findIndex(x => x.id === v.id); if (i >= 0) db.certs[i] = v; else db.certs.push(v); save();
     },
     async deleteCert(id) { if (!isMgr()) throw new Error('Geen rechten'); db.certs = (db.certs || []).filter(x => x.id !== id); save(); },
-    async dayReports(from, to) { if (!canPlan()) return []; db.dayreports ||= {}; return clone(Object.values(db.dayreports).filter(r => r.date >= from && r.date <= to)).sort((a, b) => b.date.localeCompare(a.date)); },
+    async dayReports(from, to) { db.dayreports ||= {}; return clone(Object.values(db.dayreports).filter(r => r.date >= from && r.date <= to && (canPlan() || r.employee_id === mem))).sort((a, b) => b.date.localeCompare(a.date) || a.created_at.localeCompare(b.created_at)); },
     async saveDayReport(r) {
-      if (!canPlan()) throw new Error('Alleen de leiding kan een dagrapport maken.');
       const bd = bizToday(); if (!isMgr() && (r.date < iso(addDays(parse(bd), -1)) || r.date > bd)) throw new Error('Een dagrapport kun je alleen voor vandaag of gisteren invullen.');
-      db.dayreports ||= {}; const old = db.dayreports[r.date], tx = v => (v || '').trim() || null;
-      db.dayreports[r.date] = { date: r.date, busy: r.busy || null, notes: tx(r.notes), sold_out: tx(r.sold_out), team: tx(r.team), employee_id: old ? old.employee_id : mem, updated_by: old ? (old.employee_id === mem ? old.updated_by || null : mem) : null, created_at: old?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+      db.dayreports ||= {}; const key = r.date + '|' + mem, old = db.dayreports[key], tx = v => (v || '').trim() || null;
+      db.dayreports[key] = { date: r.date, busy: r.busy || null, notes: tx(r.notes), sold_out: tx(r.sold_out), team: tx(r.team), employee_id: mem, created_at: old?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
       if (!old) notifyMgrs(`Dagrapport ${r.date.slice(8, 10)}-${r.date.slice(5, 7)}`, `Van ${fname(mem)}${tx(r.notes) ? ': ' + tx(r.notes).slice(0, 120) : '.'}`, 'overzicht:rapport:' + r.date, mem);
       save();
     },
@@ -851,7 +850,7 @@ async function supabaseStore() {
     async certs() { return ok(await sb.from('employee_certs').select('*')) || []; },
     async saveCert(c) { const v = { employee_id: c.employee_id, kind: c.kind, label: c.label || null, expires: c.expires || null }; ok(c.id ? await sb.from('employee_certs').update(v).eq('id', c.id) : await sb.from('employee_certs').insert(v)); },
     async deleteCert(id) { ok(await sb.from('employee_certs').delete().eq('id', id)); },
-    async dayReports(from, to) { if (!canPlan()) return []; return ok(await sb.from('day_reports').select('*').gte('date', from).lte('date', to).order('date', { ascending: false })) || []; },
+    async dayReports(from, to) { return ok(await sb.from('day_reports').select('*').gte('date', from).lte('date', to).order('date', { ascending: false })) || []; },
     async saveDayReport(r) { ok(await sb.rpc('save_day_report', { p_date: r.date, p_busy: r.busy || null, p_notes: r.notes || null, p_sold_out: r.sold_out || null, p_team: r.team || null })); },
     async emergencyContacts() { return ok(await sb.rpc('emergency_contacts')) || []; },
     async teamPhones() { return ok(await sb.rpc('team_phones')) || []; },
@@ -2668,11 +2667,11 @@ async function viewDashboard(el) {
     : vRow(op.full === op.n ? 'ok' : hr >= 12 ? 'bad' : 'warn', op.n ? (op.full === op.n ? 'Openingslijsten af' : `Opening: ${op.full} van ${op.n} lijsten af`) : 'Geen openingslijsten', cl.n ? `Sluiting en dag: ${cl.full} van ${cl.n} af` : '', 'data-goto2="lijsten"');
   const yd = iso(addDays(parse(bd), -1));
   const reps = await store.dayReports(yd, bd).catch(() => []);
-  const repT = reps.find(x => x.date === bd), repY = reps.find(x => x.date === yd);
-  const repSub = x => esc([x.busy, x.notes || ''].filter(Boolean).join(' · '));
-  const repRow = repT ? vRow('ok', `Dagrapport van ${esc(fnm(repT.employee_id))}`, repSub(repT), `data-drep="${bd}"`)
-    : (hr >= 17 || hr < 5) && todayShifts.length ? vRow('info', 'Dagrapport nog niet ingevuld', 'De shiftleader vult het in na de dienst', `data-drepnew="${bd}"`)
-    : repY ? vRow('ok', `Dagrapport gisteren van ${esc(fnm(repY.employee_id))}`, repSub(repY), `data-drep="${yd}"`) : '';
+  const rT = reps.filter(x => x.date === bd), rY = reps.filter(x => x.date === yd), repT = rT[0], repY = rY[0];
+  const who = l => esc(l.map(x => fnm(x.employee_id)).join(', '));
+  const repRow = rT.length ? vRow('ok', rT.length === 1 ? `Dagrapport van ${who(rT)}` : `${rT.length} dagrapporten`, rT.length === 1 ? esc(rT[0].notes || rT[0].busy || '') : who(rT), `data-drep="${bd}"`)
+    : (hr >= 17 || hr < 5) && todayShifts.length ? vRow('info', 'Nog geen dagrapport vandaag', 'Wie werkt, vult het in na de dienst', `data-drepnew="${bd}"`)
+    : rY.length ? vRow('ok', rY.length === 1 ? `Dagrapport gisteren van ${who(rY)}` : `${rY.length} dagrapporten van gisteren`, rY.length === 1 ? esc(rY[0].notes || rY[0].busy || '') : who(rY), `data-drep="${yd}"`) : '';
   const guests = dayToday[0]?.guests;
   const guestRow = spToday?.kind === 'gesloten' ? '' : `<div class="hrow static"><span class="hn info">${ico('user')}</span><span class="ht"><strong>Gasten vandaag</strong><small>${Object.values(st.guest_ratios || {}).some(v => Number(v) > 0) ? 'De bezetting in de planning rekent hiermee' : 'Vul in uit Zenchef'}</small></span><input class="guestin" type="number" min="0" step="1" inputmode="numeric" aria-label="Aantal gasten vandaag" data-gtoday="${bd}" value="${guests ?? ''}" placeholder="0"></div>`;
   // te doen: met de knoppen erbij
@@ -3337,9 +3336,9 @@ async function viewSettings(el) {
 /* ================= Dagrapport (shiftleader → directie) ================= */
 async function dayReportDialog(date) {
   let r = null;
-  try { [r] = await store.dayReports(date, date); } catch (x) { return toast(/day_reports|schema cache|does not exist/i.test(x.message || '') ? 'Het dagrapport werkt na database-update 44.' : errMsg(x), 'error'); }
+  try { r = (await store.dayReports(date, date)).find(x => x.employee_id === S.me.id) || null; } catch (x) { return toast(/day_reports|schema cache|does not exist/i.test(x.message || '') ? 'Het dagrapport werkt na database-update 44.' : errMsg(x), 'error'); }
   openDialog(`Dagrapport · ${fmtLong(date)}`, `
-    <p class="hint" style="margin-top:0">Voor de directie: hoe ging het? Gasten, omzet, uren en meldingen komen er vanzelf bij.</p>
+    <p class="hint" style="margin-top:0">Voor de directie: hoe ging jouw dienst? Alleen de directie en de shiftleaders lezen dit.</p>
     <fieldset class="choice"><legend>Hoe druk was het?</legend><div class="busyrow">${BUSY.map(b => `<label class="busyopt"><input type="radio" name="busy" value="${b}" ${r?.busy === b ? 'checked' : ''}><span>${b[0].toUpperCase() + b.slice(1)}</span></label>`).join('')}</div></fieldset>
     <label class="field">Hoe ging het?<textarea name="notes" rows="4" maxlength="4000" placeholder="Bijzonderheden, sfeer, gasten, wat ging goed of mis">${esc(r?.notes || '')}</textarea></label>
     <label class="field">Uitverkocht of bijna op<input name="sold_out" maxlength="1000" value="${esc(r?.sold_out || '')}" placeholder="Bijv. tarte tatin, Chablis"></label>
@@ -3355,7 +3354,8 @@ async function dayReportView(date) {
   const soft = (pr, fb) => pr.catch(() => fb);
   const [reps, emps, logs, di, rev, ents, shifts, privs, st] = await Promise.all([soft(store.dayReports(date, date), []), store.employees(), soft(store.logs(date, date), []), soft(store.dayInfo(date, date), []),
     soft(store.revenue(date, date), []), soft(store.entries(date, iso(addDays(parse(date), 1))), []), soft(store.shifts(date, date), []), isMgr() ? soft(store.privates(), []) : [], store.settings()]);
-  const r = reps[0]; if (!r) return dayReportDialog(date);
+  if (!reps.length) return dayReportDialog(date);
+  const busyRank = { rustig: 1, normaal: 2, druk: 3, 'heel druk': 4 }, busiest = reps.map(x => x.busy).filter(Boolean).sort((a, b) => busyRank[b] - busyRank[a])[0];
   const byId = Object.fromEntries(emps.map(e => [e.id, e]));
   const dayEnts = ents.filter(x => iso(new Date(new Date(x.clock_in).getTime() - 5 * 3600e3)) === date);   // werkdag loopt tot 05:00
   const stillIn = dayEnts.some(x => !x.clock_out);
@@ -3365,13 +3365,14 @@ async function dayReportView(date) {
   const meld = logs.filter(x => x.kind === 'melding');
   const kp = (v, l) => v === '—' || v === '0 u' ? '' : `<div class="mk"><b>${v}</b><span>${l}</span></div>`;
   const sec = (t, v) => v ? `<h3 class="reph">${t}</h3><p class="reptxt">${esc(v)}</p>` : '';
-  const canEdit = canPlan() && (isMgr() || date >= iso(addDays(parse(bizToday()), -1)));
+  const mineR = reps.find(x => x.employee_id === S.me.id), canEdit = isMgr() || date >= iso(addDays(parse(bizToday()), -1));
   openDialog(`Dagrapport · ${fmtLong(date)}`, `
-    <p class="hint" style="margin-top:0">Van ${esc((byId[r.employee_id]?.name || '?').split(' ')[0])}, ${tTime(r.created_at)}${r.updated_by ? ` · aangepast door ${esc((byId[r.updated_by]?.name || '?').split(' ')[0])} om ${tTime(r.updated_at)}` : ''}${r.busy ? ` · <strong>${esc(r.busy)}</strong>` : ''}</p>
+    <p class="hint" style="margin-top:0">${reps.length} ${reps.length === 1 ? 'rapport' : 'rapporten'}${busiest ? ` · <strong>${esc(busiest)}</strong>` : ''}</p>
     <div class="minikpis static">${kp(di[0]?.guests ?? '—', 'gasten')}${isMgr() ? kp(omzet ? euro0(omzet) : '—', rv.actual != null ? 'omzet' : 'omzet (verwacht)') + kp(P.pct != null ? pct1(P.pct) : '—', 'kosten') : ''}${kp(Math.round(P.hours) + ' u', worked.length ? 'gewerkt' : 'gepland')}</div>
-    ${sec('Hoe ging het?', r.notes)}${sec('Uitverkocht of bijna op', r.sold_out)}${sec('Team', r.team)}
+    ${reps.map(r => `<section class="repblock"><h3 class="repwho">${esc((byId[r.employee_id]?.name || '?').split(' ')[0])}<small>${esc(byId[r.employee_id]?.position || '')}${r.busy ? ' · ' + esc(r.busy) : ''} · ${tTime(r.updated_at || r.created_at)}</small></h3>
+      ${sec('Hoe ging het?', r.notes)}${sec('Uitverkocht of bijna op', r.sold_out)}${sec('Team', r.team)}</section>`).join('')}
     ${meld.length ? `<h3 class="reph">Meldingen van die dag</h3><ul class="replist">${meld.map(x => `<li>${tTime(x.at)} · ${esc((x.data?.tekst || x.data?.soort || 'Melding').slice(0, 200))}${x.resolved_at ? ' <span class="pill ok">opgelost</span>' : ''}</li>`).join('')}</ul>` : ''}
-    <div class="dlg-foot"><button type="button" class="btn" data-dreps>Alle rapporten</button>${canEdit ? '<button type="button" class="btn" data-drepedit>Aanpassen</button>' : ''}</div>`, {
+    <div class="dlg-foot"><button type="button" class="btn" data-dreps>Alle rapporten</button>${canEdit ? `<button type="button" class="btn" data-drepedit>${mineR ? 'Mijn rapport aanpassen' : 'Zelf invullen'}</button>` : ''}</div>`, {
     onReady(dlg) {
       dlg.addEventListener('click', ev => {
         if (ev.target.closest('[data-drepedit]')) { dlg.close(); dayReportDialog(date); }
@@ -3383,8 +3384,9 @@ async function dayReportView(date) {
 async function dayReportsList() {
   const [reps, emps] = await Promise.all([store.dayReports(iso(addDays(new Date(), -60)), todayIso()).catch(() => []), store.employees()]);
   const byId = Object.fromEntries(emps.map(e => [e.id, e]));
-  openDialog('Dagrapporten', reps.length ? `<div class="hlist">${reps.map(r => `<button type="button" class="hrow" data-drep="${r.date}"><span class="ht"><strong>${esc(fmtLong(r.date))}</strong><small>${esc([(byId[r.employee_id]?.name || '').split(' ')[0], r.busy, r.notes || ''].filter(Boolean).join(' · '))}</small></span><span class="chev" aria-hidden="true">›</span></button>`).join('')}</div>`
-    : '<p class="hint">Nog geen dagrapporten. De shiftleader vult het in na de dienst, via het startscherm.</p>', {
+  const days = [...new Set(reps.map(r => r.date))];
+  openDialog('Dagrapporten', days.length ? `<div class="hlist">${days.map(d => { const rs = reps.filter(r => r.date === d); return `<button type="button" class="hrow" data-drep="${d}"><span class="ht"><strong>${esc(fmtLong(d))}</strong><small>${esc(rs.map(r => (byId[r.employee_id]?.name || '').split(' ')[0]).join(', '))}${rs[0].notes ? ' · ' + esc(rs[0].notes) : ''}</small></span><span class="chev" aria-hidden="true">›</span></button>`; }).join('')}</div>`
+    : '<p class="hint">Nog geen dagrapporten. Wie werkt, vult het in na de dienst via het startscherm.</p>', {
     onReady(dlg) { dlg.addEventListener('click', ev => { const b = ev.target.closest('[data-drep]'); if (b) { dlg.close(); dayReportView(b.dataset.drep); } }); },
   });
 }
@@ -3434,7 +3436,7 @@ async function viewMine(el) {
       else if (canPlan() && (hrM >= 14 || hrM < 2)) { const g = (await store.dayInfo(bdM, bdM).catch(() => []))[0]?.guests; if (g) gSub = `${hrM >= 17 || hrM < 5 ? 'Vanavond' : 'Vandaag'} ${g} gasten verwacht`; }
     } catch (x) { /* niet belangrijk */ }
   }
-  const repMine = !sel && canPlan() && (mine.some(s => s.date === bdM) || isMgr()) ? await store.dayReports(bdM, bdM).then(l => ({ r: l[0] || null })).catch(() => null) : null;
+  const repMine = !sel && (mine.some(s => s.date === bdM) || isMgr()) ? await store.dayReports(bdM, bdM).then(l => ({ r: l.find(x => x.employee_id === S.me.id) || null })).catch(() => null) : null;
   const repCard = repMine ? `<section class="homesec"><div class="hs-head"><h2>Dagrapport</h2></div><button type="button" class="card lhome" data-drepnew="${bdM}"><span><strong>${ico('file')}${repMine.r ? 'Dagrapport ingevuld ✓' : 'Hoe ging de dienst?'}</strong><small>${repMine.r ? 'Tik om aan te passen' : 'Vul na de dienst het dagrapport in voor de directie'}</small></span><span class="chev">›</span></button></section>` : '';
   const [clockHTML, boardH, rulesH] = await Promise.all([sel ? '' : clockHero(todayShift, { mates: todayShift ? withWho(todayShift) : [], next: nextAfter }), boardHTML().catch(() => ''), sel ? '' : rulesBannerHTML()]);
   const srow = (x, withDate) => `<li class="srow k-${shiftKind(x)}">${withDate ? `<span class="sdate ${x.date === today ? 'istoday' : ''}"><small>${x.date === today ? 'vandaag' : DAG[dayIdx(parse(x.date))]}</small><b>${parse(x.date).getDate()}</b></span>` : ''}<span class="sbar"></span><span class="sinfo"><strong>${esc(shiftKindLabel(x))}${x.position ? ` <span class="muted">· ${esc(x.position)}</span>` : ''}</strong><small>${hm(x.start_time)} – ${hm(x.end_time)}${withWho(x).length ? ` · met ${esc(withWho(x).slice(0, 3).join(', '))}${withWho(x).length > 3 ? ' e.a.' : ''}` : ''}</small></span><span class="shrs">${fmtH(shiftHours(x))}u${withDate && shiftWindow(x)[0] > new Date() ? (swapOf(x.id) ? '<small class="swp">ruil loopt</small>' : `<button type="button" class="linkbtn swl" data-swap="${x.id}">Ruilen</button>`) : ''}</span></li>`;

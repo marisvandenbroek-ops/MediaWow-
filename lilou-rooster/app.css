@@ -1705,3 +1705,7 @@ form:has([name=ok][value=true]:checked) .field:has([name=reden]) { display: none
 dialog.viewer { height: var(--app-h, 100dvh); }
 .ml-body, .viewer .vbody { overscroll-behavior: contain; }
 main[hidden] { display: none !important; }
+
+.repblock { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 12px; }
+.repwho { margin: 0 0 2px; font-size: 16px; display: flex; flex-direction: column; }
+.repwho small { font-weight: 400; color: var(--muted); font-size: 12.5px; }

@@ -998,10 +998,21 @@ async function test(name, fn) {
     const r = Object.values(db.dayreports)[0];
     assert.ok(r && r.busy === 'druk' && /Terras vol/.test(r.notes) && r.sold_out === 'Tarte tatin', 'dagrapport niet opgeslagen');
     assert.ok(db.notifications.some(n => /^Dagrapport/.test(n.title) && n.view === 'overzicht:rapport:' + r.date), 'directie krijgt geen melding');
+    // ook een gewone medewerker die vandaag werkt schrijft een eigen rapport
+    const s2 = watch(await ctx.newPage()); await s2.setViewportSize({ width: 390, height: 844 });
+    await s2.goto(URL + '#personeel'); await s2.waitForSelector('[data-demo]');
+    await setDemoDb(s2, `const e = db.employees.find(x => x.name.startsWith('Sanne')); const b = new Date(Date.now() - 5 * 3600e3), bd = b.getFullYear() + '-' + String(b.getMonth() + 1).padStart(2, '0') + '-' + String(b.getDate()).padStart(2, '0');
+      db.shifts.push({ id: 'rep-2', employee_id: e.id, date: bd, start_time: '00:00', end_time: '23:59', break_minutes: 0, position: 'Bediening', note: '', published: true });`);
+    await s2.reload(); await s2.waitForSelector('[data-demo]'); await login(s2, 'Sanne');
+    await s2.waitForSelector('[data-drepnew]'); await s2.click('[data-drepnew]'); await s2.waitForSelector('dialog[open] textarea[name=notes]');
+    await s2.fill('dialog[open] textarea[name=notes]', 'Bediening liep soepel.'); await s2.click('dialog[open] button[value=save]'); await s2.waitForSelector('.toast:has-text("Dagrapport verstuurd")');
+    const all = Object.values((await demoDb(s2)).db.dayreports);
+    assert.strictEqual(all.length, 2, 'rapport van de medewerker overschrijft dat van de shiftleader');
     const m = watch(await ctx.newPage()); await m.setViewportSize({ width: 1280, height: 900 });
     await m.goto(URL + '#directie'); await m.waitForSelector('[data-demo]'); await login(m, 'Mark');
     await m.waitForSelector('[data-dreps]'); await m.click('[data-dreps]'); await m.click('dialog [data-drep]');
     await m.waitForSelector('dialog .reptxt:has-text("Terras vol")');
+    await m.waitForSelector('dialog .reptxt:has-text("Bediening liep soepel")');
     assert.ok(await m.$('dialog .minikpis.static'), 'cijfers ontbreken in het dagrapport');
     await ctx.close();
   });

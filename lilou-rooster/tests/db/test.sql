@@ -576,14 +576,18 @@ select save_day_report(business_day(), 'druk', 'Goede avond, terras vol.', 'Tart
 select t_ok(t_count('select * from day_reports') = 1, 'shiftleader kan een dagrapport maken en lezen');
 select t_fails($$select save_day_report(business_day() - 5, 'rustig', 'x', null, null)$$, 'shiftleader kan geen oud dagrapport aanpassen');
 select as_user(2);
-select t_fails($$select save_day_report(business_day(), 'rustig', 'x', null, null)$$, 'medewerker kan geen dagrapport maken');
-select t_ok(t_count('select * from day_reports') = 0, 'medewerker leest geen dagrapporten');
+select save_day_report(business_day(), 'rustig', 'Mijn kant van de avond', null, null);
+select t_ok(t_count('select * from day_reports') = 1, 'medewerker maakt een eigen dagrapport en ziet alleen dat');
+select t_fails($$select save_day_report(business_day() - 5, 'rustig', 'x', null, null)$$, 'medewerker kan geen oud dagrapport maken');
 reset role;
-select t_ok((select count(*) from notifications where employee_id = 'a0000000-0000-0000-0000-000000000001' and title like 'Dagrapport%') = 1, 'directie krijgt melding van het dagrapport');
+select t_ok((select count(*) from notifications where employee_id = 'a0000000-0000-0000-0000-000000000001' and title like 'Dagrapport%') = 2, 'directie krijgt een melding per dagrapport');
 set role authenticated; select as_user(4);
 select save_day_report(business_day(), 'heel druk', 'Aangepast', null, null);
 reset role;
-select t_ok((select count(*) from notifications where employee_id = 'a0000000-0000-0000-0000-000000000001' and title like 'Dagrapport%') = 1 and (select notes from day_reports where date = business_day()) = 'Aangepast', 'aanpassen geeft geen tweede melding');
+select t_ok((select count(*) from notifications where employee_id = 'a0000000-0000-0000-0000-000000000001' and title like 'Dagrapport%') = 2 and (select notes from day_reports where date = business_day() and employee_id = 'a0000000-0000-0000-0000-000000000004') = 'Aangepast', 'aanpassen geeft geen tweede melding');
+set role authenticated; select as_user(4);
+select t_ok(t_count('select * from day_reports') = 2, 'shiftleader leest alle dagrapporten');
+reset role;
 -- niet ingeklokt
 delete from time_entries where employee_id = 'a0000000-0000-0000-0000-000000000002';
 delete from requests where employee_id = 'a0000000-0000-0000-0000-000000000002';
@@ -614,7 +618,7 @@ select t_ok((select view from notifications where title like 'Dagrapport%' limit
 set role authenticated; select as_user(1);
 select save_day_report(business_day(), 'rustig', 'Door directie aangepast', null, null);
 reset role;
-select t_ok((select employee_id = 'a0000000-0000-0000-0000-000000000004' and updated_by = 'a0000000-0000-0000-0000-000000000001' from day_reports where date = business_day()), 'schrijver blijft staan, aanpasser wordt bewaard');
+select t_ok((select count(*) from day_reports where date = business_day()) = 3 and (select notes from day_reports where date = business_day() and employee_id = 'a0000000-0000-0000-0000-000000000004') = 'Aangepast', 'ieder een eigen rapport: niemand overschrijft een ander');
 select t_ok(run_jobs() >= 0, 'run_jobs draait met de nieuwe stappen');
 
 \echo ''
