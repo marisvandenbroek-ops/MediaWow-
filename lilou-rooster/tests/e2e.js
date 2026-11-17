@@ -48,7 +48,7 @@ async function test(name, fn) {
   const login = async (page, name) => { await page.click(`[data-demo]:has-text("${name}")`); await page.waitForSelector('#view > *', { state: 'attached' }); await page.waitForTimeout(200);
     await page.evaluate(() => { try { const id = window.__rooster?.S?.me?.id; if (id) localStorage.setItem('rulesNag:' + id, new Date().toISOString().slice(0, 10)); } catch (e) { /* */ } });
     await page.waitForTimeout(700); const n = await page.$('dialog[open] [data-rulesnow]'); if (n) await page.click('dialog[open] [data-close]:has-text("Later")'); };
-  const logout = async (page, hash) => { await page.click('[data-logout]'); await page.goto(URL + hash); await page.waitForSelector('[data-demo]'); };
+  const logout = async (page, hash) => { const b = await page.$('[data-logout]'); if (b && await b.isVisible()) await b.click(); else { await page.click('[data-more]'); await page.click('dialog.moresheet [data-mout]'); } await page.goto(URL + hash); await page.waitForSelector('[data-demo]'); };   // op de telefoon via Meer
   const noViewError = async page => assert.ok(!(await page.$('#view .msg.err')), 'foutmelding op de pagina: ' + (await page.$eval('#view .msg.err', e => e.textContent).catch(() => '')));
   const demoDb = page => page.evaluate(() => { const k = Object.keys(localStorage).find(x => x.startsWith('lilou-rooster-demo-')); return { k, db: JSON.parse(localStorage.getItem(k)) }; });
   const setDemoDb = (page, fn, arg) => page.evaluate(([src, a]) => {

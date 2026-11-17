@@ -1636,7 +1636,7 @@ function moreSheet() {
   const row = (attr, iconHTML, label) => `<button type="button" class="mrow" ${attr}><span class="mic">${iconHTML}</span><span>${label}</span><span class="chev" aria-hidden="true">›</span></button>`;
   const items = [
     ...rest.map(([k, l]) => row(`data-mgo="${k}"`, ICON[k === 'planning' && !canPlan() ? 'team' : k] || '', esc(l))),
-    ...(isMgr() ? [] : [row('data-mgo="mijnuren"', ico('clock'), 'Mijn gewerkte uren')]),
+    ...(isMgr() ? [] : [row('data-mgo="mijnuren"', ico('clock'), 'Mijn uren')]),
     ...(isMgr() ? [row('data-mgo="instellingen"', ICON.settings, 'Instellingen')] : []),
     row('data-mprofile', ico('user'), 'Mijn profiel'),
     row('data-mphones', ico('phone'), 'Telefoonlijst'),
@@ -2573,7 +2573,7 @@ async function viewDashboard(el) {
   openMeld = mlog.length;
   if (acks) { const v = st.rules_version || 1; rulesMiss = rulesTeam(emps).filter(e => !acks.some(r => r.employee_id === e.id && r.version === v)).length; }
   const att = [
-    rulesMiss && [`${rulesMiss} ${rulesMiss === 1 ? 'medewerker heeft' : 'medewerkers hebben'} de afspraken nog niet gelezen en akkoord gegeven`, 'afspraken'],
+    rulesMiss && [`${rulesMiss} Afspraken nog niet getekend`, 'afspraken'],
     openMeld && [`${openMeld} open ${openMeld === 1 ? 'melding' : 'meldingen'} (gebrek, incident of klacht)`, 'meldingen'],
     listMiss && [`${listMiss} ${listMiss === 1 ? 'lijst' : 'lijsten'} gisteren niet helemaal afgevinkt`, 'lijsten-gisteren'],
     pendReq && [`${pendReq} ${pendReq === 1 ? 'aanvraag wacht' : 'aanvragen wachten'} op je beslissing`, 'aanvragen:verlof'],
@@ -2665,7 +2665,7 @@ async function viewDashboard(el) {
     : (hr >= 17 || hr < 5) && todayShifts.length ? vRow('info', 'Dagrapport nog niet ingevuld', 'De shiftleader vult het in na de dienst', `data-drepnew="${bd}"`)
     : repY ? vRow('ok', `Dagrapport gisteren van ${esc(fnm(repY.employee_id))}`, repSub(repY), `data-drep="${yd}"`) : '';
   const guests = dayToday[0]?.guests;
-  const guestRow = spToday?.kind === 'gesloten' ? '' : `<div class="hrow static"><span class="hn info">${ico('user')}</span><span class="ht"><strong>Gasten vandaag</strong><small>${Object.values(st.guest_ratios || {}).some(v => Number(v) > 0) ? 'De bezetting in de planning rekent hiermee' : 'Vul in uit Zenchef'}</small></span><input class="guestin" type="number" min="0" step="1" inputmode="numeric" aria-label="Aantal gasten vandaag" data-gtoday="${bd}" value="${guests ?? ''}" placeholder="—"></div>`;
+  const guestRow = spToday?.kind === 'gesloten' ? '' : `<div class="hrow static"><span class="hn info">${ico('user')}</span><span class="ht"><strong>Gasten vandaag</strong><small>${Object.values(st.guest_ratios || {}).some(v => Number(v) > 0) ? 'De bezetting in de planning rekent hiermee' : 'Vul in uit Zenchef'}</small></span><input class="guestin" type="number" min="0" step="1" inputmode="numeric" aria-label="Aantal gasten vandaag" data-gtoday="${bd}" value="${guests ?? ''}" placeholder="0"></div>`;
   // te doen: met de knoppen erbij
   const pendList = reqs.filter(r => r.status === 'pending').sort((a, b) => a.start_date.localeCompare(b.start_date));
   const swapList = swapsAll.filter(w => w.status === 'accepted');
@@ -2991,12 +2991,12 @@ function logDialog(kind) {
       <label class="check"><input type="checkbox" name="tht" checked> Houdbaarheid en verpakking in orde</label>
       <fieldset class="choice"><legend>Oordeel</legend><label class="check"><input type="radio" name="ok" value="true" checked> Goedgekeurd</label><label class="check"><input type="radio" name="ok" value="false"> Afgekeurd</label></fieldset>
       <label class="field">Reden bij afkeuren<input name="reden" maxlength="160"></label>
-      <label class="field">Wat heb je gedaan? (bij afkeuren of te warm)<input name="actie" maxlength="200" placeholder="bv. teruggegeven aan de chauffeur, leverancier gebeld"></label>`
+      <label class="field">Wat heb je gedaan? <span class="muted small">(bij afkeuren of te warm)</span><input name="actie" maxlength="200" placeholder="bv. teruggegeven aan de chauffeur, leverancier gebeld"></label>`
     : kind === 'kern' ? `
       <label class="field">Product<input name="product" required maxlength="80" placeholder="bv. kippendij"></label>
-      <label class="field">Kerntemperatuur (°C)<input name="temp" required inputmode="decimal" placeholder="minimaal 75"></label>
-      <label class="field">Terugkoelen: temperatuur na 5 uur (°C, optioneel)<input name="terug" inputmode="decimal" placeholder="maximaal 7"></label>
-      <label class="field">Wat heb je gedaan? (verplicht onder 75 °C of boven 7 °C na terugkoelen)<input name="actie" maxlength="200" placeholder="bv. langer doorverhit tot 80 °C"></label>`
+      <label class="field">Kerntemperatuur (°C)<input name="temp" required inputmode="decimal" placeholder="bv. 78"></label>
+      <label class="field">Na 5 uur terugkoelen (°C, optioneel)<input name="terug" inputmode="decimal" placeholder="bv. 5"></label>
+      <label class="field">Wat heb je gedaan? <span class="muted small">(nodig onder 75 °C of boven 7 °C)</span><input name="actie" maxlength="200" placeholder="bv. langer doorverhit tot 80 °C"></label>`
     : `<label class="field">Soort<select name="soort">${Object.entries(MELD).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
       <label class="field">Wat is er aan de hand?<textarea name="tekst" required maxlength="600" rows="4" placeholder="Wat, waar en wanneer. Bij een klacht: tafel en wat de gast zei."></textarea></label>
       <p class="hint" style="margin:0">De directie en shiftleaders krijgen meteen een melding.</p>`;
@@ -3354,7 +3354,7 @@ async function dayReportView(date) {
   const rv = rev[0] || {}, omzet = Number(rv.actual ?? rv.forecast) || 0;
   const P = kpiOf(worked.length ? worked : shifts.filter(x => x.employee_id), Object.fromEntries(privs.map(p => [p.employee_id, p])), st, omzet);
   const meld = logs.filter(x => x.kind === 'melding');
-  const kp = (v, l) => `<div class="mk"><b>${v}</b><span>${l}</span></div>`;
+  const kp = (v, l) => v === '—' || v === '0 u' ? '' : `<div class="mk"><b>${v}</b><span>${l}</span></div>`;
   const sec = (t, v) => v ? `<h3 class="reph">${t}</h3><p class="reptxt">${esc(v)}</p>` : '';
   const canEdit = canPlan() && (isMgr() || date >= iso(addDays(parse(bizToday()), -1)));
   openDialog(`Dagrapport · ${fmtLong(date)}`, `
@@ -3492,6 +3492,20 @@ async function viewMine(el) {
   const todayTeam = all.filter(x => x.date === today && x.employee_id && x.published).sort((a, b) => shiftWindow(a)[0] - shiftWindow(b)[0]);
   const teamHTML = sel || !todayTeam.length ? '' : `<section class="card hcard teamtoday"><div class="hhead"><h2>Vandaag aan het werk</h2><span class="muted small">${new Set(todayTeam.map(x => x.employee_id)).size} ${new Set(todayTeam.map(x => x.employee_id)).size === 1 ? 'persoon' : 'mensen'}</span></div>
     <ul class="rlist">${todayTeam.map(x => `<li class="rrow"><span class="rdot" style="background:${esc(emps.find(e => e.id === x.employee_id)?.color || COLORS[0])}"></span><span class="rwho"><strong>${x.employee_id === S.me.id ? 'Jij' : esc(nameOf[x.employee_id] || '?')}</strong><small>${esc(x.position || '')}</small></span><span class="rtime">${hm(x.start_time)} – ${hm(x.end_time)}</span>${shiftWindow(x)[0] <= new Date() && shiftWindow(x)[1] > new Date() ? '<span class="rstat in">nu</span>' : shiftWindow(x)[1] <= new Date() ? '<span class="rstat done">klaar</span>' : ''}</li>`).join('')}</ul></section>`;
+  let statsHTML = '';
+  if (!sel) {
+    try {
+      const LS = await leaveSummary(reqs);
+      const wf = iso(start), wt = iso(addDays(start, 6)), wk = mine.filter(x => x.date >= wf && x.date <= wt), wkH = wk.reduce((tt, x) => tt + shiftHours(x), 0);
+      const dTo = LS.nextOff ? Math.max(0, Math.round((parse(LS.nextOff.start_date) - parse(today)) / 864e5)) : null;
+      const fmtU = h => (Math.round(h * 10) / 10).toLocaleString('nl-NL');
+      statsHTML = `<div class="hstats">
+        <button type="button" class="card hstat" data-hnav="0"><small>Deze week</small><b>${wk.length}</b><span>${wk.length === 1 ? 'dienst' : 'diensten'} · ${fmtH(wkH)} u</span></button>
+        <button type="button" class="card hstat" data-goto="aanvragen"><small>Verlof</small><b>${LS.show ? fmtU(LS.avail) : '—'}</b><span>${LS.show ? 'uur te plannen' : 'nog niet ingevuld'}</span></button>
+        <button type="button" class="card hstat" data-goto="aanvragen"><small>${dTo === 0 ? 'Vrij' : 'Volgende vrij'}</small><b>${dTo == null ? '—' : dTo === 0 ? 'nu' : dTo}</b><span>${dTo == null ? 'niets gepland' : dTo === 0 ? 'geniet ervan' : dTo === 1 ? 'dag' : 'dagen'}</span></button>
+      </div>`;
+    } catch (x) { statsHTML = ''; }
+  }
   const rosterHTML = sel ? '' : `<section class="homeroster" data-hroster>
     <div class="hr-top"><h2>Mijn rooster</h2><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${S.homeMode === 'week' ? 'on' : ''}" data-hmode="week">Week</button><button type="button" class="${S.homeMode === 'maand' ? 'on' : ''}" data-hmode="maand">Maand</button></div></div>
     <div class="weeknav hr-nav"><button class="btn icon" data-hnav="-1" aria-label="${S.homeMode === 'maand' ? 'Vorige maand' : 'Vorige week'}">‹</button><div class="label">${navTitle}</div><button class="btn icon" data-hnav="1" aria-label="${S.homeMode === 'maand' ? 'Volgende maand' : 'Volgende week'}">›</button></div>
@@ -3520,6 +3534,7 @@ async function viewMine(el) {
     ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     <div class="mhome ${sel ? 'sel' : ''}"><div class="mcol">
     ${clockHTML}
+    ${statsHTML}
     ${teamHTML}
     ${rosterHTML}
     ${todayHTML}
@@ -3530,7 +3545,7 @@ async function viewMine(el) {
     ${sel ? '' : await listsHomeHTML()}
     ${sel ? '' : boardH}
     ${sel ? '' : `<div class="homemore tiles">
-      <button type="button" class="card lhome" data-gohours><span><strong>${ico('clock')}Mijn gewerkte uren</strong><small>Per week, met je kloktijden en wat is goedgekeurd</small></span><span class="chev">›</span></button>
+      <button type="button" class="card lhome" data-gohours><span><strong>${ico('clock')}Mijn uren</strong><small>Per week, met je kloktijden en wat is goedgekeurd</small></span><span class="chev">›</span></button>
       <button type="button" class="card lhome" data-gokaarten><span><strong>${ico('book')}Menukaart & wijnkaart</strong><small>Snel even kijken wat er op de kaart staat</small></span><span class="chev">›</span></button>
       <button type="button" class="card lhome" data-phones><span><strong>${ico('user')}Telefoonlijst</strong><small>Collega's die hun nummer delen, met Bellen en WhatsApp</small></span><span class="chev">›</span></button>
       <button type="button" class="card lhome" data-nood><span><strong>${ico('phone')}Noodnummers</strong><small>112, gaslucht, huisartsenpost${CFG.sickPhone ? ', ziek melden' : ''}</small></span><span class="chev">›</span></button>
@@ -3687,20 +3702,24 @@ function sickDialog() {
   });
 }
 
-async function viewRequestsStaff(el) {
-  const Y = new Date().getFullYear(), yr0 = Y + '-01-01';
-  const [reqs0, privList, sh0] = await Promise.all([store.requests(), store.privates(), store.shifts(yr0, iso(addDays(new Date(), 400))).catch(() => [])]);
-  const reqs = reqs0.filter(r => r.employee_id === S.me.id);
+async function leaveSummary(reqsAll) {
+  const Y = new Date().getFullYear();
+  const [privList, sh0] = await Promise.all([store.privates().catch(() => []), store.shifts(Y + '-01-01', iso(addDays(new Date(), 400))).catch(() => [])]);
+  const reqs = reqsAll.filter(r => r.employee_id === S.me.id);
+  const bal = leaveBalance(S.me, privList.find(p => p.employee_id === S.me.id), reqs);
+  const myShifts = sh0.filter(x => x.employee_id === S.me.id);
+  const hoursOf = r => r.status === 'approved' && r.leave_hours != null ? Number(r.leave_hours) : estimateLeaveHours({ ...r, employee_id: S.me.id }, S.me, myShifts);
+  const reserved = Math.round(reqs.filter(r => r.status === 'pending' && ['vakantie', 'vrij'].includes(r.type) && r.start_date.slice(0, 4) === String(bal.year)).reduce((t, r) => t + hoursOf(r), 0) * 10) / 10;
   const t = todayIso();
-  const priv = privList.find(p => p.employee_id === S.me.id);
-  const bal = leaveBalance(S.me, priv, reqs);
-  const showBal = bal.entitlement || bal.opening || bal.used;
-  const myShifts0 = sh0.filter(x => x.employee_id === S.me.id);
+  const nextOff = reqs.filter(r => r.status === 'approved' && ['vakantie', 'vrij'].includes(r.type) && r.end_date >= t).sort((a, b) => a.start_date.localeCompare(b.start_date))[0] || null;
+  return { reqs, bal, myShifts, hoursOf, reserved, avail: Math.round((bal.rest - reserved) * 10) / 10, show: !!(bal.entitlement || bal.opening || bal.used), nextOff };
+}
+async function viewRequestsStaff(el) {
+  const Y = new Date().getFullYear();
+  const LS = await leaveSummary(await store.requests());
+  const { reqs, bal, hoursOf, reserved, avail } = LS, myShifts0 = LS.myShifts, showBal = LS.show;
+  const t = todayIso();
   const isLeave = r => ['vakantie', 'vrij'].includes(r.type);
-  const hoursOf = r => r.status === 'approved' && r.leave_hours != null ? Number(r.leave_hours) : estimateLeaveHours({ ...r, employee_id: S.me.id }, S.me, myShifts0);
-  const pendList = reqs.filter(r => r.status === 'pending' && isLeave(r) && r.start_date.slice(0, 4) === String(bal.year));
-  const reserved = Math.round(pendList.reduce((s, r) => s + hoursOf(r), 0) * 10) / 10;
-  const avail = Math.round((bal.rest - reserved) * 10) / 10;
   const total = Math.max(0, bal.opening + bal.entitlement), used = Math.max(0, bal.used);
   const perDay = (Number(S.me.contract_hours) || 0) / 5;
   const asDays = h => perDay ? Math.round(Math.max(0, h) / perDay * 2) / 2 : null;
