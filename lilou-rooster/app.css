@@ -1699,3 +1699,8 @@ form:has([name=ok][value=true]:checked) .field:has([name=reden]) { display: none
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg button.on { background: #9E2218; color: #fff; } }
 :root[data-theme="dark"] .seg button.on { background: #9E2218; color: #fff; }
 .teamtoday .rlist { margin-bottom: 0; }
+
+/* iOS: echte schermhoogte (zie --app-h / --vv-bottom in app.js) */
+@media (max-width: 760px) { .tabs { bottom: var(--vv-bottom, 0px) !important; } }
+dialog.viewer { height: var(--app-h, 100dvh); }
+.ml-body, .viewer .vbody { overscroll-behavior: contain; }

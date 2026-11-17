@@ -1372,10 +1372,19 @@ async function go(view) {
   const old = $('#view');
   if (!old) return;
   const el = document.createElement('main'); el.id = 'view'; el.dataset.view = view;
-  el.style.minHeight = old.offsetHeight + 'px';   // geen sprong naar boven tijdens het opnieuw laden
-  old.parentNode.replaceChild(el, old);
-  const slow = setTimeout(() => { if (el.isConnected && !el.childElementCount) el.innerHTML = '<p class="hint loading">Laden…</p>'; }, 400);
-  const show = html => { if (el.isConnected && tok === S.renderTok) el.innerHTML = html; };
+  // Nieuw scherm onzichtbaar opbouwen vóór het oude; pas als het klaar is wisselen (geen knipperen, scrollpositie blijft)
+  el.hidden = true; old.parentNode.insertBefore(el, old); old.removeAttribute('id');
+  const y0 = window.scrollY;
+  let swapped = false;
+  const swap = () => {
+    if (swapped || !el.isConnected) return; swapped = true;
+    $$('main[data-view]').forEach(m => { if (m !== el) m.remove(); });
+    el.hidden = false;
+    if (!changed) window.scrollTo(0, Math.min(y0, document.documentElement.scrollHeight));
+    const f = S.afterSwap; S.afterSwap = null; if (f) try { f(); } catch (x) { /* niet kritiek */ }
+  };
+  const slow = setTimeout(() => { if (el.isConnected && !el.childElementCount) { el.innerHTML = '<p class="hint loading">Laden…</p>'; swap(); } }, 600);
+  const show = html => { if (el.isConnected && tok === S.renderTok) { el.innerHTML = html; swap(); } };
   try {
     let to;
     await Promise.race([renderView(view, el), new Promise((_, rej) => { to = setTimeout(() => rej(new Error('Het laden duurt te lang. Controleer je verbinding.')), 20000); })]).finally(() => clearTimeout(to));
@@ -1383,7 +1392,7 @@ async function go(view) {
     console.error(e);
     show(`<div class="card pad"><p class="msg err">Er ging iets mis bij het laden: ${esc(errMsg(e))}</p><button class="btn" data-retry>Opnieuw proberen</button></div>`);
     const r = $('[data-retry]', el); if (r) r.onclick = () => go(view);
-  } finally { clearTimeout(slow); el.style.minHeight = ''; }
+  } finally { clearTimeout(slow); if (tok === S.renderTok) swap(); else if (!swapped) el.remove(); }
   if (tok === S.renderTok) refreshBadge();
 }
 async function renderView(view, el) {
@@ -1922,7 +1931,7 @@ async function viewWeek(el, editable) {
   if (S.selMode) markSel();
 
   el.onkeydown = ev => { if (ev.target.matches('[data-rev]')) S.lastKey = ev.key; };
-  if (S.refocus && S.refocus.attr === 'data-rev') { const { date } = S.refocus; S.refocus = null; const ins = $$('[data-rev]', el); const i = ins.findIndex(x => x.dataset.rev === date); if (ins[i + 1]) ins[i + 1].focus(); }
+  if (S.refocus && S.refocus.attr === 'data-rev') { const { date } = S.refocus; S.refocus = null; const ins = $$('[data-rev]', el); const i = ins.findIndex(x => x.dataset.rev === date); if (ins[i + 1]) S.afterSwap = () => ins[i + 1].focus(); }
   el.onchange = async ev => {
     const rv = ev.target.closest('[data-rev]');
     if (rv) {
@@ -2722,7 +2731,7 @@ async function viewDashboard(el) {
   el.innerHTML = S.dashTab === 'cijfers' ? cijfersHTML : homeHTML;
   fillAnnFiles(el);
   if (S.reqTab === 'rapport') { S.reqTab = ''; const want = S.repDate; S.repDate = null; const last = repT || repY; if (want) dayReportView(want); else if (last) dayReportView(last.date); else dayReportsList(); }
-  if (S.refocus) { const { attr, date } = S.refocus; S.refocus = null; const ins = $$(`[${attr}]`, el); const i = ins.findIndex(x => x.getAttribute(attr) === date); const nx = ins[i + 1]; if (nx) nx.focus(); }
+  if (S.refocus) { const { attr, date } = S.refocus; S.refocus = null; const ins = $$(`[${attr}]`, el); const i = ins.findIndex(x => x.getAttribute(attr) === date); const nx = ins[i + 1]; if (nx) S.afterSwap = () => nx.focus(); }
   el.onclick = ev => {
     if (ev.target.closest('[data-annnew]')) return annDialog();
     const drp = ev.target.closest('[data-drep]'); if (drp) return dayReportView(drp.dataset.drep);
@@ -5399,6 +5408,22 @@ async function boot() {
 }
 
 window.addEventListener('hashchange', () => { if (store && !S.me && store.demo) renderAuth(); });
+// iOS (vooral als web-app op het beginscherm) rekent na herladen soms met een te korte schermhoogte:
+// dan hangt de menubalk halverwege en scrolt een schermvullend venster niet. Corrigeer met de echte zichtbare hoogte.
+(() => {
+  const vv = window.visualViewport; if (!vv) return;
+  const fix = () => {
+    const r = document.documentElement.style;
+    r.setProperty('--app-h', Math.round(vv.height) + 'px');
+    const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);   // toetsenbord open: balk niet verplaatsen
+    r.setProperty('--vv-bottom', (typing ? 0 : Math.round(window.innerHeight - vv.height - vv.offsetTop)) + 'px');
+  };
+  vv.addEventListener('resize', fix); vv.addEventListener('scroll', fix);
+  window.addEventListener('orientationchange', () => setTimeout(fix, 300));
+  window.addEventListener('pageshow', () => { fix(); setTimeout(fix, 400); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { fix(); setTimeout(fix, 400); } });
+  fix(); setTimeout(fix, 400); setTimeout(fix, 1500);
+})();
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) { /* ignore */ }
   // tik op een pushmelding: het juiste scherm openen

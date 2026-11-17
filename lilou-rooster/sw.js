@@ -1,7 +1,7 @@
 // Eenvoudige service worker: app-bestanden offline beschikbaar, data altijd live.
 const PREFIX = 'rooster-' + new URL(self.registration.scope).pathname + '-';
-const CACHE = PREFIX + 'v84';
-const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'config.js', 'icon-192-v2.png', 'brand/lilou-wordmark-rood.png', 'brand/lilou-wordmark-creme.png', 'manifest.webmanifest', 'vendor/fonts.css', 'vendor/supabase.min.js'];
+const CACHE = PREFIX + 'v86';
+const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'config.js', 'icon-192-v3.png', 'brand/lilou-wordmark-rood.png', 'brand/lilou-wordmark-creme.png', 'manifest.webmanifest', 'vendor/fonts.css', 'vendor/supabase.min.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -25,8 +25,8 @@ self.addEventListener('push', e => {
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = { title: 'Rooster', body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.registration.showNotification(d.title || 'Rooster', {
     body: d.body || '',
-    icon: 'icon-192-v2.png',
-    badge: 'icon-192-v2.png',
+    icon: 'icon-192-v3.png',
+    badge: 'icon-192-v3.png',
     tag: d.id || undefined,
     data: { view: d.view || '' },
   }));
