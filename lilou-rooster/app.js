@@ -1294,10 +1294,10 @@ async function phonesDialog() {
 /* ================= Shell ================= */
 function tabsFor() {
   return isMgr()
-    ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['aanvragen', 'Aanvragen'], ['lijsten', 'Lijsten'], ['team', 'Team'], ['uren', 'Uren & export'], ['kaarten', 'Kaarten']]
+    ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['aanvragen', 'Aanvragen'], ['lijsten', 'Lijsten'], ['team', 'Team'], ['uren', 'Uren & export'], ['kaarten', 'Menukaarten']]
     : canPlan()
-      ? [['mijn', 'Mijn rooster'], ['planning', 'Planning'], ['lijsten', 'Lijsten'], ['diensten', 'Diensten'], ['aanvragen', 'Verlof'], ['beschikbaar', 'Beschikbaar'], ['kaarten', 'Kaarten']]
-      : [['mijn', 'Mijn rooster'], ['diensten', 'Diensten'], ['lijsten', 'Lijsten'], ['aanvragen', 'Verlof'], ['planning', 'Team'], ['beschikbaar', 'Beschikbaar'], ['kaarten', 'Kaarten']];
+      ? [['mijn', 'Mijn rooster'], ['planning', 'Planning'], ['lijsten', 'Lijsten'], ['diensten', 'Diensten'], ['aanvragen', 'Verlof'], ['beschikbaar', 'Beschikbaar'], ['kaarten', 'Menukaarten']]
+      : [['mijn', 'Mijn rooster'], ['diensten', 'Diensten'], ['lijsten', 'Lijsten'], ['aanvragen', 'Verlof'], ['planning', 'Team'], ['beschikbaar', 'Beschikbaar'], ['kaarten', 'Menukaarten']];
 }
 
 function renderShell() {
@@ -1589,7 +1589,7 @@ async function viewKaarten(el) {
   const mgr = isMgr();
   const isImg = c => /^image\//.test(c.file_type || '');
   el.innerHTML = `
-    <div class="page-head"><div><h1>Kaarten</h1><p>De actuele menukaart, wijnkaart en bites. Tik om te openen.</p></div>${mgr ? '<button class="btn primary" data-kadd>+ Kaart toevoegen</button>' : ''}</div>
+    <div class="page-head"><div><h1>Menukaarten</h1><p>De actuele menukaart, wijnkaart en bites. Tik om te openen.</p></div>${mgr ? '<button class="btn primary" data-kadd>+ Menukaart toevoegen</button>' : ''}</div>
     ${cards.length ? `<div class="kgrid">${cards.map(c => `<div class="card kcard">
         <button type="button" class="kopen" data-kopen="${c.id}"><span class="kic">${isImg(c) ? ico('file') : ico('book')}</span><span class="kt"><strong>${esc(c.title)}</strong><small>Bijgewerkt ${esc(fmtShort(iso(new Date(c.updated_at))))}</small></span><span class="chev" aria-hidden="true">›</span></button>
         ${mgr ? `<div class="kact"><button type="button" class="linkbtn small" data-kedit="${c.id}">Vervangen of naam wijzigen</button><button type="button" class="linkbtn small danger" data-kdel="${c.id}">Verwijderen</button></div>` : ''}
