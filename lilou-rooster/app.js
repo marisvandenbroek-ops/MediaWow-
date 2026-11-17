@@ -1371,15 +1371,15 @@ async function go(view) {
   // Nieuw element per keer: een tragere, oudere laadactie schrijft dan in een losgekoppeld element en niet over dit scherm
   const old = $('#view');
   if (!old) return;
-  const el = document.createElement('main'); el.id = 'view'; el.dataset.view = view;
+  const el = document.createElement('main'); el.dataset.view = view;   // id 'view' pas bij het wisselen: het oude scherm houdt zijn opmaak
   // Nieuw scherm onzichtbaar opbouwen vóór het oude; pas als het klaar is wisselen (geen knipperen, scrollpositie blijft)
-  el.hidden = true; old.parentNode.insertBefore(el, old); old.removeAttribute('id');
+  el.hidden = true; old.parentNode.insertBefore(el, old);
   const y0 = window.scrollY;
   let swapped = false;
   const swap = () => {
     if (swapped || !el.isConnected) return; swapped = true;
-    $$('main[data-view]').forEach(m => { if (m !== el) m.remove(); });
-    el.hidden = false;
+    $$('main[data-view], main#view').forEach(m => { if (m !== el) m.remove(); });
+    el.id = 'view'; el.hidden = false;
     if (!changed) window.scrollTo(0, Math.min(y0, document.documentElement.scrollHeight));
     const f = S.afterSwap; S.afterSwap = null; if (f) try { f(); } catch (x) { /* niet kritiek */ }
   };

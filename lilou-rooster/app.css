@@ -1704,3 +1704,4 @@ form:has([name=ok][value=true]:checked) .field:has([name=reden]) { display: none
 @media (max-width: 760px) { .tabs { bottom: var(--vv-bottom, 0px) !important; } }
 dialog.viewer { height: var(--app-h, 100dvh); }
 .ml-body, .viewer .vbody { overscroll-behavior: contain; }
+main[hidden] { display: none !important; }
