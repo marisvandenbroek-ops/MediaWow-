@@ -3699,9 +3699,21 @@ async function viewRequestsStaff(el) {
   const avail = Math.round((bal.rest - reserved) * 10) / 10;
   el.innerHTML = `
     <div class="page-head"><div><h1>Verlof</h1><p>Vraag vakantie of een vrije dag aan, of meld je ziek. Beschikbaarheid per week geef je door onder <button class="linkbtn" data-goto="beschikbaar">Beschikbaar</button>.</p></div><button class="btn" data-sick>${ico('therm')}Ik ben ziek</button></div>
-    ${showBal ? `<div class="card pad balance"><div><small>Nog te plannen verlof ${bal.year}</small><b>${fmtH(avail)} uur</b></div>
-      <div class="balrows"><span>Saldo</span><span>${fmtH(bal.rest)} uur</span>${reserved ? `<span>Aangevraagd (in behandeling)</span><span>− ${fmtH(reserved)} uur</span>` : ''}</div>
-      <div class="hint">${fmtH(bal.entitlement)} uur recht + ${fmtH(bal.opening)} meegenomen uit ${bal.year - 1} − ${fmtH(bal.used)} opgenomen.${reserved ? ' Aangevraagde uren tellen meteen mee; wordt een aanvraag afgewezen, dan komen ze terug.' : ''}</div></div>` : ''}
+    ${showBal ? (() => {
+      const total = Math.max(0.01, bal.opening + bal.entitlement), used = Math.max(0, bal.used);
+      const pc = v => Math.max(0, Math.min(100, v / total * 100)).toFixed(1);
+      const perDay = (Number(S.me.contract_hours) || 0) / 5, days = perDay ? Math.round(Math.max(0, avail) / perDay * 2) / 2 : null;
+      return `<section class="card leavecard">
+        <div class="lc-top"><div><small>Verlof ${bal.year}</small><b>${fmtH(avail)}<span> uur</span></b><em>nog te plannen${days != null ? ` · ongeveer ${String(days).replace('.', ',')} ${days === 1 ? 'dag' : 'dagen'}` : ''}</em></div></div>
+        <div class="lc-bar" role="img" aria-label="${fmtH(used)} uur opgenomen, ${fmtH(reserved)} uur aangevraagd, ${fmtH(avail)} uur vrij te plannen van ${fmtH(total)} uur">
+          <i class="u" style="width:${pc(used)}%"></i><i class="r" style="width:${pc(reserved)}%"></i></div>
+        <ul class="lc-leg">
+          <li><span class="dot u"></span>Opgenomen<b>${fmtH(used)} u</b></li>
+          <li><span class="dot r"></span>Aangevraagd<b>${fmtH(reserved)} u</b></li>
+          <li><span class="dot f"></span>Vrij te plannen<b>${fmtH(avail)} u</b></li>
+        </ul>
+        <p class="lc-foot">Totaal ${fmtH(total)} uur: ${fmtH(bal.entitlement)} recht${bal.opening ? ` + ${fmtH(bal.opening)} uit ${bal.year - 1}` : ''}</p>
+      </section>`; })() : ''}
     <div class="split">
       <form class="card pad stack" id="reqform">
         <h3 style="font-size:18px">Nieuwe aanvraag</h3>

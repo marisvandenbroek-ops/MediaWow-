@@ -1572,3 +1572,24 @@ a.btn { text-decoration: none; }
 .balrows { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin: 10px 0 6px; font-size: 14.5px; }
 .balrows span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .teamtoday { margin-top: 16px; }
+
+/* verlofoverzicht */
+.leavecard { padding: 20px 20px 16px; }
+.lc-top small { display: block; font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.lc-top b { display: block; font-size: 44px; line-height: 1.05; letter-spacing: -.03em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.lc-top b span { font-size: 20px; font-weight: 600; letter-spacing: 0; color: var(--muted); }
+.lc-top em { display: block; font-style: normal; color: var(--muted); font-size: 14.5px; margin-top: 2px; }
+.lc-bar { display: flex; height: 12px; border-radius: 6px; background: var(--surface-2, #efe6dc); overflow: hidden; margin: 18px 0 14px; }
+.lc-bar i { display: block; height: 100%; }
+.lc-bar .u { background: var(--accent); }
+.lc-bar .r { background: repeating-linear-gradient(135deg, var(--accent) 0 4px, color-mix(in srgb, var(--accent) 45%, transparent) 4px 8px); }
+.lc-leg { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.lc-leg li { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.lc-leg b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.lc-leg .dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.lc-leg .dot.u { background: var(--accent); }
+.lc-leg .dot.r { background: repeating-linear-gradient(135deg, var(--accent) 0 3px, color-mix(in srgb, var(--accent) 45%, transparent) 3px 6px); }
+.lc-leg .dot.f { background: var(--surface-2, #efe6dc); border: 1px solid var(--line-strong, var(--line)); }
+.lc-foot { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+.lc-bar { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent); }
+.lc-leg .dot.f { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 25%, transparent); }
