@@ -87,6 +87,8 @@ const IC = {
   pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
   box: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
   chat: '<path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l1.9-5.4A8.5 8.5 0 1 1 21 11.5z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
   swap: '<path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
   alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
   lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
@@ -3686,89 +3688,127 @@ function sickDialog() {
 }
 
 async function viewRequestsStaff(el) {
-  const yr0 = new Date().getFullYear() + '-01-01';
+  const Y = new Date().getFullYear(), yr0 = Y + '-01-01';
   const [reqs0, privList, sh0] = await Promise.all([store.requests(), store.privates(), store.shifts(yr0, iso(addDays(new Date(), 400))).catch(() => [])]);
   const reqs = reqs0.filter(r => r.employee_id === S.me.id);
   const t = todayIso();
-  const bal = leaveBalance(S.me, privList.find(p => p.employee_id === S.me.id), reqs);
+  const priv = privList.find(p => p.employee_id === S.me.id);
+  const bal = leaveBalance(S.me, priv, reqs);
   const showBal = bal.entitlement || bal.opening || bal.used;
   const myShifts0 = sh0.filter(x => x.employee_id === S.me.id);
-  const pendH = r => estimateLeaveHours(r, S.me, myShifts0);
-  const pendList = reqs.filter(r => r.status === 'pending' && ['vakantie', 'vrij'].includes(r.type) && r.start_date.slice(0, 4) === String(bal.year));
-  const reserved = Math.round(pendList.reduce((tt, r) => tt + pendH(r), 0) * 10) / 10;
+  const isLeave = r => ['vakantie', 'vrij'].includes(r.type);
+  const hoursOf = r => r.status === 'approved' && r.leave_hours != null ? Number(r.leave_hours) : estimateLeaveHours({ ...r, employee_id: S.me.id }, S.me, myShifts0);
+  const pendList = reqs.filter(r => r.status === 'pending' && isLeave(r) && r.start_date.slice(0, 4) === String(bal.year));
+  const reserved = Math.round(pendList.reduce((s, r) => s + hoursOf(r), 0) * 10) / 10;
   const avail = Math.round((bal.rest - reserved) * 10) / 10;
+  const total = Math.max(0, bal.opening + bal.entitlement), used = Math.max(0, bal.used);
+  const perDay = (Number(S.me.contract_hours) || 0) / 5;
+  const asDays = h => perDay ? Math.round(Math.max(0, h) / perDay * 2) / 2 : null;
+  const fmtH = h => (Math.round(Number(h) * 10) / 10).toLocaleString('nl-NL');   // verlof in hele uren met één decimaal
+  const dTxt = d => d == null ? '' : `${String(d).replace('.', ',')} ${d === 1 ? 'dag' : 'dagen'}`;
+
+  // Tegoeden: wettelijk = 4 x de uren per week (vervalt 1 juli van het jaar erna), de rest bovenwettelijk (vervalt na 5 jaar).
+  // Eerst gaat het meegenomen verlof eraf, dan wettelijk, dan bovenwettelijk.
+  const wett = Math.min(bal.entitlement, 4 * (Number(S.me.contract_hours) || 0)), boven = Math.max(0, bal.entitlement - wett);
+  let take = used + reserved;
+  const bucket = (label, amount, expires, note) => { const u = Math.min(amount, take); take -= u; return { label, amount, left: Math.round((amount - u) * 10) / 10, expires, note }; };
+  const buckets = [
+    bal.opening ? bucket(`Meegenomen uit ${Y - 1}`, bal.opening, `${Y}-07-01`, 'wordt als eerste gebruikt') : null,
+    bucket(`Wettelijk ${Y}`, wett, `${Y + 1}-07-01`, '4 × je uren per week'),
+    boven ? bucket(`Bovenwettelijk ${Y}`, boven, `${Y + 5}-12-31`, 'extra uren uit je contract') : null,
+  ].filter(Boolean);
+  const longDate = ds => fmt(parse(ds), { day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Donut
+  const R0 = 54, C0 = 2 * Math.PI * R0, fr = v => total ? Math.max(0, Math.min(1, v / total)) : 0;
+  const seg = (from, len, cls) => len <= 0 ? '' : `<circle class="ld-${cls}" cx="70" cy="70" r="${R0}" stroke-dasharray="${(C0 * len).toFixed(1)} ${C0.toFixed(1)}" stroke-dashoffset="${(-C0 * from).toFixed(1)}"/>`;
+  const donut = `<svg class="ldonut" viewBox="0 0 140 140" aria-hidden="true"><circle class="ld-track" cx="70" cy="70" r="${R0}"/>${seg(0, fr(used), 'used')}${seg(fr(used), fr(reserved), 'res')}</svg>`;
+
+  // Aanvragen ordenen
+  const byStart = (a, b) => a.start_date.localeCompare(b.start_date);
+  const pending = reqs.filter(r => r.status === 'pending' && r.type !== 'ziek').sort(byStart);
+  const planned = reqs.filter(r => r.status === 'approved' && r.end_date >= t && r.type !== 'ziek').sort(byStart);
+  const past = reqs.filter(r => !pending.includes(r) && !planned.includes(r)).sort((a, b) => b.start_date.localeCompare(a.start_date));
+  const nextOff = planned.find(r => isLeave(r));
+  const daysTo = nextOff ? Math.max(0, Math.round((parse(nextOff.start_date) - parse(t)) / 864e5)) : null;
+  const TICO = { vakantie: 'sun', vrij: 'cal', onbeschikbaar: 'lock', ziek: 'therm' };
+  const row = r => `<button type="button" class="lrq ${S.flashReq && S.flashReq === r.start_date + r.type ? 'flash' : ''}" data-req="${r.id}">
+      <span class="lrq-ico t-${r.type}">${ico(TICO[r.type] || 'cal')}</span>
+      <span class="lrq-main"><strong>${esc(REQ[r.type])}</strong><small>${reqDates(r)}</small></span>
+      <span class="lrq-side">${isLeave(r) ? `<b>${fmtH(hoursOf(r))} u</b>` : ''}<span class="status ${r.status}">${stLabel(r)}</span></span></button>`;
+  const group = (title, list, open = true) => list.length ? `<section class="lgrp"><h3>${title} <span class="muted">${list.length}</span></h3><div class="card lrqs">${list.map(row).join('')}</div></section>` : '';
+
   el.innerHTML = `
-    <div class="page-head"><div><h1>Verlof</h1><p>Vraag vakantie of een vrije dag aan, of meld je ziek. Beschikbaarheid per week geef je door onder <button class="linkbtn" data-goto="beschikbaar">Beschikbaar</button>.</p></div><button class="btn" data-sick>${ico('therm')}Ik ben ziek</button></div>
-    ${showBal ? (() => {
-      const total = Math.max(0.01, bal.opening + bal.entitlement), used = Math.max(0, bal.used);
-      const pc = v => Math.max(0, Math.min(100, v / total * 100)).toFixed(1);
-      const perDay = (Number(S.me.contract_hours) || 0) / 5, days = perDay ? Math.round(Math.max(0, avail) / perDay * 2) / 2 : null;
-      return `<section class="card leavecard">
-        <div class="lc-top"><div><small>Verlof ${bal.year}</small><b>${fmtH(avail)}<span> uur</span></b><em>nog te plannen${days != null ? ` · ongeveer ${String(days).replace('.', ',')} ${days === 1 ? 'dag' : 'dagen'}` : ''}</em></div></div>
-        <div class="lc-bar" role="img" aria-label="${fmtH(used)} uur opgenomen, ${fmtH(reserved)} uur aangevraagd, ${fmtH(avail)} uur vrij te plannen van ${fmtH(total)} uur">
-          <i class="u" style="width:${pc(used)}%"></i><i class="r" style="width:${pc(reserved)}%"></i></div>
-        <ul class="lc-leg">
-          <li><span class="dot u"></span>Opgenomen<b>${fmtH(used)} u</b></li>
-          <li><span class="dot r"></span>Aangevraagd<b>${fmtH(reserved)} u</b></li>
-          <li><span class="dot f"></span>Vrij te plannen<b>${fmtH(avail)} u</b></li>
-        </ul>
-        <p class="lc-foot">Totaal ${fmtH(total)} uur: ${fmtH(bal.entitlement)} recht${bal.opening ? ` + ${fmtH(bal.opening)} uit ${bal.year - 1}` : ''}</p>
-      </section>`; })() : ''}
-    <div class="split">
-      <form class="card pad stack" id="reqform">
-        <h3 style="font-size:18px">Nieuwe aanvraag</h3>
-        <label class="field">Soort<select name="type">${Object.entries(REQ).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
-        <div class="row keep">
-          <label class="field">Van<input type="date" name="start_date" min="${t}" required></label>
-          <label class="field">Tot en met<input type="date" name="end_date" min="${t}" required></label>
-        </div>
-        <p class="costline" data-cost hidden></p>
-        <label class="field">Toelichting<textarea name="note" placeholder="Optioneel"></textarea></label>
-        <button class="btn primary">Aanvraag versturen</button>
-      </form>
-      <div>
-        ${reqs.length ? `<div class="reqs">${reqs.map(r => `
-          <article class="card req ${S.flashReq && S.flashReq === r.start_date + r.type ? 'flash' : ''}"><div class="req-head"><strong>${esc(REQ[r.type])}</strong><span class="status ${r.status}">${stLabel(r)}</span></div>
-          <p class="dates">${reqDates(r)}</p>${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}
-          ${r.status === 'approved' && r.leave_hours ? `<p class="hint">${fmtH(Number(r.leave_hours))} verlofuren afgeschreven</p>` : r.status === 'pending' && ['vakantie', 'vrij'].includes(r.type) ? `<p class="hint">Ongeveer ${fmtH(pendH(r))} uur gereserveerd van je saldo</p>` : ''}
-          ${r.manager_note ? `<p class="reply"><strong>Reactie:</strong> ${esc(r.manager_note)}</p>` : ''}
-          ${r.status === 'pending' ? `<div class="req-actions"><button class="btn sm danger" data-del="${r.id}">Intrekken</button></div>` : ''}</article>`).join('')}</div>`
-          : '<div class="card empty">Je hebt nog geen aanvragen gedaan.</div>'}
-      </div>
-    </div>`;
-  const f = $('#reqform');
-  // direct zien wat de aanvraag kost: dagen en verlofuren tegenover je saldo
-  let myShifts = null;
-  const cost = async () => {
-    const box = $('[data-cost]', f), a = f.start_date.value, b = f.end_date.value || a;
-    if (!a || b < a) { box.hidden = true; return; }
-    const days = daysBetween(a, b);
-    let txt = `${days} ${days === 1 ? 'dag' : 'dagen'}: ${esc(fmtShort(a))}${days > 1 ? ' – ' + esc(fmtShort(b)) : ''}`;
-    if (['vakantie', 'vrij'].includes(f.type.value) && showBal) {
-      myShifts ||= myShifts0;
-      const h = estimateLeaveHours({ employee_id: S.me.id, start_date: a, end_date: b }, S.me, myShifts);
-      txt += ` · ongeveer <strong>${fmtH(h)} uur</strong> van je ${fmtH(avail)} uur${h > avail ? ' <b class="bad">(meer dan je saldo)</b>' : ''}`;
-    }
-    box.innerHTML = txt; box.hidden = false;
+    <div class="page-head"><div><h1>Verlof</h1></div><button class="btn" data-sick>${ico('therm')}Ik ben ziek</button></div>
+    <div class="leave-grid"><div>
+    ${showBal ? `<section class="card leavehero">
+      <div class="lh-ring">${donut}<div class="lh-in"><small>nog te plannen</small><b>${fmtH(avail)}</b><span>uur${perDay ? ` · ${dTxt(asDays(avail))}` : ''}</span></div></div>
+      <ul class="lc-leg">
+        <li><span class="dot u"></span>Opgenomen<b>${fmtH(used)} u</b></li>
+        <li><span class="dot r"></span>Aangevraagd<b>${fmtH(reserved)} u</b></li>
+        <li><span class="dot f"></span>Vrij te plannen<b>${fmtH(avail)} u</b></li>
+      </ul>
+      <button type="button" class="btn primary block lh-cta" data-reqnew>${ico('plus')}Verlof aanvragen</button>
+    </section>` : `<section class="card leavehero"><p class="hint" style="margin:0 0 12px">Je verlofsaldo is nog niet ingevuld door de directie.</p><button type="button" class="btn primary block lh-cta" data-reqnew>${ico('plus')}Verlof aanvragen</button></section>`}
+    ${nextOff ? `<section class="card nextoff"><span class="no-ico">${ico('sun')}</span><span><small>${daysTo === 0 ? 'Vandaag begint' : 'Je volgende vrij'}</small><strong>${esc(REQ[nextOff.type])} · ${reqDates(nextOff)}</strong></span>${daysTo ? `<span class="no-days"><b>${daysTo}</b><small>${daysTo === 1 ? 'dag' : 'dagen'}</small></span>` : ''}</section>` : ''}
+    ${showBal ? `<section class="card pad tegoed"><h3>Mijn tegoeden</h3>
+      ${buckets.map(b => { const soon = b.left > 0 && b.expires <= iso(addDays(new Date(), 120)); return `<div class="tg-row"><span><strong>${esc(b.label)}</strong><small class="${soon ? 'warn' : ''}">${soon ? 'Let op: vervalt ' : 'Vervalt '}${esc(longDate(b.expires))} · ${esc(b.note)}</small></span><b>${fmtH(b.left)} u</b></div>`; }).join('')}
+      <p class="tg-foot">Totaal ${fmtH(total)} uur dit jaar. Wettelijke uren vervallen een half jaar na het einde van het jaar; plan ze op tijd in.</p></section>` : ''}
+    </div><div>
+    ${group('In behandeling', pending)}
+    ${group('Gepland', planned)}
+    ${past.length ? `<details class="lgrp lpast"><summary><h3>Eerder <span class="muted">${past.length}</span></h3></summary><div class="card lrqs">${past.map(row).join('')}</div></details>` : ''}
+    ${!reqs.length ? `<div class="card empty lempty">${ico('sun')}<p>Nog geen aanvragen.<br>Tik op <strong>Verlof aanvragen</strong> om je eerste vrije dagen te plannen.</p></div>` : ''}
+    <p class="hint lbesch">Wanneer je wel of niet kunt werken geef je per week door bij <button class="linkbtn" data-goto="beschikbaar">Beschikbaar</button>.</p>
+    </div></div>`;
+  if (S.flashReq) { const fl = $('.lrq.flash', el); S.flashReq = null; if (fl) setTimeout(() => fl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50); }
+
+  const newDialog = () => {
+    const types = [['vakantie', 'Vakantie', 'sun'], ['vrij', 'Vrije dag', 'cal'], ['onbeschikbaar', 'Niet beschikbaar', 'lock']];
+    openDialog('Verlof aanvragen', `
+      <div class="rq-types" role="radiogroup" aria-label="Soort">${types.map(([k, l, i], n) => `<label class="rq-type"><input type="radio" name="type" value="${k}" ${n === 0 ? 'checked' : ''}><span>${ico(i)}${l}</span></label>`).join('')}</div>
+      <div class="row keep"><label class="field">Van<input type="date" name="start_date" min="${t}" required></label><label class="field">Tot en met<input type="date" name="end_date" min="${t}" required></label></div>
+      <div class="rq-sum" data-rqsum hidden></div>
+      <label class="field">Toelichting <span class="muted small">(optioneel)</span><textarea name="note" rows="2" placeholder="Bijv. bruiloft van mijn zus"></textarea></label>
+      <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Aanvraag versturen</button></div>`, {
+      onReady(dlg) {
+        const fm = $('form', dlg), sum = $('[data-rqsum]', dlg);
+        const upd = () => {
+          const a = fm.start_date.value, b = fm.end_date.value || a, tp = fm.type.value;
+          if (!a || b < a) { sum.hidden = true; return; }
+          const days = daysBetween(a, b), leave = ['vakantie', 'vrij'].includes(tp);
+          const h = leave ? estimateLeaveHours({ employee_id: S.me.id, start_date: a, end_date: b }, S.me, myShifts0) : 0, after = Math.round((avail - h) * 10) / 10;
+          sum.innerHTML = `<div><small>Periode</small><b>${days} ${days === 1 ? 'dag' : 'dagen'}</b></div>${leave ? `<div><small>Kost ongeveer</small><b>${fmtH(h)} uur</b></div><div class="${after < 0 ? 'neg' : ''}"><small>Daarna over</small><b>${fmtH(after)} uur</b></div>` : '<div><small>Verlofuren</small><b>geen</b></div>'}`;
+          sum.hidden = false;
+        };
+        fm.start_date.addEventListener('change', () => { fm.end_date.min = fm.start_date.value; if (!fm.end_date.value || fm.end_date.value < fm.start_date.value) fm.end_date.value = fm.start_date.value; upd(); });
+        fm.end_date.addEventListener('change', upd);
+        $$('[name=type]', fm).forEach(x => x.addEventListener('change', upd));
+      },
+      async onSubmit(fd) {
+        const a = fd.get('start_date'), b = fd.get('end_date');
+        if (!a || !b) throw new Error('Kies de datums van je verlof.');
+        if (b < a) throw new Error('De einddatum ligt voor de begindatum.');
+        await store.saveRequest({ employee_id: S.me.id, type: fd.get('type'), start_date: a, end_date: b, note: String(fd.get('note') || '').trim() || null });
+        S.flashReq = a + fd.get('type');
+        toast('Aanvraag verstuurd. Je krijgt bericht zodra hij is bekeken.'); rerender();
+      },
+    });
   };
-  f.start_date.onchange = () => { f.end_date.min = f.start_date.value; if (!f.end_date.value || f.end_date.value < f.start_date.value) f.end_date.value = f.start_date.value; cost(); };
-  f.end_date.onchange = cost; f.type.onchange = cost;
-  if (S.flashReq) { const fl = $('.req.flash', el); S.flashReq = null; if (fl) setTimeout(() => fl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50); }
-  f.onsubmit = async ev => {
-    ev.preventDefault();
-    const fd = new FormData(f);
-    if (fd.get('end_date') < fd.get('start_date')) return toast('De einddatum ligt voor de begindatum', 'error');
-    try {
-      await store.saveRequest({ employee_id: S.me.id, type: fd.get('type'), start_date: fd.get('start_date'), end_date: fd.get('end_date'), note: fd.get('note').trim() || null });
-      S.flashReq = fd.get('start_date') + fd.get('type');
-      toast('Aanvraag verstuurd. De directie krijgt een melding.'); rerender();
-    } catch (e) { toast(errMsg(e), 'error'); }
+  const detail = r => {
+    openDialog(REQ[r.type], `
+      <div class="rq-detail"><span class="status ${r.status}">${stLabel(r)}</span><p class="rq-dates">${reqDates(r)}</p>
+      ${isLeave(r) ? `<p class="hint" style="margin:0">${r.status === 'approved' && r.leave_hours != null ? `${fmtH(Number(r.leave_hours))} verlofuren afgeschreven` : r.status === 'pending' ? `Ongeveer ${fmtH(hoursOf(r))} uur gereserveerd van je saldo` : ''}</p>` : ''}
+      ${r.note ? `<p class="note">“${esc(r.note)}”</p>` : ''}${r.manager_note ? `<p class="reply"><strong>Reactie van de directie:</strong> ${esc(r.manager_note)}</p>` : ''}</div>
+      ${r.status === 'pending' ? '<div class="dlg-foot"><button type="button" class="btn danger" data-delreq>Aanvraag intrekken</button></div>' : ''}`, {
+      onReady(dlg) { const d = $('[data-delreq]', dlg); if (d) d.onclick = async () => { if (!await ask('Deze aanvraag intrekken?')) return; await store.deleteRequest(r.id); dlg.close(); toast('Aanvraag ingetrokken'); rerender(); }; },
+    });
   };
   el.onclick = async ev => {
     if (ev.target.closest('[data-sick]')) return sickDialog();
+    if (ev.target.closest('[data-reqnew]')) return newDialog();
     const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
-    const d = ev.target.closest('[data-del]');
-    if (d && await ask('Deze aanvraag intrekken?')) { await store.deleteRequest(d.dataset.del); toast('Aanvraag ingetrokken'); rerender(); }
+    const q = ev.target.closest('[data-req]'); if (q) return detail(reqs.find(r => r.id === q.dataset.req));
   };
 }
 

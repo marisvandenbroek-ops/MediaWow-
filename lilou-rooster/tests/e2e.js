@@ -173,12 +173,18 @@ async function test(name, fn) {
   });
   await test('verlof aanvragen', async () => {
     await tab(mob, 'aanvragen');
-    await mob.click('#reqform button'); await mob.waitForTimeout(200);
-    assert.ok(!(await mob.$('[data-del]')), 'zonder datum mag er geen aanvraag verstuurd worden');
+    const before = (await demoDb(mob)).db.requests.length;
+    await mob.click('[data-reqnew]'); await mob.waitForSelector('dialog[open] [name=start_date]');
+    await mob.click('dialog[open] button[value=save]'); await mob.waitForTimeout(250);
+    assert.ok(await mob.$('dialog[open] [name=start_date]'), 'zonder datum mag het venster niet sluiten');
+    assert.strictEqual((await demoDb(mob)).db.requests.length, before, 'zonder datum mag er geen aanvraag verstuurd worden');
     const d = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
-    await mob.fill('#reqform [name=start_date]', d); await mob.fill('#reqform [name=end_date]', d);
-    await mob.click('#reqform button'); await mob.waitForTimeout(200);
-    assert.ok(await mob.$('[data-del]'));
+    await mob.fill('dialog[open] [name=start_date]', d); await mob.dispatchEvent('dialog[open] [name=start_date]', 'change');
+    await mob.waitForSelector('dialog[open] [data-rqsum]:has-text("1 dag")');
+    await mob.click('dialog[open] button[value=save]'); await mob.waitForSelector('.toast:has-text("Aanvraag verstuurd")');
+    assert.strictEqual((await demoDb(mob)).db.requests.length, before + 1);
+    await mob.click('.lrq.flash, .lrq >> nth=0'); await mob.waitForSelector('dialog[open] [data-delreq]');
+    await mob.evaluate(() => document.querySelectorAll('dialog[open]').forEach(x => x.close()));
   });
   await test('ziek melden via de knop "Ik ben ziek"', async () => {
     await tab(mob, 'mijn'); await mob.click('[data-sick]'); await mob.waitForSelector('dialog .warnbox:has-text("Eerst bellen")');
@@ -1052,9 +1058,11 @@ async function test(name, fn) {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#personeel'); await login(p, 'Sanne'); await tab(p, 'aanvragen');
     const a = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), b = new Date(Date.now() + 34 * 864e5).toISOString().slice(0, 10);
-    await p.fill('#reqform [name=start_date]', a); await p.dispatchEvent('#reqform [name=start_date]', 'change');
-    await p.fill('#reqform [name=end_date]', b); await p.dispatchEvent('#reqform [name=end_date]', 'change');
-    await p.waitForSelector('[data-cost]:has-text("5 dagen")');
+    await p.click('[data-reqnew]');
+    await p.fill('dialog[open] [name=start_date]', a); await p.dispatchEvent('dialog[open] [name=start_date]', 'change');
+    await p.fill('dialog[open] [name=end_date]', b); await p.dispatchEvent('dialog[open] [name=end_date]', 'change');
+    await p.waitForSelector('dialog[open] [data-rqsum]:has-text("5 dagen")');
+    assert.match(await p.textContent('dialog[open] [data-rqsum]'), /Daarna over/);
     await ctx.close();
   });
   await test('afspraken: dagelijkse herinnering tot gelezen en akkoord', async () => {
