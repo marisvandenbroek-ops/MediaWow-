@@ -92,3 +92,9 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 ## Idee: app voor gasten (na de opening)
 - Advies: de website installeerbaar maken (PWA, zelfde techniek als het rooster) in plaats van een aparte App Store-app. Gasten kunnen hem op hun beginscherm zetten met het Lilou-icoon.
 - Mogelijk: pushberichten (spaarzaam: nieuwe kaart, wijndiner, laatste plekken), snel reserveren via Zenchef, actuele kaart met allergenen, later cadeaubon of spaarkaart. Let op privacy zodra gastgegevens bewaard worden.
+
+## Werkwijze vanaf 17 nov: eerst testomgeving
+- Testomgeving: rooster.lilou-ede.nl/test/ (demo-modus, geen echte database; eigen cache per map in sw.js).
+- Elke update: eerst rooster-TEST-NN.zip (map test/) → Mariska kijkt → dan pas rooster-update-NN.zip live.
+- Bouwen: scratchpad build_zips.py NN (live = 4 bestanden, test = hele app met lege Supabase-sleutels).
+- Wensen uit recensies: aangevraagd verlof meteen van saldo (gereserveerd), en zien wie er vandaag werkt — gedaan (v79).

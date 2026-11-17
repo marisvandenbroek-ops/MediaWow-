@@ -3487,6 +3487,9 @@ async function viewMine(el) {
     ? `<strong>${esc(fmt(hm0, { month: 'long', year: 'numeric' }))}</strong><span>${curMonth ? 'deze maand' : '&nbsp;'}</span>`
     : `<strong>${curWeek ? 'Deze week' : iso(S.homeWeek) === iso(addDays(start, 7)) ? 'Volgende week' : 'Week ' + weekNr(S.homeWeek)}</strong><span>${fmt(S.homeWeek, { day: 'numeric', month: 'short' })} – ${fmt(addDays(S.homeWeek, 6), { day: 'numeric', month: 'short' })} · wk ${weekNr(S.homeWeek)}</span>`;
   const weekEmpty = () => { const f = iso(S.homeWeek), t = iso(addDays(S.homeWeek, 6)); return !mine.some(x => x.date >= f && x.date <= t) && !myLeaves.some(r => overlaps(r.start_date, r.end_date, f, t)) && !closedRuns(CFG.specialDays, f, t).length && f > today; };
+  const todayTeam = all.filter(x => x.date === today && x.employee_id && x.published).sort((a, b) => shiftWindow(a)[0] - shiftWindow(b)[0]);
+  const teamHTML = sel || !todayTeam.length ? '' : `<section class="card hcard teamtoday"><div class="hhead"><h2>Vandaag aan het werk</h2><span class="muted small">${new Set(todayTeam.map(x => x.employee_id)).size} ${new Set(todayTeam.map(x => x.employee_id)).size === 1 ? 'persoon' : 'mensen'}</span></div>
+    <ul class="rlist">${todayTeam.map(x => `<li class="rrow"><span class="rdot" style="background:${esc(emps.find(e => e.id === x.employee_id)?.color || COLORS[0])}"></span><span class="rwho"><strong>${x.employee_id === S.me.id ? 'Jij' : esc(nameOf[x.employee_id] || '?')}</strong><small>${esc(x.position || '')}</small></span><span class="rtime">${hm(x.start_time)} – ${hm(x.end_time)}</span>${shiftWindow(x)[0] <= new Date() && shiftWindow(x)[1] > new Date() ? '<span class="rstat in">nu</span>' : shiftWindow(x)[1] <= new Date() ? '<span class="rstat done">klaar</span>' : ''}</li>`).join('')}</ul></section>`;
   const rosterHTML = sel ? '' : `<section class="homeroster" data-hroster>
     <div class="hr-top"><h2>Mijn rooster</h2><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${S.homeMode === 'week' ? 'on' : ''}" data-hmode="week">Week</button><button type="button" class="${S.homeMode === 'maand' ? 'on' : ''}" data-hmode="maand">Maand</button></div></div>
     <div class="weeknav hr-nav"><button class="btn icon" data-hnav="-1" aria-label="${S.homeMode === 'maand' ? 'Vorige maand' : 'Vorige week'}">‹</button><div class="label">${navTitle}</div><button class="btn icon" data-hnav="1" aria-label="${S.homeMode === 'maand' ? 'Volgende maand' : 'Volgende week'}">›</button></div>
@@ -3515,6 +3518,7 @@ async function viewMine(el) {
     ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     <div class="mhome ${sel ? 'sel' : ''}"><div class="mcol">
     ${clockHTML}
+    ${teamHTML}
     ${rosterHTML}
     ${todayHTML}
     ${repCard}
@@ -3682,14 +3686,22 @@ function sickDialog() {
 }
 
 async function viewRequestsStaff(el) {
-  const [reqs0, privList] = await Promise.all([store.requests(), store.privates()]);
+  const yr0 = new Date().getFullYear() + '-01-01';
+  const [reqs0, privList, sh0] = await Promise.all([store.requests(), store.privates(), store.shifts(yr0, iso(addDays(new Date(), 400))).catch(() => [])]);
   const reqs = reqs0.filter(r => r.employee_id === S.me.id);
   const t = todayIso();
   const bal = leaveBalance(S.me, privList.find(p => p.employee_id === S.me.id), reqs);
   const showBal = bal.entitlement || bal.opening || bal.used;
+  const myShifts0 = sh0.filter(x => x.employee_id === S.me.id);
+  const pendH = r => estimateLeaveHours(r, S.me, myShifts0);
+  const pendList = reqs.filter(r => r.status === 'pending' && ['vakantie', 'vrij'].includes(r.type) && r.start_date.slice(0, 4) === String(bal.year));
+  const reserved = Math.round(pendList.reduce((tt, r) => tt + pendH(r), 0) * 10) / 10;
+  const avail = Math.round((bal.rest - reserved) * 10) / 10;
   el.innerHTML = `
     <div class="page-head"><div><h1>Verlof</h1><p>Vraag vakantie of een vrije dag aan, of meld je ziek. Beschikbaarheid per week geef je door onder <button class="linkbtn" data-goto="beschikbaar">Beschikbaar</button>.</p></div><button class="btn" data-sick>${ico('therm')}Ik ben ziek</button></div>
-    ${showBal ? `<div class="card pad balance"><div><small>Verlofsaldo ${bal.year}</small><b>${fmtH(bal.rest)} uur</b></div><div class="hint">${fmtH(bal.opening)} meegenomen uit ${bal.year - 1} + ${fmtH(bal.entitlement)} recht − ${fmtH(bal.used)} opgenomen${bal.pending ? ` · ${bal.pending} ${bal.pending === 1 ? 'aanvraag' : 'aanvragen'} in behandeling` : ''}</div></div>` : ''}
+    ${showBal ? `<div class="card pad balance"><div><small>Nog te plannen verlof ${bal.year}</small><b>${fmtH(avail)} uur</b></div>
+      <div class="balrows"><span>Saldo</span><span>${fmtH(bal.rest)} uur</span>${reserved ? `<span>Aangevraagd (in behandeling)</span><span>− ${fmtH(reserved)} uur</span>` : ''}</div>
+      <div class="hint">${fmtH(bal.entitlement)} uur recht + ${fmtH(bal.opening)} meegenomen uit ${bal.year - 1} − ${fmtH(bal.used)} opgenomen.${reserved ? ' Aangevraagde uren tellen meteen mee; wordt een aanvraag afgewezen, dan komen ze terug.' : ''}</div></div>` : ''}
     <div class="split">
       <form class="card pad stack" id="reqform">
         <h3 style="font-size:18px">Nieuwe aanvraag</h3>
@@ -3706,7 +3718,7 @@ async function viewRequestsStaff(el) {
         ${reqs.length ? `<div class="reqs">${reqs.map(r => `
           <article class="card req ${S.flashReq && S.flashReq === r.start_date + r.type ? 'flash' : ''}"><div class="req-head"><strong>${esc(REQ[r.type])}</strong><span class="status ${r.status}">${stLabel(r)}</span></div>
           <p class="dates">${reqDates(r)}</p>${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}
-          ${r.status === 'approved' && r.leave_hours ? `<p class="hint">${fmtH(Number(r.leave_hours))} verlofuren afgeschreven</p>` : ''}
+          ${r.status === 'approved' && r.leave_hours ? `<p class="hint">${fmtH(Number(r.leave_hours))} verlofuren afgeschreven</p>` : r.status === 'pending' && ['vakantie', 'vrij'].includes(r.type) ? `<p class="hint">Ongeveer ${fmtH(pendH(r))} uur gereserveerd van je saldo</p>` : ''}
           ${r.manager_note ? `<p class="reply"><strong>Reactie:</strong> ${esc(r.manager_note)}</p>` : ''}
           ${r.status === 'pending' ? `<div class="req-actions"><button class="btn sm danger" data-del="${r.id}">Intrekken</button></div>` : ''}</article>`).join('')}</div>`
           : '<div class="card empty">Je hebt nog geen aanvragen gedaan.</div>'}
@@ -3721,9 +3733,9 @@ async function viewRequestsStaff(el) {
     const days = daysBetween(a, b);
     let txt = `${days} ${days === 1 ? 'dag' : 'dagen'}: ${esc(fmtShort(a))}${days > 1 ? ' – ' + esc(fmtShort(b)) : ''}`;
     if (['vakantie', 'vrij'].includes(f.type.value) && showBal) {
-      myShifts ||= await store.shifts(t, iso(addDays(new Date(), 400))).then(l => l.filter(x => x.employee_id === S.me.id)).catch(() => []);
+      myShifts ||= myShifts0;
       const h = estimateLeaveHours({ employee_id: S.me.id, start_date: a, end_date: b }, S.me, myShifts);
-      txt += ` · ongeveer <strong>${fmtH(h)} uur</strong> van je ${fmtH(bal.rest)} uur`;
+      txt += ` · ongeveer <strong>${fmtH(h)} uur</strong> van je ${fmtH(avail)} uur${h > avail ? ' <b class="bad">(meer dan je saldo)</b>' : ''}`;
     }
     box.innerHTML = txt; box.hidden = false;
   };
