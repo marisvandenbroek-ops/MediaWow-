@@ -1676,3 +1676,26 @@ form:has([name=ok][value=true]:checked) .field:has([name=reden]) { display: none
 @media (max-width: 760px) { [data-logout].hdr-logout, .topbar [data-logout] { display: none; } }
 .ch-btns .btn.big { min-height: 50px; font-size: 16px; }
 @media (max-width: 760px) { .userbox [data-logout] { display: none; } }
+
+/* controle 9 */
+@media (hover: hover) { .ch-main:hover { filter: brightness(1.06); } }
+.btn.ch-main, .btn.ch-main:hover, .btn.ch-main:focus, .btn.ch-main:active { background: #8E1B14; border-color: #8E1B14; color: #fff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.ch-main, :root:not([data-theme="light"]) .btn.ch-main:hover, :root:not([data-theme="light"]) .btn.ch-main:focus { background: #9E2218; border-color: #9E2218; color: #fff; } }
+:root[data-theme="dark"] .btn.ch-main, :root[data-theme="dark"] .btn.ch-main:hover, :root[data-theme="dark"] .btn.ch-main:focus { background: #9E2218; border-color: #9E2218; color: #fff; }
+.btn.primary:hover, .btn.primary:focus { color: var(--accent-ink, #fff); }
+.rq-sum[hidden] { display: none; }
+:root { accent-color: var(--accent); }
+.days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.days label { min-width: 0; }
+.hstat small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.hstat b { min-height: 31px; }
+.hstat b.none { color: var(--muted); font-weight: 400; }
+@media (max-width: 380px) { .hstat span { font-size: 12px; } }
+@media (max-width: 400px) { .avopts { grid-template-columns: 1.3fr 1.2fr 1.1fr 1fr .8fr; gap: 4px; } }
+.busyopt span { white-space: nowrap; padding: 0 4px; font-size: 13.5px; }
+@media (max-width: 380px) { .busyrow { grid-template-columns: repeat(2, 1fr); } }
+.namecell .nm { min-width: 0; }
+@media (max-width: 760px) { .dlg-foot .btn { flex: 1 1 auto; } .mplan .daykpi { padding-right: 64px; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg button.on { background: #9E2218; color: #fff; } }
+:root[data-theme="dark"] .seg button.on { background: #9E2218; color: #fff; }
+.teamtoday .rlist { margin-bottom: 0; }

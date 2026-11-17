@@ -2575,7 +2575,7 @@ async function viewDashboard(el) {
   const att = [
     rulesMiss && [`${rulesMiss} Afspraken nog niet getekend`, 'afspraken'],
     openMeld && [`${openMeld} open ${openMeld === 1 ? 'melding' : 'meldingen'} (gebrek, incident of klacht)`, 'meldingen'],
-    listMiss && [`${listMiss} ${listMiss === 1 ? 'lijst' : 'lijsten'} gisteren niet helemaal afgevinkt`, 'lijsten-gisteren'],
+    listMiss && [`${listMiss} ${listMiss === 1 ? 'Lijst' : 'Lijsten'} gisteren niet helemaal afgevinkt`, 'lijsten-gisteren'],
     pendReq && [`${pendReq} ${pendReq === 1 ? 'aanvraag wacht' : 'aanvragen wachten'} op je beslissing`, 'aanvragen:verlof'],
     swapsWait && [`${swapsWait} ${swapsWait === 1 ? 'ruil wacht' : 'ruilen wachten'} op goedkeuring`, 'aanvragen:ruilen'],
     openShifts.length && [`${openShifts.length} open ${openShifts.length === 1 ? 'dienst' : 'diensten'}${openApps ? ` · ${openApps} aanmelding${openApps === 1 ? '' : 'en'}` : ''}`, 'aanvragen:open'],
@@ -2991,12 +2991,12 @@ function logDialog(kind) {
       <label class="check"><input type="checkbox" name="tht" checked> Houdbaarheid en verpakking in orde</label>
       <fieldset class="choice"><legend>Oordeel</legend><label class="check"><input type="radio" name="ok" value="true" checked> Goedgekeurd</label><label class="check"><input type="radio" name="ok" value="false"> Afgekeurd</label></fieldset>
       <label class="field">Reden bij afkeuren<input name="reden" maxlength="160"></label>
-      <label class="field">Wat heb je gedaan? <span class="muted small">(bij afkeuren of te warm)</span><input name="actie" maxlength="200" placeholder="bv. teruggegeven aan de chauffeur, leverancier gebeld"></label>`
+      <label class="field"><span>Wat heb je gedaan? <span class="muted small">(bij afkeuren of te warm)</span></span><input name="actie" maxlength="200" placeholder="bv. teruggegeven aan de chauffeur, leverancier gebeld"></label>`
     : kind === 'kern' ? `
       <label class="field">Product<input name="product" required maxlength="80" placeholder="bv. kippendij"></label>
       <label class="field">Kerntemperatuur (°C)<input name="temp" required inputmode="decimal" placeholder="bv. 78"></label>
       <label class="field">Na 5 uur terugkoelen (°C, optioneel)<input name="terug" inputmode="decimal" placeholder="bv. 5"></label>
-      <label class="field">Wat heb je gedaan? <span class="muted small">(nodig onder 75 °C of boven 7 °C)</span><input name="actie" maxlength="200" placeholder="bv. langer doorverhit tot 80 °C"></label>`
+      <label class="field"><span>Wat heb je gedaan? <span class="muted small">(nodig onder 75 °C of boven 7 °C)</span></span><input name="actie" maxlength="200" placeholder="bv. langer doorverhit tot 80 °C"></label>`
     : `<label class="field">Soort<select name="soort">${Object.entries(MELD).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
       <label class="field">Wat is er aan de hand?<textarea name="tekst" required maxlength="600" rows="4" placeholder="Wat, waar en wanneer. Bij een klacht: tafel en wat de gast zei."></textarea></label>
       <p class="hint" style="margin:0">De directie en shiftleaders krijgen meteen een melding.</p>`;
@@ -3500,9 +3500,9 @@ async function viewMine(el) {
       const dTo = LS.nextOff ? Math.max(0, Math.round((parse(LS.nextOff.start_date) - parse(today)) / 864e5)) : null;
       const fmtU = h => (Math.round(h * 10) / 10).toLocaleString('nl-NL');
       statsHTML = `<div class="hstats">
-        <button type="button" class="card hstat" data-hnav="0"><small>Deze week</small><b>${wk.length}</b><span>${wk.length === 1 ? 'dienst' : 'diensten'} · ${fmtH(wkH)} u</span></button>
-        <button type="button" class="card hstat" data-goto="aanvragen"><small>Verlof</small><b>${LS.show ? fmtU(LS.avail) : '—'}</b><span>${LS.show ? 'uur te plannen' : 'nog niet ingevuld'}</span></button>
-        <button type="button" class="card hstat" data-goto="aanvragen"><small>${dTo === 0 ? 'Vrij' : 'Volgende vrij'}</small><b>${dTo == null ? '—' : dTo === 0 ? 'nu' : dTo}</b><span>${dTo == null ? 'niets gepland' : dTo === 0 ? 'geniet ervan' : dTo === 1 ? 'dag' : 'dagen'}</span></button>
+        <button type="button" class="card hstat" data-hnav="0"><small>Deze week</small><b>${wk.length}</b><span>${wk.length === 1 ? 'dienst' : 'diensten'}&nbsp;·&nbsp;${fmtH(wkH)}&nbsp;u</span></button>
+        <button type="button" class="card hstat" data-goto="aanvragen"><small>Verlof</small><b>${LS.show ? fmtU(LS.avail) : '—'}</b><span>${LS.show ? 'uur over' : 'nog niet ingevuld'}</span></button>
+        <button type="button" class="card hstat" data-goto="aanvragen"><small>${dTo == null || dTo === 0 ? 'Vrij' : 'Vrij over'}</small><b class="${dTo == null ? 'none' : ''}">${dTo == null ? '–' : dTo === 0 ? 'nu' : dTo}</b><span>${dTo == null ? 'niets gepland' : dTo === 0 ? 'geniet ervan' : dTo === 1 ? 'dag' : 'dagen'}</span></button>
       </div>`;
     } catch (x) { statsHTML = ''; }
   }
@@ -3670,7 +3670,7 @@ function downloadIcs(shifts) {
 function reqDates(r) {
   if (r.open_end) return `vanaf ${fmtShort(r.start_date)} <span class="muted">(nog ziek, tot beter gemeld)</span>`;
   const n = daysBetween(r.start_date, r.end_date);
-  return r.start_date === r.end_date ? fmtLong(r.start_date) : `${fmtShort(r.start_date)} t/m ${fmtShort(r.end_date)} <span class="muted">(${n} dagen)</span>`;
+  return r.start_date === r.end_date ? fmtLong(r.start_date) : `${fmtShort(r.start_date)} t/m ${fmtShort(r.end_date)} <span class="muted nowrap">(${n}&nbsp;dagen)</span>`;
 }
 
 // Ziekmelden: snel en duidelijk, met de afspraak dat je eerst belt
@@ -3728,7 +3728,7 @@ async function viewRequestsStaff(el) {
 
   // Tegoeden: wettelijk = 4 x de uren per week (vervalt 1 juli van het jaar erna), de rest bovenwettelijk (vervalt na 5 jaar).
   // Eerst gaat het meegenomen verlof eraf, dan wettelijk, dan bovenwettelijk.
-  const wett = Math.min(bal.entitlement, 4 * (Number(S.me.contract_hours) || 0)), boven = Math.max(0, bal.entitlement - wett);
+  const wett = Number(S.me.contract_hours) ? Math.min(bal.entitlement, 4 * Number(S.me.contract_hours)) : bal.entitlement, boven = Math.max(0, bal.entitlement - wett);
   let take = used + reserved;
   const bucket = (label, amount, expires, note) => { const u = Math.min(amount, take); take -= u; return { label, amount, left: Math.round((amount - u) * 10) / 10, expires, note }; };
   const buckets = [
@@ -3769,9 +3769,9 @@ async function viewRequestsStaff(el) {
       </ul>
       <button type="button" class="btn primary block lh-cta" data-reqnew>${ico('plus')}Verlof aanvragen</button>
     </section>` : `<section class="card leavehero"><p class="hint" style="margin:0 0 12px">Je verlofsaldo is nog niet ingevuld door de directie.</p><button type="button" class="btn primary block lh-cta" data-reqnew>${ico('plus')}Verlof aanvragen</button></section>`}
-    ${nextOff ? `<section class="card nextoff"><span class="no-ico">${ico('sun')}</span><span><small>${daysTo === 0 ? 'Vandaag begint' : 'Je volgende vrij'}</small><strong>${esc(REQ[nextOff.type])} · ${reqDates(nextOff)}</strong></span>${daysTo ? `<span class="no-days"><b>${daysTo}</b><small>${daysTo === 1 ? 'dag' : 'dagen'}</small></span>` : ''}</section>` : ''}
+    ${nextOff ? `<section class="card nextoff"><span class="no-ico">${ico('sun')}</span><span><small>${nextOff.start_date < t ? 'Je bent nu vrij' : daysTo === 0 ? 'Vandaag begint' : 'Je volgende vrij'}</small><strong>${esc(REQ[nextOff.type])} · ${reqDates(nextOff)}</strong></span>${daysTo ? `<span class="no-days"><b>${daysTo}</b><small>${daysTo === 1 ? 'dag' : 'dagen'}</small></span>` : ''}</section>` : ''}
     ${showBal ? `<section class="card pad tegoed"><h3>Mijn tegoeden</h3>
-      ${buckets.map(b => { const soon = b.left > 0 && b.expires <= iso(addDays(new Date(), 120)); return `<div class="tg-row"><span><strong>${esc(b.label)}</strong><small class="${soon ? 'warn' : ''}">${soon ? 'Let op: vervalt ' : 'Vervalt '}${esc(longDate(b.expires))} · ${esc(b.note)}</small></span><b>${fmtH(b.left)} u</b></div>`; }).join('')}
+      ${buckets.map(b => { const gone = b.expires < t, soon = !gone && b.left > 0 && b.expires <= iso(addDays(new Date(), 120)); return `<div class="tg-row"><span><strong>${esc(b.label)}</strong><small class="${soon ? 'warn' : ''}">${gone ? 'Vervaldatum ' + esc(longDate(b.expires)) + ' verstreken' : (soon ? 'Let op: vervalt ' : 'Vervalt ') + esc(longDate(b.expires)) + ' · ' + esc(b.note)}</small></span><b>${fmtH(b.left)} u</b></div>`; }).join('')}
       <p class="tg-foot">Totaal ${fmtH(total)} uur dit jaar. Wettelijke uren vervallen een half jaar na het einde van het jaar; plan ze op tijd in.</p></section>` : ''}
     </div><div>
     ${group('In behandeling', pending)}
@@ -3788,8 +3788,8 @@ async function viewRequestsStaff(el) {
       <div class="rq-types" role="radiogroup" aria-label="Soort">${types.map(([k, l, i], n) => `<label class="rq-type"><input type="radio" name="type" value="${k}" ${n === 0 ? 'checked' : ''}><span>${ico(i)}${l}</span></label>`).join('')}</div>
       <div class="row keep"><label class="field">Van<input type="date" name="start_date" min="${t}" required></label><label class="field">Tot en met<input type="date" name="end_date" min="${t}" required></label></div>
       <div class="rq-sum" data-rqsum hidden></div>
-      <label class="field">Toelichting <span class="muted small">(optioneel)</span><textarea name="note" rows="2" placeholder="Bijv. bruiloft van mijn zus"></textarea></label>
-      <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Aanvraag versturen</button></div>`, {
+      <label class="field"><span>Toelichting <span class="muted small">(optioneel)</span></span><textarea name="note" rows="2" placeholder="Bijv. bruiloft van mijn zus"></textarea></label>
+      <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Versturen</button></div>`, {
       onReady(dlg) {
         const fm = $('form', dlg), sum = $('[data-rqsum]', dlg);
         const upd = () => {
@@ -3797,7 +3797,8 @@ async function viewRequestsStaff(el) {
           if (!a || b < a) { sum.hidden = true; return; }
           const days = daysBetween(a, b), leave = ['vakantie', 'vrij'].includes(tp);
           const h = leave ? estimateLeaveHours({ employee_id: S.me.id, start_date: a, end_date: b }, S.me, myShifts0) : 0, after = Math.round((avail - h) * 10) / 10;
-          sum.innerHTML = `<div><small>Periode</small><b>${days} ${days === 1 ? 'dag' : 'dagen'}</b></div>${leave ? `<div><small>Kost ongeveer</small><b>${fmtH(h)} uur</b></div><div class="${after < 0 ? 'neg' : ''}"><small>Daarna over</small><b>${fmtH(after)} uur</b></div>` : '<div><small>Verlofuren</small><b>geen</b></div>'}`;
+          const other = a.slice(0, 4) !== String(bal.year);
+          sum.innerHTML = `<div><small>Periode</small><b>${days} ${days === 1 ? 'dag' : 'dagen'}</b></div>${leave ? `<div><small>Kost ongeveer</small><b>${fmtH(h)} uur</b></div>${other ? `<div><small>Telt mee voor</small><b>${a.slice(0, 4)}</b></div>` : `<div class="${after < 0 ? 'neg' : ''}"><small>Daarna over</small><b>${fmtH(after)} uur</b></div>`}` : '<div><small>Verlofuren</small><b>geen</b></div>'}`;
           sum.hidden = false;
         };
         fm.start_date.addEventListener('change', () => { fm.end_date.min = fm.start_date.value; if (!fm.end_date.value || fm.end_date.value < fm.start_date.value) fm.end_date.value = fm.start_date.value; upd(); });
@@ -3861,7 +3862,7 @@ async function viewLeaveMgr(el) {
       const c = conflicts[r.id] || [];
       return `<article class="card req"><div class="req-head"><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name)}</strong><span class="badge">${esc(REQ[r.type])}</span><span class="status ${r.status}">${STATUS[r.status]}</span></div>
         <p class="dates">${reqDates(r)}${r.status === 'approved' && r.leave_hours ? ` <span class="muted">· ${fmtH(Number(r.leave_hours))} verlofuren</span>` : ''}</p>${r.note ? `<p class="note">“${esc(r.note)}”</p>` : ''}
-        ${(r.type === 'vakantie' || r.type === 'vrij') && r.status === 'pending' ? `<p class="hint">Verlofsaldo ${esc(e.name.split(' ')[0])}: ${fmtH(leaveBalance(e, privs[e.id], reqs).rest)} uur</p>` : ''}
+        ${(r.type === 'vakantie' || r.type === 'vrij') && r.status === 'pending' ? (() => { const b0 = leaveBalance(e, privs[e.id], reqs).rest, h0 = estimateLeaveHours(r, e, []); return `<p class="hint">Saldo ${esc(e.name.split(' ')[0])}: ${(Math.round(b0 * 10) / 10).toLocaleString('nl-NL')} uur · deze aanvraag ± ${(Math.round(h0 * 10) / 10).toLocaleString('nl-NL')} uur</p>`; })() : ''}
         ${c.length ? `<p class="conflict">${ico('alert')}Staat ${c.length}× ingepland in deze periode (${c.map(s => fmtShort(s.date)).join(', ')}).</p>` : ''}
         ${r.manager_note ? `<p class="reply"><strong>Jouw reactie:</strong> ${esc(r.manager_note)}</p>` : ''}
         <div class="req-actions">${r.status === 'pending'
@@ -3890,16 +3891,17 @@ async function approveRequest(r, { reqs, byId, privs, conflicts } = {}) {
   if (r.type === 'vakantie' || r.type === 'vrij') {
     const e = byId[r.employee_id] || {}, bal = leaveBalance(e, privs[e.id], reqs);
     const sh = await store.shifts(iso(mondayOf(parse(r.start_date))), iso(addDays(mondayOf(parse(r.end_date)), 6)));
-    const est = estimateLeaveHours(r, e, sh);
+    const est = estimateLeaveHours(r, e, sh.filter(s => s.published));
+    const dec = v => (Math.round(Number(v) * 10) / 10).toLocaleString('nl-NL');
     return openDialog('Verlof goedkeuren', `
       <p style="margin:0"><strong>${esc(e.name || '')}</strong> · ${reqDates(r)}</p>
       ${conflictChoice(c)}
-      <label class="field">Af te schrijven verlofuren<input type="number" name="hours" min="0" step="0.5" value="${est}"></label>
-      <p class="hint">Voorstel: ${sh.some(s => s.employee_id === r.employee_id) ? 'de geplande uren; voor weken die nog niet zijn ingepland dagen × contracturen ÷ 7' : 'dagen × contracturen ÷ 7'}. Saldo nu ${fmtH(bal.rest)} uur → na goedkeuren <strong data-after>${fmtH(bal.rest - est)}</strong> uur.</p>
+      <label class="field">Af te schrijven verlofuren<input type="number" name="hours" min="0" step="any" inputmode="decimal" value="${est}"></label>
+      <p class="hint">Voorstel: ${sh.some(s => s.employee_id === r.employee_id) ? 'de geplande uren; voor weken die nog niet zijn ingepland dagen × contracturen ÷ 7' : 'dagen × contracturen ÷ 7'}. Saldo nu ${dec(bal.rest)} uur → na goedkeuren <strong data-after>${dec(bal.rest - est)}</strong> uur.</p>
       <label class="field">Reactie (optioneel)<input name="note" placeholder="Bijv. fijne vakantie!"></label>
       <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn ok" value="save">Goedkeuren</button></div>`, {
-      onReady(dlg) { const f = $('form', dlg); f.hours.oninput = () => { $('[data-after]', dlg).textContent = fmtH(bal.rest - (Number(f.hours.value) || 0)); }; },
-      async onSubmit(fd) { await store.decideRequest(r.id, 'approved', fd.get('note').trim() || null, Number(fd.get('hours')) || 0); toast('Verlof goedgekeurd' + await resolveConflicts(c, fd.get('conflict'))); rerender(); },
+      onReady(dlg) { const f = $('form', dlg); f.hours.oninput = () => { $('[data-after]', dlg).textContent = dec(bal.rest - (Number(String(f.hours.value).replace(',', '.')) || 0)); }; },
+      async onSubmit(fd) { await store.decideRequest(r.id, 'approved', fd.get('note').trim() || null, Math.max(0, Math.round((Number(String(fd.get('hours')).replace(',', '.')) || 0) * 10) / 10)); toast('Verlof goedgekeurd' + await resolveConflicts(c, fd.get('conflict'))); rerender(); },
     });
   }
   if (c.length) {
@@ -3934,7 +3936,7 @@ function contractCell(e) {
     const days = daysBetween(todayIso(), e.contract_end) - 1;
     end = days < 0 ? ' <span class="pill warn">verlopen</span>' : days <= 45 ? ` <span class="pill warn">loopt af ${esc(fmtShort(e.contract_end))}</span>` : ` <span class="muted small">t/m ${esc(fmtShort(e.contract_end))}</span>`;
   }
-  return `${esc(CT[ct])}${h}${end}`;
+  return `<span class="hide-sm">${esc(CT[ct])}</span>${h}${end}`;
 }
 async function viewTeam(el) {
   const [emps0, privList, reqs] = await Promise.all([store.employees(), store.privates(), store.requests()]);
@@ -3943,14 +3945,14 @@ async function viewTeam(el) {
   el.innerHTML = `
     <div class="page-head"><div><h1>Team</h1><p>Medewerkers, functies en contracturen.</p></div><button class="btn primary" data-new>+ Medewerker</button></div>
     ${emps.length ? `<div class="card table-wrap"><table class="list">
-      <thead><tr><th>Naam</th><th class="hide-sm">Functie</th><th class="hide-sm">E-mail</th><th class="hide-sm">Telefoon</th><th class="num">Contract</th><th class="num hide-sm">Uurloon</th><th class="num hide-sm">Verlof over</th><th>Account</th></tr></thead>
+      <thead><tr><th>Naam</th><th class="hide-sm">Functie</th><th class="hide-sm">E-mail</th><th class="hide-sm">Telefoon</th><th class="num">Contract</th><th class="num hide-sm">Uurloon</th><th class="num hide-sm">Verlof over</th><th class="hide-sm">Account</th></tr></thead>
       <tbody>${emps.map(e => `<tr class="click ${e.active === false ? 'inactive' : ''}" data-id="${e.id}">
         <td><div class="namecell"><span class="dot" style="background:${esc(e.color || COLORS[0])}"></span><span class="nm">${esc(e.name)}${e.role === 'manager' ? ' <span class="pill">directie</span>' : e.role === 'planner' ? ' <span class="pill">shiftleader</span>' : ''}<small class="show-sm">${esc(e.position || '')}</small></span></div></td>
         <td class="hide-sm">${esc(e.position || '—')}</td><td class="hide-sm">${esc(e.email)}</td><td class="hide-sm">${esc(e.phone || '—')}</td>
         <td class="num">${contractCell(e)}</td>
         <td class="num hide-sm">${privs[e.id]?.hourly_wage ? euro(Number(privs[e.id].hourly_wage)) : '—'}${(() => { const a = ageOn(privs[e.id]?.birth_date, todayIso()); return a != null && a < 18 ? ` <span class="pill warn">${a} jr</span>` : ''; })()}</td>
         <td class="num hide-sm">${(() => { const b = leaveBalance(e, privs[e.id], reqs); return b.entitlement || b.opening ? fmtH(b.rest) + ' u' : '—'; })()}</td>
-        <td>${e.active === false ? '<span class="pill">inactief</span>' : e.user_id ? '<span class="pill ok">actief</span>' : e.invited_at ? `<span class="pill warn">uitgenodigd ${esc(fmtShort(iso(new Date(e.invited_at))))}</span>` : '<span class="pill warn">nog niet geactiveerd</span>'}</td></tr>`).join('')}</tbody>
+        <td class="hide-sm">${e.active === false ? '<span class="pill">inactief</span>' : e.user_id ? '<span class="pill ok">actief</span>' : e.invited_at ? `<span class="pill warn">uitgenodigd ${esc(fmtShort(iso(new Date(e.invited_at))))}</span>` : '<span class="pill warn">nog niet geactiveerd</span>'}</td></tr>`).join('')}</tbody>
     </table></div>` : '<div class="card empty">Nog geen medewerkers.</div>'}
     <p class="hint" style="margin-top:14px">Nieuwe medewerkers krijgen een uitnodiging per e-mail van ${esc(CFG.bedrijf)}. Komt die niet aan? Open de medewerker en kies <strong>Uitnodiging opnieuw sturen</strong>, of stuur het uitnodigingsbericht via WhatsApp.</p>`;
   el.onclick = ev => {
@@ -3979,7 +3981,7 @@ function employeeDialog(e, priv = {}, reqs = []) {
       <label class="field"><span data-hlabel>Uren per week</span><input type="number" name="contract_hours" min="0" step="0.5" value="${e.contract_hours ?? ''}"></label>
       <label class="field" data-minrow>Minimum uren per week<input type="number" name="contract_min_hours" min="0" step="0.5" value="${e.contract_min_hours ?? ''}"></label>
     </div>
-    <label class="field">Einddatum contract <span class="muted small">(leeg = onbepaalde tijd)</span><input type="date" name="contract_end" value="${esc(e.contract_end || '')}"></label>
+    <label class="field"><span>Einddatum contract <span class="muted small">(leeg = onbepaalde tijd)</span></span><input type="date" name="contract_end" value="${esc(e.contract_end || '')}"></label>
     <p class="hint" data-cthint></p>
     <div class="row">
       <label class="field">Toegang<select name="plan_mode">${[['functie', 'Volgt de functie'], ['nee', 'Medewerker'], ['ja', 'Shiftleader (plannen, geen lonen)'], ['directie', 'Directie (alles)']].map(([v, l]) => `<option value="${v}" ${planModeOf(e) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
@@ -4869,7 +4871,7 @@ async function viewHours(el) {
         <td class="num hide-sm">${r.n}</td><td class="num"><strong>${fmtH(r.h)}</strong></td>
         <td class="num hide-sm">${fmtH(r.avond)}</td><td class="num hide-sm">${fmtH(r.nacht)}</td><td class="num hide-sm">${fmtH(r.zondag)}</td><td class="num hide-sm">${fmtH(r.feestdag)}</td>
         <td class="num hide-sm">${r.verlof ? r.verlof + ' d' : '—'}</td><td class="num hide-sm">${r.ziek ? r.ziek + ' d' : '—'}</td>
-        <td class="num ${r.diff == null ? '' : r.diff >= 0 ? 'pos' : 'neg'}">${r.diff == null ? '—' : (r.diff > 0 ? '+' : '') + fmtH(r.diff) + ' u'}</td>${hasWages ? `<td class="num hide-sm">${r.lk ? euro(r.lk.bruto) : '<span class="muted">geen uurloon</span>'}</td><td class="num">${r.lk ? euro(r.lk.totaal) : '—'}</td>` : ''}</tr>`).join('')}</tbody>
+        <td class="num ${r.diff == null ? '' : r.diff >= 0 ? 'pos' : to >= todayIso() ? 'muted' : 'neg'}" ${r.diff != null && r.diff < 0 && to >= todayIso() ? 'title="Periode loopt nog"' : ''}>${r.diff == null ? '—' : (r.diff > 0 ? '+' : '') + fmtH(r.diff) + ' u'}</td>${hasWages ? `<td class="num hide-sm">${r.lk ? euro(r.lk.bruto) : '<span class="muted">geen uurloon</span>'}</td><td class="num">${r.lk ? euro(r.lk.totaal) : '—'}</td>` : ''}</tr>`).join('')}</tbody>
       <tfoot><tr><td>Totaal</td><td class="num hide-sm">${T.n}</td><td class="num">${fmtH(T.h)}</td><td class="num hide-sm">${fmtH(T.avond)}</td><td class="num hide-sm">${fmtH(T.nacht)}</td><td class="num hide-sm">${fmtH(T.zondag)}</td><td class="num hide-sm">${fmtH(T.feestdag)}</td><td class="hide-sm"></td><td class="hide-sm"></td><td></td>${hasWages ? `<td class="num hide-sm">${euro(T.bruto)}</td><td class="num">${euro(T.totaal)}</td>` : ''}</tr></tfoot>
     </table></div>
     <h2 style="font-size:21px;margin:28px 0 12px">Exporteren</h2>

@@ -1076,6 +1076,22 @@ async function test(name, fn) {
     await p.reload(); await p.waitForSelector('dialog[open] [data-rulesnow]', { timeout: 8000 });
     await ctx.close();
   });
+  await test('verlof goedkeuren met uren als 14,3 (geen veelvoud van 0,5)', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#directie'); await login(p, 'Mark');
+    await setDemoDb(p, `const d = db.employees.find(x => x.name.startsWith('Daan')); d.contract_hours = 20;
+      const f = n => { const x = new Date(Date.now() + n * 864e5); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+      db.shifts = db.shifts.filter(s => !(s.employee_id === d.id && s.date >= f(150) && s.date <= f(170)));
+      db.requests.push({ id: 'dec-1', employee_id: d.id, type: 'vakantie', start_date: f(160), end_date: f(164), status: 'pending', note: null, created_at: new Date().toISOString() });`);
+    await p.reload(); await p.waitForSelector('#view > *', { state: 'attached' }); await p.waitForTimeout(500);
+    await tab(p, 'aanvragen'); await p.click('[data-ok="dec-1"]'); await p.waitForSelector('dialog[open] [name=hours]');
+    const v = await p.inputValue('dialog[open] [name=hours]');
+    assert.ok(Number(v) % 0.5 !== 0, 'voorstel is toevallig een veelvoud van 0,5: ' + v);
+    await p.click('dialog[open] button[value=save]'); await p.waitForSelector('.toast:has-text("Verlof goedgekeurd")');
+    const r = (await demoDb(p)).db.requests.find(x => x.id === 'dec-1');
+    assert.strictEqual(r.status, 'approved'); assert.strictEqual(Number(r.leave_hours), Number(v));
+    await ctx.close();
+  });
   await test('geen JavaScript-fouten', async () => assert.deepStrictEqual(errors, []));
   await browser.close(); server.close();
   console.log(`\n${passed} tests geslaagd${process.exitCode ? ', maar er zijn FOUTEN' : ''}`);
