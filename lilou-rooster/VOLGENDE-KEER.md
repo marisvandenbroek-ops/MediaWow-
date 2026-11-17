@@ -93,7 +93,8 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Advies: de website installeerbaar maken (PWA, zelfde techniek als het rooster) in plaats van een aparte App Store-app. Gasten kunnen hem op hun beginscherm zetten met het Lilou-icoon.
 - Mogelijk: pushberichten (spaarzaam: nieuwe kaart, wijndiner, laatste plekken), snel reserveren via Zenchef, actuele kaart met allergenen, later cadeaubon of spaarkaart. Let op privacy zodra gastgegevens bewaard worden.
 
-## Werkwijze vanaf 17 nov: eerst testomgeving
+## Werkwijze vanaf 17 nov (testomgeving NIET gebruiken: Mariska wil geen extra werk)
+- Geen test-zip meer sturen. Zelf grondig testen (tijdscenario's, iPhone-formaat, alle rollen) en screenshots meesturen; dan alleen de live-zip.
 - Testomgeving: rooster.lilou-ede.nl/test/ (demo-modus, geen echte database; eigen cache per map in sw.js).
 - Elke update: eerst rooster-TEST-NN.zip (map test/) → Mariska kijkt → dan pas rooster-update-NN.zip live.
 - Bouwen: scratchpad build_zips.py NN (live = 4 bestanden, test = hele app met lege Supabase-sleutels).
