@@ -8,7 +8,7 @@ const FONTS = 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wg
 const css = `*{margin:0;padding:0;box-sizing:border-box}body{width:1080px;height:1350px;overflow:hidden}
 .s{position:relative;width:1080px;height:1350px;overflow:hidden;color:#FAF4ED;font-family:'DM Sans'}
 .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-.dim{position:absolute;inset:0;background:rgba(40,6,12,.62)}
+.dim{position:absolute;inset:0;background:rgba(27,18,14,.62)}
 .logo{position:absolute;left:50%;transform:translateX(-50%);bottom:56px;width:180px;opacity:.9}
 .n{position:absolute;right:70px;top:60px;font-size:26px;letter-spacing:.2em;background:rgba(27,4,5,.55);padding:10px 20px;border-radius:30px}
 .hand{text-shadow:0 2px 16px rgba(27,4,5,.7);font-family:Caveat;font-weight:600;color:#E8F27A;font-size:70px;line-height:1}
