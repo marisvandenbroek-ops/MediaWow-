@@ -43,12 +43,12 @@ async function test(name, fn) {
   const watch = p => { p.on('pageerror', e => errors.push(e.message)); pages.push(p); return p; };
   const fresh = async (page, hash) => { await page.goto(URL + hash); await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); }); await page.reload(); await page.waitForSelector('[data-demo]'); };
   // tabblad openen; op de telefoon staan sommige tabbladen onder 'Meer'
-  const tab = async (page, t) => { const b = await page.$(`[data-tab=${t}]`); if (b && await b.isVisible()) return b.click(); await page.click('[data-more]'); await page.click(`dialog.moresheet [data-mgo=${t}]`); };
+  const tab = async (page, t) => { const b = await page.$(`[data-tab=${t}]`); if (b && await b.isVisible()) return b.click(); await page.click('[data-more]'); await page.click(`main#view [data-mgo=${t}]`); };
   // na het inloggen: de dagelijkse herinnering voor de afspraken wegtikken (eigen test hieronder)
   const login = async (page, name) => { await page.click(`[data-demo]:has-text("${name}")`); await page.waitForSelector('#view > *', { state: 'attached' }); await page.waitForTimeout(200);
     await page.evaluate(() => { try { const id = window.__rooster?.S?.me?.id; if (id) localStorage.setItem('rulesNag:' + id, new Date().toISOString().slice(0, 10)); } catch (e) { /* */ } });
     await page.waitForTimeout(700); const n = await page.$('dialog[open] [data-rulesnow]'); if (n) await page.click('dialog[open] [data-close]:has-text("Later")'); };
-  const logout = async (page, hash) => { const b = await page.$('[data-logout]'); if (b && await b.isVisible()) await b.click(); else { await page.click('[data-more]'); await page.click('dialog.moresheet [data-mout]'); } await page.goto(URL + hash); await page.waitForSelector('[data-demo]'); };   // op de telefoon via Meer
+  const logout = async (page, hash) => { const b = await page.$('[data-logout]'); if (b && await b.isVisible()) await b.click(); else { await page.click('[data-more]'); await page.click('main#view [data-mout]'); } await page.goto(URL + hash); await page.waitForSelector('[data-demo]'); };   // op de telefoon via Meer
   const noViewError = async page => assert.ok(!(await page.$('#view .msg.err')), 'foutmelding op de pagina: ' + (await page.$eval('#view .msg.err', e => e.textContent).catch(() => '')));
   const demoDb = page => page.evaluate(() => { const k = Object.keys(localStorage).find(x => x.startsWith('lilou-rooster-demo-')); return { k, db: JSON.parse(localStorage.getItem(k)) }; });
   const setDemoDb = (page, fn, arg) => page.evaluate(([src, a]) => {
@@ -846,7 +846,7 @@ async function test(name, fn) {
     await p.fill('dialog [name=phone]', '06 1234 5678'); await p.fill('dialog [name=ice_name0]', 'Anna'); await p.fill('dialog [name=ice_rel0]', 'moeder'); await p.fill('dialog [name=ice_phone0]', '06 9999 0000');
     await p.check('dialog [name=share_phone]'); await p.click('dialog button[value=save]'); await p.waitForSelector('.toast:has-text("profiel is klaar")');
     // telefoonlijst via Meer
-    await p.click('[data-more]'); await p.click('dialog.moresheet [data-mphones]'); await p.waitForSelector('dialog .phonelist li:has-text("Sanne") a[href^="https://wa.me/31612345678"]');
+    await p.click('[data-more]'); await p.click('main#view [data-mphones]'); await p.waitForSelector('dialog .phonelist li:has-text("Sanne") a[href^="https://wa.me/31612345678"]');
     await p.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
     // directie ziet het noodcontact bij Noodnummers
     const m = watch(await ctx.newPage()); await m.goto(URL + '#directie'); await m.waitForSelector('[data-demo]'); await login(m, 'Mark');

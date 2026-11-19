@@ -1307,7 +1307,6 @@ function renderShell() {
   app.innerHTML = `
     ${store.demo ? '<div class="demo-banner">Demo-modus<span class="hide-sm"> · gegevens worden alleen in deze browser bewaard</span></div>' : ''}
     <header class="topbar"><div class="topbar-inner">
-      <button type="button" class="btn ghost icon menubtn" data-menu aria-label="Menu openen"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <div class="brand">${CFG.logo ? `<div class="stack-brand"><img class="wordmark light" src="${esc(CFG.logo)}" alt="${esc(CFG.bedrijf)}"><img class="wordmark dark" src="${esc(CFG.logoDark || CFG.logo)}" alt="${esc(CFG.bedrijf)}"><div class="sub">Rooster · ${isMgr() ? 'Leiding' : S.me.role === 'planner' ? 'Shiftleader' : esc(S.me.position || 'Team')}</div></div>` : `<div class="logo">${letter}</div><div><strong>${esc(CFG.appName)}</strong><small>${isMgr() ? 'Leidinggevende' : esc(S.me.position || 'Medewerker')}</small></div>`}</div>
       <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !canPlan() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l === 'Mijn rooster' ? 'Rooster' : l}</span>${(isMgr() ? k === 'aanvragen' : k === 'diensten') ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}<button class="tab tab-more" data-more aria-label="Meer" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg><span class="tl">Meer</span><span class="ts">Meer</span></button></nav>
       <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon bell" data-bell title="Meldingen" aria-label="Meldingen">${ICON.bell}<span class="ncount hidden" data-ncount></span></button>${isMgr() ? `<button class="btn ghost icon" data-gosettings title="Instellingen" aria-label="Instellingen">${ICON.settings}</button>` : ''}<button class="btn ghost icon" data-myprofile title="Mijn profiel" aria-label="Mijn profiel">${ico('user')}</button><button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
@@ -1315,8 +1314,7 @@ function renderShell() {
     <main id="view"></main>
     ${store.demo ? '' : `<footer class="app-foot">${LEGAL}</footer>`}`;
   $$('[data-tab]').forEach(b => (b.onclick = () => { if (b.dataset.tab === 'mijn') S.mineWeek = null; go(b.dataset.tab); }));   // tik op Rooster = terug naar het startscherm
-  const mb = $('[data-more]'); if (mb) mb.onclick = moreSheet;
-  const mn = $('[data-menu]'); if (mn) mn.onclick = moreSheet;
+  const mb = $('[data-more]'); if (mb) mb.onclick = () => go('meer');
   const gs = $('[data-gosettings]'); if (gs) gs.onclick = () => go('instellingen');
   $('[data-logout]').onclick = signOut;
   $('[data-myprofile]').onclick = () => profileDialog();
@@ -1409,6 +1407,7 @@ async function renderView(view, el) {
     else if (view === 'lijsten') await viewLijsten(el);
     else if (view === 'mijnuren') await viewMyHours(el);
     else if (view === 'kaarten') await viewKaarten(el);
+    else if (view === 'meer') await viewMeer(el);
     else if (view === 'instellingen' && isMgr()) await viewSettings(el);
     else if (view === 'overzicht' && isMgr()) await viewDashboard(el);
   }
@@ -1637,7 +1636,39 @@ function menuCardDialog(c = {}) {
   });
 }
 
-/* ================= Meer (telefoon) ================= */
+/* ================= Meer (telefoon): eigen pagina, zoals Shiftbase en bankapps ================= */
+async function viewMeer(el) {
+  const rest = tabsFor().slice(4);
+  const ini = esc(S.me.name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase());
+  const role = isMgr() ? 'Directie' : S.me.role === 'planner' ? 'Shiftleader' : esc(S.me.position || 'Team');
+  const row = (attr, iconHTML, label, sub) => `<button type="button" class="mrow" ${attr}><span class="mic">${iconHTML}</span><span class="mt">${label}${sub ? `<small>${sub}</small>` : ''}</span><span class="chev" aria-hidden="true">›</span></button>`;
+  const SUB = { team: 'Wie werkt wanneer', planning: canPlan() ? 'Rooster maken' : 'Het rooster van iedereen', beschikbaar: 'Wanneer je kunt werken', kaarten: 'Menukaart en wijnkaart', aanvragen: isMgr() ? 'Verlof en ruilen' : 'Vrij vragen', lijsten: 'Afvinken en registraties', uren: 'Uren en export voor Moni', klokken: 'In- en uitklokken', diensten: 'Ruilen en open diensten' };
+  const main = [
+    ...rest.map(([k, l]) => row(`data-mgo="${k}"`, ICON[k === 'planning' && !canPlan() ? 'team' : k] || '', esc(l), SUB[k] || '')),
+    ...(isMgr() ? [] : [row('data-mgo="mijnuren"', ico('clock'), 'Mijn uren', 'Gewerkt en goedgekeurd')]),
+    ...(isMgr() ? [row('data-mgo="instellingen"', ICON.settings, 'Instellingen', 'Functies, lijsten, locatie')] : []),
+  ];
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Meer</h1></div></div>
+    <button type="button" class="card meer-me" data-mprofile><span class="ms-av" aria-hidden="true">${ini}</span><span class="mt"><strong>${esc(S.me.name)}</strong><small>${role} · Mijn profiel</small></span><span class="chev" aria-hidden="true">›</span></button>
+    ${main.length ? `<h2 class="meer-h">Onderdelen</h2><div class="card meer-list">${main.join('')}</div>` : ''}
+    <h2 class="meer-h">Handig</h2>
+    <div class="card meer-list">
+      ${row('data-mphones', ico('phone'), 'Telefoonlijst', 'Collega\'s bellen of appen')}
+      ${row('data-mnood', ico('alert'), 'Noodnummers', '112, gaslucht, huisartsenpost')}
+      ${row('data-mrules', ico('book'), 'Afspraken', 'Hoe we werken bij ' + esc(CFG.bedrijf || 'ons'))}
+    </div>
+    <div class="card meer-list meer-out">${row('data-mout', ICON.logout, 'Uitloggen', '')}</div>`;
+  el.onclick = ev => {
+    const g = ev.target.closest('[data-mgo]'); if (g) return go(g.dataset.mgo);
+    if (ev.target.closest('[data-mrules]')) return rulesViewer();
+    if (ev.target.closest('[data-mnood]')) return noodDialog();
+    if (ev.target.closest('[data-mprofile]')) return profileDialog();
+    if (ev.target.closest('[data-mphones]')) return phonesDialog();
+    if (ev.target.closest('[data-mout]')) return signOut();
+  };
+}
+/* (oud) Meer als lade — niet meer in gebruik */
 function moreSheet() {
   if (document.querySelector('dialog.moresheet[open]')) return;
   const rest = tabsFor();

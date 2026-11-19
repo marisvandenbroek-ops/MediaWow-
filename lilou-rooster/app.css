@@ -1743,3 +1743,16 @@ main[hidden] { display: none !important; }
 .drawer .mrow.on .mic { background: rgba(255, 255, 255, .18); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .drawer .mrow.on { background: #9E2218; color: #fff; } }
 :root[data-theme="dark"] .drawer .mrow.on { background: #9E2218; color: #fff; }
+
+/* Meer-pagina */
+.meer-me { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; text-align: left; font: inherit; color: var(--text); cursor: pointer; margin-bottom: 6px; }
+.meer-me .ms-av { width: 52px; height: 52px; font-size: 18px; }
+.meer-me .mt, .meer-list .mt { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.meer-me strong { font-size: 18px; }
+.meer-me small, .meer-list .mt small { color: var(--muted); font-size: 13px; font-weight: 400; }
+.meer-h { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 18px 4px 8px; font-weight: 600; }
+.meer-list { padding: 0 4px; overflow: hidden; }
+.meer-list .mrow { font-size: 16px; }
+.meer-out { margin-top: 18px; }
+.meer-out .mrow { color: var(--bad, #b3261e); }
+.meer-out .mic { color: inherit; }
