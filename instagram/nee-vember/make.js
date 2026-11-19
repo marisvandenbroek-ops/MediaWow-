@@ -26,15 +26,26 @@ const slides = [
   wrap(`<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(27,4,5,.15),rgba(27,4,5,0) 40%,rgba(27,4,5,.35))"></div>
     <div class="hand" style="position:absolute;left:96px;top:600px">doe je mee?</div>
     <div class="big" style="position:absolute;left:90px;top:690px;font-size:170px">NEE-<br>vember</div>
-    <div class="hand" style="position:absolute;left:96px;top:1040px;font-size:76px;color:#FAF4ED">challenge voor je website</div>`, 1, false),
-  tip(2, 1, '‘Neem contact op’', '', `<p>Te vaag. Niemand weet wat er daarna gebeurt.</p><ul><li>Boek je behandeling</li><li>Reserveer je tafel</li><li>Plan een gratis kennismaking</li></ul>`),
-  tip(3, 2, 'Je menu als pdf', '', `<p>Inzoomen, wachten, scrollen. Op je telefoon haken ze af.</p><ul><li>Prijzen en menu als gewone tekst</li><li>Leesbaar in één oogopslag</li></ul>`),
-  tip(4, 3, '‘Welkom op onze website’', '', `<p>Dat weten ze al. Zeg liever wat ze hier krijgen.</p><ul><li>Wat je doet + wat ze nu moeten doen</li></ul>`),
-  tip(5, 4, 'Een trage site', '', `<p>Langer dan 3 tellen laden? Dan zijn ze weg.</p><ul><li>Kleinere foto's</li><li>Alleen wat je echt nodig hebt</li></ul>`),
-  tip(6, 5, 'Een website die niet van jou is', '', `<p>Staat je domein op naam van je webbureau? Dan ben je bij overstappen je adres kwijt.</p><ul><li>Domein en site op jóuw naam</li></ul>`),
-  wrap(`<div class="c" style="text-align:center"><div class="hand">jouw beurt</div>
-    <h2 style="font-size:110px;margin-bottom:40px">Welke NEE <i>heeft jouw site nodig?</i></h2>
-    <p>Reageer <b style="color:#E8F27A">NEE</b> en ik check gratis je website.<br>Je krijgt 3 tips in je DM.</p></div>`, 7),
+    <div class="hand" style="position:absolute;left:96px;top:1040px;font-size:76px;color:#FAF4ED">challenge voor ondernemers</div>`, 1, false),
+  wrap(`<div class="c"><h2 style="font-size:72px">Deze november zeggen we <span style="color:#E8F27A">NEE</span> <i>tegen alles wat ons als ondernemer klein houdt.</i></h2>
+    <ul><li>Je prijs verlagen voordat iemand er iets van zegt</li><li>‘Even gratis sparren’ dat 2 uur duurt</li><li>Appjes beantwoorden om 23:00</li></ul>
+    <div class="hand" style="margin-top:50px">zo doe je mee:</div></div>`, 2),
+  wrap(`<div class="c"><div class="hand">stap 1</div><h2>Schrijf je NEE-lijst</h2>
+    <p>Vijf dingen waar je opgelucht van wordt als je ermee stopt. Een paar ideeën:</p>
+    <ul><li>Nee tegen korting zonder reden</li><li>Nee tegen klanten die niet bij je passen</li><li>Nee tegen ‘ik doe het er wel even bij’</li><li>Nee tegen jezelf vergelijken op Insta</li><li>Nee tegen een site waar je je voor schaamt</li></ul></div>`, 3),
+  wrap(`<div class="c"><div class="hand">stap 2</div><h2>Zet naast elke NEE <i>wat je wél doet</i></h2>
+    <p>‘Kan het wat goedkoper?’<br>Probeer: <span style="color:#E8F27A;font-style:italic">‘Nee, dit is mijn prijs.’</span> Zonder uitleg. Zonder sorry.</p>
+    <p style="margin-top:34px">Avond = vrij?<br>Zet een automatisch antwoord aan en leg je telefoon weg.</p></div>`, 4),
+  wrap(`<div class="c"><div class="hand">stap 3</div><h2>Laat je website <i>nee zeggen</i></h2>
+    <p>Zodat jij het niet steeds hoeft te doen.</p>
+    <ul><li>Je prijzen zichtbaar: geen ‘wat kost het?’-appjes meer</li><li>Je voorwaarden erop: no-show en annuleren</li><li>Online boeken: geen heen-en-weer meer</li></ul></div>`, 5),
+  wrap(`<div class="c"><div class="hand">stap 4</div><h2>Beloon jezelf</h2>
+    <p>Kies iets wat je écht wilt. Die lunch, die behandeling, die middag vrij.</p>
+    <p style="margin-top:34px">Elke keer dat je nee zegt: een vinkje.<br><span style="color:#E8F27A;font-style:italic">‘Bij 15 vinkjes boek ik het.’</span></p>
+    <p style="margin-top:34px">En dan boek je het ook echt.</p></div>`, 6),
+  wrap(`<div class="c" style="text-align:center"><div class="hand">doe je mee?</div>
+    <h2 style="font-size:104px;margin-bottom:40px">Wat staat er <i>op jouw NEE-lijst?</i></h2>
+    <p>Reageer <b style="color:#E8F27A">NEE</b> en je krijgt mijn NEE-lijst voor ondernemers in je DM.</p></div>`, 7),
 ];
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1080, height: 1350 } });
