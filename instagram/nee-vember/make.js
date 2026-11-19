@@ -39,10 +39,8 @@ const slides = [
   wrap(`<div class="c"><div class="hand">stap 3</div><h2>Laat je website <i>nee zeggen</i></h2>
     <p>Zodat jij het niet steeds hoeft te doen.</p>
     <ul><li>Je prijzen zichtbaar: geen ‘wat kost het?’-appjes meer</li><li>Je voorwaarden erop: no-show en annuleren</li><li>Online boeken: geen heen-en-weer meer</li></ul></div>`, 5),
-  wrap(`<div class="c"><div class="hand">stap 4</div><h2>Beloon jezelf</h2>
-    <p>Kies iets wat je écht wilt. Die lunch, die behandeling, die middag vrij.</p>
-    <p style="margin-top:34px">Elke keer dat je nee zegt: een vinkje.<br><span style="color:#E8F27A;font-style:italic">‘Bij 15 vinkjes boek ik het.’</span></p>
-    <p style="margin-top:34px">En dan boek je het ook echt.</p></div>`, 6),
+  wrap(`<div class="c"><div class="hand">en de allerbelangrijkste…</div><h2 style="font-size:104px">NEE tegen <i>‘dat doe ik in januari wel’</i></h2>
+    <p style="font-size:44px">Dat zei je vorig jaar ook. 🪩</p></div>`, 6),
   wrap(`<div class="c" style="text-align:center"><div class="hand">doe je mee?</div>
     <h2 style="font-size:104px;margin-bottom:40px">Wat staat er <i>op jouw NEE-lijst?</i></h2>
     <p>Reageer <b style="color:#E8F27A">NEE</b> en je krijgt mijn NEE-lijst voor ondernemers in je DM.</p></div>`, 7),
