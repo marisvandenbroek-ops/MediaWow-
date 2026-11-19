@@ -28,7 +28,7 @@ const slides = [
     <div class="big" style="position:absolute;left:90px;top:690px;font-size:170px">NEE-<br>vember</div>
     <div class="hand" style="position:absolute;left:96px;top:1040px;font-size:76px;color:#FAF4ED">challenge voor ondernemers</div>`, 1, false),
   wrap(`<div class="c"><h2 style="font-size:72px">Deze november zeggen we <span style="color:#E8F27A">NEE</span> <i>tegen alles wat ons als ondernemer klein houdt.</i></h2>
-    <ul><li>Je prijs verlagen voordat iemand er iets van zegt</li><li>‘Even gratis sparren’ dat 2 uur duurt</li><li>Appjes beantwoorden om 23:00</li></ul>
+    <ul><li>Korting geven terwijl niemand erom vroeg</li><li>‘Even gratis sparren’ dat 2 uur duurt</li><li>Appjes beantwoorden om 23:00</li></ul>
     <div class="hand" style="margin-top:50px">zo doe je mee:</div></div>`, 2),
   wrap(`<div class="c"><div class="hand">stap 1</div><h2>Schrijf je NEE-lijst</h2>
     <p>Vijf dingen waar je opgelucht van wordt als je ermee stopt. Een paar ideeën:</p>
