@@ -1307,6 +1307,7 @@ function renderShell() {
   app.innerHTML = `
     ${store.demo ? '<div class="demo-banner">Demo-modus<span class="hide-sm"> · gegevens worden alleen in deze browser bewaard</span></div>' : ''}
     <header class="topbar"><div class="topbar-inner">
+      <button type="button" class="btn ghost icon menubtn" data-menu aria-label="Menu openen"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <div class="brand">${CFG.logo ? `<div class="stack-brand"><img class="wordmark light" src="${esc(CFG.logo)}" alt="${esc(CFG.bedrijf)}"><img class="wordmark dark" src="${esc(CFG.logoDark || CFG.logo)}" alt="${esc(CFG.bedrijf)}"><div class="sub">Rooster · ${isMgr() ? 'Leiding' : S.me.role === 'planner' ? 'Shiftleader' : esc(S.me.position || 'Team')}</div></div>` : `<div class="logo">${letter}</div><div><strong>${esc(CFG.appName)}</strong><small>${isMgr() ? 'Leidinggevende' : esc(S.me.position || 'Medewerker')}</small></div>`}</div>
       <nav class="tabs" aria-label="Hoofdmenu">${tabsFor().map(([k, l]) => `<button class="tab" data-tab="${k}">${ICON[k === 'planning' && !canPlan() ? 'team' : k] || ''}<span class="tl">${l}</span><span class="ts">${l === 'Uren & export' ? 'Uren' : l === 'Mijn rooster' ? 'Rooster' : l}</span>${(isMgr() ? k === 'aanvragen' : k === 'diensten') ? '<span class="count hidden" data-count></span>' : ''}</button>`).join('')}<button class="tab tab-more" data-more aria-label="Meer" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg><span class="tl">Meer</span><span class="ts">Meer</span></button></nav>
       <div class="userbox"><div class="who"><strong>${esc(S.me.name)}</strong><small>${esc(S.me.email)}</small></div><button class="btn ghost icon bell" data-bell title="Meldingen" aria-label="Meldingen">${ICON.bell}<span class="ncount hidden" data-ncount></span></button>${isMgr() ? `<button class="btn ghost icon" data-gosettings title="Instellingen" aria-label="Instellingen">${ICON.settings}</button>` : ''}<button class="btn ghost icon" data-myprofile title="Mijn profiel" aria-label="Mijn profiel">${ico('user')}</button><button class="btn ghost icon" data-logout title="Uitloggen" aria-label="Uitloggen">${ICON.logout}</button></div>
@@ -1315,6 +1316,7 @@ function renderShell() {
     ${store.demo ? '' : `<footer class="app-foot">${LEGAL}</footer>`}`;
   $$('[data-tab]').forEach(b => (b.onclick = () => { if (b.dataset.tab === 'mijn') S.mineWeek = null; go(b.dataset.tab); }));   // tik op Rooster = terug naar het startscherm
   const mb = $('[data-more]'); if (mb) mb.onclick = moreSheet;
+  const mn = $('[data-menu]'); if (mn) mn.onclick = moreSheet;
   const gs = $('[data-gosettings]'); if (gs) gs.onclick = () => go('instellingen');
   $('[data-logout]').onclick = signOut;
   $('[data-myprofile]').onclick = () => profileDialog();
@@ -1638,24 +1640,26 @@ function menuCardDialog(c = {}) {
 /* ================= Meer (telefoon) ================= */
 function moreSheet() {
   if (document.querySelector('dialog.moresheet[open]')) return;
-  const rest = tabsFor().slice(4);
+  const rest = tabsFor();
   const ini = esc(S.me.name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase());
   const role = isMgr() ? 'Directie' : S.me.role === 'planner' ? 'Shiftleader' : esc(S.me.position || 'Team');
-  const row = (attr, iconHTML, label) => `<button type="button" class="mrow" ${attr}><span class="mic">${iconHTML}</span><span>${label}</span><span class="chev" aria-hidden="true">›</span></button>`;
+  const row = (attr, iconHTML, label, on) => `<button type="button" class="mrow ${on ? 'on' : ''}" ${attr} ${on ? 'aria-current="page"' : ''}><span class="mic">${iconHTML}</span><span>${label}</span></button>`;
   const items = [
-    ...rest.map(([k, l]) => row(`data-mgo="${k}"`, ICON[k === 'planning' && !canPlan() ? 'team' : k] || '', esc(l))),
-    ...(isMgr() ? [] : [row('data-mgo="mijnuren"', ico('clock'), 'Mijn uren')]),
-    ...(isMgr() ? [row('data-mgo="instellingen"', ICON.settings, 'Instellingen')] : []),
+    ...rest.map(([k, l]) => row(`data-mgo="${k}"`, ICON[k === 'planning' && !canPlan() ? 'team' : k] || '', esc(l), S.view === k)),
+    ...(isMgr() ? [] : [row('data-mgo="mijnuren"', ico('clock'), 'Mijn uren', S.view === 'mijnuren')]),
+    ...(isMgr() ? [row('data-mgo="instellingen"', ICON.settings, 'Instellingen', S.view === 'instellingen')] : []),
+    '<hr class="ms-sep">',
     row('data-mprofile', ico('user'), 'Mijn profiel'),
     row('data-mphones', ico('phone'), 'Telefoonlijst'),
     row('data-mrules', ico('book'), 'Afspraken'),
     row('data-mnood', ico('alert'), 'Noodnummers'),
-    row('data-mout', ICON.logout, 'Uitloggen'),
   ];
   const dlg = document.createElement('dialog');
-  dlg.className = 'moresheet';
+  dlg.className = 'moresheet drawer';
   dlg.setAttribute('aria-labelledby', 'ms-name');
-  dlg.innerHTML = `<div class="ms-head"><span class="ms-av" aria-hidden="true">${ini}</span><div><strong id="ms-name">${esc(S.me.name)}</strong><small>${role}</small></div><button type="button" class="x" data-mclose aria-label="Sluiten">×</button></div><div class="ms-list">${items.join('')}</div>`;
+  dlg.innerHTML = `<div class="ms-top">${CFG.logo ? `<img class="wordmark light" src="${esc(CFG.logo)}" alt="${esc(CFG.bedrijf)}"><img class="wordmark dark" src="${esc(CFG.logoDark || CFG.logo)}" alt="${esc(CFG.bedrijf)}">` : `<strong>${esc(CFG.appName)}</strong>`}<button type="button" class="x" data-mclose aria-label="Menu sluiten">×</button></div>
+    <nav class="ms-list" aria-label="Menu">${items.join('')}</nav>
+    <div class="ms-foot"><span class="ms-av" aria-hidden="true">${ini}</span><div><strong id="ms-name">${esc(S.me.name)}</strong><small>${role}</small></div><button type="button" class="btn sm" data-mout>${ICON.logout}Uitloggen</button></div>`;
   document.body.append(dlg);
   dlg.addEventListener('close', () => { if (dlg.parentNode) dlg.parentNode.removeChild(dlg); });
   dlg.addEventListener('click', ev => {
@@ -1667,6 +1671,9 @@ function moreSheet() {
     if (ev.target.closest('[data-mphones]')) { dlg.close(); return phonesDialog(); }
     if (ev.target.closest('[data-mout]')) { dlg.close(); return signOut(); }
   });
+  let x0 = null;
+  dlg.addEventListener('touchstart', ev => { x0 = ev.touches[0].clientX; }, { passive: true });
+  dlg.addEventListener('touchend', ev => { if (x0 != null && ev.changedTouches[0].clientX - x0 < -60) dlg.close(); x0 = null; }, { passive: true });
   dlg.showModal();
 }
 
