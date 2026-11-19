@@ -7,12 +7,12 @@ const LOGO = 'data:image/png;base64,' + fs.readFileSync(path.join(A, 'logo-wit.p
 const FONTS = 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Caveat:wght@600&family=DM+Sans:wght@400;500&display=swap';
 const css = `*{margin:0;padding:0;box-sizing:border-box}body{width:1080px;height:1350px;overflow:hidden}
 .s{position:relative;width:1080px;height:1350px;overflow:hidden;color:#FAF4ED;font-family:'DM Sans'}
-.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.dim{position:absolute;inset:0;background:rgba(27,4,5,.72)}
+.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(1.55) saturate(1.25) contrast(1.05)}
+.dim{position:absolute;inset:0;background:rgba(27,4,5,.6)}
 .logo{position:absolute;left:50%;transform:translateX(-50%);bottom:56px;width:180px;opacity:.9}
 .n{position:absolute;right:70px;top:60px;font-size:26px;letter-spacing:.2em;background:rgba(27,4,5,.55);padding:10px 20px;border-radius:30px}
-.hand{font-family:Caveat;font-weight:600;color:#E8F27A;font-size:70px;line-height:1}
-.big{font-family:'Playfair Display';font-weight:600;line-height:.95;letter-spacing:-.02em}
+.hand{text-shadow:0 2px 16px rgba(27,4,5,.7);font-family:Caveat;font-weight:600;color:#E8F27A;font-size:70px;line-height:1}
+.big{text-shadow:0 4px 30px rgba(27,4,5,.6);font-family:'Playfair Display';font-weight:600;line-height:.95;letter-spacing:-.02em}
 .c{position:absolute;left:90px;right:90px;top:50%;transform:translateY(-50%)}
 .c h2{font-family:'Playfair Display';font-weight:600;font-size:92px;line-height:1;letter-spacing:-.02em;color:#E8F27A;margin:18px 0 34px}
 .c h2 i{font-weight:400;color:#FAF4ED}
@@ -23,7 +23,7 @@ const css = `*{margin:0;padding:0;box-sizing:border-box}body{width:1080px;height
 const wrap = (inner, n, dim = true) => `<div class="s"><img class="bg" src="${BG}">${dim ? '<div class="dim"></div>' : ''}${n ? `<div class="n">${n}/7</div>` : ''}${inner}<img class="logo" src="${LOGO}"></div>`;
 const tip = (n, nr, title, x, body) => wrap(`<div class="c"><div class="hand">nee tegen…</div><h2>${nr}. ${title}</h2>${x ? `<div class="x">${x}</div>` : ''}${body}</div>`, n);
 const slides = [
-  wrap(`<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(27,4,5,.45),rgba(27,4,5,.15) 40%,rgba(27,4,5,.55))"></div>
+  wrap(`<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(27,4,5,.15),rgba(27,4,5,0) 40%,rgba(27,4,5,.35))"></div>
     <div class="hand" style="position:absolute;left:96px;top:600px">doe je mee?</div>
     <div class="big" style="position:absolute;left:90px;top:690px;font-size:170px">NEE-<br>vember</div>
     <div class="hand" style="position:absolute;left:96px;top:1040px;font-size:76px;color:#FAF4ED">challenge voor je website</div>`, 1, false),
