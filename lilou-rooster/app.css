@@ -1757,20 +1757,19 @@ main[hidden] { display: none !important; }
 .meer-out .mrow { color: var(--bad, #b3261e); }
 .meer-out .mic { color: inherit; }
 
-/* ===== Tablet staand (761–1023px): compacte menubalk met icoon en kort label ===== */
+/* ===== Tablet staand (761–1023px): vier hoofdonderdelen + Meer, net als op de telefoon ===== */
 @media (min-width: 761px) and (max-width: 1023px) {
-  .topbar-inner { padding: 8px 10px; gap: 4px; }
+  .topbar-inner { padding: 8px 14px; gap: 16px; }
   .brand { flex: none; }
-  .brand .wordmark { height: 26px; }
   .brand .sub { display: none; }
   .userbox { flex: none; gap: 2px; }
   .userbox .who { display: none; }
-  .tabs { margin-left: 0; gap: 0; min-width: 0; }
-  .tab { flex: 1 1 0; min-width: 0; flex-direction: column; gap: 3px; padding: 7px 1px; font-size: 11px; letter-spacing: -.1px; }
-  .userbox .btn { padding-left: 6px; padding-right: 6px; }
-  .tab .tl { display: none; }
-  .tab .ts { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tab .count { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 16px; height: 16px; font-size: 10px; }
+  .tabs { margin-left: 4px; gap: 2px; min-width: 0; }
+  .tabs .tab:nth-child(n+5):not(.tab-more) { display: none; }
+  .tab-more { display: inline-flex; }
+  .tab { padding: 8px 10px; font-size: 14px; white-space: nowrap; }
+  /* Profiel, instellingen en uitloggen staan op de Meer-pagina, net als op de telefoon */
+  .userbox [data-gosettings], .userbox [data-myprofile], .userbox [data-logout] { display: none; }
 }
 /* Zijbalk vanaf tablet liggend: iets smaller zodat er meer ruimte voor de inhoud is */
 @media (min-width: 1024px) and (max-width: 1279px) {
