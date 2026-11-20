@@ -5368,7 +5368,7 @@ async function viewClockMgr(el) {
       ${otBox}
       ${flags || x.edited ? `<div class="entry-flags">${flags}${x.edited ? '<span class="pill">aangepast</span>' : ''}</div>` : ''}
       ${x.reason ? `<p class="note">“${esc(x.reason)}”</p>` : ''}${x.manager_note ? `<p class="reply"><strong>Notitie:</strong> ${esc(x.manager_note)}</p>` : ''}
-      <div class="req-actions">${x.status === 'pending' ? (x.overtime_status === 'requested' ? `<button class="btn sm ok" data-eok="${x.id}|approved">Goedkeuren mét overuren</button><button class="btn sm" data-eok="${x.id}|rejected">Goedkeuren zonder overuren</button>` : `<button class="btn sm ok" data-eok="${x.id}">Goedkeuren</button>`) : ''}<button class="btn sm" data-eedit="${x.id}">Aanpassen</button>${x.status === 'pending' ? `<button class="btn sm danger" data-eno="${x.id}">Afkeuren</button>` : ''}</div>
+      <div class="req-actions${x.status === 'pending' && x.overtime_status === 'requested' ? ' ot' : ''}">${x.status === 'pending' ? (x.overtime_status === 'requested' ? `<button class="btn sm ok" data-eok="${x.id}|approved">Goedkeuren mét overuren</button><button class="btn sm" data-eok="${x.id}|rejected">Goedkeuren zonder overuren</button>` : `<button class="btn sm ok" data-eok="${x.id}">Goedkeuren</button>`) : ''}<button class="btn sm" data-eedit="${x.id}">Aanpassen</button>${x.status === 'pending' ? `<button class="btn sm danger" data-eno="${x.id}">Afkeuren</button>` : ''}</div>
     </article>`;
   };
 
