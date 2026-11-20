@@ -1782,3 +1782,25 @@ main[hidden] { display: none !important; }
   .entry .req-actions.ot { grid-template-columns: 1fr 1fr; }
   .entry .req-actions.ot > :nth-child(-n+2) { grid-column: 1 / -1; }
 }
+
+/* ===== Startscherm: Mijn beschikbaarheid ===== */
+.avhome { padding: 14px 14px 10px; margin-top: 12px; }
+.avhome .hhead { margin-bottom: 6px; }
+.avwk { display: block; width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; border-top: 1px solid var(--line); padding: 12px 0 10px; cursor: pointer; }
+.avhome .hhead + .avwk { border-top: 0; padding-top: 4px; }
+.avwk-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.avwk-h strong { display: block; font-size: 15px; }
+.avwk-h small { display: block; color: var(--muted); font-size: 12px; }
+.avwk-h .pill { flex: none; font-size: 12px; white-space: nowrap; }
+.avdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.avd { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 2px 7px; border-radius: 10px; min-width: 0; }
+.avd small { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; opacity: .85; }
+.avd b { font-size: 16px; line-height: 1.1; }
+.avd i { font-style: normal; font-size: 10.5px; font-weight: 600; line-height: 1.15; text-align: center; overflow-wrap: anywhere; max-width: 100%; }
+.avd.av-leeg { color: var(--muted); border: 1.5px dashed var(--line); }
+.avlegend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 4px 0 2px; font-size: 12px; }
+.avd-dot { width: 10px; height: 10px; border-radius: 3px; border: 1.5px dashed var(--line); display: inline-block; margin-left: 6px; }
+.avd-dot:first-child { margin-left: 0; }
+.avd-dot.ok { background: var(--ok-soft); border: 1.5px solid var(--ok); }
+.avd-dot.bad { background: var(--bad-soft); border: 1.5px solid var(--bad); }
+@media (hover: hover) { .avwk:hover .avwk-h strong { color: var(--accent); } }

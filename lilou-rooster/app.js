@@ -3549,11 +3549,34 @@ async function viewMine(el) {
       const dTo = LS.nextOff ? Math.max(0, Math.round((parse(LS.nextOff.start_date) - parse(today)) / 864e5)) : null;
       const fmtU = h => (Math.round(h * 10) / 10).toLocaleString('nl-NL');
       statsHTML = `<div class="hstats">
-        <button type="button" class="card hstat" data-hnav="0"><small>Deze week</small><b>${wk.length}</b><span>${wk.length === 1 ? 'dienst' : 'diensten'}&nbsp;·&nbsp;${fmtH(wkH)}&nbsp;u</span></button>
+        <button type="button" class="card hstat" data-hnav="0"><small>Deze week</small><b>${wk.length}</b><span>${wk.length === 1 ? 'dienst' : 'diensten'} · ${fmtH(wkH)}&nbsp;u</span></button>
         <button type="button" class="card hstat" data-goto="aanvragen"><small>Verlof</small><b>${LS.show ? fmtU(LS.avail) : '—'}</b><span>${LS.show ? 'uur over' : 'nog niet ingevuld'}</span></button>
         <button type="button" class="card hstat" data-goto="aanvragen"><small>${dTo == null || dTo === 0 ? 'Vrij' : 'Vrij over'}</small><b class="${dTo == null ? 'none' : ''}">${dTo == null ? '–' : dTo === 0 ? 'nu' : dTo}</b><span>${dTo == null ? 'niets gepland' : dTo === 0 ? 'geniet ervan' : dTo === 1 ? 'dag' : 'dagen'}</span></button>
       </div>`;
     } catch (x) { statsHTML = ''; }
+  }
+  // Beschikbaarheid: volgende week en de week erna, met de deadline (uiterlijk maandag voor de week erna)
+  let availHTML = '';
+  if (!sel) {
+    try {
+      const base = mondayOf(new Date()), isMon = new Date().getDay() === 1;
+      const w1 = addDays(base, 7), w2 = addDays(base, 14), target = isMon ? w1 : w2, dl = addDays(target, -7);
+      const avs = (await store.availability(iso(w1), iso(addDays(w2, 6))).catch(() => [])).filter(a => a.employee_id === S.me.id);
+      const SH = { hele_dag: 'hele dag', ochtend: 'ochtend', middag: 'middag', avond: 'avond', niet: 'niet' };
+      const wkRow = (mon, label) => {
+        const days = [...Array(7)].map((_, i) => { const ds = iso(addDays(mon, i)); return { ds, d: addDays(mon, i), a: avs.find(a => a.date === ds) }; });
+        const n = days.filter(x => x.a).length, isT = iso(mon) === iso(target);
+        const st = n === 7 ? '<span class="pill ok">✓ doorgegeven</span>'
+          : isT ? `<span class="pill warn">${n ? `${n} van 7 · ` : ''}uiterlijk ${esc(fmt(dl, { weekday: 'short', day: 'numeric', month: 'short' }))}</span>`
+          : n ? `<span class="pill">${n} van 7</span>` : '<span class="pill">nog leeg</span>';
+        return `<button type="button" class="avwk" data-goto="beschikbaar" data-avweek="${iso(mon)}" aria-label="Beschikbaarheid ${label} doorgeven">
+          <span class="avwk-h"><span><strong>${label}</strong><small>wk ${weekNr(mon)} · ${fmt(mon, { day: 'numeric', month: 'short' })} – ${fmt(addDays(mon, 6), { day: 'numeric', month: 'short' })}</small></span>${st}</span>
+          <span class="avdays">${days.map((x, i) => `<span class="avd av-${x.a ? x.a.kind : 'leeg'}"><small>${DAG[i]}</small><b>${x.d.getDate()}</b><i>${x.a ? SH[x.a.kind] || '' : '?'}</i></span>`).join('')}</span></button>`;
+      };
+      availHTML = `<section class="card hcard avhome"><div class="hhead"><h2>Mijn beschikbaarheid</h2><button type="button" class="linkbtn" data-goto="beschikbaar" data-avweek="${iso(target)}">Doorgeven ›</button></div>
+        ${wkRow(w1, 'Volgende week')}${wkRow(w2, 'Week erna')}
+        <p class="hint avlegend"><span class="avd-dot ok"></span>beschikbaar <span class="avd-dot bad"></span>niet <span class="avd-dot"></span>nog niet doorgegeven</p></section>`;
+    } catch (x) { availHTML = ''; }
   }
   const rosterHTML = sel ? '' : `<section class="homeroster" data-hroster>
     <div class="hr-top"><h2>Mijn rooster</h2><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${S.homeMode === 'week' ? 'on' : ''}" data-hmode="week">Week</button><button type="button" class="${S.homeMode === 'maand' ? 'on' : ''}" data-hmode="maand">Maand</button></div></div>
@@ -3584,6 +3607,7 @@ async function viewMine(el) {
     <div class="mhome ${sel ? 'sel' : ''}"><div class="mcol">
     ${clockHTML}
     ${statsHTML}
+    ${availHTML}
     ${teamHTML}
     ${rosterHTML}
     ${todayHTML}
@@ -3623,7 +3647,7 @@ async function viewMine(el) {
     if (ev.target.closest('[data-rulesview]')) return rulesViewer();
     const bt = ev.target.closest('[data-better]');
     if (bt) { if (!await ask('Ben je weer beter? De directie krijgt een melding en je ziekmelding stopt vandaag.', 'Ik ben weer beter')) return; try { await store.sickRecover(bt.dataset.better); toast('Fijn dat je weer beter bent!'); rerender(); } catch (x) { toast(errMsg(x), 'error'); } return; }
-    const g = ev.target.closest('[data-goto]'); if (g) return go(g.dataset.goto);
+    const g = ev.target.closest('[data-goto]'); if (g) { if (g.dataset.avweek) S.avWeek = parse(g.dataset.avweek); return go(g.dataset.goto); }
     const hmB = ev.target.closest('[data-hmode]'); if (hmB) { S.homeMode = hmB.dataset.hmode; return rerender(); }
     const hn = ev.target.closest('[data-hnav]');
     if (hn) {
