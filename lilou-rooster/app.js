@@ -42,8 +42,11 @@ const REQ = { vakantie: 'Vakantie', vrij: 'Vrije dag', onbeschikbaar: 'Niet besc
 const STATUS = { pending: 'Openstaand', approved: 'Goedgekeurd', rejected: 'Afgewezen' };
 const ZSTATUS = { pending: 'Gemeld', approved: 'Verwerkt', rejected: 'Afgewezen' };
 const stLabel = r => (r.type === 'ziek' ? ZSTATUS : STATUS)[r.status];
-const AVAIL = { hele_dag: 'Hele dag', ochtend: 'Ochtend', middag: 'Middag', avond: 'Avond', niet: 'Niet beschikbaar' };
-const AVAIL_SHORT = { hele_dag: '✓ hele dag', ochtend: '✓ ochtend', middag: '✓ middag', avond: '✓ avond', niet: '✕ niet' };
+const AVAIL = { hele_dag: 'Hele dag', ochtend: 'Ochtend', middag: 'Middag', avond: 'Avond', tijden: 'Tijden', niet: 'Niet beschikbaar' };
+const AVAIL_SHORT = { hele_dag: '✓ hele dag', ochtend: '✓ ochtend', middag: '✓ middag', avond: '✓ avond', tijden: '✓ tijden', niet: '✕ niet' };
+// beschikbaarheid als tekst, ook met eigen tijden ("van 18:00 tot 23:00")
+const avShort = a => a.kind === 'tijden' && a.from_time ? `✓ ${hm(a.from_time)}–${hm(a.to_time)}` : AVAIL_SHORT[a.kind] || '';
+const avLong = a => a.kind === 'tijden' && a.from_time ? `van ${hm(a.from_time)} tot ${hm(a.to_time)}` : (AVAIL[a.kind] || '').toLowerCase();
 const SWAPST = { open: 'Wacht op collega', accepted: 'Wacht op directie', approved: 'Geregeld', rejected: 'Afgewezen', cancelled: 'Ingetrokken' };
 const COLORS = ['#9a5b3f', '#3f7d58', '#3f6a9a', '#8a4f8f', '#b8862b', '#2f8a8a', '#b3485f', '#5b6b2f'];
 
@@ -588,7 +591,7 @@ function demoStore() {
     async saveAvailability(rows) {
       const dates = rows.map(r => r.date);
       db.availability = db.availability.filter(a => !(a.employee_id === mem && dates.includes(a.date)));
-      rows.filter(r => r.kind).forEach(r => db.availability.push({ employee_id: mem, date: r.date, kind: r.kind, note: r.note || null }));
+      rows.filter(r => r.kind).forEach(r => db.availability.push({ employee_id: mem, date: r.date, kind: r.kind, from_time: r.kind === 'tijden' ? r.from_time : null, to_time: r.kind === 'tijden' ? r.to_time : null, note: r.note || null }));
       save();
     },
     // --- meldingen
@@ -959,7 +962,7 @@ async function supabaseStore() {
       const me = S.me.id;
       const del = rows.filter(r => !r.kind).map(r => r.date);
       if (del.length) ok(await sb.from('availability').delete().eq('employee_id', me).in('date', del));
-      const up = rows.filter(r => r.kind).map(r => ({ employee_id: me, date: r.date, kind: r.kind, note: r.note || null, updated_at: new Date().toISOString() }));
+      const up = rows.filter(r => r.kind).map(r => ({ employee_id: me, date: r.date, kind: r.kind, ...(r.kind === 'tijden' ? { from_time: r.from_time, to_time: r.to_time } : {}), note: r.note || null, updated_at: new Date().toISOString() }));
       if (up.length) ok(await sb.from('availability').upsert(up));
     },
     // --- meldingen
@@ -1780,7 +1783,7 @@ async function viewWeek(el, editable) {
   const costDay = ds => shifts.filter(x => x.date === ds && x.employee_id).reduce((t, x) => { const c = costOf(x, Number(privs[x.employee_id]?.hourly_wage), stW); return t + (c ? loonkosten(c.bruto, stW).totaal : 0); }, 0);
   const hasWages = privList.some(p => p.hourly_wage);
   const avMap = {}; avail.forEach(a => (avMap[a.employee_id + a.date] = a));
-  const avHTML = (emp, ds) => { const a = avMap[emp + ds]; return a ? `<span class="av av-${a.kind}" title="${esc(AVAIL[a.kind])}${a.note ? ': ' + esc(a.note) : ''}">${AVAIL_SHORT[a.kind]}</span>` : ''; };
+  const avHTML = (emp, ds) => { const a = avMap[emp + ds]; return a ? `<span class="av av-${a.kind}" title="${esc(avLong(a))}${a.note ? ': ' + esc(a.note) : ''}">${esc(avShort(a))}</span>` : ''; };
   const openShifts = shifts.filter(s => !s.employee_id);
   const people = emps.filter(e => e.active !== false || shifts.some(s => s.employee_id === e.id));
   const days = [...Array(7)].map((_, i) => addDays(S.week, i));
@@ -1921,7 +1924,7 @@ async function viewWeek(el, editable) {
       ${covOn ? `<div class="cov mcov">${covHTML(ds)}</div>` : ''}
       ${leaveHTML}
       <div class="mlist">${items || `<div class="card empty">${editable ? 'Nog niemand ingepland.' : 'Geen diensten op deze dag.'}</div>`}</div>
-      ${availFree.length ? `<p class="hint mavail">Beschikbaar, nog niet ingepland: ${availFree.map(a => `<strong>${esc((byId[a.employee_id]?.name || '').split(' ')[0])}</strong> (${AVAIL[a.kind].toLowerCase()})`).join(', ')}</p>` : ''}
+      ${availFree.length ? `<p class="hint mavail">Beschikbaar, nog niet ingepland: ${availFree.map(a => `<strong>${esc((byId[a.employee_id]?.name || '').split(' ')[0])}</strong> (${esc(avLong(a))})`).join(', ')}</p>` : ''}
       ${editable && !S.selMode ? '<button class="btn primary block madd" data-addday>+ Dienst toevoegen</button>' : ''}
       <p class="hint swipehint">${(() => { let seen = false; try { seen = !!localStorage.getItem('rooster-swipehint'); localStorage.setItem('rooster-swipehint', '1'); } catch (x) { /* geen opslag */ } return seen ? '' : 'Veeg over de dagen bovenin voor een andere week, over de diensten voor een andere dag · '; })()}week totaal ${fmtH(totalH)} u</p>`;
   };
@@ -2121,7 +2124,7 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
     ${!isNew && !s.employee_id ? (() => {
       const l = apps.filter(a => a.shift_id === s.id && a.status === 'pending');
       return `<div class="applist-wrap"><div class="hint" style="margin-bottom:6px">Aanmeldingen</div>${l.length ? `<ul class="applist">${l.map(a => { const e = emps.find(x => x.id === a.employee_id) || {}; const v = avail.find(x => x.employee_id === a.employee_id && x.date === s.date);
-        return `<li><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name || '?')}</strong>${v ? `<span class="muted small">${AVAIL_SHORT[v.kind]}</span>` : ''}${leaves.some(r => r.status === 'approved' && r.employee_id === a.employee_id && r.start_date <= s.date && r.end_date >= s.date) ? '<span class="pill warn">heeft verlof</span>' : ''}<button type="button" class="btn sm ok" data-assign="${a.employee_id}">Toewijzen</button></li>`; }).join('')}</ul>` : `<p class="hint">${s.published ? 'Nog niemand aangemeld.' : 'Publiceer de week om deze open dienst zichtbaar te maken.'}</p>`}</div>`;
+        return `<li><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name || '?')}</strong>${v ? `<span class="muted small">${esc(avShort(v))}</span>` : ''}${leaves.some(r => r.status === 'approved' && r.employee_id === a.employee_id && r.start_date <= s.date && r.end_date >= s.date) ? '<span class="pill warn">heeft verlof</span>' : ''}<button type="button" class="btn sm ok" data-assign="${a.employee_id}">Toewijzen</button></li>`; }).join('')}</ul>` : `<p class="hint">${s.published ? 'Nog niemand aangemeld.' : 'Publiceer de week om deze open dienst zichtbaar te maken.'}</p>`}</div>`;
     })() : ''}
     ${CFG.diensten.length ? `<div><div class="hint" style="margin-bottom:6px">Snelkeuze</div><div class="tpls">${CFG.diensten.map(d => `<button type="button" class="tpl" data-s="${d.start}" data-e="${d.end}" data-p="${d.pauze || 0}">${esc(d.label)} <span class="muted">${d.start}–${d.end}</span></button>`).join('')}</div></div>` : ''}
     <div class="row three keep">
@@ -2181,6 +2184,7 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
           if (other) msgs.push(`${fmtShort(ds)}: heeft al een dienst ${hm(other.start_time)}–${hm(other.end_time)}`);
           const v = avail.find(a => a.employee_id === emp && a.date === ds);
           if (v && v.kind === 'niet') msgs.push(`${fmtShort(ds)}: heeft “niet beschikbaar” doorgegeven${v.note ? ' (' + v.note + ')' : ''}`);
+          else if (v && v.kind === 'tijden') { const st = f.start_time.value, et = f.end_time.value, ov = x => (x < '05:00' ? '1' : '0') + x; if (st && et && (ov(st) < ov(hm(v.from_time)) || ov(et) > ov(hm(v.to_time)))) msgs.push(`${fmtShort(ds)}: alleen beschikbaar ${avLong(v)}`); }
           else if (v && v.kind !== 'hele_dag') msgs.push(`${fmtShort(ds)}: alleen ${AVAIL[v.kind].toLowerCase()} beschikbaar`);
           // Arbeidstijdenwet
           const cand = { id: '__nieuw', employee_id: emp, date: ds, start_time: f.start_time.value, end_time: f.end_time.value, break_minutes: Number(f.break_minutes.value) || 0 };
@@ -3571,7 +3575,7 @@ async function viewMine(el) {
           : n ? `<span class="pill">${n} van 7</span>` : '<span class="pill">nog leeg</span>';
         return `<button type="button" class="avwk" data-goto="beschikbaar" data-avweek="${iso(mon)}" aria-label="Beschikbaarheid ${label} doorgeven">
           <span class="avwk-h"><span><strong>${label}</strong><small>wk ${weekNr(mon)} · ${fmt(mon, { day: 'numeric', month: 'short' })} – ${fmt(addDays(mon, 6), { day: 'numeric', month: 'short' })}</small></span>${st}</span>
-          <span class="avdays">${days.map((x, i) => `<span class="avd av-${x.a ? x.a.kind : 'leeg'}"><small>${DAG[i]}</small><b>${x.d.getDate()}</b><i>${x.a ? SH[x.a.kind] || '' : '?'}</i></span>`).join('')}</span></button>`;
+          <span class="avdays">${days.map((x, i) => `<span class="avd av-${x.a ? x.a.kind : 'leeg'}"><small>${DAG[i]}</small><b>${x.d.getDate()}</b><i>${x.a ? (x.a.kind === 'tijden' && x.a.from_time ? `${hm(x.a.from_time)}<br>${hm(x.a.to_time)}` : SH[x.a.kind] || '') : '?'}</i></span>`).join('')}</span></button>`;
       };
       availHTML = `<section class="card hcard avhome"><div class="hhead"><h2>Mijn beschikbaarheid</h2><button type="button" class="linkbtn" data-goto="beschikbaar" data-avweek="${iso(target)}">Doorgeven ›</button></div>
         ${wkRow(w1, 'Volgende week')}${wkRow(w2, 'Week erna')}
@@ -4436,6 +4440,7 @@ async function viewBeschikbaar(el) {
     const ds = iso(addDays(mon, i)), a = get(ds), work = shifts.find(s => s.employee_id === S.me.id && s.date === ds);
     return `<div class="avrow"><div class="d"><span>${DAG[i]}</span><b>${addDays(mon, i).getDate()}</b></div>
       <div class="avopts"><label class="avopt av-leeg"><input type="radio" name="k-${i}" value="" ${a ? '' : 'checked'}><span>Leeg</span></label>${Object.keys(AVAIL).map(k => `<label class="avopt av-${k}"><input type="radio" name="k-${i}" value="${k}" ${a?.kind === k ? 'checked' : ''}><span>${k === 'niet' ? 'Niet' : AVAIL[k]}</span></label>`).join('')}</div>
+      <div class="avtimes" data-avt="${i}" ${a?.kind === 'tijden' ? '' : 'hidden'}><span>Van</span><input class="input" type="time" name="f-${i}" step="900" value="${esc(hm(a?.from_time) || '')}" aria-label="Beschikbaar vanaf ${DAG[i]}"><span>tot</span><input class="input" type="time" name="t-${i}" step="900" value="${esc(hm(a?.to_time) || '')}" aria-label="Beschikbaar tot ${DAG[i]}"></div>
       <input class="input avnote" name="n-${i}" placeholder="Opmerking, bijv. pas vanaf 18:00" aria-label="Opmerking ${DAG[i]}" value="${esc(a?.note || '')}" ${a?.note ? '' : 'hidden'}>${a?.note ? '' : `<button type="button" class="linkbtn avaddnote" data-addnote="${i}">+ opmerking</button>`}
       ${work ? `<small class="hint">Ingepland: ${hm(work.start_time)}–${hm(work.end_time)}</small>` : ''}</div>`;
   }).join('');
@@ -4452,7 +4457,9 @@ async function viewBeschikbaar(el) {
   f.onsubmit = async ev => {
     ev.preventDefault();
     const fd = new FormData(f);
-    const out = [...Array(7)].map((_, i) => ({ date: iso(addDays(mon, i)), kind: fd.get(`k-${i}`) || null, note: (fd.get(`n-${i}`) || '').trim() || null }));
+    const out = [...Array(7)].map((_, i) => { const kind = fd.get(`k-${i}`) || null; return { date: iso(addDays(mon, i)), kind, from_time: kind === 'tijden' ? fd.get(`f-${i}`) || null : null, to_time: kind === 'tijden' ? fd.get(`t-${i}`) || null : null, note: (fd.get(`n-${i}`) || '').trim() || null }; });
+    const bad = out.findIndex(r => r.kind === 'tijden' && (!r.from_time || !r.to_time || r.from_time === r.to_time));
+    if (bad >= 0) { toast(`Vul bij ${DAG[bad].toLowerCase()} ${addDays(mon, bad).getDate()} een begin- en eindtijd in`, 'error'); $(`[name="f-${bad}"]`, f)?.focus(); return; }
     try {
       await store.saveAvailability(out);
       if (ev.submitter?.value === 'repeat') {
@@ -4475,13 +4482,17 @@ async function viewBeschikbaar(el) {
     const lb = ev.target.closest('.avopt'); if (!lb || ev.target.tagName !== 'INPUT') return;
     if (lb.dataset.was === '1') { const leeg = $('.av-leeg input', lb.closest('.avopts')); if (leeg) leeg.checked = true; }
     lb.dataset.was = '';
+    syncT();
   });
+  // "Tijden" gekozen: toon de van-tot-velden van die dag
+  function syncT() { [...Array(7)].forEach((_, i) => { const box = $(`[data-avt="${i}"]`, f); if (!box) return; const on = f.querySelector(`input[name="k-${i}"]:checked`)?.value === 'tijden'; if (box.hidden === on) { box.hidden = !on; if (on && !f[`f-${i}`].value) f[`f-${i}`].focus(); } }); }
+  f.addEventListener('change', syncT);
   el.onclick = ev => {
     const an = ev.target.closest('[data-addnote]'); if (an) { const inp = f[`n-${an.dataset.addnote}`]; inp.hidden = false; an.remove(); return inp.focus(); }
     const w = ev.target.closest('[data-w]'); if (w) { S.avWeek = addDays(S.avWeek, 7 * Number(w.dataset.w)); return rerender(); }
-    const fill = ev.target.closest('[data-fill]'); if (fill) { $$(`input[value="${fill.dataset.fill}"]`, f).forEach(r => (r.checked = true)); return toast('Ingevuld — vergeet niet op te slaan'); }
+    const fill = ev.target.closest('[data-fill]'); if (fill) { $$(`input[value="${fill.dataset.fill}"]`, f).forEach(r => (r.checked = true)); syncT(); return toast('Ingevuld — vergeet niet op te slaan'); }
     if (ev.target.closest('[data-copyprev]')) {
-      prevAv.filter(a => a.employee_id === S.me.id).forEach(a => { const i = dayIdx(parse(a.date)); const r = $(`input[name="k-${i}"][value="${a.kind}"]`, f); if (r) r.checked = true; if (a.note) f[`n-${i}`].value = a.note; });
+      prevAv.filter(a => a.employee_id === S.me.id).forEach(a => { const i = dayIdx(parse(a.date)); const r = $(`input[name="k-${i}"][value="${a.kind}"]`, f); if (r) r.checked = true; if (a.kind === 'tijden') { f[`f-${i}`].value = hm(a.from_time) || ''; f[`t-${i}`].value = hm(a.to_time) || ''; } if (a.note) f[`n-${i}`].value = a.note; });
       return toast('Overgenomen van vorige week — vergeet niet op te slaan');
     }
   };
@@ -4556,7 +4567,7 @@ async function viewOpenMgr(el) {
       return `<article class="card req"><div class="req-head"><strong>${fmtShort(s.date)} · ${hm(s.start_time)}–${hm(s.end_time)}</strong>${s.position ? `<span class="badge">${esc(s.position)}</span>` : ''}<span class="status ${s.published ? 'pending' : 'rejected'}">${s.published ? `${list.length} aanmelding${list.length === 1 ? '' : 'en'}` : 'Concept – nog niet zichtbaar'}</span></div>
         ${s.note ? `<p class="note">${esc(s.note)}</p>` : ''}
         ${list.length ? `<ul class="applist">${list.map(a => { const e = byId[a.employee_id] || {}; const v = av.find(x => x.employee_id === a.employee_id && x.date === s.date); const h = weekHours(a.employee_id, s.date);
-          return `<li><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name || '?')}</strong><span class="muted small">${fmtH(h)} u die week${e.contract_hours ? ` / ${fmtH(Number(e.contract_hours))}` : ''}${v ? ' · ' + AVAIL_SHORT[v.kind] : ''}${onLeaveO(a.employee_id, s.date) ? ' · <strong class="neg">heeft verlof</strong>' : ''}</span><button class="btn sm ok" data-assign="${s.id}|${a.employee_id}">Toewijzen</button></li>`; }).join('')}</ul>` : s.published ? '<p class="hint">Nog niemand aangemeld.</p>' : '<p class="hint">Publiceer de week in Planning om deze dienst zichtbaar te maken.</p>'}
+          return `<li><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name || '?')}</strong><span class="muted small">${fmtH(h)} u die week${e.contract_hours ? ` / ${fmtH(Number(e.contract_hours))}` : ''}${v ? ' · ' + esc(avShort(v)) : ''}${onLeaveO(a.employee_id, s.date) ? ' · <strong class="neg">heeft verlof</strong>' : ''}</span><button class="btn sm ok" data-assign="${s.id}|${a.employee_id}">Toewijzen</button></li>`; }).join('')}</ul>` : s.published ? '<p class="hint">Nog niemand aangemeld.</p>' : '<p class="hint">Publiceer de week in Planning om deze dienst zichtbaar te maken.</p>'}
         <div class="req-actions"><button class="btn sm" data-editopen="${s.id}">Bewerken</button></div></article>`;
     }).join('')}</div>` : '<div class="card empty">Geen open diensten. Maak er een via <strong>+ Open dienst</strong> of in de planning (kies “Open dienst” als medewerker).</div>'}`;
   el.onclick = async ev => {
@@ -4589,7 +4600,7 @@ async function viewAvailMgr(el) {
     ${missing.length ? `<p class="warnbox" style="margin:0 0 12px">Nog niet doorgegeven: ${missing.map(e => esc(e.name.split(' ')[0])).join(', ')}</p>` : '<p class="msg ok">Iedereen heeft zijn beschikbaarheid doorgegeven ✓</p>'}
     <div class="card table-wrap"><table class="list avtable">
       <thead><tr><th>Medewerker</th>${[...Array(7)].map((_, i) => `<th>${DAG[i]} ${addDays(mon, i).getDate()}</th>`).join('')}</tr></thead>
-      <tbody>${emps.map(e => `<tr><td><div class="namecell"><span class="dot" style="background:${esc(e.color || COLORS[0])}"></span>${esc(e.name)}</div></td>${[...Array(7)].map((_, i) => { const a = av.find(x => x.employee_id === e.id && x.date === iso(addDays(mon, i))); return `<td>${a ? `<span class="av av-${a.kind}" title="${esc(a.note || '')}">${AVAIL_SHORT[a.kind]}</span>${a.note ? `<small class="muted avn">${esc(a.note)}</small>` : ''}` : '<span class="muted">—</span>'}</td>`; }).join('')}</tr>`).join('')}</tbody>
+      <tbody>${emps.map(e => `<tr><td><div class="namecell"><span class="dot" style="background:${esc(e.color || COLORS[0])}"></span>${esc(e.name)}</div></td>${[...Array(7)].map((_, i) => { const a = av.find(x => x.employee_id === e.id && x.date === iso(addDays(mon, i))); return `<td>${a ? `<span class="av av-${a.kind}" title="${esc(a.note || '')}">${esc(avShort(a))}</span>${a.note ? `<small class="muted avn">${esc(a.note)}</small>` : ''}` : '<span class="muted">—</span>'}</td>`; }).join('')}</tr>`).join('')}</tbody>
     </table></div>`;
   el.onclick = ev => { if (rtClick(ev)) return; const w = ev.target.closest('[data-w]'); if (w) { S.avWeek = addDays(S.avWeek, 7 * Number(w.dataset.w)); rerender(); } };
 }

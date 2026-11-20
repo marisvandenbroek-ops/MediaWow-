@@ -1804,3 +1804,17 @@ main[hidden] { display: none !important; }
 .avd-dot.ok { background: var(--ok-soft); border: 1.5px solid var(--ok); }
 .avd-dot.bad { background: var(--bad-soft); border: 1.5px solid var(--bad); }
 @media (hover: hover) { .avwk:hover .avwk-h strong { color: var(--accent); } }
+
+/* Beschikbaarheid: eigen tijden */
+.avtimes { grid-column: 2 / -1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.avtimes[hidden] { display: none; }
+.avtimes span { color: var(--muted); font-size: 14px; }
+.avtimes input { width: 118px; padding: 8px 10px; }
+.av-tijden { color: var(--ok); background: var(--ok-soft); }
+.avopt.av-tijden { background: none; padding: 0; margin: 0; }
+.avopts { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.avtimes input { width: 132px; }
+@media (max-width: 520px) {
+  .avopts { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 6px; }
+  .avrow .avtimes { grid-column: 1; }
+}

@@ -621,5 +621,14 @@ reset role;
 select t_ok((select count(*) from day_reports where date = business_day()) = 3 and (select notes from day_reports where date = business_day() and employee_id = 'a0000000-0000-0000-0000-000000000004') = 'Aangepast', 'ieder een eigen rapport: niemand overschrijft een ander');
 select t_ok(run_jobs() >= 0, 'run_jobs draait met de nieuwe stappen');
 
+\echo '== Update 46: beschikbaarheid met eigen tijden'
+insert into availability (employee_id, date, kind, from_time, to_time) values ('a0000000-0000-0000-0000-000000000004', today_nl() + 30, 'tijden', '18:00', '23:30');
+select t_ok((select to_time from availability where employee_id = 'a0000000-0000-0000-0000-000000000004' and date = today_nl() + 30) = '23:30', 'beschikbaar op eigen tijden wordt bewaard');
+do $$ begin
+  insert into availability (employee_id, date, kind) values ('a0000000-0000-0000-0000-000000000004', today_nl() + 31, 'tijden');
+  raise exception 'FOUT: tijden zonder begin- en eindtijd werd geaccepteerd';
+exception when check_violation then null; end $$;
+select t_ok(true, 'tijden zonder begin- en eindtijd wordt geweigerd');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'
