@@ -630,5 +630,13 @@ do $$ begin
 exception when check_violation then null; end $$;
 select t_ok(true, 'tijden zonder begin- en eindtijd wordt geweigerd');
 
+\echo '== Update 47: allergenen op de menukaart'
+insert into menu_cards (id, title, file_path) values ('d4700000-0000-0000-0000-000000000001', 'Testkaart', 'static:kaarten/x.pdf');
+set role authenticated; select as_user(1);
+select set_menu_allergens('d4700000-0000-0000-0000-000000000001', '01 Steak Tartare', array['ei','gluten','onzin'], true);
+reset role;
+select t_ok((select allergens->'01 steak tartare'->'codes' from menu_cards where id = 'd4700000-0000-0000-0000-000000000001') = '["ei", "gluten"]'::jsonb
+  and (select (allergens->'01 steak tartare'->>'ok')::boolean from menu_cards where id = 'd4700000-0000-0000-0000-000000000001'), 'directie legt allergenen vast; onbekende codes vallen weg');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

@@ -25,6 +25,12 @@ const mins = t => { const [h, m] = hm(t).split(':').map(Number); return h * 60 +
 const shiftHours = s => { let m = mins(s.end_time) - mins(s.start_time); if (m <= 0) m += 1440; return Math.max(0, (m - (Number(s.break_minutes) || 0)) / 60); };
 const fmtH = h => { const m = Math.round(Math.abs(Number(h) || 0) * 60), H = Math.floor(m / 60), M = m % 60; return (h < 0 && m ? '−' : '') + (M ? `${H}:${String(M).padStart(2, '0')}` : `${H}`); };   // 7,67 → 7:40
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// De 14 allergenen (EU) en hoe een gerecht op de kaart heet in de allergenenlijst
+const ALG = [['gluten', 'Gluten'], ['schaaldieren', 'Schaaldieren'], ['ei', 'Ei'], ['vis', 'Vis'], ['pinda', "Pinda's"], ['soja', 'Soja'], ['melk', 'Melk'], ['noten', 'Noten'], ['selderij', 'Selderij'], ['mosterd', 'Mosterd'], ['sesam', 'Sesam'], ['sulfiet', 'Sulfiet'], ['lupine', 'Lupine'], ['weekdieren', 'Weekdieren']];
+const ALGL = Object.fromEntries(ALG);
+const algKey = n => String(n || '').toLowerCase().replace(/^(✦\s*|\d+\s+)/, '').replace(/\s+/g, ' ').trim();
+const isPriceRow = it => !(it.lines || []).length && /\bgangen$/i.test(it.name || '');
+const algNames = codes => (codes || []).map(k => ALGL[k] || k).join(', ');
 const DEFAULT_CARDS = [['Menukaart', 'Lilou-menukaart-app.pdf'], ['Wijnkaart', 'Lilou-wijnkaart-app.pdf'], ['Bites', 'Lilou-bites-app.pdf'], ['Kerstmenu', 'Lilou-kerstmenu-app.pdf']]
   .map(([title, f]) => ({ title, file_path: 'static:kaarten/' + f, file_name: f, file_type: 'application/pdf' }));
 const DEFAULT_LISTS = [{"name": "Opening bediening", "department": "Bediening", "moment": "opening", "kind": "check", "sort": 10, "items": [{"id": "i1", "label": "Alarm uit, rondje gelopen, geen bijzonderheden"}, {"id": "i2", "label": "Lichten en muziek aan (juiste volume)"}, {"id": "i3", "label": "Zaal op temperatuur, ventilatie aan"}, {"id": "i4", "label": "Entree, ramen en terras toonbaar"}, {"id": "i5", "label": "Vloer schoon, niets onder de tafels"}, {"id": "i6", "label": "Tafels ingedekt; bestek en glazen tegen het licht gecontroleerd"}, {"id": "i7", "label": "Tafels recht en wiebelen niet"}, {"id": "i8", "label": "Tafelindeling klopt met de reserveringen"}, {"id": "i9", "label": "Kaarsen, bloemen en decoratie verzorgd"}, {"id": "i10", "label": "Menukaarten en wijnkaart schoon en actueel"}, {"id": "i11", "label": "Servicestations aangevuld (bestek, servetten, borden)"}, {"id": "i12", "label": "Water, karaffen en ijs klaar"}, {"id": "i13", "label": "Allergeenprikkers, bonnen en pennen aanwezig"}, {"id": "i14", "label": "Reserveringslijst doorgenomen, bijzonderheden gemarkeerd"}, {"id": "i15", "label": "Kassa aan, bonrol vol, pinautomaten getest"}, {"id": "i16", "label": "Kasgeld geteld"}, {"id": "i17", "label": "Telefoon opneembaar, voicemail afgeluisterd"}, {"id": "i18", "label": "Toiletten schoon en aangevuld"}], "active": true}, {"name": "Sluiting bediening", "department": "Bediening", "moment": "sluiting", "kind": "check", "sort": 20, "items": [{"id": "i1", "label": "Laatste gasten weg; toiletten en terras gecontroleerd"}, {"id": "i2", "label": "Tafels afgeruimd, afgenomen en ingedekt"}, {"id": "i3", "label": "Vloer geveegd en gedweild"}, {"id": "i4", "label": "Kaarsen uit, bloemen water gegeven"}, {"id": "i5", "label": "Menukaarten afgenomen en opgeborgen"}, {"id": "i6", "label": "Servicestations leeg, schoon en aangevuld"}, {"id": "i7", "label": "Karaffen en koelers schoon, omgekeerd drogen"}, {"id": "i8", "label": "Vuile was in de waszak"}, {"id": "i9", "label": "Alle tafels afgesloten, geen open bonnen"}, {"id": "i10", "label": "Dagafsluiting (Z-rapport) gedraaid"}, {"id": "i11", "label": "Kas geteld, verschil doorgegeven"}, {"id": "i12", "label": "Pinautomaten aan de lader"}, {"id": "i13", "label": "Toiletten eindschoonmaak en aangevuld"}, {"id": "i14", "label": "Terrasmeubilair opgeborgen"}, {"id": "i15", "label": "Ramen en deuren op slot, nooduitgangen dicht"}, {"id": "i16", "label": "Muziek en lichten uit"}, {"id": "i17", "label": "Gevonden voorwerpen opgeborgen"}], "active": true}, {"name": "Opening keuken", "department": "Keuken", "moment": "opening", "kind": "check", "sort": 30, "items": [{"id": "i1", "label": "Afzuiging aan vóór het aansteken van gas"}, {"id": "i2", "label": "Apparatuur opgestart en werkt (oven, fornuis, plancha, friteuse, vaatwasser)"}, {"id": "i3", "label": "Nooduitgang en blusdeken vrij"}, {"id": "i4", "label": "Houdbaarheid koelingen gecontroleerd, verlopen weg (waste)"}, {"id": "i5", "label": "Prikthermometer schoon en werkt"}, {"id": "i6", "label": "Handenwasplaats: zeep, papier, desinfectie"}, {"id": "i7", "label": "Werkbanken, planken en messen schoon en gedesinfecteerd"}, {"id": "i8", "label": "Iedereen in schone keukenkleding, lang haar vast, geen sieraden"}, {"id": "i9", "label": "Gezondheidscheck: niemand met diarree, braken, koorts of open wond"}, {"id": "i10", "label": "Reserveringen en allergieën doorgenomen"}, {"id": "i11", "label": "Mise-en-place-lijsten per partie klaar"}, {"id": "i12", "label": "Leveringen van vandaag bekend"}], "active": true}, {"name": "Sluiting keuken", "department": "Keuken", "moment": "sluiting", "kind": "check", "sort": 40, "items": [{"id": "i1", "label": "Mise-en-place afgedekt, gelabeld en in de koeling"}, {"id": "i2", "label": "Terugkoelen gestart en geregistreerd"}, {"id": "i3", "label": "Niets buiten de koeling"}, {"id": "i4", "label": "Waste van vandaag geregistreerd"}, {"id": "i5", "label": "Werkbanken, koelwerkbanken en planken schoon en gedesinfecteerd"}, {"id": "i6", "label": "Fornuis, plancha en salamander ontvet"}, {"id": "i7", "label": "Oven/combisteamer reinigingsprogramma gedraaid"}, {"id": "i8", "label": "Friteuse: olie gecontroleerd/gefilterd, afgedekt"}, {"id": "i9", "label": "Vloer geveegd, gedweild, putjes leeg"}, {"id": "i10", "label": "Afval en glas weg, bakken schoon"}, {"id": "i11", "label": "Vaatwasser leeg, filters schoon, deur open"}, {"id": "i12", "label": "Gas dicht, apparatuur uit (behalve koeling)"}, {"id": "i13", "label": "Koelingen en vriezers goed dicht"}, {"id": "i14", "label": "Afzuiging uit"}, {"id": "i15", "label": "Achterdeur op slot"}, {"id": "i16", "label": "Bestellingen verstuurd"}, {"id": "i17", "label": "Overdracht naar de volgende dienst doorgegeven"}], "active": true}, {"name": "Opening bar", "department": "Bar", "moment": "opening", "kind": "check", "sort": 50, "items": [{"id": "i1", "label": "Koelingen aangevuld (FIFO)"}, {"id": "i2", "label": "Open flessen gecontroleerd op datum en geproefd"}, {"id": "i3", "label": "Garnituren vers gesneden, afgedekt, gelabeld"}, {"id": "i4", "label": "IJsbak vol, schone schep in de bak"}, {"id": "i5", "label": "Glaswerk gepoetst en op de vaste plek"}, {"id": "i6", "label": "Eerste bier getapt en geproefd, lekbak schoon"}, {"id": "i7", "label": "Koffiemachine warm, eerste espresso geproefd"}, {"id": "i8", "label": "Melk, thee, suiker aangevuld"}, {"id": "i9", "label": "Kassa en pin aan de bar werken"}, {"id": "i10", "label": "Werkblad schoon en leeg"}], "active": true}, {"name": "Sluiting bar", "department": "Bar", "moment": "sluiting", "kind": "check", "sort": 60, "items": [{"id": "i1", "label": "Open flessen afgesloten en gelabeld met openingsdatum"}, {"id": "i2", "label": "Garnituren weg of afgedekt en gelabeld"}, {"id": "i3", "label": "Koelingen aangevuld voor morgen"}, {"id": "i4", "label": "Koffiemachine gereinigd (backflush, stoompijpje, bakjes)"}, {"id": "i5", "label": "Glazenspoelmachine leeg en schoon"}, {"id": "i6", "label": "Tapkranen afgenomen, lekbak schoon, kranen dicht"}, {"id": "i7", "label": "IJsbak leeg en schoon"}, {"id": "i8", "label": "Werkblad, spoelbak en vloer achter de bar schoon"}, {"id": "i9", "label": "Breuk en derving geregistreerd"}, {"id": "i10", "label": "Bestellijst bar bijgewerkt"}], "active": true}, {"name": "Temperaturen opening", "department": "", "moment": "opening", "kind": "temp", "sort": 70, "items": [{"id": "i1", "label": "K1 Koelcel", "max": 7.0}, {"id": "i2", "label": "K2 Koelwerkbank keuken", "max": 7.0}, {"id": "i3", "label": "K3 Koeling bar", "max": 7.0}, {"id": "i4", "label": "V1 Vriezer", "max": -18.0}], "active": true}, {"name": "Temperaturen sluiting", "department": "", "moment": "sluiting", "kind": "temp", "sort": 80, "items": [{"id": "i1", "label": "K1 Koelcel", "max": 7.0}, {"id": "i2", "label": "K2 Koelwerkbank keuken", "max": 7.0}, {"id": "i3", "label": "K3 Koeling bar", "max": 7.0}, {"id": "i4", "label": "V1 Vriezer", "max": -18.0}], "active": true}, {"name": "Weekschoonmaak", "department": "", "moment": "week", "kind": "check", "sort": 90, "items": [{"id": "i1", "label": "Koelcellen en koelwerkbanken leeg en grondig schoon"}, {"id": "i2", "label": "Oven/combisteamer grondig"}, {"id": "i3", "label": "Filters afzuigkap in de vaatwasser"}, {"id": "i4", "label": "Wanden en tegels keuken"}, {"id": "i5", "label": "Afvalbakken uitgespoten"}, {"id": "i6", "label": "Droge opslag: schappen en vloer"}, {"id": "i7", "label": "Barkoelingen uitgenomen en schoon"}, {"id": "i8", "label": "IJsmachine gereinigd"}, {"id": "i9", "label": "Flessen en spiritrekken stofvrij"}, {"id": "i10", "label": "Ramen en deuren volledig"}, {"id": "i11", "label": "Lampen, lijsten en vensterbanken stofvrij"}], "active": true}, {"name": "Maandschoonmaak", "department": "", "moment": "maand", "kind": "check", "sort": 100, "items": [{"id": "i1", "label": "Vriezers ontdooid en schoon"}, {"id": "i2", "label": "Afzuigkap afgenomen"}, {"id": "i3", "label": "Vaatwasser ontkalkt"}, {"id": "i4", "label": "IJsmachine gedesinfecteerd"}], "active": true}, {"name": "Opening afwas", "department": "Afwas", "moment": "opening", "kind": "check", "sort": 55, "active": true, "items": [{"id": "i1", "label": "Vaatwasser aangezet en laten opwarmen vóór de eerste lading"}, {"id": "i2", "label": "Temperatuur op het display gecontroleerd (wassen ± 60 °C, naspoelen ± 82 °C)"}, {"id": "i3", "label": "Zeep en naglansmiddel voldoende"}, {"id": "i4", "label": "Rekken, korven en schone doeken klaar"}, {"id": "i5", "label": "Spoelbak en voorspoeldouche schoon"}, {"id": "i6", "label": "Afvalbakken leeg met nieuwe zak"}, {"id": "i7", "label": "Handenwasplaats: zeep, papier"}]}, {"name": "Sluiting afwas", "department": "Afwas", "moment": "sluiting", "kind": "check", "sort": 56, "active": true, "items": [{"id": "i1", "label": "Alle vaat schoon en op de vaste plek"}, {"id": "i2", "label": "Vaatwasser leeg, filters en zeven schoon, deur open"}, {"id": "i3", "label": "Machine van buiten afgenomen"}, {"id": "i4", "label": "Spoelbakken en werkbank schoon en gedesinfecteerd"}, {"id": "i5", "label": "Afval, glas en karton weg, bakken schoon"}, {"id": "i6", "label": "Vloer geveegd en gedweild, putjes leeg"}, {"id": "i7", "label": "Vuile doeken en schorten in de was"}]}];
@@ -407,13 +413,20 @@ function demoStore() {
       return { path, name: file.name, type: file.type };
     },
     async attachmentUrl(path) { return (db.files || {})[path] || ''; },
-    async menuCards() { db.menuCards ||= DEFAULT_CARDS.map((c, i) => ({ id: uid(), sort: i, ...c, updated_at: new Date().toISOString() })); return clone(db.menuCards).sort((a, b) => a.sort - b.sort || a.title.localeCompare(b.title)); },
+    async menuCards() { if (!db.menuCards) { db.menuCards = DEFAULT_CARDS.map((c, i) => ({ id: uid(), sort: i, ...c, updated_at: new Date().toISOString() })); save(); } return clone(db.menuCards).sort((a, b) => a.sort - b.sort || a.title.localeCompare(b.title)); },
     async saveMenuCard(c) {
       if (!isMgr()) throw new Error('Alleen de directie kan dit');
       db.menuCards ||= [];
       const row = { ...c, updated_at: new Date().toISOString(), updated_by: mem };
       if (c.id) Object.assign(db.menuCards.find(x => x.id === c.id), row); else db.menuCards.push({ sort: db.menuCards.length, ...row, id: uid() });
       save();
+    },
+    async setMenuAllergens(cardId, key, codes, conf) {
+      if (!isMgr()) throw new Error('Alleen de directie kan allergenen vastleggen.');
+      const c = (db.menuCards || []).find(x => x.id === cardId); if (!c) throw new Error('Kaart niet gevonden.');
+      c.allergens ||= {};
+      const v = { codes: [...new Set(codes)].filter(k => ALGL[k]).sort(), ok: !!conf, by: S.me.name, at: new Date().toISOString() };
+      c.allergens[algKey(key)] = v; save(); return v;
     },
     async deleteMenuCard(id) { const c = (db.menuCards || []).find(x => x.id === id); db.menuCards = (db.menuCards || []).filter(x => x.id !== id); if (c && db.files) delete db.files[c.file_path]; save(); },
     async attachmentBlob(path) { if (path.startsWith('static:')) return staticBlob(path); const d = (db.files || {})[path]; if (!d) throw new Error('Bestand niet gevonden'); return (await fetch(d)).blob(); },
@@ -863,6 +876,7 @@ async function supabaseStore() {
       if (c.id) ok(await sb.from('menu_cards').update(row).eq('id', c.id));
       else ok(await sb.from('menu_cards').insert({ ...row, sort: c.sort ?? 0 }));
     },
+    async setMenuAllergens(cardId, key, codes, conf) { return ok(await sb.rpc('set_menu_allergens', { p_card: cardId, p_key: algKey(key), p_codes: codes, p_ok: !!conf })); },
     async deleteMenuCard(id) {
       const c = ok(await sb.from('menu_cards').select('file_path').eq('id', id).maybeSingle());
       ok(await sb.from('menu_cards').delete().eq('id', id));
@@ -1503,11 +1517,13 @@ async function menuList(c) {
     secs.forEach(x => { x.label = secs.filter(y => y.section === x.section).length > 1 ? `${x.section} · ${(x.group || '').replace(/^Per /i, '').toLowerCase()}` : x.section; });
   };
   calcSecs();
-  let cur = 'alle', q = '', edit = false;
+  let cur = 'alle', q = '', edit = false, alg = false;
+  const A = (c.allergens ||= {});
+  const pend = {};   // allergenen die de directie aan het aanpassen is, nog niet opgeslagen
   const dlg = document.createElement('dialog');
   dlg.className = 'viewer menulist';
   dlg.setAttribute('aria-labelledby', 'ml-name');
-  dlg.innerHTML = `<div class="viewer-bar"><strong class="viewer-name" id="ml-name">${esc(c.title)}</strong>${mgr ? '<button type="button" class="btn sm" data-mledit aria-pressed="false">Bewerken</button>' : ''}<button type="button" class="x" data-mlclose aria-label="Sluiten">×</button></div>
+  dlg.innerHTML = `<div class="viewer-bar"><strong class="viewer-name" id="ml-name">${esc(c.title)}</strong>${mgr ? '<button type="button" class="btn sm" data-mlalg aria-pressed="false">Allergenen</button><button type="button" class="btn sm" data-mledit aria-pressed="false">Bewerken</button>' : ''}<button type="button" class="x" data-mlclose aria-label="Sluiten">×</button></div>
     <div class="ml-tools"><input type="search" placeholder="Zoeken, bv. truffel of Bourgogne" aria-label="Zoeken in ${esc(c.title)}" data-mlq>
       <div class="ml-chips" role="tablist" data-mlchips></div></div>
     <div class="ml-body" data-mlbody></div>`;
@@ -1523,14 +1539,29 @@ async function menuList(c) {
     const nq = norm(q.trim());
     const show = items.filter(it => (cur === 'alle' || keyOf(it) === cur) && (!nq || norm([it.name, it.tag, ...it.lines, it.section].join(' ')).includes(nq)));
     let lastK = '';
-    const tools = edit ? `<div class="ml-edbar"><button type="button" class="btn primary" data-mladd>+ Gerecht toevoegen</button>${Array.isArray(c.items) && c.items.length ? '<button type="button" class="linkbtn small" data-mlreset>Opnieuw uit de pdf halen</button>' : ''}<p class="hint">Tik op een gerecht om het te wijzigen, te verplaatsen of weg te halen. Wijzigingen ziet het team meteen.</p></div>` : '';
+    const dishes = [...new Set(items.filter(it => !isPriceRow(it)).map(it => algKey(it.name)))];
+    const nOk = dishes.filter(k => A[k]?.ok).length;
+    const algBar = alg ? `<div class="ml-edbar algbar"><p><strong>${nOk} van ${dishes.length} gerechten gecontroleerd</strong></p><p class="hint">Groen = zit erin. Tik op een allergeen om het aan of uit te zetten. Klopt het? Tik op <strong>✓ Klopt</strong>. Pas daarna ziet het team de allergenen.</p></div>` : '';
+    const tools = alg ? algBar : edit ? `<div class="ml-edbar"><button type="button" class="btn primary" data-mladd>+ Gerecht toevoegen</button>${Array.isArray(c.items) && c.items.length ? '<button type="button" class="linkbtn small" data-mlreset>Opnieuw uit de pdf halen</button>' : ''}<p class="hint">Tik op een gerecht om het te wijzigen, te verplaatsen of weg te halen. Wijzigingen ziet het team meteen.</p></div>` : '';
     body.innerHTML = tools + (show.length ? show.map(it => {
       const k = keyOf(it), head = k !== lastK ? `<h3 class="ml-sec">${esc(secs.find(x => x.k === k)?.label || it.section)}</h3>` : ''; lastK = k;
       const unknown = !it.allergens || /niet bekend/i.test(it.allergens);
+      const ak = algKey(it.name), ae = A[ak];
+      if (alg && !isPriceRow(it)) {
+        const sel = pend[ak] || new Set(ae?.codes || []), changed = !!pend[ak];
+        return head + `<article class="ml-item algitem ${ae?.ok && !changed ? 'okd' : ''}"><div class="ml-top"><strong>${esc(it.name)}</strong></div>${it.lines.length ? `<p>${esc(it.lines.join(' · '))}</p>` : ''}
+          <div class="algchips" role="group" aria-label="Allergenen ${esc(it.name)}">${ALG.map(([k, l]) => `<button type="button" class="algc ${sel.has(k) ? 'on' : ''}" data-algc="${esc(ak)}|${k}" aria-pressed="${sel.has(k)}">${l}</button>`).join('')}</div>
+          <div class="algfoot"><span class="pill ${ae?.ok && !changed ? 'ok' : 'warn'}">${changed ? 'Gewijzigd, nog bevestigen' : ae?.ok ? `✓ Gecontroleerd${ae.by ? ' door ' + esc(ae.by.split(' ')[0]) : ''}` : ae ? 'Voorstel, nog controleren' : 'Nog niet ingevuld'}</span>${ae?.ok && !changed ? '' : `<button type="button" class="btn sm primary" data-algok="${esc(ak)}">✓ Klopt</button>`}</div></article>`;
+      }
+      const algLine = isPriceRow(it) ? ''
+        : ae?.ok ? `<p class="ml-all"><b>Allergenen</b> ${ae.codes.length ? esc(algNames(ae.codes)) : 'geen van de 14 allergenen'}</p>`
+        : ae && mgr ? `<p class="ml-all unk"><b>Voorstel</b> ${ae.codes.length ? esc(algNames(ae.codes)) : 'geen'} · nog controleren</p>`
+        : it.allergens && !unknown ? `<p class="ml-all"><b>Allergenen</b> ${esc(it.allergens)}</p>`
+        : Object.keys(A).length ? '<p class="ml-all unk"><b>Allergenen</b> nog niet gecontroleerd. Vraag het altijd na in de keuken.</p>' : '';
       const inner = `<div class="ml-top"><strong>${esc(it.name)}</strong>${it.tag ? `<span class="pill">${esc(it.tag)}</span>` : ''}${edit ? `<span class="ml-pen">${ico('pen')}Wijzig</span>` : ''}</div>
         ${it.lines.map(l => `<p>${esc(l)}</p>`).join('')}
         ${it.price ? `<p class="ml-price">${esc(it.price)}</p>` : ''}
-        ${it.allergens ? `<p class="ml-all ${unknown ? 'unk' : ''}"><b>Allergenen</b> ${esc(it.allergens)}</p>` : ''}`;
+        ${algLine}`;
       return head + (edit ? `<button type="button" class="ml-item ml-ed" data-mlitem="${items.indexOf(it)}">${inner}</button>` : `<article class="ml-item">${inner}</article>`);
     }).join('') : '<p class="hint" style="padding:16px">Niets gevonden.</p>');
     body.scrollTop = keepScroll ? top : 0;
@@ -1578,9 +1609,24 @@ async function menuList(c) {
   };
   dlg.addEventListener('close', () => { if (dlg.parentNode) dlg.parentNode.removeChild(dlg); });
   dlg.addEventListener('click', async ev => {
-    if (ev.target.closest('[data-mlclose]')) { dlg.close(); if (S.view === 'kaarten') rerender(); return; }
+    if (ev.target.closest('[data-mlclose]')) { if (Object.keys(pend).length && !await ask('Je hebt allergenen aangepast maar nog niet bevestigd met ✓ Klopt. Toch sluiten?', 'Sluiten')) return; dlg.close(); if (S.view === 'kaarten') rerender(); return; }
+    const ab = ev.target.closest('[data-mlalg]');
+    if (ab) {
+      alg = !alg; ab.setAttribute('aria-pressed', alg); ab.textContent = alg ? 'Klaar' : 'Allergenen';
+      if (alg && edit) { edit = false; const eb = $('[data-mledit]', dlg); eb.textContent = 'Bewerken'; eb.setAttribute('aria-pressed', false); eb.classList.remove('primary'); }
+      return draw();
+    }
+    const ac = ev.target.closest('[data-algc]');
+    if (ac) { const [k, code] = ac.dataset.algc.split('|'); const set = pend[k] || new Set(A[k]?.codes || []); if (set.has(code)) set.delete(code); else set.add(code); pend[k] = set; return draw(true); }
+    const ao = ev.target.closest('[data-algok]');
+    if (ao) {
+      const k = ao.dataset.algok; ao.disabled = true;
+      try { A[k] = await store.setMenuAllergens(c.id, k, [...(pend[k] || new Set(A[k]?.codes || []))], true); delete pend[k]; toast('Allergenen vastgelegd'); }
+      catch (x) { toast(errMsg(x), 'error'); }
+      return draw(true);
+    }
     const e = ev.target.closest('[data-mledit]');
-    if (e) { edit = !edit; e.textContent = edit ? 'Klaar' : 'Bewerken'; e.setAttribute('aria-pressed', edit); e.classList.toggle('primary', edit); return draw(true); }
+    if (e) { if (alg) { alg = false; const b2 = $('[data-mlalg]', dlg); b2.textContent = 'Allergenen'; b2.setAttribute('aria-pressed', false); b2.classList.remove('primary'); } edit = !edit; e.textContent = edit ? 'Klaar' : 'Bewerken'; e.setAttribute('aria-pressed', edit); e.classList.toggle('primary', edit); return draw(true); }
     if (ev.target.closest('[data-mladd]')) return dishDialog(null);
     const it = ev.target.closest('[data-mlitem]'); if (it) return dishDialog(+it.dataset.mlitem);
     if (ev.target.closest('[data-mlreset]')) {
@@ -1605,7 +1651,7 @@ async function viewKaarten(el) {
   el.innerHTML = `
     <div class="page-head"><div><h1>Menukaarten</h1><p>De actuele menukaart, wijnkaart en bites. Tik om te openen.</p></div>${mgr ? '<button class="btn primary" data-kadd>+ Menukaart toevoegen</button>' : ''}</div>
     ${cards.length ? `<div class="kgrid">${cards.map(c => `<div class="card kcard">
-        <button type="button" class="kopen" data-kopen="${c.id}"><span class="kic">${isImg(c) ? ico('file') : ico('book')}</span><span class="kt"><strong>${esc(c.title)}</strong><small>Bijgewerkt ${esc(fmtShort(iso(new Date(c.updated_at))))}</small></span><span class="chev" aria-hidden="true">›</span></button>
+        <button type="button" class="kopen" data-kopen="${c.id}"><span class="kic">${isImg(c) ? ico('file') : ico('book')}</span><span class="kt"><strong>${esc(c.title)}</strong><small>Bijgewerkt ${esc(fmtShort(iso(new Date(c.updated_at))))}${mgr && Object.values(c.allergens || {}).some(v => !v.ok) ? ` · <span class="algtodo">allergenen van ${Object.values(c.allergens).filter(v => !v.ok).length} gerechten nog controleren</span>` : ''}</small></span><span class="chev" aria-hidden="true">›</span></button>
         ${mgr ? `<div class="kact"><button type="button" class="linkbtn small" data-kedit="${c.id}">Vervangen of naam wijzigen</button><button type="button" class="linkbtn small danger" data-kdel="${c.id}">Verwijderen</button></div>` : ''}
       </div>`).join('')}</div>`
       : `<div class="card empty">${mgr ? 'Nog geen kaarten. Tik op <strong>+ Kaart toevoegen</strong> en kies een pdf of foto van de menukaart, wijnkaart of bites.' : 'De kaarten staan hier zodra de directie ze heeft toegevoegd.'}</div>`}`;
