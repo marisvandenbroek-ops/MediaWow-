@@ -1840,3 +1840,82 @@ main[hidden] { display: none !important; }
 .algtodo { color: var(--warn); font-weight: 600; }
 
 .teamtoday .teammore { display: block; width: 100%; text-align: center; padding: 10px 0 2px; font-size: 14px; }
+
+/* ===== Controleronde 10: opmaak ===== */
+/* Klokken op een smalle telefoon: knoppen blijven binnen de kaart */
+.entry .req-actions .btn { min-width: 0; white-space: normal; }
+@media (max-width: 360px) {
+  .entry .req-actions { grid-template-columns: 1fr 1fr !important; }
+  .entry .req-actions > :first-child { grid-column: 1 / -1; }
+  .entry-grid { grid-template-columns: 1fr 1fr !important; }
+  .entry-grid > div:last-child { grid-column: 1 / -1 !important; }
+  .entry-grid b { white-space: nowrap; font-size: 13.5px; }
+}
+/* Planning op tablet en kleine laptop: smallere naamkolom zodat de hele week past; dagkoppen blijven staan */
+@media (min-width: 761px) and (max-width: 1365px) {
+  table.grid { min-width: 0; }
+  .grid .who { width: 132px; }
+  .money .rev input, .moneyrow input { width: 100% !important; min-width: 0; }
+  .moneyrow td { font-size: 12px; }
+  .grid tbody .who { padding: 8px 8px; }
+  .who-inner strong { font-size: 13px; }
+  .grid td.cell { padding: 4px; }
+  .chip { padding-left: 6px; padding-right: 4px; }
+  .chip b { font-size: 11.5px; letter-spacing: -.02em; white-space: nowrap; }
+  .chip small { font-size: 10.5px; }
+}
+.grid thead th { position: sticky; top: 0; z-index: 2; }
+.grid thead .who { z-index: 4; }
+/* Kostenrij in de planning: lucht in de cellen */
+.moneyrow td, .moneyrow th { padding: 8px 8px 10px; }
+.moneyrow .kp { border-radius: 8px; margin-top: 4px; }
+/* Open dienst: aantal aanmeldingen mag op een tweede regel */
+.chip.open small { white-space: normal; overflow: visible; }
+/* Overzicht directie: twee kolommen zonder gaten */
+@media (min-width: 900px) {
+  .dhome { display: block; columns: 2; column-gap: 14px; }
+  .dhome > * { break-inside: avoid; margin: 0 0 12px; display: block; width: 100%; }
+  .dhome > .hlinks { column-span: all; }
+}
+/* Startscherm beschikbaarheid: geen woorden die midden in breken */
+.avd i { word-break: keep-all; overflow-wrap: normal; font-size: 10px; min-height: 2.3em; display: flex; align-items: flex-start; justify-content: center; }
+.avlegend .lg { white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; margin-right: 8px; }
+.avd-dot { margin-left: 0; border: 1.5px dashed var(--muted); }
+.avd.av-leeg { border-color: color-mix(in srgb, var(--muted) 55%, transparent); }
+/* Beschikbaarheid met tijden: Van en tot netjes naast elkaar */
+.avtimes { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; max-width: 380px; }
+.avtimes input { min-width: 0; width: 100% !important; }
+.avrow .avaddnote { grid-column: 1 / -1; }
+@media (min-width: 521px) { .avrow .avaddnote, .avrow .avnote, .avrow .avtimes { grid-column: 2 / -1; } }
+/* Verlof: ruimte tussen de kaarten */
+.lc-hero + *, .lvhero + *, .leavehero + * { margin-top: 14px; }
+/* Planning op de telefoon: de + knop valt niet over de laatste regel */
+@media (max-width: 760px) { #view:has(.btn.madd) { padding-bottom: 150px; } }
+/* Smalle telefoon: koppen niet lelijk afbreken */
+@media (max-width: 360px) {
+  .hhead h2 { font-size: 11px; letter-spacing: .06em; }
+  .hhead .linkbtn, .hhead .muted { white-space: nowrap; }
+  .hr-top h2 { white-space: nowrap; font-size: 20px; }
+  .viewer-bar { flex-wrap: wrap; row-gap: 6px; }
+  .viewer-bar .viewer-name { flex: 1 1 100%; order: -1; }
+}
+.hhead .linkbtn { white-space: nowrap; }
+/* Zijbalk: uitlog-icoon op dezelfde regel */
+@media (min-width: 1024px) { .userbox { flex-wrap: nowrap; gap: 2px; } .userbox .who { flex-basis: auto; } .topbar .userbox { flex-wrap: wrap; } .topbar .userbox .who { flex: 1 1 100%; } .topbar .userbox .btn.icon { padding-left: 7px; padding-right: 7px; } }
+/* Tegels: tekst op dezelfde hoogte als de getallen */
+.hstat b.txt { margin-top: 4px; margin-bottom: 0; min-height: 34px; display: flex; align-items: center; }
+/* Losse kop Dagrapport iets meer lucht */
+.homesec { margin-top: 20px; }
+.homesec > h2 { margin-bottom: 8px; }
+/* Menukaarten-lijst: actielinks breken niet af */
+.kact { flex-wrap: wrap; row-gap: 4px; }
+.kact .linkbtn { white-space: nowrap; }
+/* Kaart: knoppen in de balk, actief = wit */
+.viewer-bar .btn.sm { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .55); }
+.viewer-bar .btn.sm.on, .viewer-bar .btn.sm.primary { background: #fff; color: #912508; border-color: #fff; font-weight: 700; }
+.card.tegoed { margin-top: 14px; }
+@media (min-width: 761px) and (max-width: 1023px) {
+  .chip b { white-space: normal; font-size: 11px; }
+  .moneyrow .rev { display: block; font-size: 0; }
+  .moneyrow .rev input { font-size: 13px !important; margin-top: 4px; padding: 4px 6px; }
+}

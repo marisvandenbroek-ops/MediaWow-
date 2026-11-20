@@ -116,7 +116,7 @@ const certValid = (c, ds) => !c.expires || c.expires >= ds;
 const dmy = ds => String(ds || '').split('-').reverse().join('-');
 const BUSY = ['rustig', 'normaal', 'druk', 'heel druk'];
 const ICON = {
-  kaarten: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5 9 3l6 2.5L21 3v15.5L15 21l-6-2.5L3 21z"/><path d="M9 3v15.5M15 5.5V21"/></svg>',
+  kaarten: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2zM22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg>',
   planning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 14h3M13.5 14h3M7.5 17.5h3"/></svg>',
   diensten: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5"/></svg>',
   beschikbaar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M8.5 15l2.2 2.2 4.8-4.7"/></svg>',
@@ -1621,7 +1621,7 @@ async function menuList(c) {
     if (ev.target.closest('[data-mlclose]')) { if (Object.keys(pend).length && !await ask('Je hebt allergenen aangepast maar nog niet bevestigd met ✓ Klopt. Toch sluiten?', 'Sluiten')) return; dlg.close(); if (S.view === 'kaarten') rerender(); return; }
     const ab = ev.target.closest('[data-mlalg]');
     if (ab) {
-      alg = !alg; ab.setAttribute('aria-pressed', alg); ab.textContent = alg ? 'Klaar' : 'Allergenen';
+      alg = !alg; ab.classList.toggle('on', alg); ab.setAttribute('aria-pressed', alg); ab.textContent = alg ? 'Klaar' : 'Allergenen';
       if (alg && edit) { edit = false; const eb = $('[data-mledit]', dlg); eb.textContent = 'Bewerken'; eb.setAttribute('aria-pressed', false); eb.classList.remove('primary'); }
       return draw();
     }
@@ -1638,7 +1638,7 @@ async function menuList(c) {
       return draw(true);
     }
     const e = ev.target.closest('[data-mledit]');
-    if (e) { if (alg) { alg = false; const b2 = $('[data-mlalg]', dlg); b2.textContent = 'Allergenen'; b2.setAttribute('aria-pressed', false); b2.classList.remove('primary'); } edit = !edit; e.textContent = edit ? 'Klaar' : 'Bewerken'; e.setAttribute('aria-pressed', edit); e.classList.toggle('primary', edit); return draw(true); }
+    if (e) { if (alg) { alg = false; const b2 = $('[data-mlalg]', dlg); b2.textContent = 'Allergenen'; b2.setAttribute('aria-pressed', false); b2.classList.remove('on'); } edit = !edit; e.textContent = edit ? 'Klaar' : 'Bewerken'; e.setAttribute('aria-pressed', edit); e.classList.toggle('primary', edit); return draw(true); }
     if (ev.target.closest('[data-mladd]')) return dishDialog(null);
     const it = ev.target.closest('[data-mlitem]'); if (it) return dishDialog(+it.dataset.mlitem);
     if (ev.target.closest('[data-mlreset]')) {
@@ -1896,7 +1896,7 @@ async function viewWeek(el, editable) {
     const mine = shifts.filter(s => s.employee_id === e.id);
     const hours = mine.reduce((t, s) => t + shiftHours(s), 0);
     const ct = e.contract_type || 'vast', max = Number(e.contract_hours) || 0, min = Number(e.contract_min_hours) || 0;
-    const over = !isFlex(e) && max && hours > max + 0.01;
+    const over = editable && !isFlex(e) && max && hours > max + 0.01;   // contractinfo alleen voor wie plant
     const under = editable && ct === 'minmax' && min && hours < min - 0.01;
     const ctTxt = !editable ? '' : isFlex(e) ? ` · ${CT[ct].toLowerCase()}` : ct === 'minmax' && max ? ` / ${fmtH(min)}–${fmtH(max)} u` : max ? ` / ${fmtH(max)} u` : '';
     const cells = days.map(d => {
@@ -1910,7 +1910,7 @@ async function viewWeek(el, editable) {
       }).join('');
       return `<td class="cell ${editable ? 'editable' : ''} ${ds === today ? 'today' : ''}" data-emp="${e.id}" data-date="${ds}">${editable ? avHTML(e.id, ds) : ''}${lv}${chips}${editable ? '<button class="add" data-add aria-label="Dienst toevoegen">+</button>' : ''}</td>`;
     }).join('');
-    return `<tr class="${e.id === S.me.id ? 'me' : ''}"><th class="who"><div class="who-inner"><span class="dot" style="background:${esc(e.color || COLORS[0])}"></span><div><strong>${esc(e.name)}</strong><small class="${over || under ? 'over' : ''}">${fmtH(hours)} u${ctTxt}${over ? ' · boven contract' : under ? ' · onder minimum' : ''}</small></div></div></th>${cells}</tr>`;
+    return `<tr class="${e.id === S.me.id ? 'me' : ''}"><th class="who"><div class="who-inner"><span class="dot" style="background:${esc(e.color || COLORS[0])}"></span><div><strong>${esc(e.name)}</strong>${editable || e.id === S.me.id ? `<small class="${over || under ? 'over' : ''}">${fmtH(hours)} u${ctTxt}${over ? ' · boven contract' : under ? ' · onder minimum' : ''}</small>` : e.position ? `<small>${esc(e.position)}</small>` : ''}</div></div></th>${cells}</tr>`;
   }).join('');
 
   const openRow = openShifts.length || editable ? `<tr class="openrow"><th class="who"><div class="who-inner"><span class="dot" style="background:#a8988f"></span><div><strong>Open diensten</strong><small>${openShifts.length ? openShifts.length + ' open' : 'team kan zich aanmelden'}</small></div></div></th>${days.map(d => {
@@ -2010,7 +2010,7 @@ async function viewWeek(el, editable) {
     ${elsewhere ? `<div class="pubbar"><span>Nog <strong>${future.length} concept${future.length > 1 ? 'en' : ''}</strong> in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} (${futureWeeks.map(w => 'wk ' + weekNr(parse(w))).join(', ')})</span><button class="btn sm primary" data-act="publishall">Alles publiceren</button></div>` : ''}
     ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : 'mob-hide'}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><button type="button" class="btn sm mob-hide" data-personpick>${ico('user')}Diensten per persoon</button>${S.selMode ? '' : '<button type="button" class="btn sm mob-only" data-planmore aria-label="Meer acties">⋯ Meer</button>'}</div>` : ''}
     ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren${listView ? ', of kies "Hele dag selecteren" onder een dag' : ''}. Met "Hele week" in de balk onderin selecteer je alles van deze week.</p>` : ''}
-    ${editable && !mobile && !listView ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span><span class="av av-avond">✓ avond</span> <span class="av av-niet">✕ niet</span> doorgegeven beschikbaarheid</span></div>` : ''}
+    ${editable && !mobile && !listView ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span>Beschikbaarheid: <span class="av av-avond">✓ kan</span> <span class="av av-niet">✕ kan niet</span></span></div>` : ''}
     ${people.length && listView ? listHTML() + '<p class="hint swipehint">Veeg naar links of rechts voor een andere week</p>' : ''}
     ${people.length && mobile && !listView ? mobileHTML() : ''}
     ${people.length && !mobile && !listView ? `<div class="grid-wrap"><table class="grid">
@@ -2541,7 +2541,7 @@ async function fileViewer(path, name, type) {
       if (io) io.observe(c); else await draw(c);
     }
   } catch (e) {
-    if (!closed) body.innerHTML = `<p class="viewer-msg">Openen lukt niet: ${esc(errMsg(e))}. Tik op Bewaren om het bestand op je telefoon te openen.</p>`;
+    if (!closed) body.innerHTML = '<p class="viewer-msg">De kaart kon niet geladen worden. Controleer je internet en probeer het opnieuw, of tik op Bewaren om het bestand op je telefoon te openen.</p>';
   }
 }
 // één luisteraar voor alle bijlageknoppen (prikbord, overzicht, 'alle mededelingen')
@@ -3009,7 +3009,7 @@ async function viewLijsten(el) {
       ${lead ? `<div class="weeknav"><button class="btn icon" data-lday="-1" aria-label="Vorige dag">‹</button><div class="label"><strong>${ds === today ? 'Vandaag' : esc(fmtLong(ds))}</strong><span>${ds === today ? esc(fmtLong(ds)) : ''}</span></div><button class="btn icon" data-lday="1" aria-label="Volgende dag" ${ds >= today ? 'disabled' : ''}>›</button></div>` : ''}</div>
     ${lead ? `<div class="filters ldeps">${deps.map(d => `<button type="button" class="${S.lDep === d ? 'active' : ''}" data-ldep="${esc(d)}">${d === 'alle' ? 'Alles' : esc(d)}</button>`).join('')}</div>` : ''}
     ${isMgr() ? '<div class="lmanage"><button type="button" class="btn" data-lmanage>' + ico('pen') + 'Lijsten aanpassen</button><button type="button" class="btn" data-lnew2>+ Nieuwe lijst</button></div>' : ''}
-    ${past ? '' : `<div class="logbtns"><button class="btn" data-newlog="ontvangst" title="Ontvangst goederen">${ico('box')}Ontvangst</button><button class="btn" data-newlog="kern" title="Kerntemperatuur">${ico('therm')}Kerntemp.</button><button class="btn" data-newlog="melding" title="Melding maken">${ico('alert')}Melding</button></div>`}
+    ${past ? '' : `<div class="logbtns"><button class="btn" data-newlog="ontvangst" title="Levering ontvangen">${ico('box')}Levering</button><button class="btn" data-newlog="kern" title="Kerntemperatuur">${ico('therm')}Kerntemp.</button><button class="btn" data-newlog="melding" title="Melding maken">${ico('alert')}Melding</button></div>`}
     ${group(ds === today ? 'Vandaag' : 'Deze dag', dayLists)}
     ${group('Deze week', lists.filter(l => l.moment === 'week'))}
     ${group('Deze maand', lists.filter(l => l.moment === 'maand'))}
@@ -3634,7 +3634,7 @@ async function viewMine(el) {
       const base = mondayOf(new Date()), isMon = new Date().getDay() === 1;
       const w1 = addDays(base, 7), w2 = addDays(base, 14), target = isMon ? w1 : w2, dl = addDays(target, -7);
       const avs = (await store.availability(iso(w1), iso(addDays(w2, 6))).catch(() => [])).filter(a => a.employee_id === S.me.id);
-      const SH = { hele_dag: 'hele dag', ochtend: 'ochtend', middag: 'middag', avond: 'avond', niet: 'niet' };
+      const SH = { hele_dag: 'hele dag', ochtend: 'ocht.', middag: 'midd.', avond: 'avond', niet: 'niet' };
       const wkRow = (mon, label) => {
         const days = [...Array(7)].map((_, i) => { const ds = iso(addDays(mon, i)); return { ds, d: addDays(mon, i), a: avs.find(a => a.date === ds) }; });
         const n = days.filter(x => x.a).length, isT = iso(mon) === iso(target);
@@ -3647,7 +3647,7 @@ async function viewMine(el) {
       };
       availHTML = `<section class="card hcard avhome"><div class="hhead"><h2>Mijn beschikbaarheid</h2><button type="button" class="linkbtn" data-goto="beschikbaar" data-avweek="${iso(target)}">Doorgeven ›</button></div>
         ${wkRow(w1, 'Volgende week')}${wkRow(w2, 'Week erna')}
-        <p class="hint avlegend"><span class="avd-dot ok"></span>beschikbaar <span class="avd-dot bad"></span>niet <span class="avd-dot"></span>nog niet doorgegeven</p></section>`;
+        <p class="hint avlegend"><span class="lg"><span class="avd-dot ok"></span>beschikbaar</span><span class="lg"><span class="avd-dot bad"></span>niet</span><span class="lg"><span class="avd-dot"></span>nog niet doorgegeven</span></p></section>`;
     } catch (x) { availHTML = ''; }
   }
   const rosterHTML = sel ? '' : `<section class="homeroster" data-hroster>
@@ -3911,7 +3911,7 @@ async function viewRequestsStaff(el) {
       <ul class="lc-leg">
         <li><span class="dot u"></span>Opgenomen<b>${fmtH(used)} u</b></li>
         <li><span class="dot r"></span>Aangevraagd<b>${fmtH(reserved)} u</b></li>
-        <li><span class="dot f"></span>Vrij te plannen<b>${fmtH(avail)} u</b></li>
+        <li><span class="dot f"></span>Nog te plannen<b>${fmtH(avail)} u</b></li>
       </ul>
       <button type="button" class="btn primary block lh-cta" data-reqnew>${ico('plus')}Verlof aanvragen</button>
     </section>` : `<section class="card leavehero"><p class="hint" style="margin:0 0 12px">Je verlofsaldo is nog niet ingevuld door de directie.</p><button type="button" class="btn primary block lh-cta" data-reqnew>${ico('plus')}Verlof aanvragen</button></section>`}
@@ -4521,7 +4521,7 @@ async function viewBeschikbaar(el) {
       <button class="btn icon" data-w="1" aria-label="Volgende week">›</button></div>
       <div class="actions"><button class="btn sm" data-fill="hele_dag">Hele week beschikbaar</button>${prevAv.some(a => a.employee_id === S.me.id) ? '<button class="btn sm" data-copyprev>Zelfde als vorige week</button>' : ''}</div></div>
     <form class="card avform" id="avform">${rows}
-      <div class="avfoot"><span class="hint">${filled ? `✓ ${filled} van 7 dagen doorgegeven` : 'Nog niet doorgegeven'}</span><div class="actions"><button class="btn" value="repeat" title="Vult de komende 4 weken met dit patroon, alleen op dagen die nog leeg zijn">Opslaan + 4 weken</button><button class="btn primary" value="save">Opslaan</button></div></div></form>`;
+      <div class="avfoot"><span class="hint">${filled ? `✓ ${filled} van 7 dagen doorgegeven` : 'Nog niet doorgegeven'}</span><div class="actions"><button class="btn" value="repeat" title="Vult de komende 4 weken met dit patroon, alleen op dagen die nog leeg zijn">Ook 4 weken vooruit</button><button class="btn primary" value="save">Opslaan</button></div></div></form>`;
   const f = $('#avform');
   f.onsubmit = async ev => {
     ev.preventDefault();
@@ -5221,11 +5221,12 @@ async function clockCard(todayShift) {
   const [open] = await store.openEntries().then(l => l.filter(e => e.employee_id === S.me.id));
   const st = await store.settings();
   const onBreak = open && open.break_started_at;
+  const done = !open && todayShift && shiftWindow(todayShift)[1] <= Date.now();   // dienst van vandaag is al voorbij
   const state = !open
-    ? `<span class="pulse"></span><div><strong>Niet ingeklokt</strong><small>${todayShift ? `Je dienst vandaag: ${hm(todayShift.start_time)} – ${hm(todayShift.end_time)}` : 'Geen dienst gepland vandaag'}</small></div>`
+    ? `<span class="pulse"></span><div><strong>${done ? 'Je dienst zit erop' : 'Niet ingeklokt'}</strong><small>${todayShift ? `${done ? 'Gepland was' : 'Je dienst vandaag:'} ${hm(todayShift.start_time)} – ${hm(todayShift.end_time)}` : 'Geen dienst gepland vandaag'}</small></div>`
     : `<span class="pulse ${onBreak ? 'brk' : 'on'}"></span><div><strong>${onBreak ? 'Pauze sinds ' + tHM(open.break_started_at) : 'Ingeklokt sinds ' + tHM(open.clock_in)}</strong><small data-live="${open.id}">${fmtDur(entryHours(open))} gewerkt${open.break_minutes ? ` · ${open.break_minutes} min pauze` : ''}</small></div>`;
   const btns = !open
-    ? `<button class="btn primary big" data-clock="in">Inklokken</button>`
+    ? (done ? `<button type="button" class="linkbtn" data-clock="in">Toch weer aan het werk? Inklokken</button>` : `<button class="btn primary big" data-clock="in">Inklokken</button>`)
     : `${onBreak ? '<button class="btn big" data-clock="pauze_eind">Pauze stoppen</button>' : '<button class="btn big" data-clock="pauze_start">Pauze</button>'}<button class="btn primary big" data-clock="uit">Uitklokken</button>`;
   const noLoc = st.lat == null && !hasWifi(st);
   return `<div class="card clock ${open ? 'is-on' : ''}" data-clockcard>
