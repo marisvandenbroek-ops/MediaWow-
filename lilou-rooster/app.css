@@ -1838,3 +1838,5 @@ main[hidden] { display: none !important; }
 .algc.on { background: var(--ok); border-color: var(--ok); color: #fff; font-weight: 600; }
 .algfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
 .algtodo { color: var(--warn); font-weight: 600; }
+
+.teamtoday .teammore { display: block; width: 100%; text-align: center; padding: 10px 0 2px; font-size: 14px; }

@@ -3590,7 +3590,7 @@ async function viewMine(el) {
   const weekEmpty = () => { const f = iso(S.homeWeek), t = iso(addDays(S.homeWeek, 6)); return !mine.some(x => x.date >= f && x.date <= t) && !myLeaves.some(r => overlaps(r.start_date, r.end_date, f, t)) && !closedRuns(CFG.specialDays, f, t).length && f > today; };
   const todayTeam = all.filter(x => x.date === today && x.employee_id && x.published).sort((a, b) => shiftWindow(a)[0] - shiftWindow(b)[0]);
   const teamHTML = sel || !todayTeam.length ? '' : `<section class="card hcard teamtoday"><div class="hhead"><h2>Vandaag aan het werk</h2><span class="muted small">${new Set(todayTeam.map(x => x.employee_id)).size} ${new Set(todayTeam.map(x => x.employee_id)).size === 1 ? 'persoon' : 'mensen'}</span></div>
-    <ul class="rlist">${todayTeam.map(x => `<li class="rrow"><span class="rdot" style="background:${esc(emps.find(e => e.id === x.employee_id)?.color || COLORS[0])}"></span><span class="rwho"><strong>${x.employee_id === S.me.id ? 'Jij' : esc(nameOf[x.employee_id] || '?')}</strong><small>${esc(x.position || '')}</small></span><span class="rtime">${hm(x.start_time)} – ${hm(x.end_time)}</span>${shiftWindow(x)[0] <= new Date() && shiftWindow(x)[1] > new Date() ? '<span class="rstat in">nu</span>' : shiftWindow(x)[1] <= new Date() ? '<span class="rstat done">klaar</span>' : ''}</li>`).join('')}</ul></section>`;
+    <ul class="rlist">${(todayTeam.length > 4 && !S.teamAll ? todayTeam.slice(0, 4) : todayTeam).map(x => `<li class="rrow"><span class="rdot" style="background:${esc(emps.find(e => e.id === x.employee_id)?.color || COLORS[0])}"></span><span class="rwho"><strong>${x.employee_id === S.me.id ? 'Jij' : esc(nameOf[x.employee_id] || '?')}</strong><small>${esc(x.position || '')}</small></span><span class="rtime">${hm(x.start_time)} – ${hm(x.end_time)}</span>${shiftWindow(x)[0] <= new Date() && shiftWindow(x)[1] > new Date() ? '<span class="rstat in">nu</span>' : shiftWindow(x)[1] <= new Date() ? '<span class="rstat done">klaar</span>' : ''}</li>`).join('')}</ul>${todayTeam.length > 4 ? `<button type="button" class="linkbtn teammore" data-teamall>${S.teamAll ? 'Minder tonen' : `Alle ${todayTeam.length} diensten bekijken`}</button>` : ''}</section>`;
   let statsHTML = '';
   if (!sel) {
     try {
@@ -3657,9 +3657,9 @@ async function viewMine(el) {
     <div class="mhome ${sel ? 'sel' : ''}"><div class="mcol">
     ${clockHTML}
     ${statsHTML}
+    ${rosterHTML}
     ${availHTML}
     ${teamHTML}
-    ${rosterHTML}
     ${todayHTML}
     ${repCard}
     </div><div class="mcol">
@@ -3697,6 +3697,7 @@ async function viewMine(el) {
     if (ev.target.closest('[data-rulesview]')) return rulesViewer();
     const bt = ev.target.closest('[data-better]');
     if (bt) { if (!await ask('Ben je weer beter? De directie krijgt een melding en je ziekmelding stopt vandaag.', 'Ik ben weer beter')) return; try { await store.sickRecover(bt.dataset.better); toast('Fijn dat je weer beter bent!'); rerender(); } catch (x) { toast(errMsg(x), 'error'); } return; }
+    if (ev.target.closest('[data-teamall]')) { S.teamAll = !S.teamAll; return rerender(); }
     const g = ev.target.closest('[data-goto]'); if (g) { if (g.dataset.avweek) S.avWeek = parse(g.dataset.avweek); return go(g.dataset.goto); }
     const hmB = ev.target.closest('[data-hmode]'); if (hmB) { S.homeMode = hmB.dataset.hmode; return rerender(); }
     const hn = ev.target.closest('[data-hnav]');
