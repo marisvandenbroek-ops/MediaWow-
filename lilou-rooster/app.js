@@ -3553,9 +3553,9 @@ async function viewMine(el) {
       const dTo = LS.nextOff ? Math.max(0, Math.round((parse(LS.nextOff.start_date) - parse(today)) / 864e5)) : null;
       const fmtU = h => (Math.round(h * 10) / 10).toLocaleString('nl-NL');
       statsHTML = `<div class="hstats">
-        <button type="button" class="card hstat" data-hnav="0"><small>Deze week</small><b>${wk.length}</b><span>${wk.length === 1 ? 'dienst' : 'diensten'} · ${fmtH(wkH)}&nbsp;u</span></button>
-        <button type="button" class="card hstat" data-goto="aanvragen"><small>Verlof</small><b>${LS.show ? fmtU(LS.avail) : '—'}</b><span>${LS.show ? 'uur over' : 'nog niet ingevuld'}</span></button>
-        <button type="button" class="card hstat" data-goto="aanvragen"><small>${dTo == null || dTo === 0 ? 'Vrij' : 'Vrij over'}</small><b class="${dTo == null ? 'none' : ''}">${dTo == null ? '–' : dTo === 0 ? 'nu' : dTo}</b><span>${dTo == null ? 'niets gepland' : dTo === 0 ? 'geniet ervan' : dTo === 1 ? 'dag' : 'dagen'}</span></button>
+        <button type="button" class="card hstat" data-hnav="0"><small>Deze week</small><b>${fmtU(wkH)}<em>uur</em></b><span>${wk.length} ${wk.length === 1 ? 'dienst' : 'diensten'}</span></button>
+        <button type="button" class="card hstat" data-goto="aanvragen"><small>Verlof</small>${LS.show ? `<b>${fmtU(LS.avail)}<em>uur</em></b><span>nog over</span>` : '<b class="txt">Vrij vragen</b><span>tik om aan te vragen</span>'}</button>
+        <button type="button" class="card hstat" data-goto="aanvragen">${dTo == null ? '<small>Vrij</small><b class="txt">Niets gepland</b><span>plan je vakantie</span>' : dTo === 0 ? '<small>Vrij</small><b class="txt">Nu vrij</b><span>geniet ervan!</span>' : `<small>Vrij over</small><b>${dTo}<em>${dTo === 1 ? 'dag' : 'dagen'}</em></b><span>vanaf ${esc(fmt(parse(LS.nextOff.start_date), { day: 'numeric', month: 'short' }))}</span>`}</button>
       </div>`;
     } catch (x) { statsHTML = ''; }
   }

@@ -1818,3 +1818,14 @@ main[hidden] { display: none !important; }
   .avopts { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 6px; }
   .avrow .avtimes { grid-column: 1; }
 }
+
+/* Tegels op het startscherm: groot getal met eenheid, korte regel eronder */
+.hstat { justify-content: flex-start; min-width: 0; overflow: hidden; }
+.hstat b { display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
+.hstat b em { font-style: normal; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--accent); opacity: .8; }
+.hstat b.txt { font-size: 17px; line-height: 1.2; letter-spacing: -.01em; margin-top: 8px; margin-bottom: 4px; }
+.hstat span { overflow-wrap: anywhere; }
+.hstat small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; letter-spacing: .06em; }
+.hstat b { flex-wrap: nowrap; white-space: nowrap; }
+.hstat b.txt { font-size: 15px; color: var(--text); white-space: normal; }
+@media (max-width: 360px) { .hstat b em { font-size: 11.5px; } .hstat small { letter-spacing: .03em; } }
