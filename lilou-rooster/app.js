@@ -2208,11 +2208,19 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
   const rank = x => (x.st?.kind === 'kan' ? 0 : !x.st ? 1 : x.st.off ? 3 : 2);
   const empOpts = [...actief].sort((a, b) => rank(a) - rank(b)).map(({ e, st }) => `<option value="${e.id}" ${e.id === s.employee_id ? 'selected' : ''}>${esc(e.name)}${st ? ' — ' + esc(st.label) : ''}</option>`).join('');
   const busy = new Set(weekShifts.filter(x => x.date === s.date && x.id !== s.id && x.employee_id).map(x => x.employee_id));
-  const sugg = actief.filter(x => x.st?.kind === 'kan' && !busy.has(x.e.id));
-  const offList = actief.filter(x => x.st?.off);
+  // per medewerker de status voor de lijst: al ingepland telt ook mee
+  const stOf = x => x.st?.off ? x.st : busy.has(x.e.id) ? { kind: 'busy', label: 'al ingepland ' + weekShifts.filter(y => y.date === s.date && y.employee_id === x.e.id && y.id !== s.id).map(y => hm(y.start_time) + '–' + hm(y.end_time)).join(', ') } : x.st;
+  const rows = actief.map(x => ({ ...x, st: stOf(x) }));
+  const grp = k => rows.filter(x => k === 'kan' ? x.st?.kind === 'kan' : k === 'off' ? x.st?.off : k === 'busy' ? x.st?.kind === 'busy' : (!x.st || x.st.kind === 'aangevraagd'));
+  const epRow = x => `<button type="button" class="ep-row st-${x.st?.kind || 'none'} ${x.e.id === s.employee_id ? 'on' : ''}" data-epv="${x.e.id}"><span class="dot" style="background:${esc(x.e.color || COLORS[0])}"></span><span class="ep-nm">${esc(x.e.name)}</span>${x.st ? `<span class="ep-st">${esc(x.st.label)}</span>` : ''}</button>`;
+  const epGroup = (title, list, cls) => list.length ? `<div class="ep-h ${cls}">${title}</div>${list.map(epRow).join('')}` : '';
+  const epList = `<button type="button" class="ep-row st-open ${!s.employee_id ? 'on' : ''}" data-epv=""><span class="ep-nm">Open dienst</span><span class="ep-st">team kan zich aanmelden</span></button>`
+    + epGroup('Beschikbaar', grp('kan'), 'ok') + epGroup('Geen opgave', grp('none'), '') + epGroup('Al ingepland deze dag', grp('busy'), '') + epGroup('Niet inzetbaar', grp('off'), 'bad');
+  const epFace = id => { const x = rows.find(r => r.e.id === id); return x ? `<span class="dot" style="background:${esc(x.e.color || COLORS[0])}"></span><span class="ep-nm">${esc(x.e.name)}</span>${x.st ? `<span class="ep-st st-${x.st.kind}">${esc(x.st.label)}</span>` : ''}<span class="ep-car" aria-hidden="true">▾</span>` : '<span class="ep-nm">Open dienst</span><span class="ep-st">team kan zich aanmelden</span><span class="ep-car" aria-hidden="true">▾</span>'; };
   const body = `
-    <label class="field">Medewerker<select name="employee_id"><option value="" ${!s.employee_id ? 'selected' : ''}>— Open dienst (team kan zich aanmelden) —</option>${empOpts}</select></label>
-    ${sugg.length || offList.length ? `<div class="pickhelp">${sugg.length ? `<div class="hint">Beschikbaar op deze dag, nog niet ingepland</div><div class="pickchips">${sugg.map(({ e, st }) => `<button type="button" class="pickchip ok" data-pickemp="${e.id}">${esc(e.name.split(' ')[0])} <small>${esc(st.label.replace('beschikbaar ', ''))}</small></button>`).join('')}</div>` : ''}${offList.length ? `<div class="hint" style="margin-top:6px">Niet inzetbaar</div><div class="pickchips">${offList.map(({ e, st }) => `<span class="pickchip bad">${esc(e.name.split(' ')[0])} <small>${esc(st.label)}</small></span>`).join('')}</div>` : ''}</div>` : ''}
+    <div class="field"><span id="ep-lbl">Medewerker</span><select name="employee_id" class="ep-native" tabindex="-1" aria-hidden="true"><option value="" ${!s.employee_id ? 'selected' : ''}>— Open dienst —</option>${empOpts}</select>
+      <div class="emppicker"><button type="button" class="ep-btn" data-epbtn aria-expanded="false" aria-labelledby="ep-lbl">${epFace(s.employee_id)}</button>
+        <div class="ep-list" data-eplist hidden>${epList}</div></div></div>
     ${!isNew && !s.employee_id ? (() => {
       const l = apps.filter(a => a.shift_id === s.id && a.status === 'pending');
       return `<div class="applist-wrap"><div class="hint" style="margin-bottom:6px">Aanmeldingen</div>${l.length ? `<ul class="applist">${l.map(a => { const e = emps.find(x => x.id === a.employee_id) || {}; const v = avail.find(x => x.employee_id === a.employee_id && x.date === s.date);
@@ -2244,7 +2252,11 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
     onReady(dlg) {
       const f = $('form', dlg);
       const warn = $('[data-warn]', dlg);
-      $$('[data-pickemp]', dlg).forEach(b => (b.onclick = () => { const sel = $('[name=employee_id]', dlg); sel.value = b.dataset.pickemp; sel.dispatchEvent(new Event('change', { bubbles: true })); $$('[data-pickemp]', dlg).forEach(x => x.classList.toggle('on', x === b)); }));
+      // eigen keuzelijst: openen, kiezen, sluiten
+      const epBtn = $('[data-epbtn]', dlg), epL = $('[data-eplist]', dlg), sel = $('[name=employee_id]', dlg);
+      const epToggle = open => { epL.hidden = !open; epBtn.setAttribute('aria-expanded', open); if (open) ($('.ep-row.on', epL) || epL.firstElementChild)?.scrollIntoView({ block: 'nearest' }); };
+      epBtn.onclick = () => epToggle(epL.hidden);
+      epL.onclick = ev => { const r = ev.target.closest('[data-epv]'); if (!r) return; sel.value = r.dataset.epv; $$('.ep-row', epL).forEach(x => x.classList.toggle('on', x === r)); epBtn.innerHTML = epFace(r.dataset.epv); epToggle(false); sel.dispatchEvent(new Event('change', { bubbles: true })); epBtn.focus(); };
       $$('[data-assign]', dlg).forEach(b => (b.onclick = async () => {
         try { await store.openAssign(s.id, b.dataset.assign); toast('Dienst toegewezen'); dlg.close(); rerender(); } catch (e) { toast(errMsg(e), 'error'); }
       }));
