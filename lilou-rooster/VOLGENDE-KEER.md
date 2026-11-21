@@ -102,7 +102,10 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Bouwen: scratchpad build_zips.py NN (live = 4 bestanden, test = hele app met lege Supabase-sleutels).
 - Wensen uit recensies: aangevraagd verlof meteen van saldo (gereserveerd), en zien wie er vandaag werkt — gedaan (v79).
 
-## Versie 100 (update 84, 21 nov) — live, gecontroleerd (md5 + rooktest)
+## Versie 102 (update 86, 21 nov) — live, gecontroleerd (md5 + rooktest)
+- Beschikbaarheid volgt de diensten: 11–20, 13–22, 16–sluit (+ Hele dag, Tijden, Niet).
+- Shiftleaders mogen lijsten maken en aanpassen (update48 live).
+- Open vraag: vaste diensten in Instellingen gelijkzetten met 11–20, 13–22, 16–sluit?
 - Beschikbaarheid: Overdag 10:00–17:00, Avond vanaf 16:30, Tijden; Ochtend weg.
 - Tablet: 4 tabs + Meer (staand), zijbalk vanaf 1024px. Startscherm: Mijn rooster direct onder de tegels, Mijn beschikbaarheid, Vandaag max 4.
 - Beschikbaarheid met Tijden (update46 live). Allergenen per gerecht op de kaarten (update47 live; voorstellen voor 43 gerechten staan erin, directie moet bevestigen met ✓ Klopt).
