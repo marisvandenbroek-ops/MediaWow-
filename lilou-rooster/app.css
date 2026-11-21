@@ -1931,3 +1931,6 @@ main[hidden] { display: none !important; }
 .avopt span small { font-size: 10.5px; font-weight: 500; opacity: .8; line-height: 1.1; white-space: nowrap; }
 .avopts { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .avopts:has(.av-ochtend) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.avopts, .avopts:has(.av-ochtend) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.av-ochtend { color: var(--ok); background: var(--ok-soft); }
+.avopt.av-ochtend { background: none; padding: 0; margin: 0; }

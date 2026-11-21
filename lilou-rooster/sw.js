@@ -1,6 +1,6 @@
 // Eenvoudige service worker: app-bestanden offline beschikbaar, data altijd live.
 const PREFIX = 'rooster-' + new URL(self.registration.scope).pathname + '-';
-const CACHE = PREFIX + 'v100';
+const CACHE = PREFIX + 'v101';
 const SHELL = ['./', 'index.html', 'app.css', 'app.js', 'config.js', 'icon-192-v3.png', 'brand/lilou-wordmark-rood.png', 'brand/lilou-wordmark-creme.png', 'manifest.webmanifest', 'vendor/fonts.css', 'vendor/supabase.min.js'];
 
 self.addEventListener('install', e => {
