@@ -1919,3 +1919,9 @@ main[hidden] { display: none !important; }
   .moneyrow .rev { display: block; font-size: 0; }
   .moneyrow .rev input { font-size: 13px !important; margin-top: 4px; padding: 4px 6px; }
 }
+
+/* Team op de telefoon: accountstatus onder de naam */
+.acst { font-weight: 600; white-space: nowrap; }
+.acst.ok { color: var(--ok); }
+.acst.wait { color: var(--warn); }
+.acst.off { color: var(--muted); }
