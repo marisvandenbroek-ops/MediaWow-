@@ -2585,3 +2585,4 @@ end $$;
 revoke execute on function public.swap_respond(uuid, boolean) from public, anon;
 revoke execute on function public.swap_decide(uuid, boolean, text) from public, anon;
 grant execute on function public.swap_respond(uuid, boolean), public.swap_decide(uuid, boolean, text) to authenticated;
+alter function public.cert_label(text, text) set search_path = public;
