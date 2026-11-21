@@ -112,3 +112,8 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Beschikbaarheid met Tijden (update46 live). Allergenen per gerecht op de kaarten (update47 live; voorstellen voor 43 gerechten staan erin, directie moet bevestigen met ✓ Klopt).
 - Controleronde 10 verwerkt (privacy: medewerkers zien geen uren/contract van collega's in Team).
 - Open: contracttypes/uren, verlof, uurlonen, diploma's en geboortedata bij medewerkers nog invullen; testaccount 'Test' op inactief zetten; Gerrit, Tim, Lukas, Shyam nog niet geactiveerd.
+
+## Open (21 nov, avond)
+- Live: versie 103 (update 87). Klaar maar NIET live: update 91 (versie 107) = ruilen door shiftleaders, rood/verlof in planning, keuzelijst met kleuren, datum bovenaan.
+- Eerst supabase/update49.sql in de database (goedkeuringsvraag kwam niet aan op de telefoon; morgen via computer, of zelf plakken in SQL Editor). Daarna pas rooster-update-91.zip uploaden.
+- Daarna controleren: policy swap_select gebruikt is_planner(); functie notify_planners bestaat; md5 van de vier bestanden.
