@@ -1507,6 +1507,9 @@ async function parseMenuPdf(path) {
     }
   }
   push();
+  // een label dat in de pdf op een eigen regel staat (bv. "BIJ 5 & 6 GANGEN" onder een lange naam) toch als label tonen
+  const TAGRE = /^(VEGA|VEGAN|NIEUW|BIJ [0-9 &]+ GANGEN|\d+ stuks)$/i;
+  out.forEach(it => { if (!it.tag && it.lines.length && TAGRE.test(it.lines[0].trim())) it.tag = it.lines.shift().trim(); });
   out.forEach(it => { delete it.row; delete it.closed; it.price = (it.price || '').replace(/(€\s*\d+),(\d)(?!\d)/g, '$1,$20'); });   // € 7,5 → € 7,50
   return (_menuCache[path] = out);
 }
