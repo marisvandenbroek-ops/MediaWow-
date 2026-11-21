@@ -1934,3 +1934,20 @@ main[hidden] { display: none !important; }
 .avopts, .avopts:has(.av-ochtend) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .av-ochtend { color: var(--ok); background: var(--ok-soft); }
 .avopt.av-ochtend { background: none; padding: 0; margin: 0; }
+
+/* ===== Planning: wie is (niet) inzetbaar ===== */
+.grid td.cell.off { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--bad-soft) 85%, transparent) 0 8px, color-mix(in srgb, var(--bad-soft) 55%, transparent) 8px 16px); }
+.grid td.cell.off-ziek { background: color-mix(in srgb, var(--bad-soft) 90%, transparent); }
+.grid td.cell.off-pending { background: color-mix(in srgb, var(--warn-soft) 70%, transparent); }
+.grid td.cell.off .add { opacity: .35; }
+.pickhelp { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.pickchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.pickchip { font: inherit; font-size: 13px; border-radius: 999px; padding: 5px 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); display: inline-flex; gap: 5px; align-items: baseline; }
+.pickchip small { font-size: 11px; color: var(--muted); }
+.pickchip.ok { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); cursor: pointer; }
+.pickchip.ok.on { background: var(--ok); border-color: var(--ok); color: #fff; }
+.pickchip.ok.on small { color: #fff; }
+.pickchip.bad { background: var(--bad-soft); border-color: transparent; color: var(--bad); }
+.pickchip.bad small { color: var(--bad); opacity: .8; }
+.mleaves-h { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--bad); margin-right: 4px; align-self: center; }
+.mleaves .leave.niet, .mleaves .leave.sick { background: var(--bad-soft); color: var(--bad); border-color: transparent; }

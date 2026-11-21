@@ -1916,7 +1916,8 @@ async function viewWeek(el, editable) {
         const w = atw[s.id];
         return `<${tag} class="chip ${s.published ? '' : 'concept'} ${w ? 'atw' : ''}" style="--c:${esc(e.color || COLORS[0])}" ${editable ? `data-shift="${s.id}"` : ''} title="${w ? esc('⚠ ' + w.join('\n⚠ ')) : s.note ? esc(s.note) : ''}"><b>${w ? '⚠ ' : ''}${hm(s.start_time)}–${hm(s.end_time)}</b><small>${esc(s.position || '')}${s.published ? '' : ' · concept'}</small></${tag}>`;
       }).join('');
-      return `<td class="cell ${editable ? 'editable' : ''} ${ds === today ? 'today' : ''}" data-emp="${e.id}" data-date="${ds}">${editable ? avHTML(e.id, ds) : ''}${lv}${chips}${editable ? '<button class="add" data-add aria-label="Dienst toevoegen">+</button>' : ''}</td>`;
+      const dst = editable ? dayStatus(e.id, ds, leaves, avail) : null;
+      return `<td class="cell ${editable ? 'editable' : ''} ${ds === today ? 'today' : ''} ${dst?.off ? 'off off-' + dst.kind : dst?.kind === 'aangevraagd' ? 'off-pending' : ''}" data-emp="${e.id}" data-date="${ds}" ${dst?.off ? `title="${esc(e.name)}: ${esc(dst.label)}"` : ''}>${editable ? avHTML(e.id, ds) : ''}${lv}${chips}${editable ? '<button class="add" data-add aria-label="Dienst toevoegen">+</button>' : ''}</td>`;
     }).join('');
     return `<tr class="${e.id === S.me.id ? 'me' : ''}"><th class="who"><div class="who-inner"><span class="dot" style="background:${esc(e.color || COLORS[0])}"></span><div><strong>${esc(e.name)}</strong>${editable || e.id === S.me.id ? `<small class="${over || under ? 'over' : ''}">${fmtH(hours)} u${ctTxt}${over ? ' · boven contract' : under ? ' · onder minimum' : ''}</small>` : e.position ? `<small>${esc(e.position)}</small>` : ''}</div></div></th>${cells}</tr>`;
   }).join('');
@@ -1985,7 +1986,8 @@ async function viewWeek(el, editable) {
         <span class="mwho"><strong>${esc(e.name || '?')}${me ? ' <em>jij</em>' : ''}</strong><small>${esc(s.position || '')}${s.position ? ' · ' : ''}${fmtH(shiftHours(s))} u${s.published ? '' : ' · concept'}${isOpen ? (editable ? ` · ${nApps} aanmelding${nApps === 1 ? '' : 'en'}` : ' · tik om je aan te melden') : ''}${s.note ? ' · ' + esc(s.note) : ''}</small></span>
         ${editable || isOpen ? '<span class="chev" aria-hidden="true">›</span>' : ''}</${tag}>`; }).join('');
     const availFree = editable ? avail.filter(a => a.date === ds && a.kind !== 'niet' && !list.some(s => s.employee_id === a.employee_id)) : [];
-    const leaveHTML = lv.length ? `<div class="mleaves">${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}</div>` : '';
+    const nietAv = editable ? avail.filter(a => a.date === ds && a.kind === 'niet' && !lv.some(r => r.employee_id === a.employee_id)) : [];
+    const leaveHTML = lv.length || nietAv.length ? `<div class="mleaves"><span class="mleaves-h">Niet inzetbaar</span>${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''} ${r.type === 'ziek' ? 'sick' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}${nietAv.map(a => `<span class="leave niet">${esc(byId[a.employee_id]?.name || '')} · niet beschikbaar</span>`).join('')}</div>` : '';
     return `<div class="dsrow"><button type="button" class="dsnav" data-wk="-1" aria-label="Vorige week">‹</button><div class="daystrip">${strip}</div><button type="button" class="dsnav" data-wk="1" aria-label="Volgende week">›</button></div>
       <div class="dayhead"><div><h2>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}</h2>${specialDay(ds)?.kind === 'gesloten' ? `<span class="fdtag cl">${ico('lock')}Gesloten · ${esc(specialDay(ds).label)}</span>` : fd ? `<span class="fdtag">${esc(fd)}</span>` : ''}</div><span>${list.length ? `${new Set(list.filter(s => s.employee_id).map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
       ${moneyOn ? moneyHTML(ds, true) : ''}
@@ -2182,13 +2184,35 @@ async function copyWeek(current, emps = [], reqs = []) {
   rerender();
 }
 
+// Is iemand op een dag niet inzetbaar (verlof, ziek, niet beschikbaar) of juist wel beschikbaar?
+function dayStatus(empId, ds, leaves = [], avail = []) {
+  const lv = leaves.find(r => r.employee_id === empId && r.status !== 'rejected' && r.start_date <= ds && (r.end_date >= ds || (r.type === 'ziek' && r.open_end && !r.recovered_at)));
+  if (lv) {
+    const pend = lv.status === 'pending';
+    if (lv.type === 'ziek') return { kind: 'ziek', off: true, label: 'ziek' };
+    return { kind: pend ? 'aangevraagd' : 'verlof', off: !pend, label: (REQ[lv.type] || 'Verlof').toLowerCase() + (pend ? ' aangevraagd' : '') };
+  }
+  const a = avail.find(x => x.employee_id === empId && x.date === ds);
+  if (a?.kind === 'niet') return { kind: 'niet', off: true, label: 'niet beschikbaar' };
+  if (a) return { kind: 'kan', off: false, label: 'beschikbaar ' + avShort(a).replace(/^✓\s*/, '') };
+  return null;
+}
+
 function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs = {}, around = null) {
   const isNew = !s.id;
   const day = parse(s.date);
   const opts = (list, val) => list.map(v => `<option ${v === val ? 'selected' : ''}>${esc(v)}</option>`).join('');
   const posList = [...new Set([...(CFG.posities || []), s.position].filter(Boolean))];
+  // per medewerker: verlof, ziek of (niet) beschikbaar op deze dag; beschikbaar bovenaan, niet inzetbaar onderaan
+  const actief = emps.filter(e => e.active !== false || e.id === s.employee_id).map(e => ({ e, st: dayStatus(e.id, s.date, leaves, avail) }));
+  const rank = x => (x.st?.kind === 'kan' ? 0 : !x.st ? 1 : x.st.off ? 3 : 2);
+  const empOpts = [...actief].sort((a, b) => rank(a) - rank(b)).map(({ e, st }) => `<option value="${e.id}" ${e.id === s.employee_id ? 'selected' : ''}>${esc(e.name)}${st ? ' — ' + esc(st.label) : ''}</option>`).join('');
+  const busy = new Set(weekShifts.filter(x => x.date === s.date && x.id !== s.id && x.employee_id).map(x => x.employee_id));
+  const sugg = actief.filter(x => x.st?.kind === 'kan' && !busy.has(x.e.id));
+  const offList = actief.filter(x => x.st?.off);
   const body = `
-    <label class="field">Medewerker<select name="employee_id"><option value="" ${!s.employee_id ? 'selected' : ''}>— Open dienst (team kan zich aanmelden) —</option>${emps.filter(e => e.active !== false || e.id === s.employee_id).map(e => `<option value="${e.id}" ${e.id === s.employee_id ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></label>
+    <label class="field">Medewerker<select name="employee_id"><option value="" ${!s.employee_id ? 'selected' : ''}>— Open dienst (team kan zich aanmelden) —</option>${empOpts}</select></label>
+    ${sugg.length || offList.length ? `<div class="pickhelp">${sugg.length ? `<div class="hint">Beschikbaar op deze dag, nog niet ingepland</div><div class="pickchips">${sugg.map(({ e, st }) => `<button type="button" class="pickchip ok" data-pickemp="${e.id}">${esc(e.name.split(' ')[0])} <small>${esc(st.label.replace('beschikbaar ', ''))}</small></button>`).join('')}</div>` : ''}${offList.length ? `<div class="hint" style="margin-top:6px">Niet inzetbaar</div><div class="pickchips">${offList.map(({ e, st }) => `<span class="pickchip bad">${esc(e.name.split(' ')[0])} <small>${esc(st.label)}</small></span>`).join('')}</div>` : ''}</div>` : ''}
     ${!isNew && !s.employee_id ? (() => {
       const l = apps.filter(a => a.shift_id === s.id && a.status === 'pending');
       return `<div class="applist-wrap"><div class="hint" style="margin-bottom:6px">Aanmeldingen</div>${l.length ? `<ul class="applist">${l.map(a => { const e = emps.find(x => x.id === a.employee_id) || {}; const v = avail.find(x => x.employee_id === a.employee_id && x.date === s.date);
@@ -2220,6 +2244,7 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
     onReady(dlg) {
       const f = $('form', dlg);
       const warn = $('[data-warn]', dlg);
+      $$('[data-pickemp]', dlg).forEach(b => (b.onclick = () => { const sel = $('[name=employee_id]', dlg); sel.value = b.dataset.pickemp; sel.dispatchEvent(new Event('change', { bubbles: true })); $$('[data-pickemp]', dlg).forEach(x => x.classList.toggle('on', x === b)); }));
       $$('[data-assign]', dlg).forEach(b => (b.onclick = async () => {
         try { await store.openAssign(s.id, b.dataset.assign); toast('Dienst toegewezen'); dlg.close(); rerender(); } catch (e) { toast(errMsg(e), 'error'); }
       }));
