@@ -102,7 +102,8 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Bouwen: scratchpad build_zips.py NN (live = 4 bestanden, test = hele app met lege Supabase-sleutels).
 - Wensen uit recensies: aangevraagd verlof meteen van saldo (gereserveerd), en zien wie er vandaag werkt — gedaan (v79).
 
-## Versie 102 (update 86, 21 nov) — live, gecontroleerd (md5 + rooktest)
+## Versie 103 (update 87, 21 nov) — live, gecontroleerd (md5 + rooktest)
+- Menukaart: losse labels (BIJ 5 & 6 GANGEN) als kader. Vaste diensten live: 11–20, 13–22, 16–sluit. Handleidingen (team + leiding) als pdf gemaakt (scratchpad/handleiding).
 - Beschikbaarheid volgt de diensten: 11–20, 13–22, 16–sluit (+ Hele dag, Tijden, Niet).
 - Shiftleaders mogen lijsten maken en aanpassen (update48 live).
 - Open vraag: vaste diensten in Instellingen gelijkzetten met 11–20, 13–22, 16–sluit?
