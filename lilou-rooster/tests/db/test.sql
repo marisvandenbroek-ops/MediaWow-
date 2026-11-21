@@ -638,5 +638,16 @@ reset role;
 select t_ok((select allergens->'01 steak tartare'->'codes' from menu_cards where id = 'd4700000-0000-0000-0000-000000000001') = '["ei", "gluten"]'::jsonb
   and (select (allergens->'01 steak tartare'->>'ok')::boolean from menu_cards where id = 'd4700000-0000-0000-0000-000000000001'), 'directie legt allergenen vast; onbekende codes vallen weg');
 
+\echo '== Update 48: shiftleader maakt en wijzigt lijsten'
+update employees set role = 'planner' where id = 'a0000000-0000-0000-0000-000000000004';
+set role authenticated; select as_user(4);
+insert into checklists (id, name, department, moment) values ('c4800000-0000-0000-0000-000000000001', 'Sluiting bar (test)', 'Bar', 'sluiting');
+update checklists set name = 'Sluiting bar' where id = 'c4800000-0000-0000-0000-000000000001';
+reset role;
+select t_ok((select name from checklists where id = 'c4800000-0000-0000-0000-000000000001') = 'Sluiting bar', 'shiftleader maakt en wijzigt een lijst');
+set role authenticated; select as_user(3);
+select t_fails($q$insert into checklists (name) values ('mag niet')$q$, 'medewerker kan geen lijst maken');
+reset role;
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

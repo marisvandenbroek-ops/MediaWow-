@@ -457,7 +457,7 @@ function demoStore() {
     // --- lijsten
     async checklists() { return clone(db.checklists).sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name)); },
     async saveChecklist(c) {
-      if (!isMgr()) throw new Error('Geen rechten');
+      if (!canPlan()) throw new Error('Geen rechten');
       if (c.id) Object.assign(db.checklists.find(x => x.id === c.id), c); else db.checklists.push({ active: true, ...c, id: uid() });
       save();
     },
@@ -2999,7 +2999,7 @@ async function viewLijsten(el) {
     const isOpen = S.lOpen ? S.lOpen.has(l.id) : (!lead && l.id === firstOpen);
     return `<details class="card lcard ${full ? 'full' : ''} ${flagged ? 'flag' : ''}" ${isOpen ? 'open' : ''} data-list="${l.id}">
       <summary><span class="lname">${esc(l.name)}${l.department ? ` <small>${esc(l.department)}</small>` : ''}</span>${stat}${items.length && !full ? `<span class="lprog" aria-hidden="true"><i style="width:${Math.round(100 * done / items.length)}%"></i></span>` : ''}</summary>
-      <div class="lrows">${rows || '<p class="hint">Nog geen onderdelen.</p>'}${isMgr() ? `<div class="ledit"><button type="button" class="linkbtn small" data-ledit2="${l.id}">${ico('pen')}Deze lijst aanpassen</button></div>` : ''}</div></details>`;
+      <div class="lrows">${rows || '<p class="hint">Nog geen onderdelen.</p>'}${canPlan() ? `<div class="ledit"><button type="button" class="linkbtn small" data-ledit2="${l.id}">${ico('pen')}Deze lijst aanpassen</button></div>` : ''}</div></details>`;
   };
   // medewerkers: alleen de eerste lijst die nog niet af is staat open; de rest ingeklapt (blijft zo bij het afvinken)
   const firstOpen = lists.filter(l => ['opening', 'dag', 'sluiting'].includes(l.moment)).sort((a, b) => (['opening', 'dag', 'sluiting'].indexOf(a.moment) - ['opening', 'dag', 'sluiting'].indexOf(b.moment)) || a.sort - b.sort)
@@ -3013,7 +3013,7 @@ async function viewLijsten(el) {
     <div class="page-head"><div><h1>Lijsten</h1><p>${lead ? 'Wie wat afvinkt, met tijd. Rood = niet gedaan of buiten de norm.' : 'Vink af wat je gedaan hebt. Je naam en de tijd worden bewaard.'}</p></div>
       ${lead ? `<div class="weeknav"><button class="btn icon" data-lday="-1" aria-label="Vorige dag">‹</button><div class="label"><strong>${ds === today ? 'Vandaag' : esc(fmtLong(ds))}</strong><span>${ds === today ? esc(fmtLong(ds)) : ''}</span></div><button class="btn icon" data-lday="1" aria-label="Volgende dag" ${ds >= today ? 'disabled' : ''}>›</button></div>` : ''}</div>
     ${lead ? `<div class="filters ldeps">${deps.map(d => `<button type="button" class="${S.lDep === d ? 'active' : ''}" data-ldep="${esc(d)}">${d === 'alle' ? 'Alles' : esc(d)}</button>`).join('')}</div>` : ''}
-    ${isMgr() ? '<div class="lmanage"><button type="button" class="btn" data-lmanage>' + ico('pen') + 'Lijsten aanpassen</button><button type="button" class="btn" data-lnew2>+ Nieuwe lijst</button></div>' : ''}
+    ${canPlan() ? '<div class="lmanage"><button type="button" class="btn" data-lmanage>' + ico('pen') + 'Lijsten aanpassen</button><button type="button" class="btn" data-lnew2>+ Nieuwe lijst</button></div>' : ''}
     ${past ? '' : `<div class="logbtns"><button class="btn" data-newlog="ontvangst" title="Levering ontvangen">${ico('box')}Levering</button><button class="btn" data-newlog="kern" title="Kerntemperatuur">${ico('therm')}Kerntemp.</button><button class="btn" data-newlog="melding" title="Melding maken">${ico('alert')}Melding</button></div>`}
     ${group(ds === today ? 'Vandaag' : 'Deze dag', dayLists)}
     ${group('Deze week', lists.filter(l => l.moment === 'week'))}
