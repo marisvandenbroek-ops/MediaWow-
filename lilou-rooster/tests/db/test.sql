@@ -649,5 +649,21 @@ set role authenticated; select as_user(3);
 select t_fails($q$insert into checklists (name) values ('mag niet')$q$, 'medewerker kan geen lijst maken');
 reset role;
 
+\echo '== Update 49: shiftleader keurt ruilen goed'
+-- Sanne (2) biedt een dienst aan, Eva (4) is shiftleader, Daan (3) neemt over
+update employees set role = 'planner', active = true where id = 'a0000000-0000-0000-0000-000000000004';
+insert into shifts (id, employee_id, date, start_time, end_time, published) values
+  ('50000000-0000-0000-0000-000000000049', 'a0000000-0000-0000-0000-000000000002', today_nl() + 40, '11:00', '20:00', true);
+insert into swaps (id, shift_id, from_employee, taken_by, status) values
+  ('54900000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000049', 'a0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', 'accepted');
+set role authenticated; select as_user(3);
+select t_fails($q$select swap_decide('54900000-0000-0000-0000-000000000001', true)$q$, 'medewerker kan geen ruil goedkeuren');
+select as_user(4);
+select t_ok(t_count($q$select * from swaps where id = '54900000-0000-0000-0000-000000000001'$q$) = 1, 'shiftleader ziet het ruilverzoek');
+select swap_decide('54900000-0000-0000-0000-000000000001', true);
+reset role;
+select t_ok((select employee_id from shifts where id = '50000000-0000-0000-0000-000000000049') = 'a0000000-0000-0000-0000-000000000003', 'shiftleader keurt goed: dienst staat bij de collega');
+select t_ok(not has_function_privilege('authenticated', 'public.notify_planners(text, text, text, uuid)', 'execute'), 'notify_planners niet direct aan te roepen');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

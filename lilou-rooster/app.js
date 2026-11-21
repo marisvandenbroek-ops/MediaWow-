@@ -561,7 +561,7 @@ function demoStore() {
       save();
     },
     // --- ruilen
-    async swaps() { return clone(db.swaps.filter(w => isMgr() || w.from_employee === mem || w.to_employee === mem || w.taken_by === mem || (!w.to_employee && w.status === 'open'))); },
+    async swaps() { return clone(db.swaps.filter(w => canPlan() || w.from_employee === mem || w.to_employee === mem || w.taken_by === mem || (!w.to_employee && w.status === 'open'))); },
     async swapOffer({ shift_id, to_employee, swap_shift_id, note }) {
       const s = shiftById(shift_id);
       if (!s || s.employee_id !== mem || !s.published || s.date < todayIso()) throw new Error('Je kunt alleen je eigen, komende diensten aanbieden.');
@@ -581,7 +581,7 @@ function demoStore() {
       if (!accept) { if (!w.to_employee) return; w.status = 'rejected'; notify(w.from_employee, 'Verzoek geweigerd', `${fname(mem)} kan ${lbl(s)} niet overnemen`, 'diensten'); return save(); }
       w.status = 'accepted'; w.taken_by = mem;
       if (db.settings.swap_needs_approval !== false) {
-        notify(w.from_employee, 'Collega gevonden', `${fname(mem)} neemt ${lbl(s)} over. Wacht op goedkeuring directie.`, 'diensten');
+        notify(w.from_employee, 'Collega gevonden', `${fname(mem)} neemt ${lbl(s)} over. Wacht op goedkeuring van de leiding.`, 'diensten');
         notifyMgrs('Ruil ter goedkeuring', `${fname(w.from_employee)} → ${fname(mem)}: ${lbl(s)}`, 'aanvragen:ruilen');
       } else {
         swapExec(w);
@@ -591,9 +591,10 @@ function demoStore() {
       save();
     },
     async swapDecide(id, approve, note) {
-      if (!isMgr()) throw new Error('Alleen de directie kan ruilen goedkeuren.');
+      if (!canPlan()) throw new Error('Alleen de directie of een shiftleader kan ruilen goedkeuren.');
       const w = db.swaps.find(x => x.id === id);
       if (!w || w.status !== 'accepted') throw new Error('Dit verzoek wacht niet op goedkeuring.');
+      if (!isMgr() && [w.from_employee, w.taken_by].includes(mem)) throw new Error('Je eigen ruil wordt door iemand anders goedgekeurd.');
       const s = shiftById(w.shift_id), L = lbl(s);
       if (approve) { swapExec(w); w.manager_note = note || null; notify(w.from_employee, 'Ruil goedgekeurd', `${L} is overgenomen door ${fname(w.taken_by)}`, 'mijn'); notify(w.taken_by, 'Ruil goedgekeurd', `${L} staat nu in jouw rooster`, 'mijn'); }
       else { w.status = 'rejected'; w.manager_note = note || null; [w.from_employee, w.taken_by].forEach(e => notify(e, 'Ruil afgewezen', L + (note ? ' — ' + note : ''), 'diensten')); }
@@ -4456,6 +4457,16 @@ async function viewDiensten(el) {
   const incoming = swaps.filter(w => w.status === 'open' && w.from_employee !== S.me.id && (!w.to_employee || w.to_employee === S.me.id) && sh(w.shift_id)?.date >= today);
   const mine = swaps.filter(w => (w.from_employee === S.me.id || w.taken_by === S.me.id) && w.status !== 'cancelled').slice(0, 12);
   const myShifts = shifts.filter(s => s.employee_id === S.me.id && s.published);
+  // shiftleader: ruilen die op goedkeuring wachten (niet de eigen ruil)
+  const toApprove = canPlan() && !isMgr() ? swaps.filter(w => w.status === 'accepted' && ![w.from_employee, w.taken_by].includes(S.me.id) && sh(w.shift_id)?.date >= today) : [];
+  const apCard = w => {
+    const s = sh(w.shift_id), s2 = w.swap_shift_id ? sh(w.swap_shift_id) : null;
+    const clash = s && shifts.find(x => x.employee_id === w.taken_by && x.date === s.date && x.id !== w.swap_shift_id);
+    return `<article class="card req"><div class="req-head"><strong>${esc(fn(w.from_employee))} → ${esc(fn(w.taken_by))}</strong><span class="status pending">Ter goedkeuring</span></div>
+      <p class="dates">${L(s)}</p>${s2 ? `<p class="note">Tegen: ${L(s2)}</p>` : ''}${w.note ? `<p class="note">“${esc(w.note)}”</p>` : ''}
+      ${clash ? `<p class="conflict">${ico('alert')}${esc(fn(w.taken_by))} werkt die dag al ${hm(clash.start_time)}–${hm(clash.end_time)}.</p>` : ''}
+      <div class="req-actions"><button class="btn sm ok" data-swapok="${w.id}">Goedkeuren</button><button class="btn sm danger" data-swapno="${w.id}">Afwijzen</button></div></article>`;
+  };
 
   const openCard = s => {
     const a = myApp(s.id), clash = workDay(s.date);
@@ -4473,7 +4484,7 @@ async function viewDiensten(el) {
   const myCard = w => {
     const s = sh(w.shift_id), s2 = w.swap_shift_id ? sh(w.swap_shift_id) : null, own = w.from_employee === S.me.id;
     const who = own ? (w.taken_by ? fn(w.taken_by) : w.to_employee ? fn(w.to_employee) : 'iedereen') : fn(w.from_employee);
-    const st = w.status === 'accepted' && !own ? 'Je neemt over · wacht op directie' : SWAPST[w.status];
+    const st = w.status === 'accepted' && !own ? 'Je neemt over · wacht op goedkeuring' : SWAPST[w.status];
     return `<article class="card req"><div class="req-head"><strong>${own ? (s2 ? 'Ruilen met ' : 'Aangeboden aan ') + esc(who) : 'Overnemen van ' + esc(who)}</strong><span class="status ${w.status === 'approved' ? 'approved' : ['rejected', 'cancelled'].includes(w.status) ? 'rejected' : 'pending'}">${esc(st)}</span></div>
       <p class="dates">${L(s)}</p>${s2 ? `<p class="note">Tegen: ${L(s2)}</p>` : ''}${w.manager_note ? `<p class="reply"><strong>Directie:</strong> ${esc(w.manager_note)}</p>` : ''}
       ${own && ['open', 'accepted'].includes(w.status) ? `<div class="req-actions"><button class="btn sm danger" data-cancel="${w.id}">Intrekken</button></div>` : ''}</article>`;
@@ -4482,6 +4493,7 @@ async function viewDiensten(el) {
   el.innerHTML = `
     <div class="page-head"><div><h1>Diensten</h1><p>Open diensten, ruilen en overnemen.</p></div>
       <button class="btn primary" data-newswap ${myShifts.some(s => s.date >= today) ? '' : 'disabled'}>${ico('swap')}Dienst ruilen of overdragen</button></div>
+    ${toApprove.length ? `<section class="sect"><h2>Ruilen ter goedkeuring <span class="muted">(${toApprove.length})</span></h2><div class="reqs">${toApprove.map(apCard).join('')}</div></section>` : ''}
     <section class="sect"><h2>Open diensten <span class="muted">(${open.length})</span></h2>
       ${open.length ? `<div class="reqs">${open.map(openCard).join('')}</div>` : '<div class="card empty">Er zijn nu geen open diensten.</div>'}</section>
     <section class="sect"><h2>Aangeboden door collega's <span class="muted">(${incoming.length})</span></h2>
@@ -4499,6 +4511,8 @@ async function viewDiensten(el) {
         await store.swapRespond(t.dataset.accept, true); toast('Geaccepteerd'); return rerender();
       }
       if (t.dataset.decline) { await store.swapRespond(t.dataset.decline, false); toast('Geweigerd'); return rerender(); }
+      if (t.dataset.swapok) { await store.swapDecide(t.dataset.swapok, true, null); toast('Ruil goedgekeurd — rooster aangepast'); return rerender(); }
+      if (t.dataset.swapno) { if (!await ask('Deze ruil afwijzen? Beide collega\'s krijgen een melding.', 'Afwijzen')) return; await store.swapDecide(t.dataset.swapno, false, null); toast('Ruil afgewezen'); return rerender(); }
       if (t.dataset.cancel) { if (!await ask('Dit verzoek intrekken?')) return; await store.swapCancel(t.dataset.cancel); toast('Ingetrokken'); return rerender(); }
     } catch (e) { toast(errMsg(e), 'error'); }
   };
@@ -4606,7 +4620,7 @@ async function viewSwapsMgr(el) {
     <div class="page-head"><div><h1>Aanvragen</h1><p>Diensten die medewerkers onderling ruilen of overdragen.</p></div></div>
     ${await reqTabsHTML()}
     <div class="toolbar"><div class="filters"><button data-swf="todo" class="${S.swFilter === 'todo' ? 'active' : ''}">Lopend</button><button data-swf="all" class="${S.swFilter === 'all' ? 'active' : ''}">Alles</button></div>
-      <label class="check small"><input type="checkbox" data-needapp ${st.swap_needs_approval !== false ? 'checked' : ''}> Ruilen moet door directie worden goedgekeurd</label></div>
+      <label class="check small"><input type="checkbox" data-needapp ${st.swap_needs_approval !== false ? 'checked' : ''}> Ruilen moet door de leiding (directie of shiftleader) worden goedgekeurd</label></div>
     ${list.length ? `<div class="reqs">${list.map(w => {
       const s = sh(w.shift_id), s2 = w.swap_shift_id ? sh(w.swap_shift_id) : null, taker = w.taken_by || w.to_employee;
       const clash = taker && s && shifts.find(x => x.employee_id === taker && x.date === s.date && x.id !== w.swap_shift_id);
