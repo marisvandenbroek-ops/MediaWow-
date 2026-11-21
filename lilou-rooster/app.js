@@ -50,8 +50,12 @@ const REQ = { vakantie: 'Vakantie', vrij: 'Vrije dag', onbeschikbaar: 'Niet besc
 const STATUS = { pending: 'Openstaand', approved: 'Goedgekeurd', rejected: 'Afgewezen' };
 const ZSTATUS = { pending: 'Gemeld', approved: 'Verwerkt', rejected: 'Afgewezen' };
 const stLabel = r => (r.type === 'ziek' ? ZSTATUS : STATUS)[r.status];
-const AVAIL = { hele_dag: 'Hele dag', ochtend: 'Ochtend', middag: 'Middag', avond: 'Avond', tijden: 'Tijden', niet: 'Niet beschikbaar' };
-const AVAIL_SHORT = { hele_dag: '✓ hele dag', ochtend: '✓ ochtend', middag: '✓ middag', avond: '✓ avond', tijden: '✓ tijden', niet: '✕ niet' };
+// Lilou: overdag 10:00–17:00 (opdekken, lunch), avond vanaf de briefing om 16:30 tot sluiting. 'ochtend' bestaat alleen nog voor oude gegevens.
+const AVAIL = { hele_dag: 'Hele dag', ochtend: 'Ochtend', middag: 'Overdag (10:00–17:00)', avond: 'Avond (vanaf 16:30)', tijden: 'Tijden', niet: 'Niet beschikbaar' };
+const AVAIL_SHORT = { hele_dag: '✓ hele dag', ochtend: '✓ ochtend', middag: '✓ 10–17', avond: '✓ avond', tijden: '✓ tijden', niet: '✕ niet' };
+const AV_OPTS = ['hele_dag', 'middag', 'avond', 'tijden', 'niet'];   // keuzes voor medewerkers
+const AV_BTN = { hele_dag: ['Hele dag', ''], ochtend: ['Ochtend', ''], middag: ['Overdag', '10:00–17:00'], avond: ['Avond', 'vanaf 16:30'], tijden: ['Tijden', 'zelf invullen'], niet: ['Niet', ''] };
+const AV_WIN = { middag: ['10:00', '17:00'], avond: ['16:30', '05:00'] };   // voor de waarschuwing in de planning
 // beschikbaarheid als tekst, ook met eigen tijden ("van 18:00 tot 23:00")
 const avShort = a => a.kind === 'tijden' && a.from_time ? `✓ ${hm(a.from_time)}–${hm(a.to_time)}` : AVAIL_SHORT[a.kind] || '';
 const avLong = a => a.kind === 'tijden' && a.from_time ? `van ${hm(a.from_time)} tot ${hm(a.to_time)}` : (AVAIL[a.kind] || '').toLowerCase();
@@ -2244,11 +2248,12 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
           if (other) msgs.push(`${fmtShort(ds)}: heeft al een dienst ${hm(other.start_time)}–${hm(other.end_time)}`);
           const v = avail.find(a => a.employee_id === emp && a.date === ds);
           if (v && v.kind === 'niet') msgs.push(`${fmtShort(ds)}: heeft “niet beschikbaar” doorgegeven${v.note ? ' (' + v.note + ')' : ''}`);
-          else if (v && v.kind === 'tijden') {
+          else if (v && (v.kind === 'tijden' || AV_WIN[v.kind])) {
             // in minuten; een eindtijd vóór of gelijk aan de begintijd ligt na middernacht
             const st = f.start_time.value, et = f.end_time.value;
-            if (st && et) {
-              const af = mins(hm(v.from_time)); let at = mins(hm(v.to_time)); if (at <= af) at += 1440;
+            const [vf, vt] = v.kind === 'tijden' ? [v.from_time, v.to_time] : AV_WIN[v.kind];
+            if (st && et && vf && vt) {
+              const af = mins(hm(vf)); let at = mins(hm(vt)); if (at <= af) at += 1440;
               let ss = mins(st), se = mins(et); if (se <= ss) se += 1440; if (ss < af && ss + 1440 <= at) { ss += 1440; se += 1440; }
               if (ss < af || se > at) msgs.push(`${fmtShort(ds)}: alleen beschikbaar ${avLong(v)}`);
             }
@@ -3634,7 +3639,7 @@ async function viewMine(el) {
       const base = mondayOf(new Date()), isMon = new Date().getDay() === 1;
       const w1 = addDays(base, 7), w2 = addDays(base, 14), target = isMon ? w1 : w2, dl = addDays(target, -7);
       const avs = (await store.availability(iso(w1), iso(addDays(w2, 6))).catch(() => [])).filter(a => a.employee_id === S.me.id);
-      const SH = { hele_dag: 'hele dag', ochtend: 'ocht.', middag: 'midd.', avond: 'avond', niet: 'niet' };
+      const SH = { hele_dag: 'hele dag', ochtend: 'ocht.', middag: '10–17', avond: 'avond', niet: 'niet' };
       const wkRow = (mon, label) => {
         const days = [...Array(7)].map((_, i) => { const ds = iso(addDays(mon, i)); return { ds, d: addDays(mon, i), a: avs.find(a => a.date === ds) }; });
         const n = days.filter(x => x.a).length, isT = iso(mon) === iso(target);
@@ -4508,7 +4513,7 @@ async function viewBeschikbaar(el) {
   const rows = [...Array(7)].map((_, i) => {
     const ds = iso(addDays(mon, i)), a = get(ds), work = shifts.find(s => s.employee_id === S.me.id && s.date === ds);
     return `<div class="avrow"><div class="d"><span>${DAG[i]}</span><b>${addDays(mon, i).getDate()}</b></div>
-      <div class="avopts"><label class="avopt av-leeg"><input type="radio" name="k-${i}" value="" ${a ? '' : 'checked'}><span>Leeg</span></label>${Object.keys(AVAIL).map(k => `<label class="avopt av-${k}"><input type="radio" name="k-${i}" value="${k}" ${a?.kind === k ? 'checked' : ''}><span>${k === 'niet' ? 'Niet' : AVAIL[k]}</span></label>`).join('')}</div>
+      <div class="avopts"><label class="avopt av-leeg"><input type="radio" name="k-${i}" value="" ${a ? '' : 'checked'}><span>Leeg</span></label>${(a?.kind === 'ochtend' ? ['ochtend', ...AV_OPTS] : AV_OPTS).map(k => `<label class="avopt av-${k}"><input type="radio" name="k-${i}" value="${k}" ${a?.kind === k ? 'checked' : ''}><span>${AV_BTN[k][0]}${AV_BTN[k][1] ? `<small>${AV_BTN[k][1]}</small>` : ''}</span></label>`).join('')}</div>
       <div class="avtimes" data-avt="${i}" ${a?.kind === 'tijden' ? '' : 'hidden'}><span>Van</span><input class="input" type="time" name="f-${i}" step="900" value="${esc(hm(a?.from_time) || '')}" aria-label="Beschikbaar vanaf ${DAG[i]}"><span>tot</span><input class="input" type="time" name="t-${i}" step="900" value="${esc(hm(a?.to_time) || '')}" aria-label="Beschikbaar tot ${DAG[i]}"></div>
       <input class="input avnote" name="n-${i}" placeholder="Opmerking, bijv. pas vanaf 18:00" aria-label="Opmerking ${DAG[i]}" value="${esc(a?.note || '')}" ${a?.note ? '' : 'hidden'}>${a?.note ? '' : `<button type="button" class="linkbtn avaddnote" data-addnote="${i}">+ opmerking</button>`}
       ${work ? `<small class="hint">Ingepland: ${hm(work.start_time)}–${hm(work.end_time)}</small>` : ''}</div>`;

@@ -1925,3 +1925,9 @@ main[hidden] { display: none !important; }
 .acst.ok { color: var(--ok); }
 .acst.wait { color: var(--warn); }
 .acst.off { color: var(--muted); }
+
+/* Beschikbaarheid: tijden onder de keuze (Overdag 10:00–17:00, Avond vanaf 16:30) */
+.avopt span { flex-direction: column; gap: 1px; }
+.avopt span small { font-size: 10.5px; font-weight: 500; opacity: .8; line-height: 1.1; white-space: nowrap; }
+.avopts { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.avopts:has(.av-ochtend) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
