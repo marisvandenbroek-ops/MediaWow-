@@ -16,7 +16,7 @@ const html = `<!doctype html><html><head><meta charset=utf-8><link rel=styleshee
 <text font-family="Playfair Display" font-weight="600" font-size="130" fill="#FAF4ED" letter-spacing="2"><textPath href="#p">${E}</textPath></text></svg>
 ${card('brave.jpg', X + 60, 110, 440, -6)}
 ${card('lilou.jpg', X + 560, 90, 440, 5)}
-${card('browz.jpg', X + 40, 980, 400, 4)}
+${card('vanhees.jpg', X + 40, 980, 400, 4)}
 ${card('luvely.jpg', X + 480, 930, 190, -5)}
 ${card('minkman.jpg', X + 700, 1000, 360, -4)}
 <div style="position:absolute;left:${X + 250}px;top:600px;font-size:96px;line-height:1.02;font-weight:600">voor een<br>nieuwe <i style="font-weight:400;color:#E8F27A">website.</i></div>

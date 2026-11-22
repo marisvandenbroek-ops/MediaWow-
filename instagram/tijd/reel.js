@@ -6,7 +6,7 @@ const FONTS = 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wg
 const W = 1080, H = 1350, N = 4, X = 3 * W, VH = 1920, OY = 285;
 const E = 'It’s tim' + 'e'.repeat(160);
 const wave = `M150,800 L760,800 C960,800 1000,520 1180,420 C1400,300 1500,980 1800,1000 C2100,1020 2150,420 2450,380 C2750,340 2850,980 3050,900 C3180,850 3200,660 3300,660 L3420,660`;
-const cards = [['brave.jpg', X + 60, 110, 440, -6], ['lilou.jpg', X + 560, 90, 440, 5], ['browz.jpg', X + 40, 980, 400, 4], ['luvely.jpg', X + 480, 930, 190, -5], ['minkman.jpg', X + 700, 1000, 360, -4]];
+const cards = [['brave.jpg', X + 60, 110, 440, -6], ['lilou.jpg', X + 560, 90, 440, 5], ['vanhees.jpg', X + 40, 980, 400, 4], ['luvely.jpg', X + 480, 930, 190, -5], ['minkman.jpg', X + 700, 1000, 360, -4]];
 const html = `<!doctype html><html><head><meta charset=utf-8><link rel=stylesheet href="${FONTS}"><style>
 *{margin:0;padding:0}body{width:${W}px;height:${VH}px;background:#3A1011;overflow:hidden;font-family:'Playfair Display';color:#FAF4ED;position:relative}
 #stage{position:absolute;left:0;top:${OY}px;width:${W * N}px;height:${H}px;will-change:transform}
