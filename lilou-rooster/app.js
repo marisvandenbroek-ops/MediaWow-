@@ -1911,7 +1911,7 @@ async function viewWeek(el, editable) {
     const cells = days.map(d => {
       const ds = iso(d);
       const lv = leaves.filter(r => r.employee_id === e.id && r.start_date <= ds && r.end_date >= ds)
-        .map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}" title="${esc(STATUS[r.status])}">${esc(REQ[r.type])}${r.status === 'pending' ? ' ?' : ''}</span>`).join('');
+        .map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}" title="${esc(STATUS[r.status])}">${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('');
       const chips = (byCell[e.id + ds] || []).map(s => {
         const tag = editable ? 'button' : 'div';
         const w = atw[s.id];
@@ -2022,7 +2022,7 @@ async function viewWeek(el, editable) {
     ${elsewhere ? `<div class="pubbar"><span>Nog <strong>${future.length} concept${future.length > 1 ? 'en' : ''}</strong> in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} (${futureWeeks.map(w => 'wk ' + weekNr(parse(w))).join(', ')})</span><button class="btn sm primary" data-act="publishall">Alles publiceren</button></div>` : ''}
     ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : 'mob-hide'}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><button type="button" class="btn sm mob-hide" data-personpick>${ico('user')}Diensten per persoon</button>${S.selMode ? '' : '<button type="button" class="btn sm mob-only" data-planmore aria-label="Meer acties">⋯ Meer</button>'}</div>` : ''}
     ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren${listView ? ', of kies "Hele dag selecteren" onder een dag' : ''}. Met "Hele week" in de balk onderin selecteer je alles van deze week.</p>` : ''}
-    ${editable && !mobile && !listView ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-leave"></i>Verlof</span><span>Beschikbaarheid: <span class="av av-avond">✓ kan</span> <span class="av av-niet">✕ kan niet</span></span></div>` : ''}
+    ${editable && !mobile && !listView ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-off"></i>Verlof of niet beschikbaar</span><span><i class="l-sick"></i>Ziek</span><span><i class="l-pend"></i>Verlof aangevraagd</span><span>Beschikbaarheid: <span class="av av-avond">✓ kan</span> <span class="av av-niet">✕ kan niet</span></span></div>` : ''}
     ${people.length && listView ? listHTML() + '<p class="hint swipehint">Veeg naar links of rechts voor een andere week</p>' : ''}
     ${people.length && mobile && !listView ? mobileHTML() : ''}
     ${people.length && !mobile && !listView ? `<div class="grid-wrap"><table class="grid">
@@ -2213,20 +2213,21 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
   const rowsFor = d => {
     const busyL = id => weekShifts.filter(y => y.date === d && y.employee_id === id && y.id !== s.id);
     return actiefE.map(e => { const st0 = dayStatus(e.id, d, leaves, avail); const b = busyL(e.id);
-      return { e, st: st0?.off ? st0 : b.length ? { kind: 'busy', label: 'al ingepland ' + b.map(y => hm(y.start_time) + '–' + hm(y.end_time)).join(', ') } : st0 }; });
+      return { e, st: st0?.off ? st0 : b.length ? { kind: 'busy', label: b.map(y => hm(y.start_time) + '–' + hm(y.end_time)).join(', '), face: 'ingepland ' + b.map(y => hm(y.start_time) + '–' + hm(y.end_time)).join(', ') } : st0 }; });
   };
-  let rows = rowsFor(s.date);
+  let rows = rowsFor(s.date), outWeek = false;
   const grp = k => rows.filter(x => k === 'kan' ? x.st?.kind === 'kan' : k === 'off' ? x.st?.off : k === 'busy' ? x.st?.kind === 'busy' : (!x.st || x.st.kind === 'aangevraagd'));
   const epRow = x => `<button type="button" class="ep-row st-${x.st?.kind || 'none'} ${x.e.id === curEmp ? 'on' : ''}" data-epv="${x.e.id}"><span class="dot" style="background:${esc(x.e.color || COLORS[0])}"></span><span class="ep-nm">${esc(x.e.name)}</span>${x.st ? `<span class="ep-st">${esc(x.st.label)}</span>` : ''}</button>`;
   const epGroup = (title, list, cls) => list.length ? `<div class="ep-h ${cls}">${title}</div>${list.map(epRow).join('')}` : '';
   const epListHTML = () => `<button type="button" class="ep-row st-open ${!curEmp ? 'on' : ''}" data-epv=""><span class="ep-nm">Open dienst</span><span class="ep-st">team kan zich aanmelden</span></button>`
-    + epGroup('Beschikbaar', grp('kan'), 'ok') + epGroup('Geen opgave', grp('none'), '') + epGroup('Al ingepland deze dag', grp('busy'), '') + epGroup('Niet inzetbaar', grp('off'), 'bad');
-  const epFace = id => { const x = rows.find(r => r.e.id === id); return x ? `<span class="dot" style="background:${esc(x.e.color || COLORS[0])}"></span><span class="ep-nm">${esc(x.e.name)}</span>${x.st ? `<span class="ep-st st-${x.st.kind}">${esc(x.st.label)}</span>` : ''}<span class="ep-car" aria-hidden="true">▾</span>` : '<span class="ep-nm">Open dienst</span><span class="ep-st">team kan zich aanmelden</span><span class="ep-car" aria-hidden="true">▾</span>'; };
+    + epGroup('Beschikbaar', grp('kan'), 'ok') + epGroup(outWeek ? 'Beschikbaarheid onbekend' : 'Geen opgave', grp('none'), '') + epGroup('Al ingepland deze dag', grp('busy'), '') + epGroup('Niet inzetbaar', grp('off'), 'bad');
+  const epFace = id => { const x = rows.find(r => r.e.id === id); return x ? `<span class="dot" style="background:${esc(x.e.color || COLORS[0])}"></span><span class="ep-nm">${esc(x.e.name)}</span>${x.st ? `<span class="ep-st st-${x.st.kind}">${esc(x.st.face || x.st.label)}</span>` : ''}<span class="ep-car" aria-hidden="true">▾</span>` : '<span class="ep-nm">Open dienst</span><span class="ep-st">team kan zich aanmelden</span><span class="ep-car" aria-hidden="true">▾</span>'; };
   const body = `
     <label class="field">Datum<input type="date" name="date" value="${s.date}" required></label>
     <div class="field"><span id="ep-lbl">Medewerker</span><select name="employee_id" class="ep-native" tabindex="-1" aria-hidden="true"><option value="" ${!s.employee_id ? 'selected' : ''}>— Open dienst —</option>${empOpts}</select>
       <div class="emppicker"><button type="button" class="ep-btn" data-epbtn aria-expanded="false" aria-labelledby="ep-lbl">${epFace(s.employee_id)}</button>
-        <div class="ep-list" data-eplist hidden>${epListHTML()}</div></div><p class="hint" data-epout hidden>Deze datum valt buiten de week die je bekijkt: verlof en beschikbaarheid zie je pas bij het opslaan.</p></div>
+        <p class="hint epout" data-epout hidden>Deze datum valt buiten de week die je bekijkt. Verlof en beschikbaarheid controleert de app bij het opslaan.</p>
+        <div class="ep-list" data-eplist hidden>${epListHTML()}</div></div></div>
     ${!isNew && !s.employee_id ? (() => {
       const l = apps.filter(a => a.shift_id === s.id && a.status === 'pending');
       return `<div class="applist-wrap"><div class="hint" style="margin-bottom:6px">Aanmeldingen</div>${l.length ? `<ul class="applist">${l.map(a => { const e = emps.find(x => x.id === a.employee_id) || {}; const v = avail.find(x => x.employee_id === a.employee_id && x.date === s.date);
@@ -2241,7 +2242,7 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
     <div class="row">
       <label class="field">Functie<select name="position"><option value="">—</option>${opts(posList, s.position)}</select></label>
     </div>
-    ${isNew ? `<div><div class="hint" style="margin-bottom:6px">Zelfde dienst ook op (deze week)</div><div class="days">${DAG.map((d, i) => `<label><input type="checkbox" name="days" value="${i}" ${i === dayIdx(day) ? 'checked' : ''}>${d}</label>`).join('')}</div></div>` : ''}
+    ${isNew ? `<div><div class="hint" style="margin-bottom:6px" data-wklbl>Zelfde dienst ook op (week ${weekNr(mondayOf(day))})</div><div class="days">${DAG.map((d, i) => `<label><input type="checkbox" name="days" value="${i}" ${i === dayIdx(day) ? 'checked' : ''}>${d}</label>`).join('')}</div></div>` : ''}
     <label class="field">Notitie (zichtbaar voor medewerker)<input name="note" value="${esc(s.note || '')}" placeholder="Bijv. inwerken nieuwe collega"></label>
     ${isMgr() ? '<p class="costline hidden" data-cost></p>' : ''}
     <div class="warnbox hidden" data-warn></div>
@@ -2263,7 +2264,7 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
       epBtn.onclick = () => epToggle(epL.hidden);
       epL.onclick = ev => { const r = ev.target.closest('[data-epv]'); if (!r) return; curEmp = r.dataset.epv; sel.value = curEmp; $$('.ep-row', epL).forEach(x => x.classList.toggle('on', x === r)); epBtn.innerHTML = epFace(curEmp); epToggle(false); sel.dispatchEvent(new Event('change', { bubbles: true })); epBtn.focus(); };
       // andere datum: beschikbaarheid, verlof en wie al werkt opnieuw bepalen
-      f.date.addEventListener('change', () => { if (!f.date.value) return; const m0 = iso(mondayOf(parse(s.date))); $('[data-epout]', dlg).hidden = f.date.value >= m0 && f.date.value <= iso(addDays(parse(m0), 6)); rows = rowsFor(f.date.value); epL.innerHTML = epListHTML(); epBtn.innerHTML = epFace(curEmp); });
+      f.date.addEventListener('change', () => { if (!f.date.value) return; const m0 = iso(mondayOf(parse(s.date))); outWeek = !(f.date.value >= m0 && f.date.value <= iso(addDays(parse(m0), 6))); $('[data-epout]', dlg).hidden = !outWeek; const wkl = $('[data-wklbl]', dlg); if (wkl) wkl.textContent = `Zelfde dienst ook op (week ${weekNr(mondayOf(parse(f.date.value)))})`; rows = rowsFor(f.date.value); epL.innerHTML = epListHTML(); epBtn.innerHTML = epFace(curEmp); });
       $$('[data-assign]', dlg).forEach(b => (b.onclick = async () => {
         try { await store.openAssign(s.id, b.dataset.assign); toast('Dienst toegewezen'); dlg.close(); rerender(); } catch (e) { toast(errMsg(e), 'error'); }
       }));
@@ -4146,7 +4147,7 @@ async function viewTeam(el) {
     ${emps.length ? `<div class="card table-wrap"><table class="list">
       <thead><tr><th>Naam</th><th class="hide-sm">Functie</th><th class="hide-sm">E-mail</th><th class="hide-sm">Telefoon</th><th class="num">Contract</th><th class="num hide-sm">Uurloon</th><th class="num hide-sm">Verlof over</th><th class="hide-sm">Account</th></tr></thead>
       <tbody>${emps.map(e => `<tr class="click ${e.active === false ? 'inactive' : ''}" data-id="${e.id}">
-        <td><div class="namecell"><span class="dot" style="background:${esc(e.color || COLORS[0])}"></span><span class="nm">${esc(e.name)}${e.role === 'manager' ? ' <span class="pill">directie</span>' : e.role === 'planner' ? ' <span class="pill">shiftleader</span>' : ''}<small class="show-sm">${esc(e.position || '')}${e.active === false ? ' · <span class="acst off">inactief</span>' : e.user_id ? ' · <span class="acst ok">● actief</span>' : ` · <span class="acst wait">● ${e.invited_at ? 'nog niet geactiveerd' : 'niet uitgenodigd'}</span>`}</small></span></div></td>
+        <td><div class="namecell"><span class="dot" style="background:${esc(e.color || COLORS[0])}"></span><span class="nm">${esc(e.name)}${e.role === 'manager' ? ' <span class="pill">directie</span>' : e.role === 'planner' ? ' <span class="pill">shiftleader</span>' : ''}<small class="show-sm">${esc(e.position || '')}</small><small class="show-sm">${e.active === false ? '<span class="acst off">inactief</span>' : e.user_id ? '<span class="acst ok">● actief</span>' : `<span class="acst wait">● ${e.invited_at ? 'nog niet geactiveerd' : 'niet uitgenodigd'}</span>`}</small></span></div></td>
         <td class="hide-sm">${esc(e.position || '—')}</td><td class="hide-sm">${esc(e.email)}</td><td class="hide-sm">${esc(e.phone || '—')}</td>
         <td class="num">${contractCell(e)}</td>
         <td class="num hide-sm">${privs[e.id]?.hourly_wage ? euro(Number(privs[e.id].hourly_wage)) : '—'}${(() => { const a = ageOn(privs[e.id]?.birth_date, todayIso()); return a != null && a < 18 ? ` <span class="pill warn">${a} jr</span>` : ''; })()}</td>
@@ -4506,7 +4507,7 @@ async function viewDiensten(el) {
   const apCard = w => {
     const s = sh(w.shift_id), s2 = w.swap_shift_id ? sh(w.swap_shift_id) : null;
     const clash = s && shifts.find(x => x.employee_id === w.taken_by && x.date === s.date && x.id !== w.swap_shift_id);
-    return `<article class="card req"><div class="req-head"><strong>${esc(fn(w.from_employee))} → ${esc(fn(w.taken_by))}</strong><span class="status pending">Ter goedkeuring</span></div>
+    return `<article class="card req"><div class="req-head"><strong>${esc(fn(w.from_employee))} → ${esc(fn(w.taken_by))}</strong><span class="status pending">${w.swap_shift_id ? 'Ruil' : 'Overname'}</span></div>
       <p class="dates">${L(s)}</p>${s2 ? `<p class="note">Tegen: ${L(s2)}</p>` : ''}${w.note ? `<p class="note">“${esc(w.note)}”</p>` : ''}
       ${clash ? `<p class="conflict">${ico('alert')}${esc(fn(w.taken_by))} werkt die dag al ${hm(clash.start_time)}–${hm(clash.end_time)}.</p>` : ''}
       <div class="req-actions"><button class="btn sm ok" data-swapok="${w.id}">Goedkeuren</button><button class="btn sm danger" data-swapno="${w.id}">Afwijzen</button></div></article>`;

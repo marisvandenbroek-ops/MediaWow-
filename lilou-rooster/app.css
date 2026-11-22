@@ -1977,3 +1977,54 @@ main[hidden] { display: none !important; }
 .ep-row.st-aangevraagd .ep-st, .ep-row.st-busy .ep-st { color: var(--warn); }
 @media (hover: hover) { .ep-row:hover { background: var(--surface-2); } }
 .mleaves-h.pend { color: var(--warn); }
+
+/* ===== Controleronde 12: opmaak ===== */
+/* 1. uitgeschakelde hoofdknop blijft grijs in donker */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary:disabled { background: var(--surface-2); border-color: var(--line); color: var(--muted); } }
+:root[data-theme="dark"] .btn.primary:disabled { background: var(--surface-2); border-color: var(--line); color: var(--muted); }
+/* 2. gekozen beschikbaarheid leesbaar in donker */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .avopt input:checked + span { background: #3f7d58; border-color: #3f7d58; color: #fff; } :root:not([data-theme="light"]) .avopt.av-niet input:checked + span { background: #b3261e; border-color: #b3261e; color: #fff; } }
+:root[data-theme="dark"] .avopt input:checked + span { background: #3f7d58; border-color: #3f7d58; color: #fff; }
+:root[data-theme="dark"] .avopt.av-niet input:checked + span { background: #b3261e; border-color: #b3261e; color: #fff; }
+/* 3. keuzelijst: naam en status niet afkappen */
+.ep-nm { min-width: 0; }
+.ep-st { flex-shrink: 0; }
+.ep-btn .ep-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto; }
+@media (max-width: 420px) {
+  .ep-row { flex-wrap: wrap; row-gap: 0; }
+  .ep-row .ep-st { margin-left: 0; flex-basis: 100%; padding-left: 18px; white-space: normal; }
+  .ep-row.st-open .ep-st { padding-left: 0; }
+  .ep-btn { flex-wrap: wrap; }
+  .ep-btn .ep-st { order: 3; }
+  .ep-btn .ep-car { order: 2; }
+}
+.epout { margin: 6px 0 0; color: var(--warn); }
+/* 4. afwezig = rood, niet groen */
+td.cell.off .leave, td.cell.off-pending .leave { background: var(--surface); border: 1.5px solid var(--bad); color: var(--bad); }
+td.cell.off-pending .leave { border-color: var(--warn); color: var(--warn); }
+.mleaves .leave { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+.mleaves .leave.pending { background: var(--warn-soft); color: var(--warn); }
+.legend i.l-off, .legend i.l-sick, .legend i.l-pend { display: inline-block; width: 18px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.legend i.l-off { background: repeating-linear-gradient(135deg, var(--bad-soft) 0 4px, color-mix(in srgb, var(--bad-soft) 50%, transparent) 4px 8px); border: 1px solid color-mix(in srgb, var(--bad) 40%, transparent); }
+.legend i.l-sick { background: var(--bad-soft); }
+.legend i.l-pend { background: var(--warn-soft); }
+/* 6. label Medewerker zoals de andere labels */
+#ep-lbl { font-size: 13px; font-weight: 500; color: var(--muted); }
+/* 7. knoppen onderin het venster altijd zichtbaar */
+dialog .dlg-foot { position: sticky; bottom: 0; background: var(--surface); z-index: 2; padding-top: 10px; }
+/* 9. 'Aangevraagd' op een eigen regel */
+.mleaves-h.pend { flex-basis: 100%; margin-top: 4px; }
+/* 10. bedragen en uren niet afbreken */
+.moneyrow td > b:first-child, .grid tfoot td { white-space: nowrap; }
+/* 13. sluitkruis altijd rechts */
+.viewer-bar .x { margin-left: auto; }
+.viewer-bar .viewer-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 14. lijsten aanpassen: twee gelijke knoppen */
+.lmanage { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lmanage .btn { justify-content: center; }
+/* 16. knop beschikbaarheid niet afbreken */
+@media (max-width: 400px) { .avfoot .btn { font-size: 13.5px; white-space: nowrap; padding-left: 10px; padding-right: 10px; } }
+/* 17. datumbereik niet afbreken */
+.avwk-h small { white-space: nowrap; }
+/* 19. menukaarten: acties naast elkaar */
+@media (max-width: 760px) { .kact { padding-left: 16px; } }
