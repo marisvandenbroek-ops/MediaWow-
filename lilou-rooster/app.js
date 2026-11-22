@@ -59,7 +59,7 @@ const AV_WIN = { ochtend: ['11:00', '20:00'], middag: ['13:00', '22:00'], avond:
 // beschikbaarheid als tekst, ook met eigen tijden ("van 18:00 tot 23:00")
 const avShort = a => a.kind === 'tijden' && a.from_time ? `✓ ${hm(a.from_time)}–${hm(a.to_time)}` : AVAIL_SHORT[a.kind] || '';
 const avLong = a => a.kind === 'tijden' && a.from_time ? `van ${hm(a.from_time)} tot ${hm(a.to_time)}` : AV_WIN[a.kind] ? `van ${AVAIL[a.kind].replace('–', ' tot ')}` : (AVAIL[a.kind] || '').toLowerCase();
-const SWAPST = { open: 'Wacht op collega', accepted: 'Wacht op directie', approved: 'Geregeld', rejected: 'Afgewezen', cancelled: 'Ingetrokken' };
+const SWAPST = { open: 'Wacht op collega', accepted: 'Wacht op goedkeuring', approved: 'Geregeld', rejected: 'Afgewezen', cancelled: 'Ingetrokken' };
 const COLORS = ['#9a5b3f', '#3f7d58', '#3f6a9a', '#8a4f8f', '#b8862b', '#2f8a8a', '#b3485f', '#5b6b2f'];
 
 function toast(msg, type) {
@@ -1363,7 +1363,8 @@ async function refreshBadge() {
       const [sw, sh, apps] = await Promise.all([store.swaps(), store.shifts(today, iso(addDays(new Date(), 90))), store.applications()]);
       const mineDates = new Set(sh.filter(s => s.employee_id === S.me.id).map(s => s.date));
       n = sw.filter(w => w.status === 'open' && w.from_employee !== S.me.id && (!w.to_employee || w.to_employee === S.me.id)).length
-        + sh.filter(s => !s.employee_id && s.published && !apps.some(a => a.shift_id === s.id) && !mineDates.has(s.date)).length;
+        + sh.filter(s => !s.employee_id && s.published && !apps.some(a => a.shift_id === s.id) && !mineDates.has(s.date)).length
+        + (canPlan() ? sw.filter(w => w.status === 'accepted' && ![w.from_employee, w.taken_by].includes(S.me.id)).length : 0);
     }
     S.pending = n;
     const c = $('[data-count]');
@@ -1516,7 +1517,7 @@ async function parseMenuPdf(path) {
 }
 async function menuList(c) {
   let items;
-  if (Array.isArray(c.items) && c.items.length) items = clone(c.items);   // door de directie aangepaste lijst
+  if (Array.isArray(c.items) && c.items.length) { items = clone(c.items); items.forEach(it => { if (!it.tag && (it.lines || []).length && /^(VEGA|VEGAN|NIEUW|BIJ [0-9 &]+ GANGEN|\d+ stuks)$/i.test(it.lines[0].trim())) it.tag = it.lines.shift().trim(); }); }   // door de directie aangepaste lijst
   else { try { items = await parseMenuPdf(c.file_path); } catch (e) { items = []; } items = clone(items); }
   const mgr = isMgr();
   if (items.length < 3 && !(mgr && items.length)) return fileViewer(c.file_path, c.title, c.file_type);   // geen app-kaart: gewoon de pdf
@@ -1987,7 +1988,8 @@ async function viewWeek(el, editable) {
         ${editable || isOpen ? '<span class="chev" aria-hidden="true">›</span>' : ''}</${tag}>`; }).join('');
     const availFree = editable ? avail.filter(a => a.date === ds && a.kind !== 'niet' && !list.some(s => s.employee_id === a.employee_id)) : [];
     const nietAv = editable ? avail.filter(a => a.date === ds && a.kind === 'niet' && !lv.some(r => r.employee_id === a.employee_id)) : [];
-    const leaveHTML = lv.length || nietAv.length ? `<div class="mleaves"><span class="mleaves-h">Niet inzetbaar</span>${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''} ${r.type === 'ziek' ? 'sick' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}${nietAv.map(a => `<span class="leave niet">${esc(byId[a.employee_id]?.name || '')} · niet beschikbaar</span>`).join('')}</div>` : '';
+    const lvOff = lv.filter(r => r.status !== 'pending'), lvPend = lv.filter(r => r.status === 'pending');
+    const leaveHTML = lv.length || nietAv.length ? `<div class="mleaves">${lvOff.length || nietAv.length ? '<span class="mleaves-h">Niet inzetbaar</span>' : ''}${lvOff.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''} ${r.type === 'ziek' ? 'sick' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}${nietAv.map(a => `<span class="leave niet">${esc(byId[a.employee_id]?.name || '')} · niet beschikbaar</span>`).join('')}${lvPend.length ? `<span class="mleaves-h pend">Aangevraagd</span>${lvPend.map(r => `<span class="leave pending">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}</span>`).join('')}` : ''}</div>` : '';
     return `<div class="dsrow"><button type="button" class="dsnav" data-wk="-1" aria-label="Vorige week">‹</button><div class="daystrip">${strip}</div><button type="button" class="dsnav" data-wk="1" aria-label="Volgende week">›</button></div>
       <div class="dayhead"><div><h2>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}</h2>${specialDay(ds)?.kind === 'gesloten' ? `<span class="fdtag cl">${ico('lock')}Gesloten · ${esc(specialDay(ds).label)}</span>` : fd ? `<span class="fdtag">${esc(fd)}</span>` : ''}</div><span>${list.length ? `${new Set(list.filter(s => s.employee_id).map(s => s.employee_id)).size} pers · ${fmtH(h)} u` : ''}</span></div>
       ${moneyOn ? moneyHTML(ds, true) : ''}
@@ -2186,7 +2188,7 @@ async function copyWeek(current, emps = [], reqs = []) {
 
 // Is iemand op een dag niet inzetbaar (verlof, ziek, niet beschikbaar) of juist wel beschikbaar?
 function dayStatus(empId, ds, leaves = [], avail = []) {
-  const lv = leaves.find(r => r.employee_id === empId && r.status !== 'rejected' && r.start_date <= ds && (r.end_date >= ds || (r.type === 'ziek' && r.open_end && !r.recovered_at)));
+  const lv = leaves.find(r => r.employee_id === empId && r.status !== 'rejected' && r.start_date <= ds && r.end_date >= ds);
   if (lv) {
     const pend = lv.status === 'pending';
     if (lv.type === 'ziek') return { kind: 'ziek', off: true, label: 'ziek' };

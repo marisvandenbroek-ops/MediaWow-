@@ -1976,3 +1976,4 @@ main[hidden] { display: none !important; }
 .ep-row.st-verlof .ep-st, .ep-row.st-ziek .ep-st, .ep-row.st-niet .ep-st { color: var(--bad); font-weight: 600; }
 .ep-row.st-aangevraagd .ep-st, .ep-row.st-busy .ep-st { color: var(--warn); }
 @media (hover: hover) { .ep-row:hover { background: var(--surface-2); } }
+.mleaves-h.pend { color: var(--warn); }

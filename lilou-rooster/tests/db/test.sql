@@ -663,7 +663,7 @@ select t_ok(t_count($q$select * from swaps where id = '54900000-0000-0000-0000-0
 select swap_decide('54900000-0000-0000-0000-000000000001', true);
 reset role;
 select t_ok((select employee_id from shifts where id = '50000000-0000-0000-0000-000000000049') = 'a0000000-0000-0000-0000-000000000003', 'shiftleader keurt goed: dienst staat bij de collega');
-select t_ok(not has_function_privilege('authenticated', 'public.notify_planners(text, text, text, uuid)', 'execute'), 'notify_planners niet direct aan te roepen');
+select t_ok(not has_function_privilege('authenticated', 'public.notify_planners(text, text, text, uuid[])', 'execute'), 'notify_planners niet direct aan te roepen');
 
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

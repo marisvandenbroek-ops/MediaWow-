@@ -2515,13 +2515,13 @@ create policy cl_update on public.checklists for update to authenticated using (
 -- Update 49: shiftleaders mogen ruilverzoeken zien en goedkeuren (verlof en kloktijden blijven bij de directie)
 
 -- meldingen voor shiftleaders
-create or replace function public.notify_planners(p_title text, p_body text, p_view text, p_except uuid default null) returns void
+create or replace function public.notify_planners(p_title text, p_body text, p_view text, p_except uuid[] default '{}') returns void
 language sql security definer set search_path = public as $$
   insert into public.notifications (employee_id, title, body, view)
   select id, p_title, p_body, p_view from public.employees
-   where role = 'planner' and active and id is distinct from p_except
+   where role = 'planner' and active and not (id = any(coalesce(p_except, '{}')))
 $$;
-revoke execute on function public.notify_planners(text, text, text, uuid) from public, anon, authenticated;
+revoke execute on function public.notify_planners(text, text, text, uuid[]) from public, anon, authenticated;
 
 -- shiftleaders zien alle ruilverzoeken
 drop policy if exists swap_select on public.swaps;
@@ -2552,7 +2552,7 @@ begin
     perform public.notify_managers('Ruil ter goedkeuring', public.first_name(w.from_employee) || ' → ' || public.first_name(me) || ': '
       || public.shift_label(s.date, s.start_time, s.end_time), 'aanvragen:ruilen');
     perform public.notify_planners('Ruil ter goedkeuring', public.first_name(w.from_employee) || ' → ' || public.first_name(me) || ': '
-      || public.shift_label(s.date, s.start_time, s.end_time), 'diensten', me);
+      || public.shift_label(s.date, s.start_time, s.end_time), 'diensten', array[me, w.from_employee]);
   else
     perform public.swap_execute(p_id);
     perform public.notify(w.from_employee, 'Ruil geregeld', public.first_name(me) || ' neemt ' || public.shift_label(s.date, s.start_time, s.end_time) || ' over.', 'mijn');

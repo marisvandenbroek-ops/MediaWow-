@@ -742,7 +742,7 @@ async function test(name, fn) {
     assert.notStrictEqual(await wk(), w0, 'week niet gewisseld');
     const w1 = await wk(), d1 = await day();
     await swipe('.mlist, .dayhead'); await p.waitForFunction(d => document.querySelector('.dayhead h2')?.textContent !== d, d1);
-    assert.strictEqual(await wk(), w1, 'vegen over diensten mag de week niet wisselen (behalve op zondag)');
+    if (!/^zondag/i.test(d1.trim())) assert.strictEqual(await wk(), w1, 'vegen over diensten mag de week niet wisselen (behalve op zondag)');   // op zondag gaat de volgende dag naar de volgende week
     const w2 = await wk(), d2 = await day(); await p.click('[data-wk="1"]'); await p.waitForFunction(w => document.querySelector('.weeknav .label strong')?.textContent !== w, w2);
     assert.strictEqual((await day()).split(' ')[0], d2.split(' ')[0], 'pijltje: niet dezelfde weekdag');
     await ctx.close(); pages.splice(pages.indexOf(p), 1);
