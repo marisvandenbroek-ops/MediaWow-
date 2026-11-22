@@ -2028,3 +2028,6 @@ dialog .dlg-foot { position: sticky; bottom: 0; background: var(--surface); z-in
 .avwk-h small { white-space: nowrap; }
 /* 19. menukaarten: acties naast elkaar */
 @media (max-width: 760px) { .kact { padding-left: 16px; } }
+
+/* Menubalk onderin: altijd onderaan; tijdens typen verborgen (toetsenbord open) */
+@media (max-width: 760px) { html.typing .tabs { display: none !important; } html.typing .btn.madd { display: none !important; } }

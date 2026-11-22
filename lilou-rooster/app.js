@@ -5628,9 +5628,17 @@ window.addEventListener('hashchange', () => { if (store && !S.me && store.demo) 
   const fix = () => {
     const r = document.documentElement.style;
     r.setProperty('--app-h', Math.round(vv.height) + 'px');
-    const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);   // toetsenbord open: balk niet verplaatsen
-    r.setProperty('--vv-bottom', (typing ? 0 : Math.round(window.innerHeight - vv.height - vv.offsetTop)) + 'px');
+    // Alleen een klein verschil (werkbalk van iOS) corrigeren. Een groot verschil is het toetsenbord
+    // (of een overgang): dan blijft de balk gewoon onderaan, nooit halverwege het scherm.
+    const diff = Math.round(window.innerHeight - vv.height - vv.offsetTop);
+    r.setProperty('--vv-bottom', (diff > 0 && diff < 90 && !isTyping() ? diff : 0) + 'px');
   };
+  // tijdens typen de menubalk verbergen (zoals in de meeste apps); daarna staat hij weer onderaan
+  const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'submit', 'range', 'color', 'file'].includes(a.type))); };
+  const typingClass = () => { document.documentElement.classList.toggle('typing', isTyping()); fix(); };
+  document.addEventListener('focusin', typingClass);
+  document.addEventListener('focusout', () => setTimeout(typingClass, 60));
+  window.addEventListener('scroll', () => { if (!isTyping()) document.documentElement.style.setProperty('--vv-bottom', '0px'); }, { passive: true });
   vv.addEventListener('resize', fix); vv.addEventListener('scroll', fix);
   window.addEventListener('orientationchange', () => setTimeout(fix, 300));
   window.addEventListener('pageshow', () => { fix(); setTimeout(fix, 400); });

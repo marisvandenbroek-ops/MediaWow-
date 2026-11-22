@@ -1146,6 +1146,18 @@ async function test(name, fn) {
     assert.ok((await p.textContent('.avhome')).includes('18:00'), 'tijden niet op het startscherm');
     await ctx.close();
   });
+  await test('telefoon: menubalk verdwijnt tijdens typen en staat daarna weer helemaal onderaan', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne');
+    await tab(p, 'beschikbaar'); await p.waitForSelector('#avform');
+    const bar = () => p.evaluate(() => { const t = document.querySelector('.tabs'); const r = t.getBoundingClientRect(); return { shown: getComputedStyle(t).display !== 'none', bottom: Math.round(r.bottom), vh: innerHeight }; });
+    await p.click('[data-addnote="0"]'); await p.waitForTimeout(150);
+    assert.strictEqual((await bar()).shown, false, 'balk zichtbaar tijdens typen');
+    await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(200);
+    await p.evaluate(() => scrollTo(0, 400)); await p.waitForTimeout(150);
+    const b = await bar(); assert.ok(b.shown, 'balk niet terug na typen'); assert.ok(Math.abs(b.bottom - b.vh) <= 1, `balk niet onderaan: ${b.bottom} vs ${b.vh}`);
+    await ctx.close();
+  });
   await test('geen JavaScript-fouten', async () => assert.deepStrictEqual(errors, []));
   await browser.close(); server.close();
   console.log(`\n${passed} tests geslaagd${process.exitCode ? ', maar er zijn FOUTEN' : ''}`);
