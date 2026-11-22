@@ -19,7 +19,7 @@ const html = `<!doctype html><html><head><meta charset=utf-8><link rel=styleshee
 ${cards.map(([f, x, y, w, r], i) => `<img class="card" id="k${i}" data-r="${r}" src="${d(f)}" style="left:${x}px;top:${y}px;width:${w}px">`).join('')}
 <div id="tx" style="position:absolute;left:${X + 250}px;top:600px;font-size:96px;line-height:1.02;font-weight:600;opacity:0">voor een<br>nieuwe <i style="font-weight:400;color:#E8F27A">website.</i></div>
 </div><img class="logo" src="${LOGO}"></body></html>`;
-const FPS = 30, DUR = 10;
+const FPS = 30, DUR = 13;
 const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const clamp = v => Math.max(0, Math.min(1, v));
 (async () => {
@@ -28,14 +28,14 @@ const clamp = v => Math.max(0, Math.min(1, v));
   await p.setContent(html, { waitUntil: 'networkidle' }); await p.evaluate(() => document.fonts.ready);
   for (let f = 0; f < FPS * DUR; f++) {
     const t = f / FPS;
-    const cam = ease(clamp((t - 0.8) / 5.2)) * X;
+    const cam = ease(clamp((t - 0.8) / 2.8)) * X;
     const reveal = 620 + clamp(t / 0.8) * 360 + cam;
-    const tx = clamp((t - 5.6) / 0.7);
+    const tx = clamp((t - 3.3) / 0.6);
     await p.evaluate(([cam, reveal, tx, t]) => {
       document.getElementById('stage').style.transform = `translateX(${-cam}px)`;
       document.getElementById('r').setAttribute('width', reveal);
       const e = document.getElementById('tx'); e.style.opacity = tx; e.style.transform = `translateY(${(1 - tx) * 30}px)`;
-      for (let i = 0; i < 5; i++) { const k = document.getElementById('k' + i); const a = Math.max(0, Math.min(1, (t - 6.1 - i * 0.18) / 0.45));
+      for (let i = 0; i < 5; i++) { const k = document.getElementById('k' + i); const a = Math.max(0, Math.min(1, (t - 3.7 - i * 0.15) / 0.4));
         const s = a < 1 ? 0.7 + 0.38 * a - 0.08 * Math.sin(a * Math.PI) * -1 : 1;
         k.style.opacity = a; k.style.transform = `rotate(${k.dataset.r}deg) scale(${a ? Math.min(1.06, 0.7 + 0.36 * a) - (a > .85 ? (a - .85) * .4 : 0) : .7})`; }
     }, [cam, reveal, tx, t]);
