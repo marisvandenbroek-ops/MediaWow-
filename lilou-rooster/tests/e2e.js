@@ -1056,13 +1056,21 @@ async function test(name, fn) {
     assert.strictEqual((await demoDb(p)).db.notifications.filter(n => /nog niet ingeklokt/.test(n.title)).length, db.notifications.filter(n => /nog niet ingeklokt/.test(n.title)).length, 'melding dubbel');
     await ctx.close();
   });
-  await test('beschikbaarheid: nogmaals tikken maakt de dag leeg, opmerking op verzoek', async () => {
+  await test('beschikbaarheid: schuifje aan vult tijden, snelkeuze, uit = niet beschikbaar, opmerking op verzoek', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#personeel'); await login(p, 'Sanne'); await tab(p, 'beschikbaar');
-    await p.click('.avrow:first-child .av-avond span'); assert.ok(await p.isChecked('.avrow:first-child .av-avond input'));
-    await p.click('.avrow:first-child .av-avond span'); assert.ok(await p.isChecked('.avrow:first-child .av-leeg input'), 'nogmaals tikken maakt niet leeg');
-    assert.ok(!(await p.isVisible('.avrow:first-child .avnote')), 'opmerking staat al open');
-    await p.click('.avrow:first-child [data-addnote]'); assert.ok(await p.isVisible('.avrow:first-child .avnote'));
+    await p.click('[data-w="1"]'); await p.waitForSelector('[data-avday="0"]');
+    if (await p.isChecked('[name="on-0"]')) await p.click('[data-avday="0"] .avsw');
+    assert.ok(await p.isDisabled('[name="f-0"]'), 'tijden niet uit bij schuifje uit');
+    await p.click('[data-avday="0"] .avsw'); assert.equal(await p.inputValue('[name="f-0"]'), '11:00'); assert.equal(await p.inputValue('[name="t-0"]'), '00:00');
+    await p.click('[data-q="0|middag"]'); assert.equal(await p.inputValue('[name="f-0"]'), '13:00');
+    if (await p.isChecked('[name="on-1"]')) await p.click('[data-avday="1"] .avsw');
+    assert.ok(!(await p.isVisible('[data-avday="0"] .avnote')), 'opmerking staat al open');
+    await p.click('[data-avday="0"] [data-addnote]'); assert.ok(await p.isVisible('[data-avday="0"] .avnote'));
+    await p.click('#avform button[value=save]'); await p.waitForSelector('.toast:has-text("Beschikbaarheid opgeslagen")');
+    const { db } = await demoDb(p); const san = db.employees.find(e => e.name.startsWith('Sanne'));
+    const mine = db.availability.filter(a => a.employee_id === san.id).sort((a, b) => a.date.localeCompare(b.date)).slice(-7);
+    assert.equal(mine[0].kind, 'middag', JSON.stringify(mine[0])); assert.equal(mine[1].kind, 'niet', JSON.stringify(mine[1]));
     await ctx.close();
   });
   await test('verlof: kosten in uren zichtbaar voor versturen', async () => {
@@ -1134,16 +1142,27 @@ async function test(name, fn) {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#personeel'); await login(p, 'Sanne');
     await p.click('.avwk >> nth=1'); await p.waitForSelector('#avform');
-    await p.click('label.av-tijden >> nth=0'); assert.ok(await p.isVisible('[data-avt="0"]'));
-    await p.click('#avform button[value=save]'); await p.waitForSelector('.toast:has-text("begin- en eindtijd")');
+    if (!(await p.isChecked('[name="on-0"]'))) await p.click('[data-avday="0"] .avsw');
+    await p.fill('[name="f-0"]', ''); await p.click('#avform button[value=save]'); await p.waitForSelector('.toast:has-text("begin- en eindtijd")');
     await p.fill('[name="f-0"]', '18:00'); await p.fill('[name="t-0"]', '01:00');
     await p.click('#avform button[value=save]'); await p.waitForSelector('.toast:has-text("Beschikbaarheid opgeslagen")');
     const a = (await demoDb(p)).db.availability.find(x => x.kind === 'tijden');
     assert.ok(a && a.from_time === '18:00' && a.to_time === '01:00', JSON.stringify(a));
     await p.click('[data-w="1"]'); await p.waitForSelector('[data-copyprev]'); await p.click('[data-copyprev]');
-    assert.ok(await p.isVisible('[data-avt="0"]'), 'tijden verborgen na Zelfde als vorige week');
+    assert.equal(await p.inputValue('[name="f-0"]'), '18:00', 'tijden niet overgenomen met Zelfde als vorige week');
     await tab(p, 'mijn'); await p.waitForSelector('.avhome');
     assert.ok((await p.textContent('.avhome')).includes('18:00'), 'tijden niet op het startscherm');
+    await ctx.close();
+  });
+  await test('medewerker: tabjes Mijn rooster en Team, team per afdeling met dienstlabel', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne');
+    await p.click('.segtabs [data-gotab=planning]'); await p.waitForSelector('.segtabs [data-gotab=planning].on');
+    let found = false;
+    for (let i = 0; i < 7 && !found; i++) { await p.click(`[data-day="${i}"]`); await p.waitForTimeout(80); found = (await p.$$('.mgrp .mshift .dpill')).length > 0; }
+    assert.ok(found, 'geen dienst met dienstlabel in de team-dag');
+    assert.ok((await p.$$('.mgrp-h')).length >= 1, 'geen afdelingskop');
+    await p.click('.segtabs [data-gotab=mijn]'); await p.waitForSelector('.segtabs [data-gotab=mijn].on');
     await ctx.close();
   });
   await test('telefoon: menubalk verdwijnt tijdens typen en staat daarna weer helemaal onderaan', async () => {

@@ -16,6 +16,7 @@ const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); r
 const mondayOf = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); return addDays(x, -((x.getDay() + 6) % 7)); };
 const todayIso = () => iso(new Date());
 const DAG = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'];
+const DAGL = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag'];
 const dayIdx = d => (d.getDay() + 6) % 7;
 const fmt = (d, o) => d.toLocaleDateString('nl-NL', o);
 const fmtShort = s => fmt(parse(s), { weekday: 'short', day: 'numeric', month: 'short' });
@@ -1318,6 +1319,10 @@ async function phonesDialog() {
 }
 
 /* ================= Shell ================= */
+// bovenin bij medewerkers: wisselen tussen je eigen rooster en dat van het team
+const segTabs = cur => `<div class="segtabs" role="tablist">${[['mijn', 'Mijn rooster'], ['planning', 'Team']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === cur}" class="${k === cur ? 'on' : ''}" data-gotab="${k}">${l}</button>`).join('')}</div>`;
+document.addEventListener('click', ev => { const b = ev.target.closest('[data-gotab]'); if (b && !b.classList.contains('on')) go(b.dataset.gotab); });
+
 function tabsFor() {
   return isMgr()
     ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['aanvragen', 'Aanvragen'], ['lijsten', 'Lijsten'], ['team', 'Team'], ['uren', 'Uren & export'], ['kaarten', 'Menukaarten']]
@@ -1980,12 +1985,18 @@ async function viewWeek(el, editable) {
     const fd = feestdag(ds);
     const strip = days.map((d, i) => { const n = new Set(shifts.filter(s => s.date === iso(d)).map(s => s.employee_id)).size; const mineThere = shifts.some(s => s.date === iso(d) && s.employee_id === S.me.id);
       return `<button class="ds ${i === di ? 'on' : ''} ${iso(d) === today ? 'today' : ''} ${specialDay(iso(d))?.kind === 'gesloten' ? 'closed' : ''}" data-day="${i}" aria-label="${fmtLong(iso(d))}"><span>${DAG[i]}</span><b>${d.getDate()}</b><i class="${mineThere && !editable ? 'mine' : ''}">${n || ''}</i></button>`; }).join('');
-    const items = list.map(s => { const isOpen = !s.employee_id; const e = byId[s.employee_id] || (isOpen ? { name: 'Open dienst', color: '#a8988f' } : {}); const me = !isOpen && e.id === S.me.id; const tag = editable || isOpen ? 'button' : 'div';
+    const itemOf = s => { const isOpen = !s.employee_id; const e = byId[s.employee_id] || (isOpen ? { name: 'Open dienst', color: '#a8988f' } : {}); const me = !isOpen && e.id === S.me.id; const tag = editable || isOpen ? 'button' : 'div';
       const nApps = isOpen ? apps.filter(a => a.shift_id === s.id && a.status === 'pending').length : 0;
-      return `<${tag} class="mshift ${s.published ? '' : 'concept'} ${me ? 'me' : ''} ${isOpen ? 'open' : ''}" style="--c:${esc(e.color || COLORS[0])}" ${editable ? `data-shift="${s.id}"` : isOpen ? 'data-goopen' : ''}>
-        <span class="mtime"><b>${hm(s.start_time)}</b><small>${hm(s.end_time)}</small></span>
-        <span class="mwho"><strong>${esc(e.name || '?')}${me ? ' <em>jij</em>' : ''}</strong><small>${esc(s.position || '')}${s.position ? ' · ' : ''}${fmtH(shiftHours(s))}${s.published ? '' : ' · concept'}${isOpen ? (editable ? ` · ${nApps} aanmelding${nApps === 1 ? '' : 'en'}` : ' · tik om je aan te melden') : ''}${s.note ? ' · ' + esc(s.note) : ''}</small></span>
-        ${editable || isOpen ? '<span class="chev" aria-hidden="true">›</span>' : ''}</${tag}>`; }).join('');
+      return `<${tag} class="mshift v2 ${s.published ? '' : 'concept'} ${me ? 'me' : ''} ${isOpen ? 'open' : ''}" style="--c:${esc(e.color || COLORS[0])}" ${editable ? `data-shift="${s.id}"` : isOpen ? 'data-goopen' : ''}>
+        <span class="mav" aria-hidden="true">${isOpen ? '+' : esc(initialsOf(e.name))}</span>
+        <span class="mwho"><b class="mtm">${hm(s.start_time)} – ${hm(s.end_time)}</b><strong>${esc(e.name || '?')}${me ? ' <em>jij</em>' : ''}</strong><small>${fmtH(shiftHours(s))}${isOpen && s.position ? ' · ' + esc(s.position) : ''}${s.published ? '' : ' · concept'}${isOpen ? (editable ? ` · ${nApps} aanmelding${nApps === 1 ? '' : 'en'}` : ' · tik om je aan te melden') : ''}${s.note ? ' · ' + esc(s.note) : ''}</small></span>
+        <span class="mside">${shiftKindPill(s)}${editable || isOpen ? '<span class="chev" aria-hidden="true">›</span>' : ''}</span></${tag}>`; };
+    // per afdeling groeperen (zoals Shiftbase): open diensten bovenaan, dan de afdelingen in de volgorde van de instellingen
+    const afd = [...(CFG.posities || [])], grp = {};
+    list.forEach(s => { const k = !s.employee_id ? '' : (s.position || 'Overig'); (grp[k] ||= []).push(s); });
+    const rank = k => (k === '' ? -1 : afd.includes(k) ? afd.indexOf(k) : 999);
+    const keys = Object.keys(grp).sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+    const items = keys.map((k, gi) => `<section class="mgrp"><h3 class="mgrp-h"><span class="gdot" style="background:${k === '' ? 'var(--accent)' : AFD_C[(afd.includes(k) ? afd.indexOf(k) : gi) % AFD_C.length]}"></span>${k === '' ? 'Open diensten' : esc(k)}<span class="n">${grp[k].length}</span></h3><div class="mgrp-l">${grp[k].map(itemOf).join('')}</div></section>`).join('');
     const availFree = editable ? avail.filter(a => a.date === ds && a.kind !== 'niet' && !list.some(s => s.employee_id === a.employee_id)) : [];
     const nietAv = editable ? avail.filter(a => a.date === ds && a.kind === 'niet' && !lv.some(r => r.employee_id === a.employee_id)) : [];
     const lvOff = lv.filter(r => r.status !== 'pending'), lvPend = lv.filter(r => r.status === 'pending');
@@ -2003,6 +2014,7 @@ async function viewWeek(el, editable) {
 
   el.innerHTML = `
     <div class="print-title">${esc(CFG.appName)} · ${wl.title} · ${wl.sub}</div>
+    ${editable || canPlan() ? '' : segTabs('planning')}
     <div class="page-head"><div><h1>${editable ? 'Planning' : 'Teamrooster'}</h1><p>${editable ? 'Plan diensten in en publiceer de week zodra hij klaar is.' : 'Het gepubliceerde rooster van het hele team.'}</p></div></div>
     <div class="toolbar">
       <div class="weeknav">
@@ -3727,6 +3739,7 @@ async function viewMine(el) {
   }
 
   el.innerHTML = `
+    ${canPlan() || sel ? '' : segTabs('mijn')}
     <div class="page-head greet ${sel ? '' : 'center'}"><div>${sel ? '<button type="button" class="backlink" data-mf="all">‹ Terug</button>' : `<p class="g-date">${esc(fmtLong(todayIso()))}</p>`}<h1>${sel ? 'Je rooster' : `${new Date().getHours() < 5 || new Date().getHours() >= 17 ? 'Bonsoir' : 'Bonjour'}, ${esc(S.me.name.split(' ')[0])}.`}</h1>${sel ? '' : gSub ? `<p class="g-sub">${gSub}</p>` : ''}</div>
       <div class="head-actions"><button class="btn" data-ics>${ico('cal')}Agenda</button>${sickNow ? '' : `<button class="btn" data-sick>${ico('therm')}Ik ben ziek</button>`}</div></div>
     ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
@@ -4572,13 +4585,20 @@ async function viewBeschikbaar(el) {
   const get = ds => mineAv.find(a => a.date === ds);
   const wl = weekLabel(mon);
   const filled = mineAv.length;
+  // per dag: schuifje aan = beschikbaar van/tot, uit = niet beschikbaar
+  const AVT = { hele_dag: ['11:00', '00:00'], ochtend: ['11:00', '20:00'], middag: ['13:00', '22:00'], avond: ['16:00', '00:00'] };
+  const QUICK = [['hele_dag', 'Hele dag'], ['ochtend', '11–20'], ['middag', '13–22'], ['avond', '16–sluit']];
+  const timesOf = a => (a?.kind === 'tijden' ? [hm(a.from_time), hm(a.to_time)] : AVT[a?.kind] || ['', '']);
   const rows = [...Array(7)].map((_, i) => {
-    const ds = iso(addDays(mon, i)), a = get(ds), work = shifts.find(s => s.employee_id === S.me.id && s.date === ds);
-    return `<div class="avrow"><div class="d"><span>${DAG[i]}</span><b>${addDays(mon, i).getDate()}</b></div>
-      <div class="avopts"><label class="avopt av-leeg"><input type="radio" name="k-${i}" value="" ${a ? '' : 'checked'}><span>Leeg</span></label>${AV_OPTS.map(k => `<label class="avopt av-${k}"><input type="radio" name="k-${i}" value="${k}" ${a?.kind === k ? 'checked' : ''}><span>${AV_BTN[k][0]}${AV_BTN[k][1] ? `<small>${AV_BTN[k][1]}</small>` : ''}</span></label>`).join('')}</div>
-      <div class="avtimes" data-avt="${i}" ${a?.kind === 'tijden' ? '' : 'hidden'}><span>Van</span><input class="input" type="time" name="f-${i}" step="900" value="${esc(hm(a?.from_time) || '')}" aria-label="Beschikbaar vanaf ${DAG[i]}"><span>tot</span><input class="input" type="time" name="t-${i}" step="900" value="${esc(hm(a?.to_time) || '')}" aria-label="Beschikbaar tot ${DAG[i]}"></div>
-      <input class="input avnote" name="n-${i}" placeholder="Opmerking, bijv. pas vanaf 18:00" aria-label="Opmerking ${DAG[i]}" value="${esc(a?.note || '')}" ${a?.note ? '' : 'hidden'}>${a?.note ? '' : `<button type="button" class="linkbtn avaddnote" data-addnote="${i}">+ opmerking</button>`}
-      ${work ? `<small class="hint">Ingepland: ${hm(work.start_time)}–${hm(work.end_time)}</small>` : ''}</div>`;
+    const d = addDays(mon, i), ds = iso(d), a = get(ds), on = !!a && a.kind !== 'niet', [tf, tt] = timesOf(a), work = shifts.find(s => s.employee_id === S.me.id && s.date === ds);
+    return `<div class="avday ${on ? 'on' : ''}" data-avday="${i}">
+      <label class="avsw"><input type="checkbox" name="on-${i}" ${on ? 'checked' : ''} aria-label="${DAGL[i]} beschikbaar"><span class="sw" aria-hidden="true"></span></label>
+      <div class="avdn"><b>${DAGL[i]}</b><small>${d.getDate()} ${fmt(d, { month: 'short' })}${a ? '' : ' · nog leeg'}</small></div>
+      <div class="avvt"><label><span>Van</span><input class="input" type="time" name="f-${i}" step="900" value="${esc(on ? tf : '')}" ${on ? '' : 'disabled'} aria-label="Beschikbaar vanaf ${DAGL[i]}"></label><label><span>Tot</span><input class="input" type="time" name="t-${i}" step="900" value="${esc(on ? tt : '')}" ${on ? '' : 'disabled'} aria-label="Beschikbaar tot ${DAGL[i]}"></label></div>
+      <button type="button" class="avnb ${a?.note ? 'has' : ''}" data-addnote="${i}" aria-label="Opmerking ${DAGL[i]}" title="Opmerking">${ico('chat')}</button>
+      <div class="avquick" ${on ? '' : 'hidden'}>${QUICK.map(([k, l]) => `<button type="button" class="qk" data-q="${i}|${k}">${l}</button>`).join('')}</div>
+      <input class="input avnote" name="n-${i}" placeholder="Opmerking, bijv. pas vanaf 18:00" aria-label="Opmerking ${DAGL[i]}" value="${esc(a?.note || '')}" ${a?.note ? '' : 'hidden'}>
+      ${work ? `<small class="hint avwork">Ingepland: ${hm(work.start_time)}–${hm(work.end_time)}</small>` : ''}</div>`;
   }).join('');
   el.innerHTML = `
     <div class="page-head"><div><h1>Beschikbaarheid</h1><p>Geef per week door wanneer je kunt werken. De directie ziet dit bij het plannen.</p></div></div>
@@ -4586,14 +4606,18 @@ async function viewBeschikbaar(el) {
       <button class="btn icon" data-w="-1" aria-label="Vorige week">‹</button>
       <div class="label"><strong>${wl.title}</strong><span>${wl.sub}</span></div>
       <button class="btn icon" data-w="1" aria-label="Volgende week">›</button></div>
-      <div class="actions"><button class="btn sm" data-fill="hele_dag">Hele week beschikbaar</button>${prevAv.some(a => a.employee_id === S.me.id) ? '<button class="btn sm" data-copyprev>Zelfde als vorige week</button>' : ''}</div></div>
-    <form class="card avform" id="avform">${rows}
+      <div class="actions"><button class="btn sm" data-fill="hele_dag">Hele week hele dag</button>${prevAv.some(a => a.employee_id === S.me.id) ? '<button class="btn sm" data-copyprev>Zelfde als vorige week</button>' : ''}</div></div>
+    <p class="hint avexp">Zet het schuifje aan op dagen dat je kunt en vul de tijden in. Uit = niet beschikbaar.</p>
+    <form class="card avform avform2" id="avform">${rows}
       <div class="avfoot"><span class="hint">${filled ? `✓ ${filled} van 7 dagen doorgegeven` : 'Nog niet doorgegeven'}</span><div class="actions"><button class="btn" value="repeat" title="Vult de komende 4 weken met dit patroon, alleen op dagen die nog leeg zijn">Ook 4 weken vooruit</button><button class="btn primary" value="save">Opslaan</button></div></div></form>`;
   const f = $('#avform');
   f.onsubmit = async ev => {
     ev.preventDefault();
     const fd = new FormData(f);
-    const out = [...Array(7)].map((_, i) => { const kind = fd.get(`k-${i}`) || null; return { date: iso(addDays(mon, i)), kind, from_time: kind === 'tijden' ? fd.get(`f-${i}`) || null : null, to_time: kind === 'tijden' ? fd.get(`t-${i}`) || null : null, note: (fd.get(`n-${i}`) || '').trim() || null }; });
+    // vaste tijden krijgen hun eigen soort (zo herkent de planning ze), al het andere is 'eigen tijden'
+    const kindOf = (a, b) => Object.keys(AVT).find(k => AVT[k][0] === a && AVT[k][1] === b) || 'tijden';
+    const out = [...Array(7)].map((_, i) => { const on = !!fd.get(`on-${i}`), a = fd.get(`f-${i}`) || null, b = fd.get(`t-${i}`) || null, kind = !on ? 'niet' : !a || !b || a === b ? 'tijden' : kindOf(a, b);
+      return { date: iso(addDays(mon, i)), kind, from_time: kind === 'tijden' ? a : null, to_time: kind === 'tijden' ? b : null, note: (fd.get(`n-${i}`) || '').trim() || null }; });
     const bad = out.findIndex(r => r.kind === 'tijden' && (!r.from_time || !r.to_time || r.from_time === r.to_time));
     if (bad >= 0) { toast(`Vul bij ${DAG[bad].toLowerCase()} ${addDays(mon, bad).getDate()} een begin- en eindtijd in`, 'error'); $(`[name="f-${bad}"]`, f)?.focus(); return; }
     try {
@@ -4612,23 +4636,21 @@ async function viewBeschikbaar(el) {
       rerender();
     } catch (e) { toast(errMsg(e), 'error'); }
   };
-  // nogmaals tikken op de gekozen optie maakt de dag weer leeg
-  f.addEventListener('pointerdown', ev => { const lb = ev.target.closest('.avopt'); if (lb) lb.dataset.was = $('input', lb).checked ? '1' : ''; });
-  f.addEventListener('click', ev => {
-    const lb = ev.target.closest('.avopt'); if (!lb || ev.target.tagName !== 'INPUT') return;
-    if (lb.dataset.was === '1') { const leeg = $('.av-leeg input', lb.closest('.avopts')); if (leeg) leeg.checked = true; }
-    lb.dataset.was = '';
-    syncT();
-  });
-  // "Tijden" gekozen: toon de van-tot-velden van die dag
-  function syncT() { [...Array(7)].forEach((_, i) => { const box = $(`[data-avt="${i}"]`, f); if (!box) return; const on = f.querySelector(`input[name="k-${i}"]:checked`)?.value === 'tijden'; if (box.hidden === on) { box.hidden = !on; if (on && !f[`f-${i}`].value) f[`f-${i}`].focus(); } }); }
-  f.addEventListener('change', syncT);
+  const setDay = (i, on, k) => {
+    const row = $(`[data-avday="${i}"]`, f), cb = f[`on-${i}`], fi = f[`f-${i}`], ti = f[`t-${i}`];
+    cb.checked = on; row.classList.toggle('on', on); fi.disabled = ti.disabled = !on; $('.avquick', row).hidden = !on;
+    if (!on) { fi.value = ti.value = ''; return; }
+    if (k && AVT[k]) [fi.value, ti.value] = AVT[k]; else if (!fi.value || !ti.value) [fi.value, ti.value] = AVT.hele_dag;
+  };
+  f.addEventListener('change', ev => { const m = ev.target.name?.match(/^on-(\d)$/); if (m) setDay(Number(m[1]), ev.target.checked); });
+  function syncT() {}
   el.onclick = ev => {
-    const an = ev.target.closest('[data-addnote]'); if (an) { const inp = f[`n-${an.dataset.addnote}`]; inp.hidden = false; an.remove(); return inp.focus(); }
+    const an = ev.target.closest('[data-addnote]'); if (an) { const inp = f[`n-${an.dataset.addnote}`]; inp.hidden = !inp.hidden || false; if (!inp.hidden) inp.focus(); return; }
+    const q = ev.target.closest('[data-q]'); if (q) { const [i, k] = q.dataset.q.split('|'); return setDay(Number(i), true, k); }
     const w = ev.target.closest('[data-w]'); if (w) { S.avWeek = addDays(S.avWeek, 7 * Number(w.dataset.w)); return rerender(); }
-    const fill = ev.target.closest('[data-fill]'); if (fill) { $$(`input[value="${fill.dataset.fill}"]`, f).forEach(r => (r.checked = true)); syncT(); return toast('Ingevuld — vergeet niet op te slaan'); }
+    const fill = ev.target.closest('[data-fill]'); if (fill) { [...Array(7)].forEach((_, i) => setDay(i, true, fill.dataset.fill)); return toast('Ingevuld — vergeet niet op te slaan'); }
     if (ev.target.closest('[data-copyprev]')) {
-      prevAv.filter(a => a.employee_id === S.me.id).forEach(a => { const i = dayIdx(parse(a.date)); const r = $(`input[name="k-${i}"][value="${a.kind}"]`, f); if (r) r.checked = true; if (a.kind === 'tijden') { f[`f-${i}`].value = hm(a.from_time) || ''; f[`t-${i}`].value = hm(a.to_time) || ''; } if (a.note) f[`n-${i}`].value = a.note; });
+      prevAv.filter(a => a.employee_id === S.me.id).forEach(a => { const i = dayIdx(parse(a.date)); if (a.kind === 'niet') setDay(i, false); else { setDay(i, true, a.kind); if (a.kind === 'tijden') { f[`f-${i}`].value = hm(a.from_time) || ''; f[`t-${i}`].value = hm(a.to_time) || ''; } } if (a.note) { f[`n-${i}`].value = a.note; f[`n-${i}`].hidden = false; } });
       syncT();
       return toast('Overgenomen van vorige week — vergeet niet op te slaan');
     }
@@ -5216,8 +5238,11 @@ function askOvertime(plannedEnd, overMin) {
   });
 }
 
-const shiftKind = x => (mins(x.start_time) >= 14 * 60 ? 'avond' : 'dag');
-const shiftKindLabel = x => (shiftKind(x) === 'avond' ? 'Avonddienst' : 'Dagdienst');
+const shiftKind = x => { const m = mins(x.start_time); return m >= 16 * 60 || m < 5 * 60 ? 'avond' : m >= 13 * 60 ? 'tussen' : 'dag'; };
+const shiftKindLabel = x => ({ dag: 'Dagdienst', tussen: 'Tussendienst', avond: 'Avonddienst' })[shiftKind(x)];
+const shiftKindPill = x => `<span class="dpill k-${shiftKind(x)}">${({ dag: 'Dag', tussen: 'Tussen', avond: 'Avond' })[shiftKind(x)]}</span>`;
+const initialsOf = n => { const w = String(n || '?').trim().split(/\s+/).filter(Boolean); return ((w[0] || '?')[0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase(); };
+const AFD_C = ['#3f7d9c', '#e0894a', '#5a9e6f', '#8b5fa8', '#c0504d', '#a6650f', '#4f6d7a'];
 // Startscherm medewerker: grote, rustige klokkaart (tijd, dienst, één knop)
 // Startscherm medewerker: rustige kaart met een ring die aftelt naar de dienst (of de dienst laat vollopen)
 const RING_R = 64, RING_C = 2 * Math.PI * RING_R;
