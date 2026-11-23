@@ -3640,7 +3640,7 @@ async function viewMine(el) {
   const repMine = !sel && (mine.some(s => s.date === bdM) || isMgr()) ? await store.dayReports(bdM, bdM).then(l => ({ r: l.find(x => x.employee_id === S.me.id) || null })).catch(() => null) : null;
   const repCard = repMine ? `<section class="homesec"><div class="hs-head"><h2>Dagrapport</h2></div><button type="button" class="card lhome" data-drepnew="${bdM}"><span><strong>${ico('file')}${repMine.r ? 'Dagrapport ingevuld ✓' : 'Hoe ging de dienst?'}</strong><small>${repMine.r ? 'Tik om aan te passen' : 'Vul na de dienst het dagrapport in voor de directie'}</small></span><span class="chev">›</span></button></section>` : '';
   const [clockHTML, boardH, rulesH] = await Promise.all([sel ? '' : clockHero(todayShift, { mates: todayShift ? withWho(todayShift) : [], next: nextAfter }), boardHTML().catch(() => ''), sel ? '' : rulesBannerHTML()]);
-  const srow = (x, withDate) => `<li class="srow k-${shiftKind(x)}">${withDate ? `<span class="sdate ${x.date === today ? 'istoday' : ''}"><small>${x.date === today ? 'vandaag' : DAG[dayIdx(parse(x.date))]}</small><b>${parse(x.date).getDate()}</b></span>` : ''}<span class="sbar"></span><span class="sinfo"><strong>${esc(shiftKindLabel(x))}${x.position ? ` <span class="muted">· ${esc(x.position)}</span>` : ''}</strong><small>${hm(x.start_time)} – ${hm(x.end_time)}${withWho(x).length ? ` · met ${esc(withWho(x).slice(0, 3).join(', '))}${withWho(x).length > 3 ? ' e.a.' : ''}` : ''}</small></span><span class="shrs">${fmtH(shiftHours(x))}${withDate && shiftWindow(x)[0] > new Date() ? (swapOf(x.id) ? '<small class="swp">ruil loopt</small>' : `<button type="button" class="linkbtn swl" data-swap="${x.id}">Ruilen</button>`) : ''}</span></li>`;
+  const srow = (x, withDate) => `<li class="srow k-${shiftKind(x)} tapable" data-sdet="${x.id}" role="button" tabindex="0" aria-label="Dienst ${esc(fmtLong(x.date))} ${hm(x.start_time)}–${hm(x.end_time)} bekijken">${withDate ? `<span class="sdate ${x.date === today ? 'istoday' : ''}"><small>${x.date === today ? 'vandaag' : DAG[dayIdx(parse(x.date))]}</small><b>${parse(x.date).getDate()}</b></span>` : ''}<span class="sbar"></span><span class="sinfo"><strong>${esc(shiftKindLabel(x))}${x.position ? ` <span class="muted">· ${esc(x.position)}</span>` : ''}</strong><small>${hm(x.start_time)} – ${hm(x.end_time)}${withWho(x).length ? ` · met ${esc(withWho(x).slice(0, 3).join(', '))}${withWho(x).length > 3 ? ' e.a.' : ''}` : ''}</small></span><span class="shrs">${fmtH(shiftHours(x))}${withDate && shiftWindow(x)[0] > new Date() ? (swapOf(x.id) ? '<small class="swp">ruil loopt</small>' : `<button type="button" class="linkbtn swl" data-swap="${x.id}">Ruilen</button>`) : ''}</span></li>`;
   const upcoming = mine.filter(s => s.date >= today).slice(0, 4);   // vandaag telt mee, ook als de dienst al voorbij is
   const todayHTML = sel ? '' : `<section class="homesec" hidden><div class="hs-head"><h2>Vandaag</h2><span class="muted small">${esc(fmtShort(today))}</span></div>${todayShift ? `<ul class="srows card">${srow(todayShift, false)}</ul>` : '<p class="hint hs-empty">Geen dienst vandaag.</p>'}</section>`;
   let workedHTML = '';
@@ -3668,7 +3668,7 @@ async function viewMine(el) {
       const d = parse(ds);
       const dayHead = `<div class="d"><span>${DAG[i]}</span><b>${d.getDate()}</b></div>`;
       const fd = feestdag(ds);
-      ws.filter(s => s.date === ds).forEach(s => items.push(`<li class="${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${hm(s.start_time)} – ${hm(s.end_time)}</strong><small>${esc(s.position || '')}${s.break_minutes ? ` · ${s.break_minutes}\u00a0min pauze` : ''}${s.note ? ` · ${esc(s.note)}` : ''}${fd ? ` · ${esc(fd)}` : ''}</small>${withWho(s).length ? `<small class="with">Met ${esc(withWho(s).join(', '))}</small>` : ''}${shiftWindow(s)[0] > new Date() ? (swapOf(s.id) ? `<small class="swapst">${ico('swap')}${SWAPST[swapOf(s.id).status].toLowerCase()}</small>` : `<button class="linkbtn small swapbtn" data-swap="${s.id}">${ico('swap')}Ruilen of overdragen</button>`) : ''}</div><div class="h">${fmtH(shiftHours(s))}</div></li>`));
+      ws.filter(s => s.date === ds).forEach(s => items.push(`<li class="${ds === today ? 'today' : ''} tapable" data-sdet="${s.id}" role="button" tabindex="0">${dayHead}<div class="t"><strong>${hm(s.start_time)} – ${hm(s.end_time)}</strong><small>${esc(s.position || '')}${s.break_minutes ? ` · ${s.break_minutes}\u00a0min pauze` : ''}${s.note ? ` · ${esc(s.note)}` : ''}${fd ? ` · ${esc(fd)}` : ''}</small>${withWho(s).length ? `<small class="with">Met ${esc(withWho(s).join(', '))}</small>` : ''}${shiftWindow(s)[0] > new Date() ? (swapOf(s.id) ? `<small class="swapst">${ico('swap')}${SWAPST[swapOf(s.id).status].toLowerCase()}</small>` : `<button class="linkbtn small swapbtn" data-swap="${s.id}">${ico('swap')}Ruilen of overdragen</button>`) : ''}</div><div class="h">${fmtH(shiftHours(s))}</div></li>`));
       if (ws.some(s => s.date === ds)) continue;
       const cl = specialDay(ds);
       if (cl?.kind === 'gesloten') { if (!weekClosed) items.push(`<li class="off closed ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>Gesloten</strong><small>${esc(cl.label)}</small></div><div class="h"><span class="pill">${ico('lock')}</span></div></li>`); continue; }
@@ -3794,10 +3794,38 @@ async function viewMine(el) {
   `;
   bindClock(el);
   const boardClick = bindBoard(el);
+  el.onkeydown = ev => { const sd = ev.target.closest?.('[data-sdet]'); if (sd && (ev.key === 'Enter' || ev.key === ' ') && ev.target === sd) { ev.preventDefault(); shiftDetail(sd.dataset.sdet); } };
+  // tik op een dienst: alles over die dienst in één venster (zoals in Shiftbase)
+  function shiftDetail(id) {
+    const x = all.find(y => y.id === id); if (!x) return;
+    const byE = Object.fromEntries(emps.map(e => [e.id, e]));
+    const col = all.filter(y => y.date === x.date && y.published && y.employee_id && y.employee_id !== S.me.id).sort((a, b) => hm(a.start_time).localeCompare(hm(b.start_time)));
+    const w = swapOf(x.id), future = shiftWindow(x)[0] > new Date(), fd = feestdag(x.date);
+    openDialog(shiftKindLabel(x), `
+      <div class="sdet">
+        <p class="sdet-date">${shiftKindPill(x)} <span>${esc(fmtLong(x.date).replace(/^./, c => c.toUpperCase()))}</span>${fd ? ` <span class="fdtag">${esc(fd)}</span>` : ''}</p>
+        <div class="sdet-time"><div><small>Begin</small><b>${hm(x.start_time)}</b></div><span aria-hidden="true">›</span><div><small>Eind</small><b>${hm(x.end_time)}</b></div><div class="sdet-dur"><small>Telt</small><b>${fmtH(shiftHours(x))}</b></div></div>
+        <ul class="sdet-list">
+          ${x.position ? `<li>${ico('user')}<span><small>Functie</small>${esc(x.position)}</span></li>` : ''}
+          <li>${ico('clock')}<span><small>Pauze</small>${x.break_minutes ? `${x.break_minutes}\u00a0min` : 'geen'}</span></li>
+          ${x.note ? `<li>${ico('chat')}<span><small>Opmerking</small>${esc(x.note)}</span></li>` : ''}
+        </ul>
+        <h3 class="sdet-h">Met wie werk je${col.length ? ` <span class="muted">(${col.length})</span>` : ''}</h3>
+        ${col.length ? `<ul class="sdet-team">${col.map(y => { const e = byE[y.employee_id] || {}; return `<li><span class="mav sm" style="--c:${esc(e.color || COLORS[0])}">${esc(initialsOf(e.name))}</span><span><strong>${esc(e.name || '?')}</strong><small>${esc(y.position || '')}</small></span><span class="t">${hm(y.start_time)}–${hm(y.end_time)}</span></li>`; }).join('')}</ul>` : '<p class="hint">Nog niemand anders ingepland.</p>'}
+        ${w ? `<p class="swapst">${ico('swap')}Ruil: ${esc(SWAPST[w.status].toLowerCase())}</p>` : ''}
+      </div>
+      <div class="dlg-foot"><button type="button" class="btn" data-sdics>${ico('cal')}In agenda</button>${future && !w ? `<button type="button" class="btn primary" data-sdswap>${ico('swap')}Ruilen of overdragen</button>` : '<button type="button" class="btn" data-close>Sluiten</button>'}</div>`, {
+      onReady(dlg) {
+        $('[data-sdics]', dlg).onclick = () => downloadIcs([x]);
+        const b = $('[data-sdswap]', dlg); if (b) b.onclick = () => { dlg.close(); swapDialog(mine, emps, all, x.id, swaps); };
+      },
+    });
+  }
   el.onclick = async ev => {
     if (clockClicks(ev)) return;
     if (await boardClick(ev)) return;
     const sw = ev.target.closest('[data-swap]'); if (sw) return swapDialog(mine, emps, all, sw.dataset.swap, swaps);
+    const sd = ev.target.closest('[data-sdet]'); if (sd && !ev.target.closest('button, a')) return shiftDetail(sd.dataset.sdet);
     if (ev.target.closest('[data-ics]')) agendaDialog(mine);
     if (ev.target.closest('[data-sick]')) return sickDialog();
     const gl = ev.target.closest('[data-golists]'); if (gl) { if (gl.dataset.golists) { S.lFocus = gl.dataset.golists; S.lOpen = new Set([gl.dataset.golists]); S.lKey = bizToday() + (canPlan() ? (S.lDep ?? 'alle') : ''); } return go('lijsten'); }

@@ -2144,3 +2144,25 @@ table.list td.num, table.list th.num { white-space: nowrap; }
 /* opmerkingenveld zelfde stijl als de andere velden */
 .avday textarea.avnote { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; padding: 8px 10px; resize: none; width: 100%; }
 .avday textarea.avnote:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+
+/* ===== Dienstvenster (tik op een dienst) ===== */
+.tapable { cursor: pointer; }
+.tapable:active { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.sdet-date { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; font-weight: 600; }
+.sdet-time { display: flex; align-items: center; gap: 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+.sdet-time small { display: block; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.sdet-time b { font-size: 24px; font-variant-numeric: tabular-nums; }
+.sdet-time > span { color: var(--muted); font-size: 22px; }
+.sdet-time .sdet-dur { margin-left: auto; text-align: right; }
+.sdet-time .sdet-dur b { font-size: 16px; white-space: nowrap; }
+.sdet-list, .sdet-team { list-style: none; margin: 0 0 12px; padding: 0; }
+.sdet-list li { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.sdet-list li:last-child { border-bottom: 0; }
+.sdet-list .ico { width: 20px; height: 20px; color: var(--muted); flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.sdet-list small, .sdet-team small { display: block; font-size: 12px; color: var(--muted); }
+.sdet-h { font-size: 15px; margin: 6px 0 8px; }
+.sdet-team li { display: flex; gap: 10px; align-items: center; padding: 6px 0; }
+.sdet-team li > span:nth-child(2) { flex: 1; min-width: 0; }
+.sdet-team .t { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; white-space: nowrap; }
+.mav.sm { width: 34px; height: 34px; font-size: 12px; flex: none; }
+.sdet .swapst { margin: 4px 0 0; }

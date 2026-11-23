@@ -1184,6 +1184,16 @@ async function test(name, fn) {
     assert.ok(db.notifications.some(n => n.title === 'Verlof ingetrokken'), 'geen melding naar medewerker');
     await ctx.close();
   });
+  await test('tik op je dienst: venster met tijden, collega\'s en ruilen', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne');
+    const row = await p.waitForSelector('[data-sdet]'); await row.scrollIntoViewIfNeeded(); await p.evaluate(() => document.querySelector('[data-sdet] .sinfo, [data-sdet] .t')?.click());
+    await p.waitForSelector('dialog[open] .sdet-time');
+    assert.match(await p.textContent('dialog[open] .sdet-time'), /\d\d:\d\d/);
+    assert.ok(await p.$('dialog[open] [data-sdics]'), 'geen agendaknop');
+    const sw = await p.$('dialog[open] [data-sdswap]'); if (sw) { await sw.click(); await p.waitForSelector('dialog[open] [name=shift_id]'); }
+    await ctx.close();
+  });
   await test('medewerker: tabjes Mijn rooster en Team, team per afdeling met dienstlabel', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#personeel'); await login(p, 'Sanne');
