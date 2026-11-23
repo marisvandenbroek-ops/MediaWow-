@@ -621,6 +621,19 @@ function demoStore() {
     async savePushSub() { /* demo: niets */ },
     async pushTest() { notify(mem, 'Testmelding', 'Zie je dit als melding op je telefoon? Dan werken de pushmeldingen op dit toestel.', ''); save(); },
     async deleteRequest(id) { db.requests = db.requests.filter(r => r.id !== id); save(); },
+    async askCancelLeave(id) {
+      const r = db.requests.find(x => x.id === id);
+      if (!r || r.employee_id !== mem || r.status !== 'approved') throw new Error('Alleen goedgekeurd verlof kun je laten intrekken.');
+      if (r.cancel_asked_at) throw new Error('Je hebt dit al gevraagd. De directie beslist.');
+      r.cancel_asked_at = new Date().toISOString();
+      notifyMgrs('Verlof intrekken?', `${fname(r.employee_id)} wil ${REQ[r.type].toLowerCase()} ${fmtShort(r.start_date)} intrekken`, 'aanvragen:verlof'); save();
+    },
+    async withdrawLeave(id, keep) {
+      const r = db.requests.find(x => x.id === id); if (!r || r.status !== 'approved') throw new Error('Alleen goedgekeurd verlof kan worden ingetrokken.');
+      if (keep) { r.cancel_asked_at = null; notify(r.employee_id, 'Verlof blijft staan', `${REQ[r.type]} ${fmtShort(r.start_date)} blijft staan.`, 'aanvragen'); }
+      else { db.requests = db.requests.filter(x => x.id !== id); notify(r.employee_id, 'Verlof ingetrokken', `${REQ[r.type]} ${fmtShort(r.start_date)} is ingetrokken. De uren staan weer op je saldo.`, 'aanvragen'); }
+      save();
+    },
     // --- klokken
     async settings() {
       if (!S.me || canPlan()) return clone(db.settings);
@@ -958,6 +971,8 @@ async function supabaseStore() {
       ok(await sb.from('requests').update(u).eq('id', id));
     },
     async deleteRequest(id) { ok(await sb.from('requests').delete().eq('id', id)); },
+    async askCancelLeave(id) { ok(await sb.rpc('request_cancel_ask', { p_id: id })); },
+    async withdrawLeave(id, keep) { ok(await sb.rpc('request_withdraw', { p_id: id, p_keep: !!keep })); },
     // --- klokken
     async settings() {
       if (S.me && !canPlan()) return ok(await sb.rpc('staff_settings')) || {};   // medewerkers: zonder wifi-adressen, doelen en loonpercentages
@@ -3967,7 +3982,7 @@ async function viewRequestsStaff(el) {
   const row = r => `<button type="button" class="lrq ${S.flashReq && S.flashReq === r.start_date + r.type ? 'flash' : ''}" data-req="${r.id}">
       <span class="lrq-ico t-${r.type}">${ico(TICO[r.type] || 'cal')}</span>
       <span class="lrq-main"><strong>${esc(REQ[r.type])}</strong><small>${reqDates(r)}</small></span>
-      <span class="lrq-side">${isLeave(r) ? `<b>${fmtH(hoursOf(r))}</b>` : ''}<span class="status ${r.status}">${stLabel(r)}</span></span></button>`;
+      <span class="lrq-side">${isLeave(r) ? `<b>${fmtH(hoursOf(r))}</b>` : ''}<span class="status ${r.cancel_asked_at ? 'pending' : r.status}">${r.cancel_asked_at ? 'Intrekken gevraagd' : stLabel(r)}</span></span></button>`;
   const group = (title, list, open = true) => list.length ? `<section class="lgrp"><h3>${title} <span class="muted">${list.length}</span></h3><div class="card lrqs">${list.map(row).join('')}</div></section>` : '';
 
   el.innerHTML = `
@@ -4033,8 +4048,13 @@ async function viewRequestsStaff(el) {
       <div class="rq-detail"><span class="status ${r.status}">${stLabel(r)}</span><p class="rq-dates">${reqDates(r)}</p>
       ${isLeave(r) ? `<p class="hint" style="margin:0">${r.status === 'approved' && r.leave_hours != null ? `${fmtH(Number(r.leave_hours))} verlof afgeschreven` : r.status === 'pending' ? `Ongeveer ${fmtH(hoursOf(r))} gereserveerd van je saldo` : ''}</p>` : ''}
       ${r.note ? `<p class="note">“${esc(r.note)}”</p>` : ''}${r.manager_note ? `<p class="reply"><strong>Reactie van de directie:</strong> ${esc(r.manager_note)}</p>` : ''}</div>
-      ${r.status === 'pending' ? '<div class="dlg-foot"><button type="button" class="btn danger" data-delreq>Aanvraag intrekken</button></div>' : ''}`, {
-      onReady(dlg) { const d = $('[data-delreq]', dlg); if (d) d.onclick = async () => { if (!await ask('Deze aanvraag intrekken?')) return; await store.deleteRequest(r.id); dlg.close(); toast('Aanvraag ingetrokken'); rerender(); }; },
+      ${r.status === 'pending' ? '<div class="dlg-foot"><button type="button" class="btn danger" data-delreq>Aanvraag intrekken</button></div>'
+        : r.status === 'approved' && r.type !== 'ziek' && r.end_date >= todayIso() ? (r.cancel_asked_at ? '<p class="hint">Je hebt gevraagd dit verlof in te trekken. De directie beslist; je krijgt een melding.</p>'
+        : '<p class="hint">Goedgekeurd verlof trek je in via de directie. Tik hieronder, dan krijgt de directie een melding.</p><div class="dlg-foot"><button type="button" class="btn danger" data-askcancel>Vraag om intrekken</button></div>') : ''}`, {
+      onReady(dlg) {
+        const d = $('[data-delreq]', dlg); if (d) d.onclick = async () => { if (!await ask('Deze aanvraag intrekken?')) return; await store.deleteRequest(r.id); dlg.close(); toast('Aanvraag ingetrokken'); rerender(); };
+        const c = $('[data-askcancel]', dlg); if (c) c.onclick = async () => { if (!await ask('De directie vragen dit verlof in te trekken?', 'Vragen')) return; try { await store.askCancelLeave(r.id); dlg.close(); toast('Gevraagd. Je krijgt een melding als de directie heeft beslist.'); rerender(); } catch (x) { toast(errMsg(x), 'error'); } };
+      },
     });
   };
   el.onclick = async ev => {
@@ -4057,7 +4077,8 @@ async function viewLeaveMgr(el) {
   const [reqs, emps, privList] = await Promise.all([store.requests(), store.employees(), store.privates()]);
   const privs = Object.fromEntries(privList.map(p => [p.employee_id, p]));
   const byId = Object.fromEntries(emps.map(e => [e.id, e]));
-  const list = S.reqFilter === 'pending' ? reqs.filter(r => r.status === 'pending') : reqs;
+  const asks = reqs.filter(r => r.status === 'approved' && r.cancel_asked_at);   // medewerker wil verlof intrekken
+  const list = S.reqFilter === 'pending' ? [...asks, ...reqs.filter(r => r.status === 'pending')] : reqs;
   const pend = reqs.filter(r => r.status === 'pending');
   let conflicts = {};
   if (pend.length) {
@@ -4069,7 +4090,7 @@ async function viewLeaveMgr(el) {
   el.innerHTML = `
     <div class="page-head"><div><h1>Aanvragen</h1><p>Verlof, ruilen, open diensten en beschikbaarheid van het team.</p></div></div>
     ${await reqTabsHTML()}
-    <div class="toolbar"><div class="filters"><button data-f="pending" class="${S.reqFilter === 'pending' ? 'active' : ''}">Openstaand (${pend.length})</button><button data-f="all" class="${S.reqFilter === 'all' ? 'active' : ''}">Alle</button></div></div>
+    <div class="toolbar"><div class="filters"><button data-f="pending" class="${S.reqFilter === 'pending' ? 'active' : ''}">Openstaand (${pend.length + asks.length})</button><button data-f="all" class="${S.reqFilter === 'all' ? 'active' : ''}">Alle</button></div></div>
     ${list.length ? `<div class="reqs">${list.map(r => {
       const e = byId[r.employee_id] || { name: 'Onbekend' };
       const c = conflicts[r.id] || [];
@@ -4078,7 +4099,10 @@ async function viewLeaveMgr(el) {
         ${(r.type === 'vakantie' || r.type === 'vrij') && r.status === 'pending' ? (() => { const b0 = leaveBalance(e, privs[e.id], reqs).rest, h0 = estimateLeaveHours(r, e, []); return `<p class="hint">Saldo ${esc(e.name.split(' ')[0])}: ${(Math.round(b0 * 10) / 10).toLocaleString('nl-NL')} uur · deze aanvraag ± ${(Math.round(h0 * 10) / 10).toLocaleString('nl-NL')} uur</p>`; })() : ''}
         ${c.length ? `<p class="conflict">${ico('alert')}Staat ${c.length}× ingepland in deze periode (${c.map(s => fmtShort(s.date)).join(', ')}).</p>` : ''}
         ${r.manager_note ? `<p class="reply"><strong>Jouw reactie:</strong> ${esc(r.manager_note)}</p>` : ''}
-        <div class="req-actions">${r.status === 'pending'
+        ${r.cancel_asked_at && r.status === 'approved' ? `<p class="conflict">${ico('alert')}${esc(e.name.split(' ')[0])} wil dit verlof intrekken.</p>` : ''}
+        <div class="req-actions">${r.status === 'approved' && r.type !== 'ziek' && r.end_date >= todayIso()
+          ? `<button class="btn sm danger" data-wd="${r.id}">Verlof intrekken</button>${r.cancel_asked_at ? `<button class="btn sm" data-keep="${r.id}">Laten staan</button>` : `<button class="btn sm ghost" data-undo="${r.id}">Terugzetten naar openstaand</button>`}`
+          : r.status === 'pending'
           ? (r.type === 'ziek' ? `<button class="btn sm ok" data-ok="${r.id}">Verwerken</button>` : `<button class="btn sm ok" data-ok="${r.id}">Goedkeuren</button><button class="btn sm danger" data-no="${r.id}">Afwijzen</button>`)
           : `<button class="btn sm ghost" data-undo="${r.id}">Terugzetten naar openstaand</button>`}</div></article>`;
     }).join('')}</div>` : `<div class="card empty">${S.reqFilter === 'pending' ? 'Geen openstaande aanvragen.' : 'Nog geen aanvragen.'}</div>`}`;
@@ -4088,6 +4112,15 @@ async function viewLeaveMgr(el) {
     const f = ev.target.closest('[data-f]'); if (f) { S.reqFilter = f.dataset.f; return rerender(); }
     const okB = ev.target.closest('[data-ok]'); if (okB) return approveRequest(reqs.find(x => x.id === okB.dataset.ok), { reqs, byId, privs, conflicts: conflicts[okB.dataset.ok] });
     const no = ev.target.closest('[data-no]'); if (no) return rejectRequest(no.dataset.no);
+    const wd = ev.target.closest('[data-wd]');
+    if (wd) {
+      const r = reqs.find(x => x.id === wd.dataset.wd), nm = (byId[r.employee_id]?.name || '').split(' ')[0];
+      if (!await ask(`${REQ[r.type]} van ${nm} (${reqDates(r).replace(/<[^>]+>/g, '')}) intrekken? De uren komen terug op het saldo en ${nm} krijgt een melding. Diensten die je bij het goedkeuren hebt aangepast, komen niet vanzelf terug.`, 'Intrekken')) return;
+      try { await store.withdrawLeave(r.id, false); toast('Verlof ingetrokken'); rerender(); } catch (x) { toast(errMsg(x), 'error'); }
+      return;
+    }
+    const keep = ev.target.closest('[data-keep]');
+    if (keep) { try { await store.withdrawLeave(keep.dataset.keep, true); toast('Verlof blijft staan; de medewerker krijgt een melding'); rerender(); } catch (x) { toast(errMsg(x), 'error'); } return; }
     const undo = ev.target.closest('[data-undo]');
     if (undo) {
       if (!await ask('Terugzetten naar openstaand? De medewerker krijgt hiervan een melding. Let op: diensten die je bij het goedkeuren open hebt gemaakt of hebt verwijderd, komen niet vanzelf terug; pas die zo nodig aan in de planning.', 'Terugzetten')) return;
@@ -4666,7 +4699,7 @@ async function mgrCounts() {
   const [reqs, swaps, apps, open] = await Promise.all([store.requests(), store.swaps(), store.applications(), store.shifts(todayIso(), iso(addDays(new Date(), 120)))]);
   const openIds = new Set(open.filter(s => !s.employee_id).map(s => s.id));
   return {
-    verlof: reqs.filter(r => r.status === 'pending').length,
+    verlof: reqs.filter(r => r.status === 'pending' || (r.status === 'approved' && r.cancel_asked_at)).length,
     ruilen: swaps.filter(w => w.status === 'accepted').length,
     open: new Set(apps.filter(a => a.status === 'pending' && openIds.has(a.shift_id)).map(a => a.shift_id)).size,
   };

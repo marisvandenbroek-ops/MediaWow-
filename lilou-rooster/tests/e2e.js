@@ -1163,6 +1163,22 @@ async function test(name, fn) {
     await p.click('[data-newswap]'); await p.waitForSelector('.toast:has-text("geen komende diensten")');
     await ctx.close();
   });
+  await test('verlof intrekken: medewerker vraagt erom, directie trekt in', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne');
+    const a = new Date(Date.now() + 40 * 864e5).toISOString().slice(0, 10), b = new Date(Date.now() + 44 * 864e5).toISOString().slice(0, 10);
+    await setDemoDb(p, `const e = db.employees.find(x => x.name.startsWith('Sanne')); db.requests.push({ id: 'wd-1', employee_id: e.id, type: 'vakantie', start_date: a[0], end_date: a[1], status: 'approved', leave_hours: 20, note: null, manager_note: null, created_at: new Date().toISOString() });`, [a, b]);
+    await p.reload(); await p.waitForSelector('#view > *', { state: 'attached' });
+    await tab(p, 'aanvragen'); await p.click('[data-req="wd-1"]'); await p.click('dialog[open] [data-askcancel]');
+    await p.click('dialog[open] button:has-text("Vragen")'); await p.waitForSelector('.toast:has-text("Gevraagd")');
+    assert.ok((await demoDb(p)).db.requests.find(r => r.id === 'wd-1').cancel_asked_at, 'verzoek niet vastgelegd');
+    await logout(p, '#directie'); await login(p, 'Mark'); await tab(p, 'aanvragen');
+    await p.waitForSelector('[data-wd="wd-1"]'); assert.ok(await p.isVisible('[data-keep="wd-1"]'), 'geen knop laten staan');
+    await p.click('[data-wd="wd-1"]'); await p.click('dialog[open] button:has-text("Intrekken")'); await p.waitForSelector('.toast:has-text("Verlof ingetrokken")');
+    const { db } = await demoDb(p); assert.ok(!db.requests.some(r => r.id === 'wd-1'), 'verlof staat er nog');
+    assert.ok(db.notifications.some(n => n.title === 'Verlof ingetrokken'), 'geen melding naar medewerker');
+    await ctx.close();
+  });
   await test('medewerker: tabjes Mijn rooster en Team, team per afdeling met dienstlabel', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#personeel'); await login(p, 'Sanne');

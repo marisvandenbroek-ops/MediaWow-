@@ -665,5 +665,26 @@ reset role;
 select t_ok((select employee_id from shifts where id = '50000000-0000-0000-0000-000000000049') = 'a0000000-0000-0000-0000-000000000003', 'shiftleader keurt goed: dienst staat bij de collega');
 select t_ok(not has_function_privilege('authenticated', 'public.notify_planners(text, text, text, uuid[])', 'execute'), 'notify_planners niet direct aan te roepen');
 
+\echo '== Update 50: verlof intrekken'
+insert into requests (id, employee_id, type, start_date, end_date, status, leave_hours) values
+  ('55000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', 'vakantie', today_nl() + 30, today_nl() + 34, 'approved', 20),
+  ('55000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', 'vakantie', today_nl() + 60, today_nl() + 61, 'approved', 8);
+set role authenticated; select as_user(3);
+select t_fails($q$select request_cancel_ask('55000000-0000-0000-0000-000000000001')$q$, 'collega kan andermans verlof niet laten intrekken');
+select t_fails($q$select request_withdraw('55000000-0000-0000-0000-000000000001')$q$, 'medewerker kan geen verlof intrekken');
+select as_user(2);
+select request_cancel_ask('55000000-0000-0000-0000-000000000001');
+select t_fails($q$select request_cancel_ask('55000000-0000-0000-0000-000000000001')$q$, 'twee keer vragen kan niet');
+reset role;
+select t_ok((select cancel_asked_at is not null from requests where id = '55000000-0000-0000-0000-000000000001'), 'verzoek tot intrekken vastgelegd');
+select t_ok(exists (select 1 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000001' and title = 'Verlof intrekken?'), 'directie krijgt melding');
+set role authenticated; select as_user(1);
+select request_withdraw('55000000-0000-0000-0000-000000000001');
+select request_withdraw('55000000-0000-0000-0000-000000000002', true);
+reset role;
+select t_ok(not exists (select 1 from requests where id = '55000000-0000-0000-0000-000000000001'), 'directie trekt verlof in: aanvraag weg, uren terug');
+select t_ok(exists (select 1 from requests where id = '55000000-0000-0000-0000-000000000002' and status = 'approved'), 'laten staan houdt het verlof');
+select t_ok(exists (select 1 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000002' and title = 'Verlof ingetrokken'), 'medewerker krijgt melding bij intrekken');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

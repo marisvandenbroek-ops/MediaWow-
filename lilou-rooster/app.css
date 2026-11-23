@@ -2096,3 +2096,10 @@ dialog .dlg-foot { position: sticky; bottom: 0; background: var(--surface); z-in
 @media (max-width: 760px) { .avvt input { width: 100px; } }
 /* opmerking bij beschikbaarheid: op de computer niet over de hele breedte */
 @media (min-width: 761px) { .avday .avnote { max-width: 380px; justify-self: start; width: 100%; } }
+/* beschikbaarheid op de computer: compact, tijden direct naast de dag (niet helemaal rechts) */
+@media (min-width: 761px) {
+  #view:has(> .avform2) { max-width: 780px; }
+  .avday { grid-template-columns: 46px 160px auto 40px; justify-content: start; column-gap: 18px; }
+  .avquick, .avday .avnote, .avday .avwork { grid-column: 2 / -1; }
+  .avday .avnote { max-width: none; }
+}
