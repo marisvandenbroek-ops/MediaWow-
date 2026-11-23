@@ -534,6 +534,7 @@ function demoStore() {
     },
     async decideRequest(id, status, note, hours) {
       const r = db.requests.find(x => x.id === id);
+      if (r.status !== status) r.cancel_asked_at = null;
       Object.assign(r, { status, manager_note: note || null, decided_at: new Date().toISOString() });
       if (hours !== undefined) r.leave_hours = hours;
       if (status !== 'pending') notify(r.employee_id, `Aanvraag ${status === 'approved' ? 'goedgekeurd' : 'afgewezen'}`, `${REQ[r.type]} ${fmtShort(r.start_date)}${note ? ' — ' + note : ''}`, 'aanvragen');
@@ -623,15 +624,24 @@ function demoStore() {
     async deleteRequest(id) { db.requests = db.requests.filter(r => r.id !== id); save(); },
     async askCancelLeave(id) {
       const r = db.requests.find(x => x.id === id);
-      if (!r || r.employee_id !== mem || r.status !== 'approved') throw new Error('Alleen goedgekeurd verlof kun je laten intrekken.');
+      if (!r || r.employee_id !== mem || r.status !== 'approved' || r.type === 'ziek') throw new Error('Alleen goedgekeurd verlof kun je laten intrekken.');
+      if (r.end_date < todayIso()) throw new Error('Dit verlof is al voorbij.');
       if (r.cancel_asked_at) throw new Error('Je hebt dit al gevraagd. De directie beslist.');
       r.cancel_asked_at = new Date().toISOString();
       notifyMgrs('Verlof intrekken?', `${fname(r.employee_id)} wil ${REQ[r.type].toLowerCase()} ${fmtShort(r.start_date)} intrekken`, 'aanvragen:verlof'); save();
     },
     async withdrawLeave(id, keep) {
-      const r = db.requests.find(x => x.id === id); if (!r || r.status !== 'approved') throw new Error('Alleen goedgekeurd verlof kan worden ingetrokken.');
+      if (!isMgr()) throw new Error('Alleen de directie kan verlof intrekken.');
+      const r = db.requests.find(x => x.id === id); if (!r || r.status !== 'approved' || r.type === 'ziek') throw new Error('Alleen goedgekeurd verlof kan worden ingetrokken.');
+      const t = todayIso(), uren = ['vakantie', 'vrij'].includes(r.type) ? ' De uren staan weer op je saldo.' : '';
       if (keep) { r.cancel_asked_at = null; notify(r.employee_id, 'Verlof blijft staan', `${REQ[r.type]} ${fmtShort(r.start_date)} blijft staan.`, 'aanvragen'); }
-      else { db.requests = db.requests.filter(x => x.id !== id); notify(r.employee_id, 'Verlof ingetrokken', `${REQ[r.type]} ${fmtShort(r.start_date)} is ingetrokken. De uren staan weer op je saldo.`, 'aanvragen'); }
+      else if (r.end_date < t) throw new Error('Dit verlof is al voorbij en kan niet meer worden ingetrokken.');
+      else if (r.start_date < t) {
+        const tot = daysBetween(r.start_date, r.end_date), had = daysBetween(r.start_date, iso(addDays(parse(t), -1)));
+        if (r.leave_hours != null) r.leave_hours = Math.round(r.leave_hours * had / tot * 10) / 10;
+        r.end_date = iso(addDays(parse(t), -1)); r.cancel_asked_at = null;
+        notify(r.employee_id, 'Verlof ingetrokken', `${REQ[r.type]} ${fmtShort(r.start_date)}: het deel vanaf vandaag is ingetrokken.${uren}`, 'aanvragen');
+      } else { db.requests = db.requests.filter(x => x.id !== id); notify(r.employee_id, 'Verlof ingetrokken', `${REQ[r.type]} ${fmtShort(r.start_date)} is ingetrokken.${uren}`, 'aanvragen'); }
       save();
     },
     // --- klokken
@@ -1336,7 +1346,7 @@ async function phonesDialog() {
 /* ================= Shell ================= */
 // bovenin bij medewerkers: wisselen tussen je eigen rooster en dat van het team
 const segTabs = cur => `<div class="segtabs" role="tablist">${[['mijn', 'Mijn rooster'], ['planning', 'Team']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === cur}" class="${k === cur ? 'on' : ''}" data-gotab="${k}">${l}</button>`).join('')}</div>`;
-document.addEventListener('click', ev => { const b = ev.target.closest('[data-gotab]'); if (b && !b.classList.contains('on')) go(b.dataset.gotab); });
+document.addEventListener('click', ev => { const b = ev.target.closest('[data-gotab]'); if (b && !b.classList.contains('on')) { if (b.dataset.gotab === 'mijn') S.mineWeek = null; go(b.dataset.gotab); } });
 
 function tabsFor() {
   return isMgr()
@@ -3989,7 +3999,7 @@ async function viewRequestsStaff(el) {
     <div class="page-head"><div><h1>Verlof</h1></div><button class="btn" data-sick>${ico('therm')}Ik ben ziek</button></div>
     <div class="leave-grid"><div>
     ${showBal ? `<section class="card leavehero">
-      <div class="lh-ring">${donut}<div class="lh-in"><small>nog te plannen</small><b>${fmtH(avail)}</b><span>${perDay ? dTxt(asDays(avail)) : ''}</span></div></div>
+      <div class="lh-ring">${donut}<div class="lh-in"><small>nog te plannen</small><b class="${fmtH(avail).length > 6 ? 'long' : ''}">${fmtH(avail)}</b><span>${perDay ? dTxt(asDays(avail)) : ''}</span></div></div>
       <ul class="lc-leg">
         <li><span class="dot u"></span>Opgenomen<b>${fmtH(used)}</b></li>
         <li><span class="dot r"></span>Aangevraagd<b>${fmtH(reserved)}</b></li>
@@ -4100,8 +4110,8 @@ async function viewLeaveMgr(el) {
         ${c.length ? `<p class="conflict">${ico('alert')}Staat ${c.length}× ingepland in deze periode (${c.map(s => fmtShort(s.date)).join(', ')}).</p>` : ''}
         ${r.manager_note ? `<p class="reply"><strong>Jouw reactie:</strong> ${esc(r.manager_note)}</p>` : ''}
         ${r.cancel_asked_at && r.status === 'approved' ? `<p class="conflict">${ico('alert')}${esc(e.name.split(' ')[0])} wil dit verlof intrekken.</p>` : ''}
-        <div class="req-actions">${r.status === 'approved' && r.type !== 'ziek' && r.end_date >= todayIso()
-          ? `<button class="btn sm danger" data-wd="${r.id}">Verlof intrekken</button>${r.cancel_asked_at ? `<button class="btn sm" data-keep="${r.id}">Laten staan</button>` : `<button class="btn sm ghost" data-undo="${r.id}">Terugzetten naar openstaand</button>`}`
+        <div class="req-actions">${r.status === 'approved' && r.type !== 'ziek' && (r.end_date >= todayIso() || r.cancel_asked_at)
+          ? `${r.end_date >= todayIso() ? `<button class="btn sm danger" data-wd="${r.id}">${r.start_date < todayIso() ? 'Rest intrekken' : 'Verlof intrekken'}</button>` : '<span class="hint">Al voorbij</span>'}${r.cancel_asked_at ? `<button class="btn sm" data-keep="${r.id}">Laten staan</button>` : `<button class="btn sm ghost" data-undo="${r.id}">Terugzetten naar openstaand</button>`}`
           : r.status === 'pending'
           ? (r.type === 'ziek' ? `<button class="btn sm ok" data-ok="${r.id}">Verwerken</button>` : `<button class="btn sm ok" data-ok="${r.id}">Goedkeuren</button><button class="btn sm danger" data-no="${r.id}">Afwijzen</button>`)
           : `<button class="btn sm ghost" data-undo="${r.id}">Terugzetten naar openstaand</button>`}</div></article>`;
@@ -4115,7 +4125,8 @@ async function viewLeaveMgr(el) {
     const wd = ev.target.closest('[data-wd]');
     if (wd) {
       const r = reqs.find(x => x.id === wd.dataset.wd), nm = (byId[r.employee_id]?.name || '').split(' ')[0];
-      if (!await ask(`${REQ[r.type]} van ${nm} (${reqDates(r).replace(/<[^>]+>/g, '')}) intrekken? De uren komen terug op het saldo en ${nm} krijgt een melding. Diensten die je bij het goedkeuren hebt aangepast, komen niet vanzelf terug.`, 'Intrekken')) return;
+      const lopend = r.start_date < todayIso(), uren = ['vakantie', 'vrij'].includes(r.type);
+      if (!await ask(`${REQ[r.type]} van ${nm} (${reqDates(r).replace(/<[^>]+>/g, '')}) ${lopend ? 'vanaf vandaag ' : ''}intrekken? ${lopend ? 'De dagen die al voorbij zijn blijven staan. ' : ''}${uren ? `De uren ${lopend ? 'van de rest ' : ''}komen terug op het saldo. ` : ''}${nm} krijgt een melding. Diensten die je bij het goedkeuren hebt aangepast, komen niet vanzelf terug.`, 'Intrekken')) return;
       try { await store.withdrawLeave(r.id, false); toast('Verlof ingetrokken'); rerender(); } catch (x) { toast(errMsg(x), 'error'); }
       return;
     }
@@ -4628,7 +4639,7 @@ async function viewBeschikbaar(el) {
   const timesOf = a => (a?.kind === 'tijden' ? [hm(a.from_time), hm(a.to_time)] : AVT[a?.kind] || ['', '']);
   const rows = [...Array(7)].map((_, i) => {
     const d = addDays(mon, i), ds = iso(d), a = get(ds), on = !!a && a.kind !== 'niet', [tf, tt] = timesOf(a), work = shifts.find(s => s.employee_id === S.me.id && s.date === ds);
-    return `<div class="avday ${on ? 'on' : ''}" data-avday="${i}">
+    return `<div class="avday ${on ? 'on' : ''}" data-avday="${i}" data-kind="${on && AVT[a.kind] ? a.kind : ''}" ${a ? 'data-had="1"' : ''}>
       <label class="avsw"><input type="checkbox" name="on-${i}" ${on ? 'checked' : ''} aria-label="${DAGL[i]} beschikbaar"><span class="sw" aria-hidden="true"></span></label>
       <div class="avdn"><b>${DAGL[i]}</b><small>${d.getDate()} ${fmt(d, { month: 'short' })}${a ? '' : ' · nog leeg'}</small></div>
       <div class="avvt"><label><span>Van</span><input class="input" type="time" name="f-${i}" step="900" value="${esc(on ? tf : '')}" ${on ? '' : 'disabled'} aria-label="Beschikbaar vanaf ${DAGL[i]}"></label><label><span>Tot</span><input class="input" type="time" name="t-${i}" step="900" value="${esc(on ? tt : '')}" ${on ? '' : 'disabled'} aria-label="Beschikbaar tot ${DAGL[i]}"></label></div>
@@ -4652,11 +4663,15 @@ async function viewBeschikbaar(el) {
     ev.preventDefault();
     const fd = new FormData(f);
     // vaste tijden krijgen hun eigen soort (zo herkent de planning ze), al het andere is 'eigen tijden'
-    const kindOf = (a, b) => Object.keys(AVT).find(k => AVT[k][0] === a && AVT[k][1] === b) || 'tijden';
-    const out = [...Array(7)].map((_, i) => { const on = !!fd.get(`on-${i}`), a = fd.get(`f-${i}`) || null, b = fd.get(`t-${i}`) || null, kind = !on ? 'niet' : !a || !b || a === b ? 'tijden' : kindOf(a, b);
+    // alleen via een snelknop gekozen (en daarna niet met de hand veranderd) telt als vaste dienst
+    const kindOf = (i, a, b) => { const k = $(`[data-avday="${i}"]`, f).dataset.kind; return k && AVT[k] && AVT[k][0] === a && AVT[k][1] === b ? k : 'tijden'; };
+    const out = [...Array(7)].map((_, i) => { const on = !!fd.get(`on-${i}`), a = fd.get(`f-${i}`) || null, b = fd.get(`t-${i}`) || null, kind = !on ? 'niet' : !a || !b || a === b ? 'tijden' : kindOf(i, a, b);
       return { date: iso(addDays(mon, i)), kind, from_time: kind === 'tijden' ? a : null, to_time: kind === 'tijden' ? b : null, note: (fd.get(`n-${i}`) || '').trim() || null }; });
     const bad = out.findIndex(r => r.kind === 'tijden' && (!r.from_time || !r.to_time || r.from_time === r.to_time));
     if (bad >= 0) { toast(`Vul bij ${DAG[bad].toLowerCase()} ${addDays(mon, bad).getDate()} een begin- en eindtijd in`, 'error'); $(`[name="f-${bad}"]`, f)?.focus(); return; }
+    // dagen die nog leeg waren en niet zijn aangeraakt: eerst vragen of ze echt 'niet beschikbaar' zijn
+    const leeg = [...Array(7)].map((_, i) => i).filter(i => { const r = $(`[data-avday="${i}"]`, f); return !r.dataset.had && !r.dataset.touched && !f[`on-${i}`].checked; });
+    if (leeg.length && !await ask(`Je hebt ${leeg.map(i => DAGL[i].toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' en $1')} niet aangezet. ${leeg.length === 1 ? 'Die dag wordt' : 'Die dagen worden'} opgeslagen als niet beschikbaar. Klopt dat?`, 'Ja, opslaan')) return;
     try {
       await store.saveAvailability(out);
       if (ev.submitter?.value === 'repeat') {
@@ -4675,20 +4690,26 @@ async function viewBeschikbaar(el) {
   };
   const setDay = (i, on, k) => {
     const row = $(`[data-avday="${i}"]`, f), cb = f[`on-${i}`], fi = f[`f-${i}`], ti = f[`t-${i}`];
+    row.dataset.touched = '1';
     cb.checked = on; row.classList.toggle('on', on); fi.disabled = ti.disabled = !on; $('.avquick', row).hidden = !on;
-    if (!on) { fi.value = ti.value = ''; return; }
-    if (k && AVT[k]) [fi.value, ti.value] = AVT[k]; else if (!fi.value || !ti.value) [fi.value, ti.value] = AVT.hele_dag;
+    if (!on) { fi.value = ti.value = ''; row.dataset.kind = ''; return; }
+    if (k && AVT[k]) { [fi.value, ti.value] = AVT[k]; row.dataset.kind = k; }
+    else if (!fi.value || !ti.value) { [fi.value, ti.value] = AVT.hele_dag; row.dataset.kind = 'hele_dag'; }
   };
   f.addEventListener('change', ev => { const m = ev.target.name?.match(/^on-(\d)$/); if (m) setDay(Number(m[1]), ev.target.checked); });
-  function syncT() {}
+  // tijden met de hand aangepast: dan zijn het eigen tijden
+  f.addEventListener('input', ev => {
+    const m = ev.target.name?.match(/^([ftn])-(\d)$/); if (!m) return;
+    const row = $(`[data-avday="${m[2]}"]`, f); row.dataset.touched = '1';
+    if (m[1] === 'n') $('.avnb', row).classList.toggle('has', !!ev.target.value.trim()); else row.dataset.kind = '';
+  });
   el.onclick = ev => {
-    const an = ev.target.closest('[data-addnote]'); if (an) { const inp = f[`n-${an.dataset.addnote}`]; inp.hidden = !inp.hidden || false; if (!inp.hidden) inp.focus(); return; }
+    const an = ev.target.closest('[data-addnote]'); if (an) { const inp = f[`n-${an.dataset.addnote}`]; if (inp.hidden || inp.value.trim()) { inp.hidden = false; inp.focus(); } else inp.hidden = true; return; }
     const q = ev.target.closest('[data-q]'); if (q) { const [i, k] = q.dataset.q.split('|'); return setDay(Number(i), true, k); }
     const w = ev.target.closest('[data-w]'); if (w) { S.avWeek = addDays(S.avWeek, 7 * Number(w.dataset.w)); return rerender(); }
     const fill = ev.target.closest('[data-fill]'); if (fill) { [...Array(7)].forEach((_, i) => setDay(i, true, fill.dataset.fill)); return toast('Ingevuld — vergeet niet op te slaan'); }
     if (ev.target.closest('[data-copyprev]')) {
-      prevAv.filter(a => a.employee_id === S.me.id).forEach(a => { const i = dayIdx(parse(a.date)); if (a.kind === 'niet') setDay(i, false); else { setDay(i, true, a.kind); if (a.kind === 'tijden') { f[`f-${i}`].value = hm(a.from_time) || ''; f[`t-${i}`].value = hm(a.to_time) || ''; } } if (a.note) { f[`n-${i}`].value = a.note; f[`n-${i}`].hidden = false; } });
-      syncT();
+      prevAv.filter(a => a.employee_id === S.me.id).forEach(a => { const i = dayIdx(parse(a.date)); if (a.kind === 'niet') setDay(i, false); else { setDay(i, true, a.kind); if (a.kind === 'tijden') { f[`f-${i}`].value = hm(a.from_time) || ''; f[`t-${i}`].value = hm(a.to_time) || ''; $(`[data-avday="${i}"]`, f).dataset.kind = ''; } } if (a.note) { f[`n-${i}`].value = a.note; f[`n-${i}`].hidden = false; $(`[data-avday="${i}"] .avnb`, f).classList.add('has'); } });
       return toast('Overgenomen van vorige week — vergeet niet op te slaan');
     }
   };
@@ -4949,10 +4970,10 @@ function atwIssues(list, birth) {
     const age = ageOn(birth, x.s.date), young = age != null && age < 18;
     const dur = (x.w[1] - x.w[0]) / 3600000;
     const maxDur = age != null && age < 16 ? 8 : young ? 9 : 12;
-    if (dur > maxDur) add(x.s, `dienst van ${fmtH(dur)} (max. ${maxDur}${young ? ' voor ' + age + '-jarigen' : ''})`);
+    if (dur > maxDur) add(x.s, `dienst van ${fmtH(dur)} (max. ${maxDur} u${young ? ' voor ' + age + '-jarigen' : ''})`);
     if (i > 0) {
       const rest = (x.w[0] - L[i - 1].w[1]) / 3600000, minRest = young ? 12 : 11;
-      if (rest >= 0 && rest < minRest) add(x.s, `${fmtH(rest)} rust na vorige dienst (min. ${minRest})`);
+      if (rest >= 0 && rest < minRest) add(x.s, `${fmtH(rest)} rust na vorige dienst (min. ${minRest} u)`);
       if (rest < 0) add(x.s, 'overlapt met een andere dienst');
     }
     if (young && age >= 16) {
@@ -4966,7 +4987,7 @@ function atwIssues(list, birth) {
   L.forEach(x => (byWeek[iso(mondayOf(parse(x.s.date)))] ||= []).push(x));
   Object.values(byWeek).forEach(w => {
     const h = w.reduce((t, x) => t + shiftHours(x.s), 0), age = ageOn(birth, w[0].s.date), max = age != null && age < 18 ? 45 : 60;
-    if (h > max) w.forEach(x => add(x.s, `${fmtH(h)} deze week (max. ${max})`));
+    if (h > max) w.forEach(x => add(x.s, `${fmtH(h)} deze week (max. ${max} u)`));
   });
   return out;
 }

@@ -685,6 +685,23 @@ reset role;
 select t_ok(not exists (select 1 from requests where id = '55000000-0000-0000-0000-000000000001'), 'directie trekt verlof in: aanvraag weg, uren terug');
 select t_ok(exists (select 1 from requests where id = '55000000-0000-0000-0000-000000000002' and status = 'approved'), 'laten staan houdt het verlof');
 select t_ok(exists (select 1 from notifications where employee_id = 'a0000000-0000-0000-0000-000000000002' and title = 'Verlof ingetrokken'), 'medewerker krijgt melding bij intrekken');
+-- lopend verlof: alleen het deel vanaf vandaag vervalt; voorbij verlof kan niet
+insert into requests (id, employee_id, type, start_date, end_date, status, leave_hours) values
+  ('55000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002', 'vakantie', today_nl() - 5, today_nl() + 4, 'approved', 40),
+  ('55000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000002', 'vakantie', today_nl() - 40, today_nl() - 35, 'approved', 24);
+set role authenticated; select as_user(1);
+select request_withdraw('55000000-0000-0000-0000-000000000003');
+select t_fails($q$select request_withdraw('55000000-0000-0000-0000-000000000004')$q$, 'voorbij verlof kan niet worden ingetrokken');
+reset role;
+select t_ok((select end_date = today_nl() - 1 and leave_hours = 20 from requests where id = '55000000-0000-0000-0000-000000000003'), 'lopend verlof: opgenomen dagen blijven staan, uren naar rato');
+-- statuswijziging wist een oud intrekverzoek; medewerker kan geen intrekverzoek of uren meesturen
+update requests set cancel_asked_at = now() where id = '55000000-0000-0000-0000-000000000002';
+update requests set status = 'pending' where id = '55000000-0000-0000-0000-000000000002';
+select t_ok((select cancel_asked_at is null from requests where id = '55000000-0000-0000-0000-000000000002'), 'terugzetten wist het intrekverzoek');
+set role authenticated; select as_user(2);
+select t_fails($q$insert into requests (employee_id, type, start_date, end_date, cancel_asked_at) values ('a0000000-0000-0000-0000-000000000002', 'vrij', today_nl() + 9, today_nl() + 9, now())$q$, 'nieuwe aanvraag met intrekverzoek geweigerd');
+select t_fails($q$insert into requests (employee_id, type, start_date, end_date, leave_hours) values ('a0000000-0000-0000-0000-000000000002', 'vrij', today_nl() + 9, today_nl() + 9, 1)$q$, 'nieuwe aanvraag met verlofuren geweigerd');
+reset role;
 
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

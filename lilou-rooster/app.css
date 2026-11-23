@@ -2103,3 +2103,4 @@ dialog .dlg-foot { position: sticky; bottom: 0; background: var(--surface); z-in
   .avquick, .avday .avnote, .avday .avwork { grid-column: 2 / -1; }
   .avday .avnote { max-width: none; }
 }
+.lh-in b.long { font-size: 26px; letter-spacing: -.01em; max-width: 150px; }
