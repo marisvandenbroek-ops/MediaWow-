@@ -2094,3 +2094,5 @@ dialog .dlg-foot { position: sticky; bottom: 0; background: var(--surface); z-in
 .avday .avdn { text-align: left; min-width: 0; }
 .avvt input { width: 104px; }
 @media (max-width: 760px) { .avvt input { width: 100px; } }
+/* opmerking bij beschikbaarheid: op de computer niet over de hele breedte */
+@media (min-width: 761px) { .avday .avnote { max-width: 380px; justify-self: start; width: 100%; } }
