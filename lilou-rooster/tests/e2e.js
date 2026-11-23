@@ -1154,6 +1154,15 @@ async function test(name, fn) {
     assert.ok((await p.textContent('.avhome')).includes('18:00'), 'tijden niet op het startscherm');
     await ctx.close();
   });
+  await test('ruilknop zonder komende diensten legt uit waarom het niet kan', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne');
+    await setDemoDb(p, `const e = db.employees.find(x => x.name.startsWith('Sanne')); db.shifts = db.shifts.filter(s => s.employee_id !== e.id);`);
+    await p.reload(); await p.waitForSelector('#view > *', { state: 'attached' });
+    await tab(p, 'diensten'); assert.ok(await p.isEnabled('[data-newswap]'), 'knop staat uit');
+    await p.click('[data-newswap]'); await p.waitForSelector('.toast:has-text("geen komende diensten")');
+    await ctx.close();
+  });
   await test('medewerker: tabjes Mijn rooster en Team, team per afdeling met dienstlabel', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#personeel'); await login(p, 'Sanne');

@@ -4550,7 +4550,7 @@ async function viewDiensten(el) {
 
   el.innerHTML = `
     <div class="page-head"><div><h1>Diensten</h1><p>Open diensten, ruilen en overnemen.</p></div>
-      <button class="btn primary" data-newswap ${myShifts.some(s => s.date >= today) ? '' : 'disabled'}>${ico('swap')}Dienst ruilen of overdragen</button></div>
+      <button class="btn primary" data-newswap>${ico('swap')}Dienst ruilen of overdragen</button></div>
     ${toApprove.length ? `<section class="sect"><h2>Ruilen ter goedkeuring <span class="muted">(${toApprove.length})</span></h2><div class="reqs">${toApprove.map(apCard).join('')}</div></section>` : ''}
     <section class="sect"><h2>Open diensten <span class="muted">(${open.length})</span></h2>
       ${open.length ? `<div class="reqs">${open.map(openCard).join('')}</div>` : '<div class="card empty">Er zijn nu geen open diensten.</div>'}</section>
@@ -4561,7 +4561,11 @@ async function viewDiensten(el) {
   el.onclick = async ev => {
     const t = ev.target.closest('button'); if (!t) return;
     try {
-      if (t.matches('[data-newswap]')) return swapDialog(myShifts, emps, shifts, null, swaps);
+      if (t.matches('[data-newswap]')) {
+        // geen komende diensten: uitleggen in plaats van een knop die niets doet
+        if (!myShifts.some(s => s.date >= today)) return toast('Je hebt nog geen komende diensten om te ruilen. Zodra je bent ingepland, kun je hier een dienst ruilen of overdragen.');
+        return swapDialog(myShifts, emps, shifts, null, swaps);
+      }
       if (t.dataset.apply) { await store.openApply(t.dataset.apply); toast('Aangemeld — de directie laat het weten'); return rerender(); }
       if (t.dataset.withdraw) { await store.openWithdraw(t.dataset.withdraw); toast('Afgemeld'); return rerender(); }
       if (t.dataset.accept) {
