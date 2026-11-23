@@ -113,7 +113,11 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Controleronde 10 verwerkt (privacy: medewerkers zien geen uren/contract van collega's in Team).
 - Open: contracttypes/uren, verlof, uurlonen, diploma's en geboortedata bij medewerkers nog invullen; testaccount 'Test' op inactief zetten; Gerrit, Tim, Lukas, Shyam nog niet geactiveerd.
 
-## Versie 108 (update 92, 22 nov) — live, gecontroleerd (md5 + rooktest)
+## Versie 110 (update 94, 23 nov) — live, gecontroleerd (md5 + rooktest + database + advisors)
+- Menubalk telefoon vast onderaan, verborgen tijdens typen. Controleronde 12 (opmaak) verwerkt.
+- Website lilou-ede.nl: CPU-piek door opgestapelde wp-cron; opgelost met DISABLE_WP_CRON + cronjob */15, WP Fastest Cache aan, XML-RPC dicht, Limit Login Attempts (via Claude in Chrome).
+
+## Versie 108 (update 92, 22 nov)
 - update49 live (shiftleaders keuren ruilen goed, notify_planners met uitzonderingen-array, cert_label zoekpad).
 - Planning: verlof/ziek/niet beschikbaar rood; Dienst inplannen met datum bovenaan en gekleurde keuzelijst.
 - Controleronde 11 (techniek) verwerkt. UX-controle 11 nog opnieuw doen (verslag kwijt door herstart).
