@@ -113,6 +113,13 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Controleronde 10 verwerkt (privacy: medewerkers zien geen uren/contract van collega's in Team).
 - Open: contracttypes/uren, verlof, uurlonen, diploma's en geboortedata bij medewerkers nog invullen; testaccount 'Test' op inactief zetten; Gerrit, Tim, Lukas, Shyam nog niet geactiveerd.
 
+## Versie 118 (update 102 + database update 50, 23 nov) — live, gecontroleerd
+- Uren als "7 u 30 min"; team per afdeling met dienstlabels Dag/Tussen/Avond; tabjes Mijn rooster | Team.
+- Beschikbaarheid met schuifje + van/tot (leeg gelaten dagen: eerst bevestigen); snelknoppen bepalen vaste dienst.
+- Verlof intrekken: medewerker vraagt (request_cancel_ask), directie trekt in of laat staan (request_withdraw); lopend verlof: alleen rest.
+- Tik op dienst: dienstvenster met collega's, agenda, ruilen. Ruilknop zonder diensten geeft uitleg.
+- Controleronde 13 (code + opmaak) verwerkt.
+
 ## Versie 110 (update 94, 23 nov) — live, gecontroleerd (md5 + rooktest + database + advisors)
 - Menubalk telefoon vast onderaan, verborgen tijdens typen. Controleronde 12 (opmaak) verwerkt.
 - Website lilou-ede.nl: CPU-piek door opgestapelde wp-cron; opgelost met DISABLE_WP_CRON + cronjob */15, WP Fastest Cache aan, XML-RPC dicht, Limit Login Attempts (via Claude in Chrome).
