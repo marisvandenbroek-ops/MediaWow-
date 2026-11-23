@@ -2015,7 +2015,7 @@ dialog .dlg-foot { position: sticky; bottom: 0; background: var(--surface); z-in
 /* 9. 'Aangevraagd' op een eigen regel */
 .mleaves-h.pend { flex-basis: 100%; margin-top: 4px; }
 /* 10. bedragen en uren niet afbreken */
-.moneyrow td > b:first-child, .grid tfoot td { white-space: nowrap; }
+.moneyrow td > b:first-child { white-space: nowrap; }
 /* 13. sluitkruis altijd rechts */
 .viewer-bar .x { margin-left: auto; }
 .viewer-bar .viewer-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2104,3 +2104,33 @@ dialog .dlg-foot { position: sticky; bottom: 0; background: var(--surface); z-in
   .avday .avnote { max-width: none; }
 }
 .lh-in b.long { font-size: 26px; letter-spacing: -.01em; max-width: 150px; }
+
+/* ===== Controleronde 13: opmaak ===== */
+.nw { white-space: nowrap; }
+table.list td.num, table.list th.num { white-space: nowrap; }
+.status { white-space: nowrap; }
+/* beschikbaarheid op smalle telefoons */
+@media (max-width: 360px) {
+  .avday { grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 8px; padding: 12px 10px; }
+  .avvt { display: grid; grid-template-columns: 1fr 1fr; }
+  .avvt input { width: 100%; min-width: 0; }
+  .avfoot .btn { white-space: nowrap; padding-inline: 10px; font-size: 14px; }
+  .subtabs button { padding: 9px 8px; }
+}
+.avday textarea.avnote { resize: vertical; min-height: 40px; field-sizing: content; max-height: 140px; line-height: 1.4; }
+/* dagkop: samenvatting onder de datum op de telefoon, dan valt de knop + er niet overheen */
+@media (max-width: 480px) {
+  .dayhead { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .dayhead h2 { font-size: 20px; }
+  .mlist { padding-bottom: 96px; }
+  .mshift.v2 .mside { margin-right: 0; }
+}
+/* tabjes: zelfde kleur als andere actieve knoppen, ook in donker; niet dubbel naast de zijbalk */
+.segtabs button.on { background: #912508; color: #f9efe6; }
+@media (min-width: 761px) { .segtabs { margin-inline: auto; } }
+@media (min-width: 1024px) { .segtabs { display: none; } }
+/* afdelingskop: neutraal bolletje, de kleuren horen bij de mensen */
+.mgrp-h .gdot { background: var(--line-strong) !important; }
+/* vraag om intrekken: gewone omlijnde knop */
+.btn.dangerline { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); background: var(--surface); text-decoration: none; }
+@media (max-width: 360px) { .xs-hide { display: none; } }
