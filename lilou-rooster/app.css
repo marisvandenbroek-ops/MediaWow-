@@ -1701,7 +1701,7 @@ form:has([name=ok][value=true]:checked) .field:has([name=reden]) { display: none
 .teamtoday .rlist { margin-bottom: 0; }
 
 /* iOS: echte schermhoogte (zie --app-h / --vv-bottom in app.js) */
-@media (max-width: 760px) { .tabs { bottom: var(--vv-bottom, 0px) !important; } }
+@media (max-width: 760px) { .tabs { bottom: 0 !important; transform: translateZ(0); } }
 dialog.viewer { height: var(--app-h, 100dvh); }
 .ml-body, .viewer .vbody { overscroll-behavior: contain; }
 main[hidden] { display: none !important; }
@@ -2166,3 +2166,19 @@ table.list td.num, table.list th.num { white-space: nowrap; }
 .sdet-team .t { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; white-space: nowrap; }
 .mav.sm { width: 34px; height: 34px; font-size: 12px; flex: none; }
 .sdet .swapst { margin: 4px 0 0; }
+
+/* ===== Soepeler: geen 'elastiek' bij omlaag trekken, zachte schermwissels ===== */
+html, body { overscroll-behavior-y: none; }
+html { -webkit-tap-highlight-color: transparent; }
+button, a, .tapable, label { touch-action: manipulation; }
+main.busy { opacity: .55; transition: opacity .15s ease; }
+@keyframes viewin { from { opacity: 0; } to { opacity: 1; } }   /* alleen vervagen: een transform zou vaste knoppen in het scherm laten verspringen */
+main#view.enter { animation: viewin .2s ease-out; }
+@keyframes dlgin { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes sheetin { from { transform: translateY(100%); } to { transform: none; } }
+dialog.dlg[open] { animation: dlgin .2s ease-out; }
+dialog.moresheet[open] { animation: sheetin .24s cubic-bezier(.2, .8, .2, 1); }
+@media (min-width: 761px) { dialog.moresheet[open] { animation: dlgin .2s ease-out; } }
+.tab, .btn, .segtabs button, .ds, .avsw .sw { transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .1s ease; }
+.btn:not(.madd):active, .tab:active, .ds:active { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) { main#view.enter, dialog.dlg[open], dialog.moresheet[open] { animation: none; } main.busy { transition: none; } }

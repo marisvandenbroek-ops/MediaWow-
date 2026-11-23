@@ -1422,7 +1422,6 @@ async function go(view) {
   if (!(await checkMe())) return;
   if (tok !== S.renderTok) return;   // intussen al naar een ander scherm gegaan
   maybeRunJobs();   // niet op wachten: de database doet dit ook zelf
-  if (changed) window.scrollTo(0, 0);
   // Nieuw element per keer: een tragere, oudere laadactie schrijft dan in een losgekoppeld element en niet over dit scherm
   const old = $('#view');
   if (!old) return;
@@ -1431,11 +1430,14 @@ async function go(view) {
   el.hidden = true; old.parentNode.insertBefore(el, old);
   const y0 = window.scrollY;
   let swapped = false;
+  const dim = changed ? setTimeout(() => { if (!swapped) old.classList.add('busy'); }, 120) : 0;   // laden duurt even: oude scherm iets dimmen
   const swap = () => {
     if (swapped || !el.isConnected) return; swapped = true;
+    clearTimeout(dim);
     $$('main[data-view], main#view').forEach(m => { if (m !== el) m.remove(); });
     el.id = 'view'; el.hidden = false;
-    if (!changed) window.scrollTo(0, Math.min(y0, document.documentElement.scrollHeight));
+    if (changed) { window.scrollTo(0, 0); el.classList.add('enter'); setTimeout(() => el.classList.remove('enter'), 260); }
+    else window.scrollTo(0, Math.min(y0, document.documentElement.scrollHeight));
     const f = S.afterSwap; S.afterSwap = null; if (f) try { f(); } catch (x) { /* niet kritiek */ }
   };
   const slow = setTimeout(() => { if (el.isConnected && !el.childElementCount) { el.innerHTML = '<p class="hint loading">Laden…</p>'; swap(); } }, 600);
@@ -5738,17 +5740,13 @@ window.addEventListener('hashchange', () => { if (store && !S.me && store.demo) 
   const fix = () => {
     const r = document.documentElement.style;
     r.setProperty('--app-h', Math.round(vv.height) + 'px');
-    // Alleen een klein verschil (werkbalk van iOS) corrigeren. Een groot verschil is het toetsenbord
-    // (of een overgang): dan blijft de balk gewoon onderaan, nooit halverwege het scherm.
-    const diff = Math.round(window.innerHeight - vv.height - vv.offsetTop);
-    r.setProperty('--vv-bottom', (diff > 0 && diff < 90 && !isTyping() ? diff : 0) + 'px');
+    // de menubalk staat altijd vast onderaan (bottom: 0); hier niets meer verschuiven
   };
   // tijdens typen de menubalk verbergen (zoals in de meeste apps); daarna staat hij weer onderaan
   const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'submit', 'range', 'color', 'file'].includes(a.type))); };
   const typingClass = () => { document.documentElement.classList.toggle('typing', isTyping()); fix(); };
   document.addEventListener('focusin', typingClass);
   document.addEventListener('focusout', () => setTimeout(typingClass, 60));
-  window.addEventListener('scroll', () => { if (!isTyping()) document.documentElement.style.setProperty('--vv-bottom', '0px'); }, { passive: true });
   vv.addEventListener('resize', fix); vv.addEventListener('scroll', fix);
   window.addEventListener('orientationchange', () => setTimeout(fix, 300));
   window.addEventListener('pageshow', () => { fix(); setTimeout(fix, 400); });
