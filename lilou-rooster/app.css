@@ -2134,3 +2134,13 @@ table.list td.num, table.list th.num { white-space: nowrap; }
 /* vraag om intrekken: gewone omlijnde knop */
 .btn.dangerline { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); background: var(--surface); text-decoration: none; }
 @media (max-width: 360px) { .xs-hide { display: none; } }
+/* beschikbaarheid: tijden altijd volledig leesbaar op de telefoon */
+@media (max-width: 760px) {
+  .avday .avvt { grid-column: 2 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .avday .avvt input { width: 100%; min-width: 0; padding: 8px 6px; }
+}
+.avvt input::-webkit-calendar-picker-indicator { margin: 0 0 0 2px; padding: 0; width: 14px; height: 14px; }
+.avvt input::-webkit-datetime-edit { padding: 0; }
+/* opmerkingenveld zelfde stijl als de andere velden */
+.avday textarea.avnote { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; padding: 8px 10px; resize: none; width: 100%; }
+.avday textarea.avnote:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
