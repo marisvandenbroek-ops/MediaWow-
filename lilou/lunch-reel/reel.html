@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=block" rel="stylesheet">
+<style>
+@font-face{font-family:Vonca;src:url(fonts/Vonca-Light.woff) format('woff');font-weight:300}
+@font-face{font-family:Vonca;src:url(fonts/Vonca-Regular.woff) format('woff');font-weight:400}
+@font-face{font-family:Vonca;src:url(fonts/Vonca-Medium.woff) format('woff');font-weight:500}
+:root{--terra:#8F2509;--ivory:#FFFDF8;--ink:#17110E}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--terra)}
+.scene{position:absolute;inset:0;overflow:hidden}
+.c{position:absolute;left:0;right:0;text-align:center}
+.d{font-family:Vonca,serif;font-weight:300;line-height:.92;letter-spacing:-.02em;white-space:nowrap}
+.i{font-style:italic}
+.cap{font-family:"DM Sans",sans-serif;font-weight:500;font-size:27px;letter-spacing:.34em;text-transform:uppercase}
+.m{overflow:hidden;display:block;padding:0 0 .08em}
+.m>span{display:inline-block;will-change:transform}
+.fade{will-change:opacity,transform}
+.terra{background:var(--terra);color:var(--ivory)}
+.ivory{background:var(--ivory);color:var(--terra)}
+.ink{background:var(--ink);color:var(--ivory)}
+.word{position:absolute;left:0;right:0;top:840px;text-align:center;font-size:250px;opacity:0}
+</style></head><body>
+
+<!-- S0 klok -->
+<section class="scene terra" id="s0">
+  <div class="c cap fade0" style="top:300px">Vanaf 2 december</div>
+  <div id="clock" style="position:absolute;left:179px;top:440px;width:760px;height:760px;will-change:transform">
+    <img src="img/logo-o-ivory.png" style="position:absolute;inset:0;width:760px;height:760px">
+    <div id="hh" style="position:absolute;left:356px;top:379px;width:10px;height:130px;margin-top:-125px;background:var(--ivory);border-radius:5px;transform-origin:5px 125px"></div>
+    <div id="mh" style="position:absolute;left:358px;top:379px;width:6px;height:205px;margin-top:-200px;background:var(--ivory);border-radius:3px;transform-origin:3px 200px"></div>
+    <div style="position:absolute;left:347px;top:365px;width:28px;height:28px;border-radius:50%;background:var(--ivory)"></div>
+  </div>
+  <div class="c d" id="digi" style="top:1220px;font-size:210px;font-weight:400;font-variant-numeric:tabular-nums">07:00</div>
+  <div class="c cap" id="days" style="top:1470px;opacity:0">Woensdag t/m zondag</div>
+</section>
+
+<!-- S1 hook -->
+<section class="scene terra" id="s1">
+  <div class="c cap fade" style="top:300px">Pomphuis · Ede</div>
+  <div class="c" id="s1z" style="top:600px">
+    <div class="d m" style="font-size:360px"><span>Lunch</span></div>
+    <div class="d m i" style="font-size:230px;margin-top:-10px"><span>at</span></div>
+    <div class="d m" style="font-size:360px"><span>Lilou.</span></div>
+  </div>
+</section>
+
+
+<!-- S3 woorden van de kaart -->
+<section class="scene ink" id="s3">
+  <div class="c cap fade" style="top:300px;color:#E9B7A4">Op de lunchkaart</div>
+  <div class="d i word">Paling.</div>
+  <div class="d i word">Tartare.</div>
+  <div class="d i word">Kreeft.</div>
+  <div class="d i word">Coquilles.</div>
+  <div class="d i word">Ribeye.</div>
+  <div class="d i word">Madeleine.</div>
+  <div class="c cap" id="cnt" style="top:1300px;color:#E9B7A4">01 / 06</div>
+</section>
+
+<!-- S4 Le 12 O'Clock -->
+<section class="scene terra" id="s4">
+  <div class="c cap fade" style="top:300px">Signature lunch</div>
+  <div class="c" style="top:470px">
+    <div class="d m" style="font-size:300px"><span>Le 12</span></div>
+    <div class="d m i" style="font-size:270px"><span>O’Clock</span></div>
+  </div>
+  <div class="c fade" style="top:1080px;font-family:'DM Sans';font-size:30px;line-height:1.75;letter-spacing:.06em">
+    Toast met gerookte paling · Steak tartare<br>Cappuccino van knolselderij · Salade César
+  </div>
+  <div class="c"style="top:1250px"><div class="d m" style="font-size:190px;font-weight:400"><span>€ 32,50</span></div></div>
+</section>
+
+<!-- S5 O-venster -->
+<section class="scene ivory" id="s5">
+  <div id="win" style="position:absolute;left:150px;top:330px;width:780px;height:960px;border-radius:50%;overflow:hidden;will-change:transform">
+    <div id="winimg" style="position:absolute;inset:-60px;background:url(img/IMG_3241.jpeg) center/cover"></div>
+  </div>
+  <div id="dot" style="position:absolute;left:900px;top:1200px;width:84px;height:84px;border-radius:50%;background:var(--terra)"></div>
+  <div class="c" style="top:1330px">
+    <div class="cap fade">Le Menu Déjeuner · 2, 3 of 4 gangen</div>
+    <div class="d m" style="font-size:150px;margin-top:30px"><span><span class="i">vanaf</span> € 39,50</span></div>
+  </div>
+</section>
+
+<!-- S6 eindkaart, groot -->
+<section class="scene terra" id="s6">
+  <div class="c" style="top:250px"><img id="logo" src="img/logo-o-ivory.png" style="width:640px;height:640px;will-change:transform"></div>
+  <div class="c" style="top:880px">
+    <div class="d m" style="font-size:150px"><span>Lunch at Lilou.</span></div>
+    <div class="d m i" style="font-size:150px"><span>C’est tout.</span></div>
+  </div>
+  <div class="c fade" style="top:1250px"><div style="width:140px;height:2px;background:var(--ivory);margin:0 auto;opacity:.75"></div></div>
+  <div class="c cap fade" style="top:1300px;line-height:2.1;font-size:26px">Vanaf 2 december · wo t/m zo vanaf 12:00<br>Klinkenbergerweg 41 · Ede</div>
+  <div class="c fade" style="top:1440px">
+    <span style="display:inline-block;background:var(--ivory);color:var(--terra);font-family:'DM Sans';font-weight:600;font-size:27px;letter-spacing:.28em;text-transform:uppercase;padding:30px 52px">Reserveer · link in bio</span>
+  </div>
+</section>
+
+<script>
+const S=[['s0',0],['s1',3.5],['s3',5.7],['s4',9.0],['s5',11.5],['s6',13.8]];
+const END=18.6, WIPE=0.42;
+const cl=x=>Math.min(Math.max(x,0),1);
+const eo=x=>1-Math.pow(1-cl(x),4);            // ease-out
+const eio=x=>{x=cl(x);return x<.5?8*x**4:1-Math.pow(-2*x+2,4)/2}; // ease-in-out
+function render(t){
+  S.forEach(([id,a],idx)=>{
+    const el=document.getElementById(id);
+    const next=S[idx+1]; const b=next?next[1]+WIPE:END;
+    if(t<a||t>b){el.style.display='none';return} el.style.display='block';
+    el.style.zIndex=idx;
+    const lt=t-a;
+    // binnenkomst: veeg van onder naar boven
+    const k=idx===0?1:eio(lt/WIPE);
+    el.style.clipPath=`inset(${(1-k)*100}% 0 0 0)`;
+    const d0=0.2;
+    // regels uit masker omhoog
+    el.querySelectorAll('.m>span').forEach((s,i)=>{const p=eo((lt-d0-i*0.14)/0.7);s.style.transform=`translateY(${(1-p)*105}%)`});
+    el.querySelectorAll('.fade').forEach((s,i)=>{const p=eo((lt-d0-0.25-i*0.12)/0.6);s.style.opacity=p;s.style.transform=`translateY(${(1-p)*24}px)`});
+    if(id==='s1'){document.getElementById('s1z').style.transform=`scale(${1+0.04*lt/2.2})`}
+    if(id==='s0'){
+      const STOP=2.3; const p=cl(lt/STOP); const e=1-Math.pow(1-p,3.2);
+      let mins=7*60+e*300; if(p>=1)mins=720;
+      // klein naveren bij stilstand
+      const kick=lt>STOP?Math.sin(Math.min((lt-STOP)/0.35,1)*Math.PI)*Math.exp(-(lt-STOP)*4)*4:0;
+      const h=(mins/60)%12, m=mins%60;
+      document.getElementById('hh').style.transform=`rotate(${h*30+kick*0.5}deg)`;
+      document.getElementById('mh').style.transform=`rotate(${m*6+(mins>=720?0:0)+kick}deg)`;
+      const H=Math.floor(mins/60), M=Math.floor(mins%60);
+      document.getElementById('digi').textContent=String(H).padStart(2,'0')+':'+String(M).padStart(2,'0');
+      const q=eo((lt-STOP)/0.5);
+      document.getElementById('clock').style.transform=`scale(${1+0.035*Math.sin(Math.min((lt-STOP)/0.4,1)*Math.PI)*(lt>STOP?1:0)})`;
+      const dd=document.getElementById('days'); dd.style.opacity=q; dd.style.transform=`translateY(${(1-q)*24}px)`;
+      el.querySelectorAll('.fade0').forEach(f=>f.style.opacity=1);
+    }
+    if(id==='s3'){const ws=el.querySelectorAll('.word');
+      // past elk woord in binnen 760px (min. 160px marge per kant), max 230px
+      ws.forEach(w=>{if(w.dataset.fit)return; w.style.fontSize='230px'; w.style.display='inline-block'; w.style.left='50%'; w.style.right='auto';
+        const r=document.createRange(); r.selectNodeContents(w); const wd=r.getBoundingClientRect().width;
+        const fs=Math.min(230,230*760/wd); w.style.fontSize=fs+'px'; w.style.top=(840+(230-fs)*0.45)+'px'; w.style.left='0'; w.style.right='0'; w.style.display='block'; w.dataset.fit=1;});const n=Math.min(ws.length-1,Math.max(0,Math.floor((lt-0.3)/0.5)));
+      ws.forEach((w,i)=>{w.style.opacity=i===n?1:0;const p=eo((lt-0.3-i*0.5)/0.25);w.style.transform=`scale(${1.06-0.06*p})`});
+      document.getElementById('cnt').textContent=`0${n+1} / 06`;}
+    if(id==='s5'){const p=eo((lt-0.1)/1.1);document.getElementById('win').style.transform=`scale(${0.55+0.45*p})`;
+      document.getElementById('winimg').style.transform=`scale(${1.25-0.15*cl(lt/2.6)})`;
+      const q=eo((lt-0.8)/0.4);document.getElementById('dot').style.transform=`scale(${q})`;}
+    if(id==='s6'){const p=eo((lt-0.05)/1.2);document.getElementById('logo').style.transform=`scale(${1.35-0.35*p}) rotate(${(1-p)*-8}deg)`;document.getElementById('logo').style.opacity=cl(lt/0.4);}
+  });
+}
+window.END=END; render(0);
+</script></body></html>
