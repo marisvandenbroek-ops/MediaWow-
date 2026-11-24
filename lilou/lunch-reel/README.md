@@ -1,6 +1,6 @@
 # LILOU — Instagram-reel lunch
 
-Reel (1080×1920, 20 s) voor de lunch bij LILOU in Ede, die opent op 2 december 2026.
+Reel (1080×1920, 19,4 s) voor de lunch bij LILOU in Ede, die opent op 2 december 2026.
 De reel is gemaakt in de huisstijl van LILOU: Vonca, terracotta `#8F2509`, ivoor `#FFFDF8` en bijna-zwart `#17110E`.
 
 ## Kant-en-klaar
@@ -19,11 +19,11 @@ De reel is gemaakt in de huisstijl van LILOU: Vonca, terracotta `#8F2509`, ivoor
 | 3,5–5,7 s | *Lunch at Lilou.* |
 | 5,7–9,0 s | Gerechtnamen, elke halve seconde een nieuwe: Paling, Tartare, Kreeft, Coquilles, Ribeye, Madeleine |
 | 9,0–11,5 s | *Le 12 O'Clock*, € 32,50 |
-| 11,5–13,8 s | Tartarefoto in een O-vormig ovaal, lunchmenu vanaf € 39,50 |
-| 13,8–20 s | Eindkaart: logo, *Lunch at Lilou. C'est tout.*, gegevens, "Reserveer · link in bio" |
+| 11,5–13,8 s | Le Menu Déjeuner: 2 · 3 · 4 springen op de tel in beeld, *gangen*, vanaf € 39,50 |
+| 13,8–19,4 s | Eindkaart: logo, *Lunch at Lilou. C'est tout.*, gegevens, "Reserveer · link in bio" |
 
-**Audio:** een intro met hi-hats, snaps, riser en een 808-drop op 12:00, gevolgd door French deep house (`audio/house.mp3`).
-De track is met Runway gemaakt en heeft dus geen rechten van bekende artiesten.
+**Audio:** een intro met hi-hats, snaps, riser en een 808-drop op 12:00, gevolgd door ruige house (`audio/house-gritty.mp3`). De rustigere deep-house-variant staat in `audio/house.mp3`; wissel via `TRACK` in `build_audio.py`.
+Beide tracks zijn met Runway gemaakt en hebben dus geen rechten van bekende artiesten.
 
 Gerechten, prijzen en tijden komen van https://lilou-ede.nl/lunch/ (stand 24 november 2026).
 

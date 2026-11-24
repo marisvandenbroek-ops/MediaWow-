@@ -1,7 +1,7 @@
 """Bouwt de soundtrack van de reel.
 
 1. Intro (0-2,3 s): hi-hats op ~130 BPM, fingersnaps, een riser en een 808-drop op 12:00.
-2. Vanaf de drop: audio/house.mp3 (gegenereerde French deep house, ~129 BPM),
+2. Vanaf de drop: audio/<TRACK> (gegenereerde house, ~129 BPM),
    met één maat eruit geknipt zodat de slotklap op de eindkaart valt.
 
 Uitvoer: audio/mix.wav. Vereist numpy en ffmpeg.
@@ -17,7 +17,8 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 SR = 48000
 DROP = 2.3   # moment waarop de klok op 12:00 staat (zie reel.html)
-END = 20.0   # lengte van de uiteindelijke video
+END = 19.4   # lengte van de uiteindelijke video
+TRACK = 'house-gritty.mp3'  # ruige house; 'house.mp3' is de rustigere deep-house-variant
 rng = np.random.default_rng(11)
 
 
@@ -98,7 +99,7 @@ def intro():
 
 
 def load_track():
-    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', os.path.join(HERE, 'audio', 'house.mp3'),
+    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', os.path.join(HERE, 'audio', TRACK),
                           '-ac', '2', '-ar', str(SR), '-f', 'f32le', '-'], capture_output=True, check=True).stdout
     return np.frombuffer(raw, dtype=np.float32).reshape(-1, 2).astype(np.float64)
 
@@ -106,7 +107,7 @@ def load_track():
 def main():
     n_tot = int(SR * END)
     m = load_track()
-    beat, t0 = 0.4644, 0.012  # gemeten tempo en eerste tel van house.mp3
+    beat, t0 = 0.4644, 0.012  # gemeten tempo en eerste tel (gelijk voor beide tracks)
     # één maat (tel 16-20) eruit, met 15 ms crossfade
     a = int((t0 + 16 * beat - 0.01) * SR)
     b = int((t0 + 20 * beat - 0.01) * SR)
