@@ -703,5 +703,14 @@ select t_fails($q$insert into requests (employee_id, type, start_date, end_date,
 select t_fails($q$insert into requests (employee_id, type, start_date, end_date, leave_hours) values ('a0000000-0000-0000-0000-000000000002', 'vrij', today_nl() + 9, today_nl() + 9, 1)$q$, 'nieuwe aanvraag met verlofuren geweigerd');
 reset role;
 
+\echo '== Update 51: verlof voor een deel van de dag'
+set role authenticated; select as_user(2);
+insert into requests (id, employee_id, type, start_date, end_date, from_time, to_time) values
+  ('55100000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002', 'vrij', today_nl() + 12, today_nl() + 12, '14:00', '16:00');
+select t_fails($q$insert into requests (employee_id, type, start_date, end_date, from_time, to_time) values ('a0000000-0000-0000-0000-000000000002', 'vrij', today_nl() + 12, today_nl() + 13, '14:00', '16:00')$q$, 'deel van de dag alleen bij één dag');
+select t_fails($q$insert into requests (employee_id, type, start_date, end_date, from_time) values ('a0000000-0000-0000-0000-000000000002', 'vrij', today_nl() + 14, today_nl() + 14, '14:00')$q$, 'alleen begintijd kan niet');
+reset role;
+select t_ok((select req_label(r) like '%14:00–16:00' from requests r where id = '55100000-0000-0000-0000-000000000001'), 'label met tijden');
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'

@@ -2182,3 +2182,10 @@ dialog.moresheet[open] { animation: sheetin .24s cubic-bezier(.2, .8, .2, 1); }
 .tab, .btn, .segtabs button, .ds, .avsw .sw { transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .1s ease; }
 .btn:not(.madd):active, .tab:active, .ds:active { transform: scale(.97); }
 @media (prefers-reduced-motion: reduce) { main#view.enter, dialog.dlg[open], dialog.moresheet[open] { animation: none; } main.busy { transition: none; } }
+
+/* verlof voor een deel van de dag */
+.rq-part { display: grid; gap: 10px; margin: 2px 0 4px; }
+.rq-part[hidden], .rq-times[hidden] { display: none; }
+.rq-whole { display: flex; width: 100%; }
+.rq-whole button { flex: 1; }
+.rq-sum b { white-space: nowrap; }

@@ -1866,9 +1866,9 @@ async function viewWeek(el, editable) {
       const cl = specialDay(x.date);
       if (cl?.kind === 'gesloten') addW(x, `${CFG.bedrijf} is gesloten (${cl.label})`);
       else if (hm(x.end_time) <= hm(x.start_time) && hm(x.end_time) > '00:00') { const nx = specialDay(iso(addDays(parse(x.date), 1))); if (nx?.kind === 'gesloten') addW(x, `loopt door tot in een gesloten dag (${nx.label})`); }
-      const lvA = reqs.find(r => r.status === 'approved' && r.employee_id === x.employee_id && r.start_date <= x.date && r.end_date >= x.date);
-      if (lvA) addW(x, `heeft ${REQ[lvA.type].toLowerCase()} (goedgekeurd)`);
-      const lvP = !lvA && reqs.find(r => r.status === 'pending' && r.employee_id === x.employee_id && r.start_date <= x.date && r.end_date >= x.date);
+      const lvA = reqs.find(r => r.status === 'approved' && r.employee_id === x.employee_id && r.start_date <= x.date && r.end_date >= x.date && lvHits(r, x.start_time, x.end_time));
+      if (lvA) addW(x, `heeft ${REQ[lvA.type].toLowerCase()}${lvTimes(lvA)} (goedgekeurd)`);
+      const lvP = !lvA && reqs.find(r => r.status === 'pending' && r.employee_id === x.employee_id && r.start_date <= x.date && r.end_date >= x.date && lvHits(r, x.start_time, x.end_time));
       if (lvP) addW(x, `heeft ${REQ[lvP.type].toLowerCase()} aangevraagd`);
       const nv = avail.find(a => a.employee_id === x.employee_id && a.date === x.date && a.kind === 'niet');
       if (nv) addW(x, `heeft "niet beschikbaar" doorgegeven${nv.note ? ' (' + nv.note + ')' : ''}`);
@@ -1908,7 +1908,7 @@ async function viewWeek(el, editable) {
   const haveOf = (ds, p) => shifts.filter(x => x.date === ds && x.employee_id && x.position === p).length;
   const certKinds = ['svh', 'bhv'].filter(k => certs.some(c => c.kind === k));
   const certHTML = ds => {
-    const away = id => leaves.some(r => r.employee_id === id && ['vakantie', 'vrij', 'ziek'].includes(r.type) && r.start_date <= ds && r.end_date >= ds);
+    const away = id => leaves.some(r => r.employee_id === id && ['vakantie', 'vrij', 'ziek'].includes(r.type) && !lvPart(r) && r.start_date <= ds && r.end_date >= ds);
     const on = shifts.filter(x => x.date === ds && x.employee_id && !away(x.employee_id)); if (!on.length || specialDay(ds)?.kind === 'gesloten') return '';
     return certKinds.filter(k => !on.some(x => certs.some(c => c.employee_id === x.employee_id && c.kind === k && certValid(c, ds))))
       .map(k => `<span class="covp short" title="Niemand met een geldig ${k === 'svh' ? 'diploma Sociale Hygiëne' : 'BHV-diploma'} ingepland deze dag">Geen ${k.toUpperCase()}</span>`).join('');
@@ -1943,7 +1943,7 @@ async function viewWeek(el, editable) {
     const cells = days.map(d => {
       const ds = iso(d);
       const lv = leaves.filter(r => r.employee_id === e.id && r.start_date <= ds && r.end_date >= ds)
-        .map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}" title="${esc(STATUS[r.status])}">${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('');
+        .map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}" title="${esc(STATUS[r.status])}">${esc(REQ[r.type])}${esc(lvTimes(r))}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('');
       const chips = (byCell[e.id + ds] || []).map(s => {
         const tag = editable ? 'button' : 'div';
         const w = atw[s.id];
@@ -1999,7 +1999,7 @@ async function viewWeek(el, editable) {
     return `<section class="pday ${ds === today ? 'today' : ''}">
       <div class="pday-head"><h3>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}${sp?.kind === 'gesloten' ? ` <span class="fdtag cl">${ico('lock')}Gesloten</span>` : fd ? ` <span class="fdtag">${esc(fd)}</span>` : ''}</h3><span class="muted small">${list.length ? `${new Set(list.filter(x => x.employee_id).map(x => x.employee_id)).size} pers · ${fmtH(h)}` : ''}</span></div>
       ${covOn && !(sp?.kind === 'gesloten') ? `<div class="cov">${covHTML(ds)}</div>` : sp?.kind === 'gesloten' ? `<div class="cov">${covHTML(ds)}</div>` : ''}
-      ${lv.length ? `<div class="mleaves">${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}</div>` : ''}
+      ${lv.length ? `<div class="mleaves">${lv.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${esc(lvTimes(r))}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}</div>` : ''}
       <div class="plist">${rowsL || '<p class="hint" style="margin:6px 2px">Nog niemand ingepland.</p>'}</div>
       <div class="pday-foot">${S.selMode ? (list.length ? `<button type="button" class="btn sm ghost" data-selday="${ds}">Hele dag selecteren</button>` : '') : `<button type="button" class="btn sm ghost" data-addon="${ds}">+ Dienst op ${DAG[i].toLowerCase()}</button>`}</div>
     </section>`;
@@ -2027,7 +2027,7 @@ async function viewWeek(el, editable) {
     const availFree = editable ? avail.filter(a => a.date === ds && a.kind !== 'niet' && !list.some(s => s.employee_id === a.employee_id)) : [];
     const nietAv = editable ? avail.filter(a => a.date === ds && a.kind === 'niet' && !lv.some(r => r.employee_id === a.employee_id)) : [];
     const lvOff = lv.filter(r => r.status !== 'pending'), lvPend = lv.filter(r => r.status === 'pending');
-    const leaveHTML = lv.length || nietAv.length ? `<div class="mleaves">${lvOff.length || nietAv.length ? '<span class="mleaves-h">Niet inzetbaar</span>' : ''}${lvOff.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''} ${r.type === 'ziek' ? 'sick' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}${nietAv.map(a => `<span class="leave niet">${esc(byId[a.employee_id]?.name || '')} · niet beschikbaar</span>`).join('')}${lvPend.length ? `<span class="mleaves-h pend">Aangevraagd</span>${lvPend.map(r => `<span class="leave pending">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}</span>`).join('')}` : ''}</div>` : '';
+    const leaveHTML = lv.length || nietAv.length ? `<div class="mleaves">${lvOff.length || nietAv.length ? '<span class="mleaves-h">Niet inzetbaar</span>' : ''}${lvOff.map(r => `<span class="leave ${r.status === 'pending' ? 'pending' : ''} ${r.type === 'ziek' ? 'sick' : ''}">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${esc(lvTimes(r))}${r.status === 'pending' ? ' (aangevraagd)' : ''}</span>`).join('')}${nietAv.map(a => `<span class="leave niet">${esc(byId[a.employee_id]?.name || '')} · niet beschikbaar</span>`).join('')}${lvPend.length ? `<span class="mleaves-h pend">Aangevraagd</span>${lvPend.map(r => `<span class="leave pending">${esc(byId[r.employee_id]?.name || '')} · ${esc(REQ[r.type])}${esc(lvTimes(r))}</span>`).join('')}` : ''}</div>` : '';
     return `<div class="dsrow"><button type="button" class="dsnav" data-wk="-1" aria-label="Vorige week">‹</button><div class="daystrip">${strip}</div><button type="button" class="dsnav" data-wk="1" aria-label="Volgende week">›</button></div>
       <div class="dayhead"><div><h2>${esc(fmtLong(ds).replace(/^./, c => c.toUpperCase()))}</h2>${specialDay(ds)?.kind === 'gesloten' ? `<span class="fdtag cl">${ico('lock')}Gesloten · ${esc(specialDay(ds).label)}</span>` : fd ? `<span class="fdtag">${esc(fd)}</span>` : ''}</div><span>${list.length ? `${new Set(list.filter(s => s.employee_id).map(s => s.employee_id)).size} pers · ${fmtH(h)}` : ''}</span></div>
       ${moneyOn ? moneyHTML(ds, true) : ''}
@@ -2213,7 +2213,7 @@ async function copyWeek(current, emps = [], reqs = []) {
     const nm = (e?.name || '').split(' ')[0];
     if (!e || e.active === false) { skipped.push(`${nm || 'oud-medewerker'}: uit dienst`); return false; }
     if (e.contract_end && x.date > e.contract_end) { skipped.push(`${nm}: contract afgelopen`); return false; }
-    const lv = reqs.find(r => r.status === 'approved' && r.employee_id === x.employee_id && r.start_date <= x.date && r.end_date >= x.date);
+    const lv = reqs.find(r => r.status === 'approved' && r.employee_id === x.employee_id && r.start_date <= x.date && r.end_date >= x.date && lvHits(r, x.start_time, x.end_time));
     if (lv) { skipped.push(`${nm} ${fmtShort(x.date)}: ${REQ[lv.type].toLowerCase()}`); return false; }
     return true;
   });
@@ -2231,6 +2231,7 @@ function dayStatus(empId, ds, leaves = [], avail = []) {
   if (lv) {
     const pend = lv.status === 'pending';
     if (lv.type === 'ziek') return { kind: 'ziek', off: true, label: 'ziek' };
+    if (lvPart(lv)) return { kind: 'deels', off: false, label: `${(REQ[lv.type] || 'Verlof').toLowerCase()}${lvTimes(lv)}${pend ? ' aangevraagd' : ''}` };
     return { kind: pend ? 'aangevraagd' : 'verlof', off: !pend, label: (REQ[lv.type] || 'Verlof').toLowerCase() + (pend ? ' aangevraagd' : '') };
   }
   const a = avail.find(x => x.employee_id === empId && x.date === ds);
@@ -2330,8 +2331,8 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
         const dates = isNew ? $$('input[name=days]:checked', f).map(c => iso(addDays(mondayOf(parse(date)), Number(c.value)))) : [date];
         dates.forEach(ds => {
           const sp = specialDay(ds); if (sp?.kind === 'gesloten') msgs.push(`${fmtShort(ds)}: ${CFG.bedrijf} is gesloten (${sp.label})`);
-          const lv = leaves.find(r => r.employee_id === emp && r.start_date <= ds && r.end_date >= ds);
-          if (lv) msgs.push(`${fmtShort(ds)}: ${REQ[lv.type].toLowerCase()} ${lv.status === 'pending' ? 'aangevraagd' : 'goedgekeurd'}`);
+          const lv = leaves.find(r => r.employee_id === emp && r.start_date <= ds && r.end_date >= ds && lvHits(r, f.start_time.value, f.end_time.value));
+          if (lv) msgs.push(`${fmtShort(ds)}: ${REQ[lv.type].toLowerCase()}${lvTimes(lv)} ${lv.status === 'pending' ? 'aangevraagd' : 'goedgekeurd'}`);
           const other = weekShifts.find(x => x.employee_id === emp && x.date === ds && x.id !== s.id);
           if (other) msgs.push(`${fmtShort(ds)}: heeft al een dienst ${hm(other.start_time)}–${hm(other.end_time)}`);
           const v = avail.find(a => a.employee_id === emp && a.date === ds);
@@ -2392,8 +2393,8 @@ function shiftDialog(s, emps, weekShifts, leaves, avail = [], apps = [], privs =
         dts.forEach(ds => {
           const sp = specialDay(ds); if (sp?.kind === 'gesloten') free.push(`${fmtShort(ds)}: ${CFG.bedrijf} is gesloten (${sp.label})`);
           if (!emp) return;
-          const lv = lvAll.find(r => r.employee_id === emp && r.status !== 'rejected' && r.start_date <= ds && r.end_date >= ds);
-          if (lv) free.push(`${fmtShort(ds)}: ${REQ[lv.type].toLowerCase()} ${lv.status === 'pending' ? 'aangevraagd' : 'goedgekeurd'}`);
+          const lv = lvAll.find(r => r.employee_id === emp && r.status !== 'rejected' && r.start_date <= ds && r.end_date >= ds && lvHits(r, fd.get('start_time'), fd.get('end_time')));
+          if (lv) free.push(`${fmtShort(ds)}: ${REQ[lv.type].toLowerCase()}${lvTimes(lv)} ${lv.status === 'pending' ? 'aangevraagd' : 'goedgekeurd'}`);
           const v = avAll.find(a => a.employee_id === emp && a.date === ds && a.kind === 'niet');
           if (v) free.push(`${fmtShort(ds)}: heeft "niet beschikbaar" doorgegeven`);
         });
@@ -3675,7 +3676,7 @@ async function viewMine(el) {
       const cl = specialDay(ds);
       if (cl?.kind === 'gesloten') { if (!weekClosed) items.push(`<li class="off closed ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>Gesloten</strong><small>${esc(cl.label)}</small></div><div class="h"><span class="pill">${ico('lock')}</span></div></li>`); continue; }
       const lv = wl.find(r => r.start_date <= ds && r.end_date >= ds);
-      if (lv) items.push(`<li class="off ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${esc(REQ[lv.type])}</strong></div><div class="h"><span class="pill ok">vrij</span></div></li>`);
+      if (lv) items.push(`<li class="off ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>${esc(REQ[lv.type])}${esc(lvTimes(lv))}</strong></div><div class="h"><span class="pill ok">vrij</span></div></li>`);
       else if (showOff) items.push(`<li class="off free ${ds === today ? 'today' : ''}">${dayHead}<div class="t"><strong>Vrij</strong>${fd ? `<small>${esc(fd)}</small>` : ''}</div><div class="h"></div></li>`);
     }
     if (compact) return `<section class="weekblock">${title ? `<div class="wk-title"><h2>${title}</h2><span class="muted">${fmt(mon, { day: 'numeric', month: 'short' })} – ${fmt(addDays(mon, 6), { day: 'numeric', month: 'short' })}</span></div>` : ''}<div class="weekblock-head"><span>${ws.length} dienst${ws.length === 1 ? '' : 'en'}</span><span><strong style="color:var(--text)">${fmtH(h)}</strong></span></div><div class="card"><ul class="daylist">${items.join('')}</ul></div></section>`;
@@ -3691,7 +3692,7 @@ async function viewMine(el) {
     const cells = [];
     for (let d = new Date(hmFrom); d <= hmTo; d = addDays(d, 1)) {
       const ds = iso(d), inM = ds.slice(0, 7) === S.homeMonth, sh = mine.filter(x => x.date === ds);
-      const lv = myLeaves.find(r => r.start_date <= ds && r.end_date >= ds), cl = specialDay(ds)?.kind === 'gesloten';
+      const lv = myLeaves.find(r => !lvPart(r) && r.start_date <= ds && r.end_date >= ds), cl = specialDay(ds)?.kind === 'gesloten';
       cells.push(`<button type="button" class="mc ${inM ? '' : 'out'} ${ds === today ? 'today' : ''} ${sh.length ? 'has k-' + shiftKind(sh[0]) : ''} ${lv ? 'leave' : ''} ${cl ? 'closed' : ''}" data-mday="${ds}" aria-label="${esc(fmtLong(ds))}${sh.length ? ': ' + sh.map(x => hm(x.start_time) + '–' + hm(x.end_time)).join(', ') : ''}">
         <b>${d.getDate()}</b>${sh.length ? `<small>${hm(sh[0].start_time)}</small><small>${hm(sh[0].end_time)}</small>` : lv ? '<small>vrij</small>' : cl ? '<small>dicht</small>' : ''}</button>`);
     }
@@ -3935,7 +3936,13 @@ function downloadIcs(shifts) {
 }
 
 /* ================= Requests ================= */
+// verlof voor een deel van de dag (from_time/to_time); raakt het deze dienst?
+const lvPart = r => !!(r && r.from_time && r.to_time);
+const span = (a, b) => { const x = mins(a), y = mins(b); return [x, y <= x ? y + 1440 : y]; };
+const lvHits = (r, st, en) => { if (!lvPart(r) || !st || !en) return true; const [a, b] = span(r.from_time, r.to_time), [c, d] = span(st, en); return a < d && c < b; };
+const lvTimes = r => (lvPart(r) ? ` ${hm(r.from_time)}–${hm(r.to_time)}` : '');
 function reqDates(r) {
+  if (lvPart(r)) return `${fmtLong(r.start_date)} <span class="nowrap">${hm(r.from_time)}–${hm(r.to_time)}</span>`;
   if (r.open_end) return `vanaf ${fmtShort(r.start_date)} <span class="muted">(nog ziek, tot beter gemeld)</span>`;
   const n = daysBetween(r.start_date, r.end_date);
   return r.start_date === r.end_date ? fmtLong(r.start_date) : `${fmtShort(r.start_date)} t/m ${fmtShort(r.end_date)} <span class="muted nowrap">(${n}&nbsp;dagen)</span>`;
@@ -4054,18 +4061,28 @@ async function viewRequestsStaff(el) {
     openDialog('Verlof aanvragen', `
       <div class="rq-types" role="radiogroup" aria-label="Soort">${types.map(([k, l, i], n) => `<label class="rq-type"><input type="radio" name="type" value="${k}" ${n === 0 ? 'checked' : ''}><span>${ico(i)}${l}</span></label>`).join('')}</div>
       <div class="row keep"><label class="field">Van<input type="date" name="start_date" min="${t}" required></label><label class="field">Tot en met<input type="date" name="end_date" min="${t}" required></label></div>
+      <div class="rq-part" data-rqpart hidden>
+        <div class="seg rq-whole" role="group" aria-label="Hele dag of een deel"><button type="button" class="on" data-part="0">Hele dag</button><button type="button" data-part="1">Deel van de dag</button></div>
+        <div class="row keep rq-times" data-rqtimes hidden><label class="field">Van<input type="time" name="from_time" step="900"></label><label class="field">Tot<input type="time" name="to_time" step="900"></label></div>
+      </div>
       <div class="rq-sum" data-rqsum hidden></div>
       <label class="field"><span>Toelichting <span class="muted small">(optioneel)</span></span><textarea name="note" rows="2" placeholder="Bijv. bruiloft van mijn zus"></textarea></label>
       <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Versturen</button></div>`, {
       onReady(dlg) {
         const fm = $('form', dlg), sum = $('[data-rqsum]', dlg);
+        const partBox = $('[data-rqpart]', dlg), times = $('[data-rqtimes]', dlg);
+        const isPart = () => !partBox.hidden && !times.hidden && fm.from_time.value && fm.to_time.value && fm.from_time.value !== fm.to_time.value;
+        partBox.addEventListener('click', ev => { const b = ev.target.closest('[data-part]'); if (!b) return; $$('[data-part]', partBox).forEach(x => x.classList.toggle('on', x === b)); times.hidden = b.dataset.part !== '1'; if (!times.hidden && !fm.from_time.value) fm.from_time.focus(); upd(); });
+        fm.from_time.addEventListener('change', () => upd()); fm.to_time.addEventListener('change', () => upd());
         const upd = () => {
           const a = fm.start_date.value, b = fm.end_date.value || a, tp = fm.type.value;
+          partBox.hidden = !a || a !== b;   // een deel van de dag kan alleen bij één dag
           if (!a || b < a) { sum.hidden = true; return; }
           const days = daysBetween(a, b), leave = ['vakantie', 'vrij'].includes(tp);
-          const h = leave ? estimateLeaveHours({ employee_id: S.me.id, start_date: a, end_date: b }, S.me, myShifts0) : 0, after = Math.round((avail - h) * 10) / 10;
+          const rr = { employee_id: S.me.id, start_date: a, end_date: b, ...(isPart() ? { from_time: fm.from_time.value, to_time: fm.to_time.value } : {}) };
+          const h = leave ? estimateLeaveHours(rr, S.me, myShifts0) : 0, after = Math.round((avail - h) * 10) / 10;
           const other = a.slice(0, 4) !== String(bal.year);
-          sum.innerHTML = `<div><small>Periode</small><b>${days} ${days === 1 ? 'dag' : 'dagen'}</b></div>${leave ? `<div><small>Kost ongeveer</small><b>${fmtH(h)}</b></div>${other ? `<div><small>Telt mee voor</small><b>${a.slice(0, 4)}</b></div>` : `<div class="${after < 0 ? 'neg' : ''}"><small>Daarna over</small><b>${fmtH(after)}</b></div>`}` : '<div><small>Verlofuren</small><b>geen</b></div>'}`;
+          sum.innerHTML = `<div><small>Periode</small><b>${isPart() ? `${fm.from_time.value}–${fm.to_time.value}` : `${days} ${days === 1 ? 'dag' : 'dagen'}`}</b></div>${leave ? `<div><small>Kost ongeveer</small><b>${fmtH(h)}</b></div>${other ? `<div><small>Telt mee voor</small><b>${a.slice(0, 4)}</b></div>` : `<div class="${after < 0 ? 'neg' : ''}"><small>Daarna over</small><b>${fmtH(after)}</b></div>`}` : '<div><small>Verlofuren</small><b>geen</b></div>'}`;
           sum.hidden = false;
         };
         fm.start_date.addEventListener('change', () => { fm.end_date.min = fm.start_date.value; if (!fm.end_date.value || fm.end_date.value < fm.start_date.value) fm.end_date.value = fm.start_date.value; upd(); });
@@ -4076,7 +4093,11 @@ async function viewRequestsStaff(el) {
         const a = fd.get('start_date'), b = fd.get('end_date');
         if (!a || !b) throw new Error('Kies de datums van je verlof.');
         if (b < a) throw new Error('De einddatum ligt voor de begindatum.');
-        await store.saveRequest({ employee_id: S.me.id, type: fd.get('type'), start_date: a, end_date: b, note: String(fd.get('note') || '').trim() || null });
+        const dlgEl = document.querySelector('dialog[open] [data-rqtimes]'), part = a === b && dlgEl && !dlgEl.hidden;
+        const ft = part ? fd.get('from_time') : null, tt = part ? fd.get('to_time') : null;
+        if (part && (!ft || !tt)) throw new Error('Vul in van hoe laat tot hoe laat je vrij wilt.');
+        if (part && ft === tt) throw new Error('Begin- en eindtijd zijn gelijk.');
+        await store.saveRequest({ employee_id: S.me.id, type: fd.get('type'), start_date: a, end_date: b, ...(part ? { from_time: ft, to_time: tt } : {}), note: String(fd.get('note') || '').trim() || null });
         S.flashReq = a + fd.get('type');
         toast('Aanvraag verstuurd. Je krijgt bericht zodra hij is bekeken.'); rerender();
       },
@@ -4124,7 +4145,7 @@ async function viewLeaveMgr(el) {
     const from = pend.reduce((m, r) => (r.start_date < m ? r.start_date : m), pend[0].start_date);
     const to = pend.reduce((m, r) => (r.end_date > m ? r.end_date : m), pend[0].end_date);
     const sh = await store.shifts(from, to);
-    pend.forEach(r => { conflicts[r.id] = sh.filter(s => s.employee_id === r.employee_id && s.date >= r.start_date && s.date <= r.end_date); });
+    pend.forEach(r => { conflicts[r.id] = sh.filter(s => s.employee_id === r.employee_id && s.date >= r.start_date && s.date <= r.end_date && lvHits(r, s.start_time, s.end_time)); });
   }
   el.innerHTML = `
     <div class="page-head"><div><h1>Aanvragen</h1><p>Verlof, ruilen, open diensten en beschikbaarheid van het team.</p></div></div>
@@ -4801,7 +4822,7 @@ async function viewOpenMgr(el) {
   const today = todayIso(), to = iso(addDays(new Date(), 120));
   const [shifts, apps, emps0, av, reqsO] = await Promise.all([store.shifts(today, to), store.applications(), store.employees(), store.availability(today, to), store.requests()]);
   const emps = sortEmps(emps0);
-  const onLeaveO = (emp, ds) => reqsO.some(r => r.status === 'approved' && r.employee_id === emp && r.start_date <= ds && r.end_date >= ds);
+  const onLeaveO = (emp, ds) => reqsO.some(r => r.status === 'approved' && !lvPart(r) && r.employee_id === emp && r.start_date <= ds && r.end_date >= ds);
   const byId = Object.fromEntries(emps.map(e => [e.id, e]));
   const open = shifts.filter(s => !s.employee_id);
   const weekHours = (emp, ds) => { const m = iso(mondayOf(parse(ds))), e = iso(addDays(parse(m), 6)); return shifts.filter(s => s.employee_id === emp && s.date >= m && s.date <= e).reduce((t, s) => t + shiftHours(s), 0); };
@@ -4980,6 +5001,7 @@ function leaveBalance(emp, priv, reqs, year = new Date().getFullYear()) {
 // Voorstel verlofuren: geplande uren in die periode, anders dagen × contracturen / 7
 // Per week: is die week al ingepland, dan de geplande uren; anders dagen × contracturen ÷ 7
 function estimateLeaveHours(r, emp, shifts) {
+  if (lvPart(r)) { const [a, b] = span(r.from_time, r.to_time); return Math.round((b - a) / 60 * 10) / 10; }
   const perDay = (Number(emp?.contract_hours) || 0) / 7;
   const weeks = {};
   for (let d = parse(r.start_date); iso(d) <= r.end_date; d = addDays(d, 1)) (weeks[iso(mondayOf(d))] ||= []).push(iso(d));
@@ -5113,7 +5135,7 @@ async function viewHours(el) {
   const weeks = daysBetween(from, to) / 7;
   const approved = reqs.filter(r => r.status === 'approved');
 
-  const onLeave = (empId, ds) => approved.some(r => r.employee_id === empId && ['vakantie', 'vrij', 'ziek'].includes(r.type) && r.start_date <= ds && r.end_date >= ds);
+  const onLeave = (empId, ds) => approved.some(r => r.employee_id === empId && ['vakantie', 'vrij', 'ziek'].includes(r.type) && !lvPart(r) && r.start_date <= ds && r.end_date >= ds);
   const rows = emps.map(e => {
     // geplande diensten op goedgekeurde verlof- of ziektedagen tellen niet als gewerkt (gewerkt = echte kloktijden, die tellen wel)
     const mine = shifts.filter(s => s.employee_id === e.id && (S.hsrc === 'gewerkt' || !onLeave(e.id, s.date)));

@@ -1194,6 +1194,21 @@ async function test(name, fn) {
     const sw = await p.$('dialog[open] [data-sdswap]'); if (sw) { await sw.click(); await p.waitForSelector('dialog[open] [name=shift_id]'); }
     await ctx.close();
   });
+  await test('verlof voor een deel van de dag: tijden kiezen en opslaan', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne'); await tab(p, 'aanvragen');
+    const d = new Date(Date.now() + 20 * 864e5).toISOString().slice(0, 10);
+    await p.click('[data-reqnew]'); await p.click('dialog[open] label.rq-type:has-text("Vrije dag")');
+    await p.fill('dialog[open] [name=start_date]', d); await p.dispatchEvent('dialog[open] [name=start_date]', 'change');
+    await p.waitForSelector('dialog[open] [data-rqpart]:not([hidden])');
+    await p.click('dialog[open] [data-part="1"]'); await p.fill('dialog[open] [name=from_time]', '14:00'); await p.fill('dialog[open] [name=to_time]', '16:00');
+    await p.dispatchEvent('dialog[open] [name=to_time]', 'change');
+    assert.match(await p.textContent('dialog[open] [data-rqsum]'), /14:00–16:00/);
+    await p.click('dialog[open] button[value=save]'); await p.waitForSelector('.toast:has-text("Aanvraag verstuurd")');
+    const r = (await demoDb(p)).db.requests.find(x => x.start_date === d && x.type === 'vrij');
+    assert.ok(r && r.from_time === '14:00' && r.to_time === '16:00', JSON.stringify(r));
+    await ctx.close();
+  });
   await test('medewerker: tabjes Mijn rooster en Team, team per afdeling met dienstlabel', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#personeel'); await login(p, 'Sanne');
