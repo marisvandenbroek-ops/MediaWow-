@@ -1,8 +1,10 @@
 """Bouwt de soundtrack van de reel.
 
-1. Intro (0-2,3 s): hi-hats op ~130 BPM, fingersnaps, een riser en een 808-drop op 12:00.
-2. Vanaf de drop: audio/<TRACK> (gegenereerde house, ~129 BPM),
-   met één maat eruit geknipt zodat de slotklap op de eindkaart valt.
+1. Intro (0-2,3 s) in het tempo van de track, teruggeteld vanaf 12:00:
+   - 'house': hi-hats op achtsten, fingersnaps, een riser en een 808-drop;
+   - 'funk': zestienden op de hi-hat en een kort snare-fillje, waarna de band invalt.
+2. Vanaf de drop: audio/<TRACK> (zie TRACKS), zo nodig met één maat eruit geknipt
+   zodat de slotklap op de eindkaart valt.
 
 Uitvoer: audio/mix.wav. Vereist numpy en ffmpeg.
 Gebruik: python3 build_audio.py
@@ -23,9 +25,10 @@ TRACKS = {
     'house.mp3':        dict(beat=0.4644, t0=0.012, cut_bar=True),   # deep house
     'house-gritty.mp3': dict(beat=0.4644, t0=0.012, cut_bar=True),   # ruige house
     'house-groovy.mp3': dict(beat=0.4876, t0=0.0, cut_bar=False, fade=1.5),  # groovy melodische / Latin house
+    'funk-70s.mp3':     dict(beat=0.5457, t0=0.0, cut_bar=True, intro='funk', intro_gain=1.6),  # 70s cinematic soul-funk
 }
-TRACK = 'house-groovy.mp3'
-END = 20.0   # lengte van de uiteindelijke video (build.sh leest deze waarde)
+TRACK = 'funk-70s.mp3'
+END = 19.6   # lengte van de uiteindelijke video (build.sh leest deze waarde)
 rng = np.random.default_rng(11)
 
 
@@ -47,7 +50,7 @@ def biquad(x, f0, q, typ):
     return y
 
 
-def intro(beat):
+def intro(beat, style='house'):
     n_tot = int(SR * END)
     L, R = np.zeros(n_tot), np.zeros(n_tot)
     eighth = beat / 2
@@ -81,6 +84,30 @@ def intro(beat):
         s = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 2.2)
         s = np.tanh(2.2 * s) / np.tanh(2.2)
         return s + biquad(rng.standard_normal(n), 3000, 1, 'bp') * np.exp(-x * 400) * 0.25
+
+    if style == 'funk':
+        # 70s-stijl: strakke zestienden op de hi-hat (als het tikken van de klok), aanzwellend,
+        # met een kort snare-fillje vlak voor 12:00. Geen riser of 808: de band valt zelf in.
+        def snare():
+            n = int(SR * 0.2)
+            x = np.arange(n) / SR
+            body = np.sin(2 * np.pi * 190 * x) * np.exp(-x * 30)
+            wires = biquad(rng.standard_normal(n), 4500, 0.7, 'bp') * np.exp(-x * 22)
+            return 0.6 * body + wires
+
+        six = beat / 4
+        k = 1
+        while DROP - k * six >= 0:
+            t = DROP - k * six
+            accent = (k % 4 == 0)
+            swell = 0.45 + 0.55 * (t / DROP)
+            add(hat(), t + rng.uniform(-0.003, 0.003), (0.30 if accent else 0.19) * swell, -0.2 if k % 2 else 0.2)
+            k += 1
+        add(hat(True), DROP - beat / 2, 0.25, 0.2)
+        for t, g in ((DROP - 3 * six, 0.35), (DROP - 2 * six, 0.45), (DROP - six, 0.6)):
+            add(snare(), t, g)
+        out = np.stack([L, R], 1)
+        return out / (np.max(np.abs(out)) * 1.12)
 
     # hi-hats op achtsten, teruggeteld vanaf de drop zodat ze in het tempo van de track vallen
     k = 1
@@ -132,9 +159,9 @@ def main():
         mus = m
 
     out = np.zeros((n_tot, 2))
-    iv = intro(beat)
-    iv[int(DROP * SR):] *= 0.6   # 808 iets terug zodat de track het overneemt
-    out += iv * 0.9
+    iv = intro(beat, cfg.get('intro', 'house'))
+    iv[int(DROP * SR):] *= 0.6   # uitklank van de intro iets terug zodat de track het overneemt
+    out += iv * 0.9 * cfg.get('intro_gain', 1.0)
     st = int((DROP - t0) * SR)
     seg = mus[:n_tot - st].copy()
     seg[:240] *= np.linspace(0, 1, 240)[:, None]

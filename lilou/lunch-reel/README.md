@@ -1,6 +1,6 @@
 # LILOU — Instagram-reel lunch
 
-Reel (1080×1920, 20 s) voor de lunch bij LILOU in Ede, die opent op 2 december 2026.
+Reel (1080×1920, 19,6 s) voor de lunch bij LILOU in Ede, die opent op 2 december 2026.
 De reel is gemaakt in de huisstijl van LILOU: Vonca, terracotta `#8F2509`, ivoor `#FFFDF8` en bijna-zwart `#17110E`.
 
 ## Kant-en-klaar
@@ -21,11 +21,11 @@ De reel is gemaakt in de huisstijl van LILOU: Vonca, terracotta `#8F2509`, ivoor
 | 5,7–9,0 s | Gerechtnamen, elke halve seconde een nieuwe: Paling, Tartare, Kreeft, Coquilles, Ribeye, Madeleine |
 | 9,0–11,5 s | *Le 12 O'Clock*, € 32,50 |
 | 11,5–13,8 s | Le Menu Déjeuner: 2 · 3 · 4 springen op de tel in beeld, *gangen*, vanaf € 39,50 |
-| 13,8–20 s | Eindkaart: logo, *Lunch at Lilou. C'est tout.*, gegevens, "Reserveer · link in bio" |
+| 13,8–19,6 s | Eindkaart: logo, *Lunch at Lilou. C'est tout.*, gegevens, "Reserveer · link in bio" |
 
-**Audio:** een intro met hi-hats, snaps, riser en een 808-drop op 12:00, gevolgd door groovy melodische Latin house (`audio/house-groovy.mp3`).
-Er zijn nog twee varianten: `audio/house.mp3` (deep house) en `audio/house-gritty.mp3` (ruige house). Je wisselt via `TRACK` in `build_audio.py`.
-Alle tracks zijn met Runway gemaakt en hebben dus geen rechten van bekende artiesten.
+**Audio:** een intro met zestienden op de hi-hat, die als een klok tikken, en een kort snare-fillje. Op 12:00 valt de band in met jaren-70 soul-funk (`audio/funk-70s.mp3`): wah-wah-gitaar, blazers en strijkers.
+Andere tracks: `audio/house-groovy.mp3` (groovy Latin house), `audio/house.mp3` (deep house) en `audio/house-gritty.mp3` (ruige house). Je wisselt via `TRACK` in `build_audio.py`. De intro past zich aan het tempo van de track aan.
+Alle tracks zijn met Runway gemaakt, met een eigen melodie, en hebben dus geen rechten van bekende artiesten. De mix wordt genormaliseerd op -14 LUFS.
 
 Gerechten, prijzen en tijden komen van https://lilou-ede.nl/lunch/ (stand 24 november 2026).
 

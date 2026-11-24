@@ -11,7 +11,7 @@ HOLD=$(python3 -c "print(round($END - 18.6, 2))")
 VOPTS=(-c:v libx264 -pix_fmt yuv420p -crf 18 -preset slow -movflags +faststart)
 ffmpeg -y -loglevel error -framerate 30 -i frames/f%04d.jpg -i audio/mix.wav \
   -filter_complex "[0:v]tpad=stop_mode=clone:stop_duration=$HOLD[v]" -map "[v]" -map 1:a \
-  "${VOPTS[@]}" -c:a aac -b:a 256k -t "$END" export/lilou-lunch-reel.mp4
+  -af "loudnorm=I=-14:TP=-1:LRA=11" -ar 48000 "${VOPTS[@]}" -c:a aac -b:a 256k -t "$END" export/lilou-lunch-reel.mp4
 # versie zonder geluid, om zelf een (trending) nummer in Instagram toe te voegen
 ffmpeg -y -loglevel error -framerate 30 -i frames/f%04d.jpg \
   -filter_complex "[0:v]tpad=stop_mode=clone:stop_duration=1.4[v]" -map "[v]" \
