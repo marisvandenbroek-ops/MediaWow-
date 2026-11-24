@@ -17,8 +17,15 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 SR = 48000
 DROP = 2.3   # moment waarop de klok op 12:00 staat (zie reel.html)
-END = 19.4   # lengte van de uiteindelijke video
-TRACK = 'house-gritty.mp3'  # ruige house; 'house.mp3' is de rustigere deep-house-variant
+# Beschikbare tracks met gemeten tempo (sec per tel) en eerste tel (t0).
+# cut_bar: één maat (tel 16-20) eruit knippen zodat de slotklap op de eindkaart valt.
+TRACKS = {
+    'house.mp3':        dict(beat=0.4644, t0=0.012, cut_bar=True),   # deep house
+    'house-gritty.mp3': dict(beat=0.4644, t0=0.012, cut_bar=True),   # ruige house
+    'house-groovy.mp3': dict(beat=0.4876, t0=0.0, cut_bar=False, fade=1.5),  # groovy melodische / Latin house
+}
+TRACK = 'house-groovy.mp3'
+END = 20.0   # lengte van de uiteindelijke video (build.sh leest deze waarde)
 rng = np.random.default_rng(11)
 
 
@@ -40,10 +47,9 @@ def biquad(x, f0, q, typ):
     return y
 
 
-def intro():
+def intro(beat):
     n_tot = int(SR * END)
     L, R = np.zeros(n_tot), np.zeros(n_tot)
-    beat = 0.46
     eighth = beat / 2
 
     def add(sig, t, g=1.0, pan=0.0):
@@ -76,11 +82,15 @@ def intro():
         s = np.tanh(2.2 * s) / np.tanh(2.2)
         return s + biquad(rng.standard_normal(n), 3000, 1, 'bp') * np.exp(-x * 400) * 0.25
 
-    for k in range(int(DROP / eighth)):
+    # hi-hats op achtsten, teruggeteld vanaf de drop zodat ze in het tempo van de track vallen
+    k = 1
+    while DROP - k * eighth >= 0:
         off = k % 2 == 1
-        add(hat(open_=off), k * eighth + (0.012 if off else 0), 0.28 if off else 0.22, 0.25 if off else -0.25)
-    for t in (beat, beat * 3):
-        add(snap(), t, 0.55)
+        add(hat(open_=off), DROP - k * eighth + (0.012 if off else 0), 0.28 if off else 0.22, 0.25 if off else -0.25)
+        k += 1
+    for t in (DROP - beat * 4, DROP - beat * 2):
+        if t >= 0:
+            add(snap(), t, 0.55)
     # riser: ruis met stijgend bandfilter, valt 40 ms voor de drop weg
     r0 = 0.7
     n = int(SR * (DROP - 0.04 - r0))
@@ -107,25 +117,29 @@ def load_track():
 def main():
     n_tot = int(SR * END)
     m = load_track()
-    beat, t0 = 0.4644, 0.012  # gemeten tempo en eerste tel (gelijk voor beide tracks)
-    # één maat (tel 16-20) eruit, met 15 ms crossfade
-    a = int((t0 + 16 * beat - 0.01) * SR)
-    b = int((t0 + 20 * beat - 0.01) * SR)
-    xf = int(0.015 * SR)
-    fade = np.linspace(0, 1, xf)[:, None]
-    head, tail = m[:a].copy(), m[b:].copy()
-    head[-xf:] = head[-xf:] * (1 - fade) + tail[:xf] * fade
-    mus = np.concatenate([head, tail[xf:]])
+    cfg = TRACKS[TRACK]
+    beat, t0 = cfg['beat'], cfg['t0']
+    if cfg['cut_bar']:
+        # één maat (tel 16-20) eruit, met 15 ms crossfade
+        a = int((t0 + 16 * beat - 0.01) * SR)
+        b = int((t0 + 20 * beat - 0.01) * SR)
+        xf = int(0.015 * SR)
+        fade = np.linspace(0, 1, xf)[:, None]
+        head, tail = m[:a].copy(), m[b:].copy()
+        head[-xf:] = head[-xf:] * (1 - fade) + tail[:xf] * fade
+        mus = np.concatenate([head, tail[xf:]])
+    else:
+        mus = m
 
     out = np.zeros((n_tot, 2))
-    iv = intro()
+    iv = intro(beat)
     iv[int(DROP * SR):] *= 0.6   # 808 iets terug zodat de track het overneemt
     out += iv * 0.9
     st = int((DROP - t0) * SR)
     seg = mus[:n_tot - st].copy()
     seg[:240] *= np.linspace(0, 1, 240)[:, None]
     out[st:st + len(seg)] += seg * 0.85
-    fo = int(0.4 * SR)
+    fo = int(cfg.get('fade', 0.4) * SR)
     out[-fo:] *= np.linspace(1, 0, fo)[:, None]
     out /= np.max(np.abs(out)) / 0.89
 
