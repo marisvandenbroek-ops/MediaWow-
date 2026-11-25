@@ -882,7 +882,7 @@ async function test(name, fn) {
     await fresh(p, '#directie'); await login(p, 'Mark');
     await tab(p, 'kaarten'); await p.click('[data-kadd]');
     const pdf = '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 400]/Contents 4 0 R/Resources<<>>>>endobj\n4 0 obj<</Length 33>>stream\n0.57 0.15 0.03 rg 20 20 260 360 re f\nendstream endobj\ntrailer<</Root 1 0 R>>\n%%EOF';
-    assert.strictEqual(await p.$$eval('.kcard', x => x.length), 4, 'de vier standaardkaarten staan er niet');
+    assert.strictEqual(await p.$$eval('.kcard', x => x.length), 5, 'de vijf standaardkaarten staan er niet');
     await p.fill('dialog [name=title]', 'Testkaart'); await p.setInputFiles('dialog [name=file]', { name: 'menu.pdf', mimeType: 'application/pdf', buffer: Buffer.from(pdf) });
     await p.click('dialog button[value=save]'); await p.waitForSelector('.kcard:has-text("Testkaart")');
     // directie zet zelf een gerecht in een categorie
@@ -912,7 +912,7 @@ async function test(name, fn) {
     const all = await s2.$$eval('.ml-item', x => x.length);
     const txt = await s2.$eval('dialog.menulist .ml-body', e => e.innerText);
     assert.ok(/Kreeft & langoustine/.test(txt), 'ligatuur ft valt weg (Kree)');
-    assert.ok(/4 gangen[\s\S]{0,40}€ 79/.test(txt) && !/Allergie of dieetwens/.test(txt), 'menuprijzen per aantal gangen kloppen niet');
+    assert.ok(/4 gangen[\s\S]{0,40}€ 68/.test(txt) && !/Allergie of dieetwens/.test(txt), 'menuprijzen per aantal gangen kloppen niet');
     await s2.click('dialog.menulist [data-mlsec]:text-is("Hoofd")');
     const hoofd = await s2.$$eval('.ml-item', x => x.length);
     assert.ok(hoofd > 0 && hoofd < all, `filter Hoofd werkt niet (${hoofd} van ${all})`);
@@ -1118,17 +1118,17 @@ async function test(name, fn) {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#directie'); await login(p, 'Mark');
     await tab(p, 'kaarten'); await p.waitForSelector('[data-kopen]');
-    await setDemoDb(p, `const c = db.menuCards.find(x => x.title === 'Menukaart'); c.allergens = { 'steak tartare': { codes: ['gluten', 'ei'], ok: false, by: 'Voorstel', at: null }, 'tonijn': { codes: [], ok: false, by: 'Voorstel', at: null } };`);
+    await setDemoDb(p, `const c = db.menuCards.find(x => x.title === 'Menukaart'); c.allergens = { 'steak tartare': { codes: ['gluten', 'ei'], ok: false, by: 'Voorstel', at: null }, 'tonijn krab': { codes: [], ok: false, by: 'Voorstel', at: null } };`);
     await p.reload(); await p.waitForSelector('#view > *', { state: 'attached' }); await p.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
     await tab(p, 'kaarten'); await p.click('[data-kopen] >> nth=0'); await p.waitForSelector('dialog.menulist .ml-item');
     await p.click('[data-mlalg]'); await p.waitForSelector('[data-algok="steak tartare"]');
     await p.click('[data-algc="steak tartare|mosterd"] >> nth=0');
     await p.click('[data-algok="steak tartare"] >> nth=0'); await p.waitForSelector('.toast:has-text("Allergenen vastgelegd")');
-    await p.click('[data-algok="tonijn"]'); await p.waitForSelector('dialog[open]:has-text("géén van de 14")');
+    await p.click('[data-algok="tonijn krab"]'); await p.waitForSelector('dialog[open]:has-text("géén van de 14")');
     await p.click('dialog[open]:has-text("géén van de 14") [data-close]'); await p.waitForTimeout(300);
     let c = (await demoDb(p)).db.menuCards.find(x => x.title === 'Menukaart');
     assert.deepStrictEqual(c.allergens['steak tartare'].codes, ['ei', 'gluten', 'mosterd']); assert.strictEqual(c.allergens['steak tartare'].ok, true);
-    assert.strictEqual(c.allergens['tonijn'].ok, false, 'leeg bevestigd zonder te vragen');
+    assert.strictEqual(c.allergens['tonijn krab'].ok, false, 'leeg bevestigd zonder te vragen');
     await ctx.close();
     const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 } }); const q = watch(await ctx2.newPage());
     await fresh(q, '#personeel'); await login(q, 'Sanne');
