@@ -1744,7 +1744,8 @@ begin
       from public.employees e join public.shifts s on s.employee_id = e.id
      where s.published and s.date = d and e.active and e.role in ('manager', 'planner')
        and not exists (select 1 from public.requests r where r.employee_id = e.id and r.status <> 'rejected'
-                        and r.type in ('vakantie', 'vrij', 'onbeschikbaar', 'ziek') and d between r.start_date and r.end_date)
+                        and r.type in ('vakantie', 'vrij', 'onbeschikbaar', 'ziek') and d between r.start_date and r.end_date
+                        and public.leave_hits(r.from_time, r.to_time, s.start_time, s.end_time))
      group by e.id
   loop
     foreach m in array array['opening', 'sluiting'] loop
@@ -2257,7 +2258,8 @@ begin
             where y.published and y.employee_id is not null and y.date between public.today_nl() - 1 and public.today_nl()
               and public.shift_start_ts(y) between now() - interval '60 minutes' and now() - interval '10 minutes'
               and not exists (select 1 from public.requests r where r.employee_id = y.employee_id and r.status <> 'rejected'
-                                and r.type in ('vakantie', 'vrij', 'onbeschikbaar', 'ziek') and y.date between r.start_date and r.end_date)
+                                and r.type in ('vakantie', 'vrij', 'onbeschikbaar', 'ziek') and y.date between r.start_date and r.end_date
+                                and public.leave_hits(r.from_time, r.to_time, y.start_time, y.end_time))
               and not exists (select 1 from public.time_entries t where t.employee_id = y.employee_id
                                 and t.clock_in between public.shift_start_ts(y) - interval '3 hours' and now()
                                 and (t.clock_out is null or t.clock_out > public.shift_start_ts(y))) loop
@@ -2370,7 +2372,8 @@ begin
             where y.published and y.employee_id is not null and y.date between public.today_nl() - 1 and public.today_nl() + 1
               and public.shift_start_ts(y) between now() + interval '45 minutes' and now() + interval '75 minutes'
               and not exists (select 1 from public.requests r where r.employee_id = y.employee_id and r.status <> 'rejected'
-                                and r.type in ('vakantie', 'vrij', 'onbeschikbaar', 'ziek') and y.date between r.start_date and r.end_date) loop
+                                and r.type in ('vakantie', 'vrij', 'onbeschikbaar', 'ziek') and y.date between r.start_date and r.end_date
+                                and public.leave_hits(r.from_time, r.to_time, y.start_time, y.end_time)) loop
     begin
       insert into public.reminder_log (kind, ref) values ('dienst', x.id) on conflict do nothing;
       if found then
@@ -2665,6 +2668,14 @@ revoke execute on function public.request_cancel_ask(uuid) from public, anon;
 revoke execute on function public.request_withdraw(uuid, boolean) from public, anon;
 grant execute on function public.request_cancel_ask(uuid), public.request_withdraw(uuid, boolean) to authenticated;
 
+-- raakt verlof (eventueel een deel van de dag) deze dienst? zonder tijden: altijd
+create or replace function public.leave_hits(f time, t time, st time, et time) returns boolean
+language sql immutable set search_path = public as $$
+  select f is null or t is null or st is null or et is null or (
+    (extract(epoch from f) / 60) < (extract(epoch from et) / 60 + case when et <= st then 1440 else 0 end)
+    and (extract(epoch from st) / 60) < (extract(epoch from t) / 60 + case when t <= f then 1440 else 0 end))
+$$;
+
 -- Update 51: verlof voor een deel van de dag (bijv. een uurtje vrij voor de tandarts)
 alter table public.requests add column if not exists from_time time;
 alter table public.requests add column if not exists to_time time;
@@ -2681,3 +2692,8 @@ language sql stable set search_path = public as $$
       || ' ' || to_char(r.start_date, 'DD-MM') || case when r.end_date <> r.start_date then ' t/m ' || to_char(r.end_date, 'DD-MM') else '' end
       || case when r.from_time is not null then ' ' || to_char(r.from_time, 'HH24:MI') || '–' || to_char(r.to_time, 'HH24:MI') else '' end
 $$;
+
+-- nieuwe kaart: Lunch (naast de menukaart)
+insert into public.menu_cards (title, sort, file_path, file_name, file_type)
+select 'Lunch', 1, 'static:kaarten/Lilou-lunch-app.pdf', 'Lilou-lunch-app.pdf', 'application/pdf'
+ where not exists (select 1 from public.menu_cards where file_path = 'static:kaarten/Lilou-lunch-app.pdf');

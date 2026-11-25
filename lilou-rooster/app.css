@@ -2188,7 +2188,7 @@ dialog.moresheet[open] { animation: sheetin .24s cubic-bezier(.2, .8, .2, 1); }
 .rq-part[hidden], .rq-times[hidden] { display: none; }
 .rq-whole { display: flex; width: 100%; }
 .rq-whole button { flex: 1; }
-.rq-sum b { white-space: nowrap; }
+.rq-sum { gap: 12px; } .rq-sum b { overflow-wrap: anywhere; }
 
 /* links naar de receptenapp zien eruit als de andere knoppen */
 a.card.lhome, a.mrow { color: inherit; text-decoration: none; }
