@@ -1209,6 +1209,15 @@ async function test(name, fn) {
     assert.ok(r && r.from_time === '14:00' && r.to_time === '16:00', JSON.stringify(r));
     await ctx.close();
   });
+  await test('recepten: link alleen voor keuken en directie', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne');
+    assert.strictEqual(await p.$('a[href^="https://recepten.lilou-ede.nl"]'), null, 'bediening ziet recepten');
+    await logout(p, '#personeel'); await login(p, 'Noor');
+    await p.waitForSelector('a.lhome[href^="https://recepten.lilou-ede.nl"]');
+    await p.click('[data-more]'); await p.waitForSelector('main#view a.mrow[href^="https://recepten.lilou-ede.nl"]');
+    await ctx.close();
+  });
   await test('medewerker: tabjes Mijn rooster en Team, team per afdeling met dienstlabel', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#personeel'); await login(p, 'Sanne');

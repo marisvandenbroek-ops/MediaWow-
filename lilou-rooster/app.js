@@ -1348,6 +1348,11 @@ async function phonesDialog() {
 const segTabs = cur => `<div class="segtabs" role="tablist">${[['mijn', 'Mijn rooster'], ['planning', 'Team']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === cur}" class="${k === cur ? 'on' : ''}" data-gotab="${k}">${l}</button>`).join('')}</div>`;
 document.addEventListener('click', ev => { const b = ev.target.closest('[data-gotab]'); if (b && !b.classList.contains('on')) { if (b.dataset.gotab === 'mijn') S.mineWeek = null; go(b.dataset.gotab); } });
 
+// receptenapp (zelfde account): alleen voor de keuken en de directie
+const RECEPTEN_URL = 'https://recepten.lilou-ede.nl/';
+const canRecipes = () => !!S.me && (isMgr() || /keuken|kok|chef/i.test(S.me.position || ''));
+const recipeLink = (cls, inner) => `<a class="${cls}" href="${RECEPTEN_URL}" target="_blank" rel="noopener">${inner}</a>`;
+
 function tabsFor() {
   return isMgr()
     ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['aanvragen', 'Aanvragen'], ['lijsten', 'Lijsten'], ['team', 'Team'], ['uren', 'Uren & export'], ['kaarten', 'Menukaarten']]
@@ -1751,6 +1756,7 @@ async function viewMeer(el) {
     ...rest.map(([k, l]) => row(`data-mgo="${k}"`, ICON[k === 'planning' && !canPlan() ? 'team' : k] || '', esc(l), SUB[k] || '')),
     ...(isMgr() ? [] : [row('data-mgo="mijnuren"', ico('clock'), 'Mijn uren', 'Gewerkt en goedgekeurd')]),
     ...(isMgr() ? [row('data-mgo="instellingen"', ICON.settings, 'Instellingen', 'Functies, lijsten, locatie')] : []),
+    ...(canRecipes() ? [recipeLink('mrow', `<span class="mic">${ico('book')}</span><span class="mt">Recepten<small>Opent de receptenapp</small></span><span class="chev" aria-hidden="true">↗</span>`)] : []),
   ];
   el.innerHTML = `
     <div class="page-head"><div><h1>Meer</h1></div></div>
@@ -3786,6 +3792,7 @@ async function viewMine(el) {
     ${sel ? '' : boardH}
     ${sel ? '' : `<div class="homemore tiles">
       <button type="button" class="card lhome" data-gohours><span><strong>${ico('clock')}Mijn uren</strong><small>Per week, met je kloktijden en wat is goedgekeurd</small></span><span class="chev">›</span></button>
+      ${canRecipes() ? recipeLink('card lhome', `<span><strong>${ico('book')}Recepten</strong><small>Alle recepten en gerechten van de keuken</small></span><span class="chev">›</span>`) : ''}
       <button type="button" class="card lhome" data-gokaarten><span><strong>${ico('book')}Menukaart & wijnkaart</strong><small>Snel even kijken wat er op de kaart staat</small></span><span class="chev">›</span></button>
       <button type="button" class="card lhome" data-phones><span><strong>${ico('user')}Telefoonlijst</strong><small>Collega's die hun nummer delen, met Bellen en WhatsApp</small></span><span class="chev">›</span></button>
       <button type="button" class="card lhome" data-nood><span><strong>${ico('phone')}Noodnummers</strong><small>112, gaslucht, huisartsenpost${CFG.sickPhone ? ', ziek melden' : ''}</small></span><span class="chev">›</span></button>
