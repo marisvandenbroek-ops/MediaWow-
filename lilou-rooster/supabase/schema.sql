@@ -2693,7 +2693,4 @@ language sql stable set search_path = public as $$
       || case when r.from_time is not null then ' ' || to_char(r.from_time, 'HH24:MI') || '–' || to_char(r.to_time, 'HH24:MI') else '' end
 $$;
 
--- nieuwe kaart: Lunch (naast de menukaart)
-insert into public.menu_cards (title, sort, file_path, file_name, file_type)
-select 'Lunch', 1, 'static:kaarten/Lilou-lunch-app.pdf', 'Lilou-lunch-app.pdf', 'application/pdf'
- where not exists (select 1 from public.menu_cards where file_path = 'static:kaarten/Lilou-lunch-app.pdf');
+-- (Lunchkaart: door de directie zelf geüpload in de app, niet via de database)

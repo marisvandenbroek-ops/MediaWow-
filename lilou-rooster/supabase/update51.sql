@@ -217,7 +217,4 @@ begin
   return n;
 end $$;
 
--- nieuwe kaart: Lunch (naast de menukaart)
-insert into public.menu_cards (title, sort, file_path, file_name, file_type)
-select 'Lunch', 1, 'static:kaarten/Lilou-lunch-app.pdf', 'Lilou-lunch-app.pdf', 'application/pdf'
- where not exists (select 1 from public.menu_cards where file_path = 'static:kaarten/Lilou-lunch-app.pdf');
+-- (Lunchkaart: door de directie zelf geüpload in de app, niet via de database)

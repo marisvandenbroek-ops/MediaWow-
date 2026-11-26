@@ -113,6 +113,13 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Controleronde 10 verwerkt (privacy: medewerkers zien geen uren/contract van collega's in Team).
 - Open: contracttypes/uren, verlof, uurlonen, diploma's en geboortedata bij medewerkers nog invullen; testaccount 'Test' op inactief zetten; Gerrit, Tim, Lukas, Shyam nog niet geactiveerd.
 
+## Versie 124 (update 108 + database update 51, 26 nov) — live, gecontroleerd
+- Deel van de dag vrij (requests.from_time/to_time, leave_hits), herinneringen houden er rekening mee.
+- Kaarten vernieuwd uit de website (kaarten/*.pdf, generator in scratchpad menugen); Lunchkaart heeft Mariska zelf geüpload (storage), de statische Lilou-lunch-app.pdf staat klaar maar is niet gekoppeld.
+- Recepten-knop (keuken + directie) naar recepten.lilou-ede.nl (map public_html/recepten).
+- Menubalk verbergt alleen bij echt open schermtoetsenbord.
+- 26 nov: receptenapp per ongeluk over public_html/rooster gezet; hersteld met volledige zip (git ls-files). Let op juiste map bij uploaden.
+
 ## Versie 118 (update 102 + database update 50, 23 nov) — live, gecontroleerd
 - Uren als "7 u 30 min"; team per afdeling met dienstlabels Dag/Tussen/Avond; tabjes Mijn rooster | Team.
 - Beschikbaarheid met schuifje + van/tot (leeg gelaten dagen: eerst bevestigen); snelknoppen bepalen vaste dienst.

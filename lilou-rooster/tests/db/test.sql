@@ -713,7 +713,6 @@ reset role;
 select t_ok((select req_label(r) like '%14:00–16:00' from requests r where id = '55100000-0000-0000-0000-000000000001'), 'label met tijden');
 select t_ok(leave_hits('14:00','16:00','11:00','17:00') and not leave_hits('09:00','10:00','17:00','23:00') and leave_hits(null,null,'17:00','23:00')
   and leave_hits('23:30','00:30','17:00','01:00') and not leave_hits('01:00','02:00','17:00','23:00'), 'deel van de dag raakt alleen overlappende diensten');
-select t_ok((select count(*) from menu_cards where title = 'Lunch') = 1, 'lunchkaart toegevoegd');
 
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'
