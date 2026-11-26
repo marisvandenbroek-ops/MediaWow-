@@ -1218,6 +1218,19 @@ async function test(name, fn) {
     await p.click('[data-more]'); await p.waitForSelector('main#view a.mrow[href^="https://recepten.lilou-ede.nl"]');
     await ctx.close();
   });
+  await test('paar uur vrij: één datum met tijden, opgeslagen als vrije dag voor een deel van de dag', async () => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
+    await fresh(p, '#personeel'); await login(p, 'Sanne'); await tab(p, 'aanvragen');
+    const d = new Date(Date.now() + 22 * 864e5).toISOString().slice(0, 10);
+    await p.click('[data-reqnew]'); await p.click('dialog[open] label.rq-type:has-text("Paar uur vrij")');
+    assert.ok(await p.isVisible('dialog[open] [name=from_time]'), 'tijden niet zichtbaar');
+    await p.fill('dialog[open] [name=start_date]', d); await p.dispatchEvent('dialog[open] [name=start_date]', 'change');
+    await p.fill('dialog[open] [name=from_time]', '10:00'); await p.fill('dialog[open] [name=to_time]', '12:00');
+    await p.click('dialog[open] button[value=save]'); await p.waitForSelector('.toast:has-text("Aanvraag verstuurd")');
+    const r = (await demoDb(p)).db.requests.find(x => x.start_date === d);
+    assert.ok(r && r.type === 'vrij' && r.end_date === d && r.from_time === '10:00' && r.to_time === '12:00', JSON.stringify(r));
+    await ctx.close();
+  });
   await test('medewerker: tabjes Mijn rooster en Team, team per afdeling met dienstlabel', async () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const p = watch(await ctx.newPage());
     await fresh(p, '#personeel'); await login(p, 'Sanne');

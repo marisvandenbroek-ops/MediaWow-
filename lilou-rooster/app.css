@@ -2225,3 +2225,30 @@ input[type="checkbox"]:not(.avsw input) { width: 22px; height: 22px; accent-colo
 /* A15 contrast van kleine statuslabels */
 :root:not([data-theme="dark"]) { --warn: #8a5208; --ok: #356b4b; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --warn: #e3ac55; --ok: #7cc297; } }
+
+/* ===== UX-advies ===== */
+/* ziek: leiding bellen/appen */
+.sickcall:empty { display: none; }
+.sickcall { margin: 4px 0 6px; }
+.sickrow { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.sickrow > span { flex: 1; min-width: 0; }
+.sickrow small { display: block; color: var(--muted); font-size: 12.5px; }
+.sickrow .btn { min-height: 44px; }
+/* verlof: één rekensom */
+.lh-sum { text-align: center; font-size: 13.5px; color: var(--muted); margin: 6px 0 10px; }
+.lh-sum b { color: var(--text); white-space: nowrap; }
+/* vier verloftegels: 2 x 2 */
+.rq-types { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rq-types .rq-type span { min-height: 64px; }
+/* allergenen-melding bovenaan de kaart */
+.ml-algbanner { display: flex; gap: 8px; align-items: flex-start; margin: 4px 0 12px; padding: 10px 12px; border-radius: 12px; background: var(--warn-soft); color: var(--text); }
+.ml-algbanner .ico { flex: none; width: 18px; height: 18px; margin-top: 2px; color: var(--warn); fill: none; stroke: currentColor; stroke-width: 1.8; }
+/* knoppen onderaan vensters: Verwijderen links (omlijnd rood), Annuleren en Opslaan rechts */
+.dlg-foot .btn.danger { order: -1; margin-right: auto; background: var(--surface); border-color: color-mix(in srgb, var(--bad) 45%, transparent); color: var(--bad); text-decoration: none; }
+@media (max-width: 760px) {
+  .dlg-foot:has(.btn.danger) { flex-direction: row !important; flex-wrap: wrap; }
+  .dlg-foot:has(.btn.danger) .btn { flex: 1 1 0; width: auto !important; }
+  .dlg-foot .btn.danger { order: 9; flex-basis: 100%; margin-right: 0; min-height: 44px; }
+}
+.rq-whole[hidden] { display: none; }
+@media (max-width: 760px) { .dlg-foot:has(.btn.danger) .btn.danger { order: 9; flex: 1 1 100%; } }

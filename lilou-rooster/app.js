@@ -1233,7 +1233,7 @@ async function checkMe(force = false) {
   // instellingen (gesloten dagen, functies) ook op andere toestellen actueel houden
   if (Date.now() - (S.setAt || 0) > 60000) { S.setAt = Date.now(); store.settings().then(applySettings).catch(() => {}); }
   if (emp.role !== S.me.role) {
-    S.me = emp; S.view = isMgr() ? 'overzicht' : canPlan() ? 'planning' : 'mijn';
+    S.me = emp; S.view = isMgr() ? 'overzicht' : 'mijn';
     renderShell(); toast('Je rechten zijn gewijzigd'); return false;
   }
   Object.assign(S.me, emp); return true;
@@ -1266,7 +1266,7 @@ async function handleSession(r) {
   if (r.unlinked) return renderUnlinked(r.email);
   S.me = r.employee;
   try { applySettings(await store.settings()); } catch (e) { /* standaardwaarden blijven gelden */ }
-  S.view = isMgr() ? 'overzicht' : canPlan() ? 'planning' : 'mijn';
+  S.view = isMgr() ? 'overzicht' : 'mijn';
   const hv = location.hash.slice(1).split(':');
   if (tabsFor().some(([k]) => k === hv[0]) || hv[0] === 'lijsten' || (isMgr() && hv[0] === 'instellingen')) { S.view = hv[0]; if (hv[1]) S.reqTab = hv[1]; if (hv[2]) S.repDate = hv[2]; }
   renderShell();
@@ -1354,7 +1354,7 @@ async function phonesDialog() {
 
 /* ================= Shell ================= */
 // bovenin bij medewerkers: wisselen tussen je eigen rooster en dat van het team
-const segTabs = cur => `<div class="segtabs" role="tablist">${[['mijn', 'Mijn rooster'], ['planning', 'Team']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === cur}" class="${k === cur ? 'on' : ''}" data-gotab="${k}">${l}</button>`).join('')}</div>`;
+const segTabs = cur => `<div class="segtabs" role="tablist">${[['mijn', 'Mijn rooster'], ['planning', canPlan() ? 'Planning' : 'Team']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === cur}" class="${k === cur ? 'on' : ''}" data-gotab="${k}">${l}</button>`).join('')}</div>`;
 document.addEventListener('click', ev => { const b = ev.target.closest('[data-gotab]'); if (b && !b.classList.contains('on')) { if (b.dataset.gotab === 'mijn') S.mineWeek = null; go(b.dataset.gotab); } });
 
 // receptenapp (zelfde account): alleen voor de keuken en de directie
@@ -1366,7 +1366,7 @@ function tabsFor() {
   return isMgr()
     ? [['overzicht', 'Overzicht'], ['planning', 'Planning'], ['klokken', 'Klokken'], ['aanvragen', 'Aanvragen'], ['lijsten', 'Lijsten'], ['team', 'Team'], ['uren', 'Uren & export'], ['kaarten', 'Menukaarten']]
     : canPlan()
-      ? [['mijn', 'Mijn rooster'], ['planning', 'Planning'], ['lijsten', 'Lijsten'], ['diensten', 'Diensten'], ['aanvragen', 'Verlof'], ['beschikbaar', 'Beschikbaar'], ['kaarten', 'Menukaarten']]
+      ? [['mijn', 'Mijn rooster'], ['diensten', 'Diensten'], ['lijsten', 'Lijsten'], ['aanvragen', 'Verlof'], ['planning', 'Planning'], ['beschikbaar', 'Beschikbaar'], ['kaarten', 'Menukaarten']]
       : [['mijn', 'Mijn rooster'], ['diensten', 'Diensten'], ['lijsten', 'Lijsten'], ['aanvragen', 'Verlof'], ['planning', 'Team'], ['beschikbaar', 'Beschikbaar'], ['kaarten', 'Menukaarten']];
 }
 
@@ -1616,7 +1616,10 @@ async function menuListOpen(c) {
     const nOk = dishes.filter(k => A[k]?.ok).length;
     const algBar = alg ? `<div class="ml-edbar algbar"><p><strong>${nOk} van ${dishes.length} gerechten gecontroleerd</strong></p><p class="hint">Groen = zit erin. Tik op een allergeen om het aan of uit te zetten. Klopt het? Tik op <strong>✓ Klopt</strong>. Pas daarna ziet het team de allergenen.</p></div>` : '';
     const tools = alg ? algBar : edit ? `<div class="ml-edbar"><button type="button" class="btn primary" data-mladd>+ Gerecht toevoegen</button>${Array.isArray(c.items) && c.items.length ? '<button type="button" class="linkbtn small" data-mlreset>Opnieuw uit de pdf halen</button>' : ''}<p class="hint">Tik op een gerecht om het te wijzigen, te verplaatsen of weg te halen. Wijzigingen ziet het team meteen.</p></div>` : '';
-    body.innerHTML = tools + (show.length ? show.map(it => {
+    // één melding bovenaan als niet alle gerechten gecontroleerd zijn (niet onder elk gerecht herhalen)
+    const shownDishes = show.filter(it => !isPriceRow(it)), notOk = shownDishes.filter(it => !A[algKey(it.name)]?.ok && !(it.allergens && !/niet bekend/i.test(it.allergens))).length;
+    const algBanner = !alg && !edit && notOk ? `<p class="ml-all unk ml-algbanner">${ico('alert')}<span><b>Allergenen</b> ${notOk === shownDishes.length ? 'nog niet gecontroleerd door de keuken' : `bij ${notOk} van de ${shownDishes.length} gerechten nog niet gecontroleerd`}. Staat er bij een gerecht geen allergenen-regel? Vraag het altijd na in de keuken.</span></p>` : '';
+    body.innerHTML = tools + algBanner + (show.length ? show.map(it => {
       const k = keyOf(it), head = k !== lastK ? `<h3 class="ml-sec">${esc(secs.find(x => x.k === k)?.label || it.section)}</h3>` : ''; lastK = k;
       const unknown = !it.allergens || /niet bekend/i.test(it.allergens);
       const ak = algKey(it.name), ae = A[ak];
@@ -1630,8 +1633,7 @@ async function menuListOpen(c) {
       const algLine = isPriceRow(it) ? ''
         : ae?.ok ? `<p class="ml-all"><b>Allergenen</b> ${ae.codes.length ? esc(algNames(ae.codes)) : 'geen van de 14 allergenen'}</p>`
         : ae && mgr ? `<p class="ml-all unk"><b>Voorstel</b> ${ae.codes.length ? esc(algNames(ae.codes)) : 'geen'} · nog controleren</p>`
-        : it.allergens ? `<p class="ml-all ${unknown ? 'unk' : ''}"><b>Allergenen</b> ${esc(it.allergens)}</p>`
-        : Object.keys(A).length ? '<p class="ml-all unk"><b>Allergenen</b> nog niet gecontroleerd. Vraag het altijd na in de keuken.</p>' : '';
+        : it.allergens && !unknown ? `<p class="ml-all"><b>Allergenen</b> ${esc(it.allergens)}</p>` : '';
       const inner = `<div class="ml-top"><strong>${esc(it.name)}</strong>${it.tag ? `<span class="pill">${esc(it.tag)}</span>` : ''}${edit ? `<span class="ml-pen">${ico('pen')}Wijzig</span>` : ''}</div>
         ${it.lines.map(l => `<p>${esc(l)}</p>`).join('')}
         ${it.price ? `<p class="ml-price">${esc(it.price)}</p>` : ''}
@@ -2073,7 +2075,7 @@ async function viewWeek(el, editable) {
 
   el.innerHTML = `
     <div class="print-title">${esc(CFG.appName)} · ${wl.title} · ${wl.sub}</div>
-    ${editable || canPlan() ? '' : segTabs('planning')}
+    ${isMgr() ? '' : segTabs('planning')}
     <div class="page-head"><div><h1>${editable ? 'Planning' : 'Teamrooster'}</h1><p>${editable ? 'Plan diensten in en publiceer de week zodra hij klaar is.' : 'Het gepubliceerde rooster van het hele team.'}</p></div></div>
     <div class="toolbar">
       <div class="weeknav">
@@ -3810,7 +3812,7 @@ async function viewMine(el) {
   }
 
   el.innerHTML = `
-    ${canPlan() || sel ? '' : segTabs('mijn')}
+    ${isMgr() || sel ? '' : segTabs('mijn')}
     <div class="page-head greet ${sel ? '' : 'center'}"><div>${sel ? '<button type="button" class="backlink" data-mf="all">‹ Terug</button>' : `<p class="g-date">${esc(fmtLong(todayIso()))}</p>`}<h1>${sel ? 'Je rooster' : `${new Date().getHours() < 5 || new Date().getHours() >= 17 ? 'Bonsoir' : 'Bonjour'}, ${esc(S.me.name.split(' ')[0])}.`}</h1>${sel ? '' : gSub ? `<p class="g-sub">${gSub}</p>` : ''}</div>
       <div class="head-actions"><button class="btn" data-ics>${ico('cal')}Agenda</button>${sickNow ? '' : `<button class="btn" data-sick>${ico('therm')}Ik ben ziek</button>`}</div></div>
     ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
@@ -4011,6 +4013,7 @@ function sickDialog() {
   openDialog('Ik ben ziek', `
     <div class="warnbox"><strong>Eerst bellen.</strong> Bel zo snel mogelijk, en uiterlijk 2 uur voor je dienst${CFG.sickName ? ` met ${esc(CFG.sickName)}` : ', met de directie'}. Een melding in de app alleen is niet genoeg.</div>
     ${CFG.sickPhone ? `<a class="btn primary block callbtn" href="tel:${esc(CFG.sickPhone.replace(/[^0-9+]/g, ''))}">${ico('phone')}Bel ${esc(CFG.sickName || 'de directie')} (${esc(CFG.sickPhone)})</a>` : ''}
+    <div class="sickcall" data-sickcall></div>
     <div class="row keep">
       <label class="field">Ziek vanaf<input type="date" name="start_date" value="${t}" min="${iso(addDays(new Date(), -7))}" required></label>
       <label class="field">Verwacht tot en met<input type="date" name="end_date" value="${t}" required disabled></label>
@@ -4020,7 +4023,22 @@ function sickDialog() {
     <label class="field">Opmerking<textarea name="note" placeholder="Optioneel, bv. dat je al gebeld hebt"></textarea></label>
     <p class="hint" style="margin:0">Vertel hier niet wat je hebt. Medische informatie hoort niet in de app.</p>
     <div class="dlg-foot"><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Ziekmelding versturen</button></div>`, {
-    onReady(dlg) { const f = $('form', dlg); f.start_date.onchange = () => { f.end_date.min = f.start_date.value; if (f.end_date.value < f.start_date.value) f.end_date.value = f.start_date.value; }; f.end_date.min = t;
+    onReady(dlg) {
+      // leiding die vandaag werkt (en haar nummer deelt): meteen bellen of appen
+      (async () => {
+        try {
+          const box = $('[data-sickcall]', dlg); if (!box) return;
+          const [emps, phones, sh] = await Promise.all([store.employees(), store.teamPhones(), store.shifts(t, t)]);
+          const lead = new Set(emps.filter(e => ['manager', 'planner'].includes(e.role) && e.id !== S.me.id).map(e => e.id));
+          const onToday = new Set(sh.filter(x => x.published && x.employee_id).map(x => x.employee_id));
+          const list = phones.filter(p => lead.has(p.employee_id) && p.phone && p.employee_id !== S.me.id && !(CFG.sickPhone && p.phone.replace(/\D/g, '').endsWith(CFG.sickPhone.replace(/\D/g, '').slice(-9))))
+            .sort((a, b) => (onToday.has(b.employee_id) - onToday.has(a.employee_id)) || a.name.localeCompare(b.name)).slice(0, 3);
+          if (!list.length) return;
+          const nl = n => n.replace(/\D/g, '').replace(/^0/, '31');
+          box.innerHTML = `<p class="hint" style="margin:0 0 6px">${onToday.has(list[0].employee_id) ? 'Leiding vandaag' : 'Leiding'}</p>` + list.map(p => `<div class="sickrow"><span><strong>${esc(p.name.split(' ')[0])}</strong><small>${onToday.has(p.employee_id) ? 'werkt vandaag' : esc(p.position || '')}</small></span><a class="btn sm" href="tel:${esc(p.phone.replace(/[^0-9+]/g, ''))}">${ico('phone')}Bel</a><a class="btn sm" href="https://wa.me/${nl(p.phone)}" target="_blank" rel="noopener">App</a></div>`).join('');
+        } catch (x) { /* niet kritiek */ }
+      })();
+      const f = $('form', dlg); f.start_date.onchange = () => { f.end_date.min = f.start_date.value; if (f.end_date.value < f.start_date.value) f.end_date.value = f.start_date.value; }; f.end_date.min = t;
       f.open_end.onchange = () => { f.end_date.disabled = f.open_end.checked; }; },
     async onSubmit(fd) {
       const start = fd.get('start_date');
@@ -4093,6 +4111,7 @@ async function viewRequestsStaff(el) {
     <div class="leave-grid"><div>
     ${showBal ? `<section class="card leavehero">
       <div class="lh-ring">${donut}<div class="lh-in"><small>nog te plannen</small><b class="${fmtH(avail).length > 6 ? 'long' : ''}">${fmtH(avail)}</b><span>${perDay ? dTxt(asDays(avail)) : ''}</span></div></div>
+      <p class="lh-sum">Tegoed ${fmtH(total)} − opgenomen ${fmtH(used)} − aangevraagd ${fmtH(reserved)} = <b>${fmtH(avail)} vrij</b></p>
       <ul class="lc-leg">
         <li><span class="dot u"></span>Opgenomen<b>${fmtH(used)}</b></li>
         <li><span class="dot r"></span>Aangevraagd<b>${fmtH(reserved)}</b></li>
@@ -4114,7 +4133,7 @@ async function viewRequestsStaff(el) {
   if (S.flashReq) { const fl = $('.lrq.flash', el); S.flashReq = null; if (fl) setTimeout(() => fl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50); }
 
   const newDialog = () => {
-    const types = [['vakantie', 'Vakantie', 'sun'], ['vrij', 'Vrije dag', 'cal'], ['onbeschikbaar', 'Niet beschikbaar', 'lock']];
+    const types = [['vakantie', 'Vakantie', 'sun'], ['vrij', 'Vrije dag', 'cal'], ['uren', 'Paar uur vrij', 'clock'], ['onbeschikbaar', 'Niet beschikbaar', 'lock']];
     openDialog('Verlof aanvragen', `
       <div class="rq-types" role="radiogroup" aria-label="Soort">${types.map(([k, l, i], n) => `<label class="rq-type"><input type="radio" name="type" value="${k}" ${n === 0 ? 'checked' : ''}><span>${ico(i)}${l}</span></label>`).join('')}</div>
       <div class="row keep"><label class="field">Van<input type="date" name="start_date" min="${t}" required></label><label class="field">Tot en met<input type="date" name="end_date" min="${t}" required></label></div>
@@ -4131,9 +4150,17 @@ async function viewRequestsStaff(el) {
         const isPart = () => !partBox.hidden && !times.hidden && fm.from_time.value && fm.to_time.value && fm.from_time.value !== fm.to_time.value;
         partBox.addEventListener('click', ev => { const b = ev.target.closest('[data-part]'); if (!b) return; $$('[data-part]', partBox).forEach(x => x.classList.toggle('on', x === b)); times.hidden = b.dataset.part !== '1'; if (!times.hidden && !fm.from_time.value) fm.from_time.focus(); upd(); });
         fm.from_time.addEventListener('change', () => upd()); fm.to_time.addEventListener('change', () => upd());
+        // 'Paar uur vrij': één datum met van/tot (wordt opgeslagen als vrije dag voor een deel van de dag)
+        const endField = fm.end_date.closest('label');
+        const startTxt = fm.start_date.closest('label').firstChild;
+        const setUren = on => { endField.hidden = on; if (startTxt && startTxt.nodeType === 3) startTxt.textContent = on ? 'Datum' : 'Van'; if (on) { fm.end_date.value = fm.start_date.value; $$('[data-part]', partBox).forEach(x => x.classList.toggle('on', x.dataset.part === '1')); times.hidden = false; } };
+        $$('[name=type]', fm).forEach(x => x.addEventListener('change', () => setUren(fm.type.value === 'uren')));
         const upd = () => {
-          const a = fm.start_date.value, b = fm.end_date.value || a, tp = fm.type.value;
-          partBox.hidden = !a || a !== b;   // een deel van de dag kan alleen bij één dag
+          if (fm.type.value === 'uren') fm.end_date.value = fm.start_date.value;
+          const a = fm.start_date.value, b = fm.end_date.value || a, tp = fm.type.value === 'uren' ? 'vrij' : fm.type.value;
+          const isUren = fm.type.value === 'uren';
+          partBox.hidden = isUren ? false : (!a || a !== b);   // een deel van de dag kan alleen bij één dag
+          $('.rq-whole', partBox).hidden = isUren; if (isUren) times.hidden = false;
           if (!a || b < a) { sum.hidden = true; return; }
           const days = daysBetween(a, b), leave = ['vakantie', 'vrij'].includes(tp);
           const rr = { employee_id: S.me.id, start_date: a, end_date: b, ...(isPart() ? { from_time: fm.from_time.value, to_time: fm.to_time.value } : {}) };
@@ -4150,12 +4177,12 @@ async function viewRequestsStaff(el) {
         const a = fd.get('start_date'), b = fd.get('end_date');
         if (!a || !b) throw new Error('Kies de datums van je verlof.');
         if (b < a) throw new Error('De einddatum ligt voor de begindatum.');
-        const dlgEl = document.querySelector('dialog[open] [data-rqtimes]'), part = a === b && dlgEl && !dlgEl.hidden;
+        const dlgEl = document.querySelector('dialog[open] [data-rqtimes]'), uren = fd.get('type') === 'uren', part = uren || (a === b && dlgEl && !dlgEl.hidden);
         const ft = part ? fd.get('from_time') : null, tt = part ? fd.get('to_time') : null;
         if (part && (!ft || !tt)) throw new Error('Vul in van hoe laat tot hoe laat je vrij wilt.');
         if (part && tt <= ft) throw new Error('De eindtijd moet na de begintijd liggen.');
-        await store.saveRequest({ employee_id: S.me.id, type: fd.get('type'), start_date: a, end_date: b, ...(part ? { from_time: ft, to_time: tt } : {}), note: String(fd.get('note') || '').trim() || null });
-        S.flashReq = a + fd.get('type');
+        await store.saveRequest({ employee_id: S.me.id, type: uren ? 'vrij' : fd.get('type'), start_date: a, end_date: uren ? a : b, ...(part ? { from_time: ft, to_time: tt } : {}), note: String(fd.get('note') || '').trim() || null });
+        S.flashReq = a + (uren ? 'vrij' : fd.get('type'));
         toast('Aanvraag verstuurd. Je krijgt bericht zodra hij is bekeken.'); rerender();
       },
     });
@@ -4213,7 +4240,7 @@ async function viewLeaveMgr(el) {
       const c = conflicts[r.id] || [];
       return `<article class="card req"><div class="req-head"><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name)}</strong><span class="badge">${esc(REQ[r.type])}</span><span class="status ${r.cancel_asked_at ? 'pending' : r.status}">${r.cancel_asked_at ? 'Intrekken gevraagd' : STATUS[r.status]}</span></div>
         <p class="dates">${reqDates(r)}${r.status === 'approved' && r.leave_hours ? ` <span class="muted">· ${fmtH(Number(r.leave_hours))} verlof</span>` : ''}</p>${r.note ? `<p class="note">“${esc(r.note)}”</p>` : ''}
-        ${(r.type === 'vakantie' || r.type === 'vrij') && r.status === 'pending' ? (() => { const b0 = leaveBalance(e, privs[e.id], reqs).rest, h0 = estimateLeaveHours(r, e, pendSh); return `<p class="hint">Saldo ${esc(e.name.split(' ')[0])}: ${fmtH(b0)} · deze aanvraag ± ${fmtH(h0)}</p>`; })() : ''}
+        ${(r.type === 'vakantie' || r.type === 'vrij') && r.status === 'pending' ? (() => { const b0 = leaveBalance(e, privs[e.id], reqs).rest, h0 = estimateLeaveHours(r, e, pendSh); return `<p class="hint">${(() => { const other = reqs.filter(x => x.id !== r.id && x.employee_id === r.employee_id && x.status === 'pending' && (x.type === 'vakantie' || x.type === 'vrij') && x.start_date.slice(0, 4) === r.start_date.slice(0, 4)).reduce((t, x) => t + estimateLeaveHours(x, e, pendSh), 0); const vrij = b0 - other; return `${esc(e.name.split(' ')[0])}: tegoed ${fmtH(b0)}${other ? ` − al aangevraagd ${fmtH(other)}` : ''} = ${fmtH(vrij)} vrij · deze aanvraag ± ${fmtH(h0)} → daarna ${fmtH(vrij - h0)}`; })()}</p>`; })() : ''}
         ${c.length ? `<p class="conflict">${ico('alert')}Staat ${c.length}× ingepland in deze periode (${c.map(s => fmtShort(s.date)).join(', ')}).</p>` : ''}
         ${r.manager_note ? `<p class="reply"><strong>Jouw reactie:</strong> ${esc(r.manager_note)}</p>` : ''}
         ${r.cancel_asked_at && r.status === 'approved' ? `<p class="conflict">${ico('alert')}${esc(e.name.split(' ')[0])} wil dit verlof intrekken.</p>` : ''}
