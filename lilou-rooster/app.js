@@ -947,7 +947,14 @@ async function supabaseStore() {
       if (error || !data?.publicKey) return '';
       return (this._vapid = data.publicKey);
     },
-    async requests() { return ok(await sb.from('requests').select('*').order('created_at', { ascending: false })); },
+    async requests() {
+      // shiftleaders: eigen aanvragen volledig, van collega's alleen wie wanneer weg is (geen verlofuren of opmerkingen)
+      const own = ok(await sb.from('requests').select('*').order('created_at', { ascending: false }));
+      if (isMgr() || !canPlan()) return own;
+      const team = ok(await sb.rpc('team_leave')) || [];
+      const mine = new Set(own.map(r => r.id));
+      return own.concat(team.filter(r => !mine.has(r.id)).map(r => ({ ...r, note: null, manager_note: null, leave_hours: null })));
+    },
     async saveRequest(r) { ok(await sb.from('requests').insert(r)); },
     async sickRecover(id) { const { error } = await sb.rpc('sick_recover', { p_id: id }); if (error) throw error; },
     async rulesAcks() { return ok(await sb.from('rules_acks').select('*')) || []; },
@@ -4139,7 +4146,7 @@ async function viewRequestsStaff(el) {
       <div class="rq-detail"><span class="status ${r.cancel_asked_at ? 'pending' : r.status}">${r.cancel_asked_at ? 'Intrekken gevraagd' : stLabel(r)}</span><p class="rq-dates">${reqDates(r)}</p>
       ${isLeave(r) ? `<p class="hint" style="margin:0">${r.status === 'approved' && r.leave_hours != null ? `${fmtH(Number(r.leave_hours))} verlof afgeschreven` : r.status === 'pending' ? `Ongeveer ${fmtH(hoursOf(r))} gereserveerd van je saldo` : ''}</p>` : ''}
       ${r.note ? `<p class="note">“${esc(r.note)}”</p>` : ''}${r.manager_note ? `<p class="reply"><strong>Reactie van de directie:</strong> ${esc(r.manager_note)}</p>` : ''}</div>
-      ${r.status === 'pending' ? '<div class="dlg-foot"><button type="button" class="btn danger" data-delreq>Aanvraag intrekken</button></div>'
+      ${r.status === 'pending' && r.type !== 'ziek' ? '<div class="dlg-foot"><button type="button" class="btn danger" data-delreq>Aanvraag intrekken</button></div>'
         : r.status === 'approved' && r.type !== 'ziek' && r.end_date >= todayIso() ? (r.cancel_asked_at ? '<p class="hint">Je hebt gevraagd dit verlof in te trekken. De directie beslist; je krijgt een melding.</p>'
         : '<p class="hint">Goedgekeurd verlof trek je in via de directie. Tik hieronder, dan krijgt de directie een melding.</p><div class="dlg-foot"><button type="button" class="btn dangerline" data-askcancel>Vraag om intrekken</button></div>') : ''}`, {
       onReady(dlg) {

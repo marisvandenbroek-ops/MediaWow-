@@ -714,5 +714,23 @@ select t_ok((select req_label(r) like '%14:00–16:00' from requests r where id 
 select t_ok(leave_hits('14:00','16:00','11:00','17:00') and not leave_hits('09:00','10:00','17:00','23:00') and leave_hits(null,null,'17:00','23:00')
   and leave_hits('23:30','00:30','17:00','01:00') and not leave_hits('01:00','02:00','17:00','23:00'), 'deel van de dag raakt alleen overlappende diensten');
 
+\echo '== Update 52: privacy en beveiliging'
+insert into time_entries (employee_id, clock_in, clock_out, in_lat, in_lng, out_lat, out_lng, status)
+values ('a0000000-0000-0000-0000-000000000002', now() - interval '100 days', now() - interval '100 days' + interval '5 hours', 52.04, 5.66, 52.04, 5.66, 'approved');
+select run_jobs();
+select t_ok(not exists (select 1 from audit_log where tbl = 'time_entries' and (old ?| array['in_lat','out_lat'] or new ?| array['in_lat','out_lat'])), 'geen kloklocaties in het logboek');
+insert into requests (id, employee_id, type, start_date, end_date) values ('55200000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', 'ziek', today_nl(), today_nl());
+set role authenticated; select as_user(3);
+delete from requests where id = '55200000-0000-0000-0000-000000000001';
+reset role;
+select t_ok(exists (select 1 from requests where id = '55200000-0000-0000-0000-000000000001'), 'medewerker kan ziekmelding niet verwijderen');
+update employees set role = 'planner' where id = 'a0000000-0000-0000-0000-000000000004';
+set role authenticated; select as_user(4);
+select t_ok(t_count($q$select * from requests where employee_id <> my_employee_id()$q$) = 0, 'shiftleader leest geen aanvragen van collega''s rechtstreeks');
+select t_ok(t_count($q$select * from team_leave()$q$) > 0, 'shiftleader ziet via team_leave wie wanneer weg is');
+select as_user(3);
+select t_ok(t_count($q$select * from team_leave()$q$) = 0, 'medewerker ziet team_leave niet');
+reset role;
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'
