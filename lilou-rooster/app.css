@@ -2252,3 +2252,5 @@ input[type="checkbox"]:not(.avsw input) { width: 22px; height: 22px; accent-colo
 }
 .rq-whole[hidden] { display: none; }
 @media (max-width: 760px) { .dlg-foot:has(.btn.danger) .btn.danger { order: 9; flex: 1 1 100%; } }
+.sickmain { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.sickmain .btn { min-height: 48px; justify-content: center; }

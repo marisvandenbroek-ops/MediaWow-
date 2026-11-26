@@ -4012,8 +4012,7 @@ function sickDialog() {
   const t = todayIso();
   openDialog('Ik ben ziek', `
     <div class="warnbox"><strong>Eerst bellen.</strong> Bel zo snel mogelijk, en uiterlijk 2 uur voor je dienst${CFG.sickName ? ` met ${esc(CFG.sickName)}` : ', met de directie'}. Een melding in de app alleen is niet genoeg.</div>
-    ${CFG.sickPhone ? `<a class="btn primary block callbtn" href="tel:${esc(CFG.sickPhone.replace(/[^0-9+]/g, ''))}">${ico('phone')}Bel ${esc(CFG.sickName || 'de directie')} (${esc(CFG.sickPhone)})</a>` : ''}
-    <div class="sickcall" data-sickcall></div>
+    ${CFG.sickPhone ? `<div class="sickmain"><a class="btn primary callbtn" href="tel:${esc(CFG.sickPhone.replace(/[^0-9+]/g, ''))}">${ico('phone')}Bel ${esc(CFG.sickName || 'de directie')}</a><a class="btn" href="https://wa.me/${esc(CFG.sickPhone.replace(/\D/g, '').replace(/^0/, '31'))}" target="_blank" rel="noopener">App</a></div><p class="hint" style="margin:-4px 0 0;text-align:center">${esc(CFG.sickPhone)}</p>` : '<div class="sickcall" data-sickcall></div>'}
     <div class="row keep">
       <label class="field">Ziek vanaf<input type="date" name="start_date" value="${t}" min="${iso(addDays(new Date(), -7))}" required></label>
       <label class="field">Verwacht tot en met<input type="date" name="end_date" value="${t}" required disabled></label>
