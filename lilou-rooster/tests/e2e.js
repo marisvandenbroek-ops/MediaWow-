@@ -1234,9 +1234,11 @@ async function test(name, fn) {
     await fresh(p, '#personeel'); await login(p, 'Sanne');
     await tab(p, 'beschikbaar'); await p.waitForSelector('#avform');
     const bar = () => p.evaluate(() => { const t = document.querySelector('.tabs'); const r = t.getBoundingClientRect(); return { shown: getComputedStyle(t).display !== 'none', bottom: Math.round(r.bottom), vh: innerHeight }; });
-    await p.click('[data-addnote="0"]'); await p.waitForTimeout(150);
-    assert.strictEqual((await bar()).shown, false, 'balk zichtbaar tijdens typen');
-    await p.evaluate(() => document.activeElement.blur()); await p.waitForTimeout(200);
+    // zonder toetsenbord (computer, tablet met toetsenbord) blijft de balk gewoon staan
+    await p.click('[data-addnote="0"]'); await p.waitForTimeout(200);
+    assert.strictEqual((await bar()).shown, true, 'balk weg terwijl er geen schermtoetsenbord is');
+    // het vak met focus verdwijnt (ander scherm): balk blijft/komt terug
+    await p.evaluate(() => { document.documentElement.classList.add('typing'); document.activeElement.remove(); }); await p.waitForTimeout(1300);
     await p.evaluate(() => scrollTo(0, 400)); await p.waitForTimeout(150);
     const b = await bar(); assert.ok(b.shown, 'balk niet terug na typen'); assert.ok(Math.abs(b.bottom - b.vh) <= 1, `balk niet onderaan: ${b.bottom} vs ${b.vh}`);
     await ctx.close();

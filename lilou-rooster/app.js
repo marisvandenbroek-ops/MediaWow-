@@ -5799,10 +5799,21 @@ window.addEventListener('hashchange', () => { if (store && !S.me && store.demo) 
     // de menubalk staat altijd vast onderaan (bottom: 0); hier niets meer verschuiven
   };
   // tijdens typen de menubalk verbergen (zoals in de meeste apps); daarna staat hij weer onderaan
-  const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'submit', 'range', 'color', 'file'].includes(a.type))); };
-  const typingClass = () => { document.documentElement.classList.toggle('typing', isTyping()); fix(); };
-  document.addEventListener('focusin', typingClass);
-  document.addEventListener('focusout', () => setTimeout(typingClass, 60));
+  // Menubalk alleen verbergen als het toetsenbord echt open is: een tekstvak heeft focus (en staat nog op het scherm)
+  // én het zichtbare deel van het scherm is flink kleiner geworden. Zo kan hij nooit 'kwijt' blijven.
+  const isTyping = () => {
+    const a = document.activeElement;
+    const field = !!a && a.isConnected && a.offsetParent !== null && (a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a.tagName === 'INPUT' && !['checkbox', 'radio', 'button', 'submit', 'range', 'color', 'file'].includes(a.type)));
+    return field && window.innerHeight - vv.height > 120;
+  };
+  const typingClass = () => { document.documentElement.classList.toggle('typing', isTyping()); };
+  const later = () => setTimeout(typingClass, 80);
+  document.addEventListener('focusin', later);
+  document.addEventListener('focusout', later);
+  ['click', 'touchend', 'scroll', 'pageshow', 'hashchange'].forEach(t => window.addEventListener(t, later, { passive: true }));
+  vv.addEventListener('resize', typingClass);
+  // vangnet: elke seconde controleren (kost niets) — als het toetsenbord dicht is, komt de balk altijd terug
+  setInterval(() => { if (document.documentElement.classList.contains('typing')) typingClass(); }, 1000);
   vv.addEventListener('resize', fix); vv.addEventListener('scroll', fix);
   window.addEventListener('orientationchange', () => setTimeout(fix, 300));
   window.addEventListener('pageshow', () => { fix(); setTimeout(fix, 400); });
