@@ -2102,8 +2102,8 @@ async function viewWeek(el, editable) {
   el.classList.toggle('selmode', !!S.selMode);
   if (S.selMode) markSel();
 
-  el.onkeydown = ev => { if (ev.target.matches('[data-rev]')) S.lastKey = ev.key; };
-  if (S.refocus && S.refocus.attr === 'data-rev') { const { date } = S.refocus; S.refocus = null; const ins = $$('[data-rev]', el); const i = ins.findIndex(x => x.dataset.rev === date); if (ins[i + 1]) S.afterSwap = () => ins[i + 1].focus(); }
+  el.onkeydown = ev => { if (ev.target.matches('[data-rev], [data-guests]')) S.lastKey = ev.key; };
+  if (S.refocus && ['data-rev', 'data-guests'].includes(S.refocus.attr)) { const { date, attr } = S.refocus; S.refocus = null; const ins = $$(`[${attr}]`, el); const i = ins.findIndex(x => x.getAttribute(attr) === date); if (ins[i + 1]) S.afterSwap = () => ins[i + 1].focus(); }
   el.onchange = async ev => {
     const rv = ev.target.closest('[data-rev]');
     if (rv) {
@@ -2113,7 +2113,14 @@ async function viewWeek(el, editable) {
       return rerender();
     }
     const g = ev.target.closest('[data-guests]'); if (!g) return;
-    const v = g.value.trim(); await store.saveDay(g.dataset.guests, v === '' ? null : Math.max(0, Math.round(Number(v)) || 0)); rerender();
+    // opslaan met bevestiging; met Enter of Tab door naar de volgende dag; het scherm blijft op zijn plek
+    const v = g.value.trim();
+    if (v !== '' && !(Number(v) >= 0)) { g.value = ''; return toast('Vul een aantal gasten in van 0 of meer.', 'error'); }
+    if (['Tab', 'Enter'].includes(S.lastKey)) S.refocus = { attr: 'data-guests', date: g.dataset.guests }; S.lastKey = null;
+    const here = S.view;
+    try { await store.saveDay(g.dataset.guests, v === '' ? null : Math.max(0, Math.round(Number(v)) || 0)); toast(v === '' ? 'Gasten gewist' : `${Math.round(Number(v))} gasten opgeslagen`); }
+    catch (x) { return toast('Gasten niet opgeslagen: ' + errMsg(x), 'error'); }
+    if (S.view === here) rerender();   // alleen bijwerken als je nog op de planning bent (niet terugspringen)
   };
   el.onclick = async ev => {
     const act = ev.target.closest('[data-act]')?.dataset.act;
