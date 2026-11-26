@@ -113,6 +113,12 @@ Nooit wachtwoorden of geheime sleutels typen of laten zien; Mariska logt zelf in
 - Controleronde 10 verwerkt (privacy: medewerkers zien geen uren/contract van collega's in Team).
 - Open: contracttypes/uren, verlof, uurlonen, diploma's en geboortedata bij medewerkers nog invullen; testaccount 'Test' op inactief zetten; Gerrit, Tim, Lukas, Shyam nog niet geactiveerd.
 
+## Versie 126 (update 110 + database update 52, 26 nov) — live, gecontroleerd
+- Eindcontrole (beveiliging, werking, UX) verwerkt: geen kloklocaties in audit_log (+7 jaar bewaren), ziekmelding niet zelf verwijderen, uit dienst wist maat/diploma's/afspraken, shiftleaders lezen verlof via team_leave() (zonder uren/notities), leeftijdsklasse via team_age_class(), request_withdraw(p_id, p_keep, p_hours), herinneringen alleen bij goedgekeurd verlof.
+- App: nachtdiensten bij Klokken, uren/loon bij deel-van-de-dag (cutShift), jaarwisseling saldo, afgekeurde uren, zomertijd.
+- UX: bel/app leiding bij ziek, één verlofrekensom, 'Paar uur vrij', shiftleader-tabs = medewerker + Planning (landt op Mijn rooster), allergenen-melding bovenaan, Verwijderen apart onderaan vensters, mededelingen bovenaan startscherm.
+- LET OP volgorde: eerst database, dan app (app 110 roept team_leave aan).
+
 ## Versie 124 (update 108 + database update 51, 26 nov) — live, gecontroleerd
 - Deel van de dag vrij (requests.from_time/to_time, leave_hits), herinneringen houden er rekening mee.
 - Kaarten vernieuwd uit de website (kaarten/*.pdf, generator in scratchpad menugen); Lunchkaart heeft Mariska zelf geüpload (storage), de statische Lilou-lunch-app.pdf staat klaar maar is niet gekoppeld.
