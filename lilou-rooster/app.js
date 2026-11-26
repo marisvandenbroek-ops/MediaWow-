@@ -292,6 +292,7 @@ function demoStore() {
       return { email: e.email, demo: true };
     },
     async privates() { db.private ||= {}; return clone(Object.values(db.private).filter(p => isMgr() || p.employee_id === mem)); },
+    async ageClasses() { const t = todayIso(); return Object.values(db.private || {}).filter(p => p.birth_date && ageOn(p.birth_date, t) < 18).map(p => ({ employee_id: p.employee_id, cls: ageOn(p.birth_date, t) < 16 ? '<16' : '16-17' })); },
     // profiel (demo): alle voorbeeldmedewerkers hebben het al ingevuld
     _profiles() { db.profiles ||= Object.fromEntries(db.employees.map((e, i) => [e.id, { employee_id: e.id, emergency: i % 2 ? [] : [{ name: 'Ouder van ' + e.name.split(' ')[0], relation: 'ouder', phone: '06 1234 56' + String(10 + i) }], shirt_size: ['S', 'M', 'L'][i % 3], share_phone: i % 3 !== 2, done_at: new Date().toISOString() }])); return db.profiles; },
     async myProfile() { const f = this._profiles()[mem] || {}, e = db.employees.find(x => x.id === mem) || {}; return clone({ phone: e.phone || null, birth_date: (db.private || {})[mem]?.birth_date || null, emergency: f.emergency || [], shirt_size: f.shirt_size || null, share_phone: !!f.share_phone, done_at: f.done_at || null }); },
@@ -630,7 +631,7 @@ function demoStore() {
       r.cancel_asked_at = new Date().toISOString();
       notifyMgrs('Verlof intrekken?', `${fname(r.employee_id)} wil ${REQ[r.type].toLowerCase()} ${fmtShort(r.start_date)} intrekken`, 'aanvragen:verlof'); save();
     },
-    async withdrawLeave(id, keep) {
+    async withdrawLeave(id, keep, hours) {
       if (!isMgr()) throw new Error('Alleen de directie kan verlof intrekken.');
       const r = db.requests.find(x => x.id === id); if (!r || r.status !== 'approved' || r.type === 'ziek') throw new Error('Alleen goedgekeurd verlof kan worden ingetrokken.');
       const t = todayIso(), uren = ['vakantie', 'vrij'].includes(r.type) ? ' De uren staan weer op je saldo.' : '';
@@ -638,7 +639,7 @@ function demoStore() {
       else if (r.end_date < t) throw new Error('Dit verlof is al voorbij en kan niet meer worden ingetrokken.');
       else if (r.start_date < t) {
         const tot = daysBetween(r.start_date, r.end_date), had = daysBetween(r.start_date, iso(addDays(parse(t), -1)));
-        if (r.leave_hours != null) r.leave_hours = Math.round(r.leave_hours * had / tot * 10) / 10;
+        if (r.leave_hours != null) r.leave_hours = hours != null ? Math.min(r.leave_hours, Math.max(0, Math.round(hours * 10) / 10)) : Math.round(r.leave_hours * had / tot * 10) / 10;
         r.end_date = iso(addDays(parse(t), -1)); r.cancel_asked_at = null;
         notify(r.employee_id, 'Verlof ingetrokken', `${REQ[r.type]} ${fmtShort(r.start_date)}: het deel vanaf vandaag is ingetrokken.${uren}`, 'aanvragen');
       } else { db.requests = db.requests.filter(x => x.id !== id); notify(r.employee_id, 'Verlof ingetrokken', `${REQ[r.type]} ${fmtShort(r.start_date)} is ingetrokken.${uren}`, 'aanvragen'); }
@@ -826,6 +827,7 @@ async function supabaseStore() {
       return ok(await sb.from('employees').insert(rest).select('id').single()).id;
     },
     async privates() { return ok(await sb.from('employee_private').select('*')); },
+    async ageClasses() { return ok(await sb.rpc('team_age_class')) || []; },
     async inviteEmployee(id) {
       const { data, error } = await sb.functions.invoke('invite-employee', { body: { employee_id: id, redirect_to: location.origin + location.pathname } });
       if (error) {
@@ -989,7 +991,7 @@ async function supabaseStore() {
     },
     async deleteRequest(id) { ok(await sb.from('requests').delete().eq('id', id)); },
     async askCancelLeave(id) { ok(await sb.rpc('request_cancel_ask', { p_id: id })); },
-    async withdrawLeave(id, keep) { ok(await sb.rpc('request_withdraw', { p_id: id, p_keep: !!keep })); },
+    async withdrawLeave(id, keep, hours) { ok(await sb.rpc('request_withdraw', { p_id: id, p_keep: !!keep, p_hours: hours ?? null })); },
     // --- klokken
     async settings() {
       if (S.me && !canPlan()) return ok(await sb.rpc('staff_settings')) || {};   // medewerkers: zonder wifi-adressen, doelen en loonpercentages
@@ -1860,6 +1862,8 @@ async function viewWeek(el, editable) {
   const certs = canPlan() ? await store.certs().catch(() => []) : [];
   const emps = sortEmps(emps0);
   const privs = Object.fromEntries(privList.map(p => [p.employee_id, p]));
+  // shiftleader: geen geboortedata, wel de leeftijdsklasse voor de Arbeidstijdenwet-waarschuwingen
+  if (canPlan() && !isMgr()) (await store.ageClasses().catch(() => [])).forEach(a => { const y = a.cls === '<16' ? 15 : 17, d = new Date(); d.setFullYear(d.getFullYear() - y); d.setDate(d.getDate() - 1); privs[a.employee_id] = { ...(privs[a.employee_id] || {}), birth_date: iso(d) }; });
   // Shiftleader (niet de directie, die heeft Klokken): wie staat er vandaag en is die al binnen?
   let todayPanel = '';
   const tdy0 = todayIso();
@@ -2888,7 +2892,7 @@ async function viewDashboard(el) {
   const inIds = new Set(inNow.map(x => x.employee_id));
   const fnm = id => (byId[id]?.name || '?').split(' ')[0];
   const started = todayShifts.filter(x => shiftWindow(x)[0] <= now && shiftWindow(x)[1] > now);
-  const late = started.filter(x => !inIds.has(x.employee_id) && now - shiftWindow(x)[0] > 10 * 60e3);
+  const late = started.filter(x => !inIds.has(x.employee_id) && now - shiftWindow(x)[0] > 10 * 60e3 && !awayDuring(reqs, x));
   const nextUp = todayShifts.filter(x => shiftWindow(x)[0] > now).sort((a, b) => shiftWindow(a)[0] - shiftWindow(b)[0]);
   const people = new Set(todayShifts.map(x => x.employee_id)).size;
   const vRow = (kind, title, sub, attr) => `<button type="button" class="hrow" ${attr}><span class="hn ${kind}">${kind === 'ok' ? '✓' : kind === 'bad' ? '!' : kind === 'info' ? ico('clock') : '!'}</span><span class="ht"><strong>${title}</strong>${sub ? `<small>${sub}</small>` : ''}</span><span class="chev" aria-hidden="true">›</span></button>`;
@@ -3054,7 +3058,7 @@ async function viewMyHours(el) {
   const weeks = {};
   ents.forEach(x => { const sh = matchShift(x, shifts), p = paidOf(x, sh, st), wk = iso(mondayOf(new Date(x.clock_in))); (weeks[wk] ||= []).push({ x, sh, p }); });
   const inMonth = Object.values(weeks).flat().filter(r => tDate(r.x.clock_in).slice(0, 7) === S.mhMonth);
-  const tot = inMonth.reduce((t, r) => t + r.p.hours, 0), ok = inMonth.filter(r => r.x.status === 'approved').reduce((t, r) => t + r.p.hours, 0);
+  const tot = inMonth.filter(r => r.x.status !== 'rejected').reduce((t, r) => t + r.p.hours, 0), ok = inMonth.filter(r => r.x.status === 'approved').reduce((t, r) => t + r.p.hours, 0);
   const ch = Number(S.me.contract_hours) || 0;
   const label = first.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' });
   const row = r => `<li class="mhrow"><span><strong>${esc(fmtShort(tDate(r.x.clock_in)))}</strong> ${tHM(new Date(r.x.clock_in))}–${r.x.clock_out ? tHM(new Date(r.x.clock_out)) : '…'}${r.x.break_minutes ? ` · ${r.x.break_minutes}\u00a0min pauze` : ''}${r.p.adjusted ? ' <small class="muted">(volgens rooster)</small>' : ''}</span>
@@ -3691,7 +3695,7 @@ async function viewMine(el) {
     const ents = ents0.filter(x => x.employee_id === S.me.id && x.clock_out);
     if (ents.length) {
       const P = x => paidOf(x, matchShift(x, mine), stM).hours;
-      const tot = ents.reduce((t, x) => t + P(x), 0), ok = ents.filter(x => x.status === 'approved').reduce((t, x) => t + P(x), 0);
+      const tot = ents.filter(x => x.status !== 'rejected').reduce((t, x) => t + P(x), 0), ok = ents.filter(x => x.status === 'approved').reduce((t, x) => t + P(x), 0);
       workedHTML = `<div class="card pad worked"><div><small>Telt mee deze week</small><b>${fmtH(tot)}</b></div><div><small>Goedgekeurd</small><b>${fmtH(ok)}</b></div><div><small>Registraties</small><b>${ents.length}</b></div></div>`;
     }
   }
@@ -3982,6 +3986,18 @@ const lvPart = r => !!(r && r.from_time && r.to_time);
 const span = (a, b) => { const x = mins(a), y = mins(b); return [x, y <= x ? y + 1440 : y]; };
 const lvHits = (r, st, en) => { if (!lvPart(r) || !st || !en) return true; const [a, b] = span(r.from_time, r.to_time), [c, d] = span(st, en); return a < d && c < b; };
 const lvTimes = r => (lvPart(r) ? ` ${hm(r.from_time)}–${hm(r.to_time)}` : '');
+// Dienst knippen rond verlof voor een deel van de dag: wat overblijft telt als gewerkt (pauze naar verhouding)
+const hmOf = m => { const x = ((m % 1440) + 1440) % 1440; return String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0'); };
+function cutShift(s, lvs) {
+  const [a, b] = span(s.start_time, s.end_time), total = b - a;
+  let segs = [[a, b]];
+  lvs.forEach(r => { const [c, d] = span(r.from_time, r.to_time); segs = segs.flatMap(([x, y]) => (d <= x || c >= y) ? [[x, y]] : [[x, Math.min(y, c)], [Math.max(x, d), y]].filter(([u, v]) => v > u)); });
+  if (segs.length === 1 && segs[0][0] === a && segs[0][1] === b) return [s];
+  return segs.map(([x, y]) => ({ ...s, start_time: hmOf(x), end_time: hmOf(y), break_minutes: Math.round((Number(s.break_minutes) || 0) * (y - x) / (total || 1)) }));
+}
+// staat iemand tijdens deze dienst ziek of met (aangevraagd/goedgekeurd) verlof?
+const awayDuring = (reqs, x) => (reqs || []).some(r => r.employee_id === x.employee_id && ['vakantie', 'vrij', 'onbeschikbaar', 'ziek'].includes(r.type)
+  && (r.status === 'approved' || (r.type === 'ziek' && r.status !== 'rejected')) && r.start_date <= x.date && (r.end_date >= x.date || (r.type === 'ziek' && r.open_end && !r.recovered_at)) && lvHits(r, x.start_time, x.end_time));
 function reqDates(r) {
   if (lvPart(r)) return `${fmtLong(r.start_date)} <span class="nowrap">${hm(r.from_time)}–${hm(r.to_time)}</span>`;
   if (r.open_end) return `vanaf ${fmtShort(r.start_date)} <span class="muted">(nog ziek, tot beter gemeld)</span>`;
@@ -4181,11 +4197,11 @@ async function viewLeaveMgr(el) {
   const asks = reqs.filter(r => r.status === 'approved' && r.cancel_asked_at);   // medewerker wil verlof intrekken
   const list = S.reqFilter === 'pending' ? [...asks, ...reqs.filter(r => r.status === 'pending')] : reqs;
   const pend = reqs.filter(r => r.status === 'pending');
-  let conflicts = {};
+  let conflicts = {}, pendSh = [];
   if (pend.length) {
     const from = pend.reduce((m, r) => (r.start_date < m ? r.start_date : m), pend[0].start_date);
     const to = pend.reduce((m, r) => (r.end_date > m ? r.end_date : m), pend[0].end_date);
-    const sh = await store.shifts(from, to);
+    const sh = await store.shifts(from, to); pendSh = sh.filter(s => s.published);
     pend.forEach(r => { conflicts[r.id] = sh.filter(s => s.employee_id === r.employee_id && s.date >= r.start_date && s.date <= r.end_date && lvHits(r, s.start_time, s.end_time)); });
   }
   el.innerHTML = `
@@ -4197,7 +4213,7 @@ async function viewLeaveMgr(el) {
       const c = conflicts[r.id] || [];
       return `<article class="card req"><div class="req-head"><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name)}</strong><span class="badge">${esc(REQ[r.type])}</span><span class="status ${r.cancel_asked_at ? 'pending' : r.status}">${r.cancel_asked_at ? 'Intrekken gevraagd' : STATUS[r.status]}</span></div>
         <p class="dates">${reqDates(r)}${r.status === 'approved' && r.leave_hours ? ` <span class="muted">· ${fmtH(Number(r.leave_hours))} verlof</span>` : ''}</p>${r.note ? `<p class="note">“${esc(r.note)}”</p>` : ''}
-        ${(r.type === 'vakantie' || r.type === 'vrij') && r.status === 'pending' ? (() => { const b0 = leaveBalance(e, privs[e.id], reqs).rest, h0 = estimateLeaveHours(r, e, []); return `<p class="hint">Saldo ${esc(e.name.split(' ')[0])}: ${fmtH(b0)} · deze aanvraag ± ${fmtH(h0)}</p>`; })() : ''}
+        ${(r.type === 'vakantie' || r.type === 'vrij') && r.status === 'pending' ? (() => { const b0 = leaveBalance(e, privs[e.id], reqs).rest, h0 = estimateLeaveHours(r, e, pendSh); return `<p class="hint">Saldo ${esc(e.name.split(' ')[0])}: ${fmtH(b0)} · deze aanvraag ± ${fmtH(h0)}</p>`; })() : ''}
         ${c.length ? `<p class="conflict">${ico('alert')}Staat ${c.length}× ingepland in deze periode (${c.map(s => fmtShort(s.date)).join(', ')}).</p>` : ''}
         ${r.manager_note ? `<p class="reply"><strong>Jouw reactie:</strong> ${esc(r.manager_note)}</p>` : ''}
         ${r.cancel_asked_at && r.status === 'approved' ? `<p class="conflict">${ico('alert')}${esc(e.name.split(' ')[0])} wil dit verlof intrekken.</p>` : ''}
@@ -4218,7 +4234,9 @@ async function viewLeaveMgr(el) {
       const r = reqs.find(x => x.id === wd.dataset.wd), nm = (byId[r.employee_id]?.name || '').split(' ')[0];
       const lopend = r.start_date < todayIso(), uren = ['vakantie', 'vrij'].includes(r.type);
       if (!await ask(`${REQ[r.type]} van ${nm} (${reqDates(r).replace(/<[^>]+>/g, '')}) ${lopend ? 'vanaf vandaag ' : ''}intrekken? ${lopend ? 'De dagen die al voorbij zijn blijven staan. ' : ''}${uren ? `De uren ${lopend ? 'van de rest ' : ''}komen terug op het saldo. ` : ''}${nm} krijgt een melding. Diensten die je bij het goedkeuren hebt aangepast, komen niet vanzelf terug.`, 'Intrekken')) return;
-      try { await store.withdrawLeave(r.id, false); toast('Verlof ingetrokken'); rerender(); } catch (x) { toast(errMsg(x), 'error'); }
+      let keepH = null;
+      if (lopend && r.leave_hours != null) { const g = iso(addDays(new Date(), -1)); const sh = await store.shifts(r.start_date, g).catch(() => []); keepH = estimateLeaveHours({ ...r, end_date: g }, byId[r.employee_id], sh.filter(s => s.published)); }
+      try { await store.withdrawLeave(r.id, false, keepH); toast('Verlof ingetrokken'); rerender(); } catch (x) { toast(errMsg(x), 'error'); }
       return;
     }
     const keep = ev.target.closest('[data-keep]');
@@ -5033,7 +5051,9 @@ function loonkosten(bruto, st = {}) {
 // Verlofsaldo voor een jaar
 function leaveBalance(emp, priv, reqs, year = new Date().getFullYear()) {
   const entitlement = priv?.leave_hours_year != null ? Number(priv.leave_hours_year) : 4 * (Number(emp?.contract_hours) || 0);
-  const opening = priv && Number(priv.leave_year) === year ? Number(priv.leave_opening) || 0 : 0;
+  // meegenomen uit vorig jaar: wat de directie invulde, of anders automatisch het restant van vorig jaar
+  const opening = priv && Number(priv.leave_year) === year ? Number(priv.leave_opening) || 0
+    : priv && Number(priv.leave_year) === year - 1 ? Math.max(0, leaveBalance(emp, priv, reqs, year - 1).rest) : 0;
   const mine = reqs.filter(r => r.employee_id === emp?.id && (r.type === 'vakantie' || r.type === 'vrij') && r.start_date.slice(0, 4) === String(year));
   const used = mine.filter(r => r.status === 'approved').reduce((t, r) => t + (Number(r.leave_hours) || 0), 0);
   const pending = mine.filter(r => r.status === 'pending').length;
@@ -5187,10 +5207,10 @@ async function viewHours(el) {
   const onLeave = (empId, ds) => approved.some(r => r.employee_id === empId && ['vakantie', 'vrij', 'ziek'].includes(r.type) && !lvPart(r) && r.start_date <= ds && r.end_date >= ds);
   const rows = emps.map(e => {
     // geplande diensten op goedgekeurde verlof- of ziektedagen tellen niet als gewerkt (gewerkt = echte kloktijden, die tellen wel)
-    const mine = shifts.filter(s => s.employee_id === e.id && (S.hsrc === 'gewerkt' || !onLeave(e.id, s.date)));
-    // gepland: uren die door goedgekeurd verlof voor een deel van de dag wegvallen, niet meetellen
-    const partOff = S.hsrc === 'gewerkt' ? 0 : mine.reduce((t, s) => t + approved.filter(r => r.employee_id === e.id && lvPart(r) && r.start_date === s.date && ['vakantie', 'vrij', 'ziek'].includes(r.type)).reduce((u, r) => { const [a, b] = span(r.from_time, r.to_time), [c, d] = span(s.start_time, s.end_time); return u + Math.max(0, Math.min(b, d) - Math.max(a, c)) / 60; }, 0), 0);
-    const h = Math.max(0, mine.reduce((t, s) => t + shiftHours(s), 0) - partOff);
+    const mine0 = shifts.filter(s => s.employee_id === e.id && (S.hsrc === 'gewerkt' || !onLeave(e.id, s.date)));
+    // gepland: het deel van een dienst dat onder goedgekeurd verlof voor een deel van de dag valt, telt niet (ook niet voor loon en toeslagen)
+    const mine = S.hsrc === 'gewerkt' ? mine0 : mine0.flatMap(s => cutShift(s, approved.filter(r => r.employee_id === e.id && lvPart(r) && r.start_date === s.date && ['vakantie', 'vrij', 'ziek'].includes(r.type))));
+    const h = mine.reduce((t, s) => t + shiftHours(s), 0);
     const pauze = mine.reduce((t, s) => t + (Number(s.break_minutes) || 0) / 60, 0);
     const sp = mine.map(splitShift).reduce((a, b) => ({ avond: a.avond + b.avond, nacht: a.nacht + b.nacht, zondag: a.zondag + b.zondag, feestdag: a.feestdag + b.feestdag }), { avond: 0, nacht: 0, zondag: 0, feestdag: 0 });
     const lv = approved.filter(r => r.employee_id === e.id);
@@ -5204,7 +5224,7 @@ async function viewHours(el) {
     const lk = cs ? loonkosten(cs.bruto, stH) : null;
     const verlofUren = lv.filter(r => (r.type === 'vakantie' || r.type === 'vrij') && r.leave_hours).reduce((t, r) => t + Number(r.leave_hours) * overlapDays(r, from, to) / daysBetween(r.start_date, r.end_date), 0);
     const target = contract != null ? Math.max(0, contract - verlofUren - ziekUren) : null;
-    return { e, n: mine.length, h, pauze, ...sp, verlof, verlofUren, ziek, contract: target, diff: target != null ? h - target : null, wage, cs, lk };
+    return { e, mine, n: mine0.length, h, pauze, ...sp, verlof, verlofUren, ziek, contract: target, diff: target != null ? h - target : null, wage, cs, lk };
   }).filter(r => r.n || r.verlof || r.ziek || r.e.active !== false);
   const T = rows.reduce((t, r) => ({ n: t.n + r.n, h: t.h + r.h, avond: t.avond + r.avond, nacht: t.nacht + r.nacht, zondag: t.zondag + r.zondag, feestdag: t.feestdag + r.feestdag, bruto: t.bruto + (r.lk?.bruto || 0), totaal: t.totaal + (r.lk?.totaal || 0) }), { n: 0, h: 0, avond: 0, nacht: 0, zondag: 0, feestdag: 0, bruto: 0, totaal: 0 });
   const conceptCount = allShifts.filter(s => !s.published).length;
@@ -5239,7 +5259,7 @@ async function viewHours(el) {
     }, `klokregistratie-${S.pmode}-${from}_${to}`],
     kosten: ['Loonkosten per functie (voor de salarisadministratie)', 'Uren en loonkosten per kostenplaats (Bediening, Bar, Keuken…). Werkgeverslasten zijn een indicatie; de exacte bedragen komen uit de salarisberekening.', () => {
       const per = {};
-      rows.forEach(r => shifts.filter(x => x.employee_id === r.e.id).forEach(x => {
+      rows.forEach(r => r.mine.forEach(x => {
         const k = x.position || r.e.position || 'Overig', c = r.wage ? costOf(x, r.wage, stH) : null;
         per[k] ||= { uren: 0, bruto: 0, zonderLoon: 0 };
         per[k].uren += shiftHours(x); if (c) per[k].bruto += c.bruto; else per[k].zonderLoon += shiftHours(x);
@@ -5651,7 +5671,7 @@ function entryDialog(e, emps, defaults = {}) {
       const mk = t => { const [h, m] = t.split(':').map(Number); const x = new Date(d); x.setHours(h, m, 0, 0); return x; };
       const cin = mk(fd.get('in'));
       let cout = fd.get('out') ? mk(fd.get('out')) : null;
-      if (cout && cout <= cin) cout = new Date(cout.getTime() + 86400000);
+      if (cout && cout <= cin) { cout = new Date(cout); cout.setDate(cout.getDate() + 1); }
       // Ongewijzigde tijden exact laten staan (geen schijnwijziging in het logboek)
       const same = (ts, d2) => ts && d2 && tHM(ts) === tHM(d2) && Math.abs(new Date(ts) - d2) < 60000;
       const cinIso = same(e.clock_in, cin) ? e.clock_in : cin.toISOString();
@@ -5689,7 +5709,7 @@ async function historyHTML(rowId) {
 
 async function viewClockMgr(el) {
   const from = iso(S.week), to = iso(addDays(S.week, 6));
-  const [emps0, entries, shifts, open, st] = await Promise.all([store.employees(), store.entries(from, to), store.shifts(iso(addDays(S.week, -1)), to), store.openEntries(), store.settings()]);
+  const [emps0, entries, shifts, open, st, reqsK] = await Promise.all([store.employees(), store.entries(from, to), store.shifts(iso(addDays(S.week, -1)), to), store.openEntries(), store.settings(), store.requests().catch(() => [])]);
   const emps = sortEmps(emps0);
   const byId = Object.fromEntries(emps.map(e => [e.id, e]));
   const today = todayIso(), now = new Date(), nowM = now.getHours() * 60 + now.getMinutes();
@@ -5698,7 +5718,7 @@ async function viewClockMgr(el) {
   const todayShift = shifts.find(s => s.employee_id === S.me.id && s.date === today);
 
   // Signalen
-  const notIn = shifts.filter(s => s.date === today && s.published && mins(s.start_time) + 10 < nowM && mins(s.end_time) > nowM
+  const notIn = shifts.filter(s => s.date === today && s.published && shiftWindow(s)[0].getTime() + 10 * 60e3 < now.getTime() && shiftWindow(s)[1] > now && !awayDuring(reqsK, s)
     && !open.some(o => o.employee_id === s.employee_id) && !entries.some(x => x.employee_id === s.employee_id && tDate(x.clock_in) === today));
   const forgot = open.filter(o => (now - new Date(o.clock_in)) / 3600000 > 12);
   const pending = entries.filter(x => x.status === 'pending');

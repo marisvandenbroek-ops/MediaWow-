@@ -2951,3 +2951,46 @@ begin
   end loop;
   return n;
 end $$;
+
+-- 6. Rest van lopend verlof intrekken: de app rekent de uren die blijven staan uit de geplande diensten (p_hours)
+drop function if exists public.request_withdraw(uuid, boolean);
+create or replace function public.request_withdraw(p_id uuid, p_keep boolean default false, p_hours numeric default null) returns void
+language plpgsql security definer set search_path = public as $$
+declare r public.requests; t date := (now() at time zone 'Europe/Amsterdam')::date; uren text;
+begin
+  if not public.is_manager() then raise exception 'Alleen de directie kan verlof intrekken.'; end if;
+  select * into r from public.requests where id = p_id for update;
+  if not found then raise exception 'Deze aanvraag bestaat niet meer.'; end if;
+  if r.status <> 'approved' or r.type = 'ziek' then raise exception 'Alleen goedgekeurd verlof kan worden ingetrokken.'; end if;
+  if p_keep then
+    update public.requests set cancel_asked_at = null where id = p_id;
+    perform public.notify(r.employee_id, 'Verlof blijft staan', public.req_label(r) || ' blijft staan. Vraag de directie als je wilt overleggen.', 'aanvragen');
+    return;
+  end if;
+  if r.end_date < t then raise exception 'Dit verlof is al voorbij en kan niet meer worden ingetrokken.'; end if;
+  uren := case when r.type in ('vakantie', 'vrij') then ' De uren staan weer op je saldo.' else '' end;
+  if r.start_date < t then
+    update public.requests
+       set end_date = t - 1, cancel_asked_at = null,
+           leave_hours = case when leave_hours is null then null
+                              when p_hours is not null then least(leave_hours, greatest(0, round(p_hours, 1)))
+                              else round(leave_hours * (t - r.start_date)::numeric / (r.end_date - r.start_date + 1), 1) end
+     where id = p_id;
+    perform public.notify(r.employee_id, 'Verlof ingetrokken', public.req_label(r) || ': het deel vanaf vandaag is ingetrokken.' || uren, 'aanvragen');
+  else
+    delete from public.requests where id = p_id;
+    perform public.notify(r.employee_id, 'Verlof ingetrokken', public.req_label(r) || ' is ingetrokken.' || uren, 'aanvragen');
+  end if;
+end $$;
+revoke execute on function public.request_withdraw(uuid, boolean, numeric) from public, anon;
+grant execute on function public.request_withdraw(uuid, boolean, numeric) to authenticated;
+
+-- 7. Shiftleaders krijgen de Arbeidstijdenwet-waarschuwingen voor jongeren, zonder geboortedatum: alleen een leeftijdsklasse
+create or replace function public.team_age_class() returns table (employee_id uuid, cls text)
+language sql stable security definer set search_path = public as $$
+  select p.employee_id, case when age(public.today_nl(), p.birth_date) < interval '16 years' then '<16' else '16-17' end
+    from public.employee_private p
+   where public.is_planner() and p.birth_date is not null and age(public.today_nl(), p.birth_date) < interval '18 years'
+$$;
+revoke execute on function public.team_age_class() from public, anon;
+grant execute on function public.team_age_class() to authenticated;

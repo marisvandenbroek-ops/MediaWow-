@@ -732,5 +732,19 @@ select as_user(3);
 select t_ok(t_count($q$select * from team_leave()$q$) = 0, 'medewerker ziet team_leave niet');
 reset role;
 
+insert into requests (id, employee_id, type, start_date, end_date, status, leave_hours) values
+  ('55200000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', 'vakantie', today_nl() - 3, today_nl() + 3, 'approved', 22);
+set role authenticated; select as_user(1);
+select request_withdraw('55200000-0000-0000-0000-000000000002', false, 11);
+reset role;
+select t_ok((select leave_hours = 11 and end_date = today_nl() - 1 from requests where id = '55200000-0000-0000-0000-000000000002'), 'rest intrekken met uren uit de planning');
+insert into employee_private (employee_id, birth_date) values ('a0000000-0000-0000-0000-000000000003', today_nl() - interval '17 years')
+  on conflict (employee_id) do update set birth_date = excluded.birth_date;
+set role authenticated; select as_user(4);
+select t_ok((select cls from team_age_class() where employee_id = 'a0000000-0000-0000-0000-000000000003') = '16-17', 'shiftleader ziet leeftijdsklasse');
+select as_user(2);
+select t_ok(t_count($q$select * from team_age_class()$q$) = 0, 'medewerker ziet geen leeftijden');
+reset role;
+
 \echo ''
 \echo 'ALLE DATABASETESTS GESLAAGD'
