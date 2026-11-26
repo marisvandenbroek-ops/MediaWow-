@@ -2192,3 +2192,36 @@ dialog.moresheet[open] { animation: sheetin .24s cubic-bezier(.2, .8, .2, 1); }
 
 /* links naar de receptenapp zien eruit als de andere knoppen */
 a.card.lhome, a.mrow { color: inherit; text-decoration: none; }
+
+/* ===== Eindcontrole UX ===== */
+/* A1 uren-tabel: naamkolom vast, rest schuift; geen namen over drie regels */
+.tablewrap { position: relative; }
+table.list th:first-child, table.list td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+table.list td:first-child { min-width: 8.5rem; }
+/* A2 knoppen op smalle telefoons niet buiten beeld */
+@media (max-width: 360px) {
+  .page-head { flex-wrap: wrap; }
+  .page-head .btn, .page-head .head-actions { max-width: 100%; }
+  .toolbar .filters { flex-wrap: wrap; }
+  .fnrow, .funcrow { flex-wrap: wrap; }
+}
+/* A3 ruimte onder de dagplanning voor de zwevende knop */
+@media (max-width: 760px) { main#view:has(.mlist) { padding-bottom: calc(150px + env(safe-area-inset-bottom)); } }
+@media (max-width: 400px) { .btn.madd { width: 52px; height: 52px; } }
+/* A6 bedragen breken niet midden in een woord */
+.rq-sum b { overflow-wrap: normal; word-break: keep-all; }
+/* A7 tikdoelen minstens 44px */
+.subtabs button, .avquick .qk, .segtabs button { min-height: 44px; }
+.head-actions .btn { min-height: 44px; }
+input[type="checkbox"]:not(.avsw input) { width: 22px; height: 22px; accent-color: var(--accent); }
+.avquick .qk { padding: 8px 12px; }
+/* A8 teller op de actieve tab leesbaar in donker */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tab.active .count { background: #fff; color: #912508; } }
+:root[data-theme="dark"] .tab.active .count { background: #fff; color: #912508; }
+/* A12 tabellen in kaarten: binnenmarge */
+.card table td, .card table th { padding: 8px 12px; }
+/* A13 planning: kolom medewerker breder zodat uren/contract passen */
+@media (min-width: 761px) { table.grid th.who, table.grid td.who { min-width: 170px; } }
+/* A15 contrast van kleine statuslabels */
+:root:not([data-theme="dark"]) { --warn: #8a5208; --ok: #356b4b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --warn: #e3ac55; --ok: #7cc297; } }

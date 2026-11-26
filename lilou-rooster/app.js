@@ -2087,7 +2087,7 @@ async function viewWeek(el, editable) {
     ${closedBanner(iso(days[0]), iso(days[days.length - 1]))}
     ${mobile && isMgr() ? '' : todayPanel}
     ${elsewhere ? `<div class="pubbar"><span>Nog <strong>${future.length} concept${future.length > 1 ? 'en' : ''}</strong> in ${futureWeeks.length} ${futureWeeks.length > 1 ? 'weken' : 'week'} (${futureWeeks.map(w => 'wk ' + weekNr(parse(w))).join(', ')})</span><button class="btn sm primary" data-act="publishall">Alles publiceren</button></div>` : ''}
-    ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : 'mob-hide'}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><button type="button" class="btn sm mob-hide" data-personpick>${ico('user')}Diensten per persoon</button>${S.selMode ? '' : '<button type="button" class="btn sm mob-only" data-planmore aria-label="Meer acties">⋯ Meer</button>'}</div>` : ''}
+    ${editable ? `<div class="viewbar"><div class="seg" role="group" aria-label="Weergave"><button type="button" class="${listView ? '' : 'on'}" data-pv="grid">Agenda</button><button type="button" class="${listView ? 'on' : ''}" data-pv="list">Lijst</button></div><button type="button" class="btn sm ${S.selMode ? 'primary' : 'mob-hide'}" data-selmode>${S.selMode ? 'Klaar met selecteren' : 'Selecteren'}</button><button type="button" class="btn sm mob-hide" data-personpick>${ico('user')}Diensten per persoon</button>${S.selMode ? '' : '<button type="button" class="btn sm mob-only" data-planmore aria-label="Meer acties">⋯ Acties</button>'}</div>` : ''}
     ${S.selMode ? `<p class="hint selhint">Tik op diensten om ze te selecteren${listView ? ', of kies "Hele dag selecteren" onder een dag' : ''}. Met "Hele week" in de balk onderin selecteer je alles van deze week.</p>` : ''}
     ${editable && !mobile && !listView ? `<div class="legend"><span><i class="l-pub"></i>Gepubliceerd (zichtbaar voor team)</span><span><i class="l-con"></i>Concept (nog niet zichtbaar)</span><span><i class="l-off"></i>Verlof of niet beschikbaar</span><span><i class="l-sick"></i>Ziek</span><span><i class="l-pend"></i>Verlof aangevraagd</span><span>Beschikbaarheid: <span class="av av-avond">✓ kan</span> <span class="av av-niet">✕ kan niet</span></span></div>` : ''}
     ${people.length && listView ? listHTML() + '<p class="hint swipehint">Veeg naar links of rechts voor een andere week</p>' : ''}
@@ -2734,7 +2734,7 @@ function annAllDialog(board, emps, mgr) {
   fillAnnFiles(dlg);
 }
 // Prikbord bovenaan Mijn rooster: ongelezen mededelingen en vastgezette berichten
-async function boardHTML() {
+async function boardHTML(part = 'all') {   // part: 'all', 'unread' (alleen ongelezen) of 'rest' (de rest)
   const { list, reads } = await store.announcements();
   const mineRead = new Set(reads.filter(r => r.employee_id === S.me.id).map(r => r.announcement_id));
   const unread = list.filter(a => !mineRead.has(a.id)).sort((a, b) => b.created_at.localeCompare(a.created_at));   // nieuwste eerst open
@@ -2743,10 +2743,12 @@ async function boardHTML() {
   const recentRead = list.filter(a => !a.pinned && mineRead.has(a.id))
     .sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 10);
   if (!list.length) return '';
+  if (part === 'unread' && !unread.length) return '';
+  if (part === 'rest' && !(pinnedRead.length || recentRead.length)) return '';
   return `<section class="board">
-    ${unread.map((a, i) => i === 0 ? annCard(a, { read: false }) : `<details class="pinitem unreaditem"><summary><span class="newdot">nieuw</span> ${esc(a.title)}</summary>${annCard(a, { read: false })}</details>`).join('')}
-    ${pinnedRead.length || recentRead.length ? `<div class="pinlist">${pinnedRead.map(a => `<details class="pinitem"><summary>${ico('pinned')}${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}${recentRead.map(a => `<details class="pinitem"><summary><span class="muted">✓</span> ${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}</div>` : ''}
-    ${list.length > unread.length + pinnedRead.length + recentRead.length ? '<button type="button" class="linkbtn small" data-annall>Alle mededelingen</button>' : ''}
+    ${part === 'rest' ? '' : unread.map((a, i) => i === 0 ? annCard(a, { read: false }) : `<details class="pinitem unreaditem"><summary><span class="newdot">nieuw</span> ${esc(a.title)}</summary>${annCard(a, { read: false })}</details>`).join('')}
+    ${part !== 'unread' && (pinnedRead.length || recentRead.length) ? `<div class="pinlist">${pinnedRead.map(a => `<details class="pinitem"><summary>${ico('pinned')}${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}${recentRead.map(a => `<details class="pinitem"><summary><span class="muted">✓</span> ${esc(a.title)}</summary>${annCard(a, { read: true })}</details>`).join('')}</div>` : ''}
+    ${part !== 'unread' && list.length > unread.length + pinnedRead.length + recentRead.length ? '<button type="button" class="linkbtn small" data-annall>Alle mededelingen</button>' : ''}
   </section>`;
 }
 function bindBoard(el) {
@@ -3679,7 +3681,7 @@ async function viewMine(el) {
   }
   const repMine = !sel && (mine.some(s => s.date === bdM) || isMgr()) ? await store.dayReports(bdM, bdM).then(l => ({ r: l.find(x => x.employee_id === S.me.id) || null })).catch(() => null) : null;
   const repCard = repMine ? `<section class="homesec"><div class="hs-head"><h2>Dagrapport</h2></div><button type="button" class="card lhome" data-drepnew="${bdM}"><span><strong>${ico('file')}${repMine.r ? 'Dagrapport ingevuld ✓' : 'Hoe ging de dienst?'}</strong><small>${repMine.r ? 'Tik om aan te passen' : 'Vul na de dienst het dagrapport in voor de directie'}</small></span><span class="chev">›</span></button></section>` : '';
-  const [clockHTML, boardH, rulesH] = await Promise.all([sel ? '' : clockHero(todayShift, { mates: todayShift ? withWho(todayShift) : [], next: nextAfter }), boardHTML().catch(() => ''), sel ? '' : rulesBannerHTML()]);
+  const [clockHTML, boardH, rulesH, boardNew] = await Promise.all([sel ? '' : clockHero(todayShift, { mates: todayShift ? withWho(todayShift) : [], next: nextAfter }), boardHTML('rest').catch(() => ''), sel ? '' : rulesBannerHTML(), sel ? '' : boardHTML('unread').catch(() => '')]);
   const srow = (x, withDate) => `<li class="srow k-${shiftKind(x)} tapable" data-sdet="${x.id}" role="button" tabindex="0" aria-label="Dienst ${esc(fmtLong(x.date))} ${hm(x.start_time)}–${hm(x.end_time)} bekijken">${withDate ? `<span class="sdate ${x.date === today ? 'istoday' : ''}"><small>${x.date === today ? 'vandaag' : DAG[dayIdx(parse(x.date))]}</small><b>${parse(x.date).getDate()}</b></span>` : ''}<span class="sbar"></span><span class="sinfo"><strong>${esc(shiftKindLabel(x))}${x.position ? ` <span class="muted">· ${esc(x.position)}</span>` : ''}</strong><small>${hm(x.start_time)} – ${hm(x.end_time)}${withWho(x).length ? ` · met ${esc(withWho(x).slice(0, 3).join(', '))}${withWho(x).length > 3 ? ' e.a.' : ''}` : ''}</small></span><span class="shrs">${fmtH(shiftHours(x))}${withDate && shiftWindow(x)[0] > new Date() ? (swapOf(x.id) ? '<small class="swp">ruil loopt</small>' : `<button type="button" class="linkbtn swl" data-swap="${x.id}">Ruilen</button>`) : ''}</span></li>`;
   const upcoming = mine.filter(s => s.date >= today).slice(0, 4);   // vandaag telt mee, ook als de dienst al voorbij is
   const todayHTML = sel ? '' : `<section class="homesec" hidden><div class="hs-head"><h2>Vandaag</h2><span class="muted small">${esc(fmtShort(today))}</span></div>${todayShift ? `<ul class="srows card">${srow(todayShift, false)}</ul>` : '<p class="hint hs-empty">Geen dienst vandaag.</p>'}</section>`;
@@ -3810,6 +3812,8 @@ async function viewMine(el) {
     ${sickNow ? `<div class="sickbanner"><div><strong>${ico('therm')}Je bent ziek gemeld</strong><span>sinds ${esc(fmtLong(sickNow.start_date))}. Beterschap! Tik op de knop zodra je weer kunt werken.</span></div><button class="btn primary" data-better="${sickNow.id}">Ik ben weer beter</button></div>` : ''}
     <div class="mhome ${sel ? 'sel' : ''}"><div class="mcol">
     ${clockHTML}
+    ${sel ? '' : boardNew || ''}
+    ${rulesH}
     ${statsHTML}
     ${rosterHTML}
     ${availHTML}
@@ -3818,7 +3822,6 @@ async function viewMine(el) {
     ${repCard}
     </div><div class="mcol">
     ${false ? `<div class="hero-next"><div><small>Volgende dienst</small><h2>${esc(fmtLong(next.date))}</h2><p>${hm(next.start_time)} – ${hm(next.end_time)}${next.position ? ' · ' + esc(next.position) : ''}${next.note ? ' · ' + esc(next.note) : ''}</p>${withWho(next).length ? `<p class="with">Met ${esc(withWho(next).join(', '))}</p>` : ''}</div><button class="btn" data-goto="aanvragen">Vrij vragen</button></div>` : ''}
-    ${rulesH}
     ${sel ? '' : await listsHomeHTML()}
     ${sel ? '' : boardH}
     ${sel ? '' : `<div class="homemore tiles">
@@ -4742,7 +4745,7 @@ async function viewBeschikbaar(el) {
       <button class="btn icon" data-w="-1" aria-label="Vorige week">‹</button>
       <div class="label"><strong>${wl.title}</strong><span>${wl.sub}</span></div>
       <button class="btn icon" data-w="1" aria-label="Volgende week">›</button></div>
-      <div class="actions"><button class="btn sm" data-fill="hele_dag">Hele week hele dag</button>${prevAv.some(a => a.employee_id === S.me.id) ? '<button class="btn sm" data-copyprev>Zelfde als vorige week</button>' : ''}</div></div>
+      <div class="actions"><button class="btn sm" data-fill="hele_dag">Hele week beschikbaar</button>${prevAv.some(a => a.employee_id === S.me.id) ? '<button class="btn sm" data-copyprev>Zelfde als vorige week</button>' : ''}</div></div>
     <p class="hint avexp">Zet het schuifje aan op dagen dat je kunt en vul de tijden in. Uit = niet beschikbaar.</p>
     <form class="card avform avform2" id="avform">${rows}
       <div class="avfoot"><span class="hint">${filled ? `✓ ${filled} van 7 dagen doorgegeven` : 'Nog niet doorgegeven'}</span><div class="actions"><button class="btn" value="repeat" title="Vult de komende 4 weken met dit patroon, alleen op dagen die nog leeg zijn"><span class="xs-hide">Ook </span>4 weken vooruit</button><button class="btn primary" value="save">Opslaan</button></div></div></form>`;
@@ -5276,7 +5279,7 @@ async function viewHours(el) {
     </table></div>
     <h2 style="font-size:21px;margin:28px 0 12px">Exporteren</h2>
     <div class="exports">${Object.entries(EXPORTS).map(([k, [t, d]]) => `<div class="card pad export"><h3>${t}</h3><p class="hint">${d}</p><div class="req-actions"><button class="btn primary sm" data-csv="${k}">Download (Excel/CSV)</button><button class="btn sm" data-copy="${k}">Kopieer tabel</button></div></div>`).join('')}</div>
-    <p class="hint" style="margin-top:14px">Uren zijn <strong>${S.hsrc === 'gewerkt' ? 'goedgekeurde gewerkte' : 'geplande'}</strong> uren (netto, na pauze). Toeslaguren zijn bruto (pauze niet afgetrokken), venster instelbaar bij Instellingen (tandwiel rechtsboven): avond ${esc((CFG.toeslagen || {}).avondVan || '20:00')}–${esc((CFG.toeslagen || {}).avondTot || '24:00')}, nacht ${esc((CFG.toeslagen || {}).nachtVan || '00:00')}–${esc((CFG.toeslagen || {}).nachtTot || '06:00')}. CSV-bestanden openen direct in Excel (puntkomma, komma als decimaalteken).</p>
+    <p class="hint" style="margin-top:14px">Uren zijn <strong>${S.hsrc === 'gewerkt' ? 'goedgekeurde gewerkte' : 'geplande'}</strong> uren (netto, na pauze). Toeslaguren zijn bruto (pauze niet afgetrokken), venster instelbaar bij Instellingen (het tandwiel bij je naam): avond ${esc((CFG.toeslagen || {}).avondVan || '20:00')}–${esc((CFG.toeslagen || {}).avondTot || '24:00')}, nacht ${esc((CFG.toeslagen || {}).nachtVan || '00:00')}–${esc((CFG.toeslagen || {}).nachtTot || '06:00')}. CSV-bestanden openen direct in Excel (puntkomma, komma als decimaalteken).</p>
     ${hasWages ? `<p class="hint">Loonkosten = bruto loon (incl. toeslagen) + ${esc(String(stH.pct_vakantiegeld ?? 8))}% vakantiegeld + ${esc(String(stH.pct_werkgever ?? 25))}% werkgeverslasten (indicatie). De exacte loonheffing en premies komen uit jullie salarisberekening.</p>` : '<p class="hint">Vul bij <strong>Team</strong> de uurlonen in om ook de loonkosten te zien.</p>'}`;
 
   el.onclick = ev => {
@@ -5294,7 +5297,7 @@ async function viewHours(el) {
 function loonSettingsDialog(st) {
   const f = (k, l, d) => `<label class="field">${l}<input type="number" name="${k}" min="0" max="300" step="0.5" value="${st[k] ?? d}"></label>`;
   openDialog('Loon & toeslagen', `
-    <p class="hint">Toeslagen in procenten van het uurloon. Valt een uur onder meerdere toeslagen, dan telt de hoogste. De tijdvakken voor avond en nacht stel je in bij Instellingen (tandwiel rechtsboven).</p>
+    <p class="hint">Toeslagen in procenten van het uurloon. Valt een uur onder meerdere toeslagen, dan telt de hoogste. De tijdvakken voor avond en nacht stel je in bij Instellingen (het tandwiel bij je naam).</p>
     <div class="row keep">${f('pct_avond', 'Avondtoeslag %', 0)}${f('pct_nacht', 'Nachttoeslag %', 0)}</div>
     <div class="row keep">${f('pct_zondag', 'Zondagtoeslag %', 0)}${f('pct_feestdag', 'Feestdagtoeslag %', 0)}</div>
     <div class="row keep">${f('pct_vakantiegeld', 'Vakantiegeld %', 8)}${f('pct_werkgever', 'Werkgeverslasten % (indicatie)', 25)}</div>
@@ -5637,7 +5640,7 @@ function entryDialog(e, emps, defaults = {}) {
     <label class="field">Overuren (na einde dienst)<select name="overtime_status">${[['', 'Geen'], ['requested', 'Aangevraagd'], ['approved', 'Goedgekeurd'], ['rejected', 'Afgekeurd']].map(([k, l]) => `<option value="${k}" ${(e.overtime_status || '') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
     ${e.overtime_reason ? `<div class="warnbox">Toelichting overuren: ${esc(e.overtime_reason)}</div>` : ''}
     ${e.reason ? `<div class="warnbox">Reden medewerker: ${esc(e.reason)}</div>` : ''}
-    <label class="field">Notitie directie<input name="manager_note" value="${esc(e.manager_note || '')}" placeholder="Bijv. vergeten uit te klokken, gecorrigeerd"></label>
+    <label class="field">Notitie leiding<input name="manager_note" value="${esc(e.manager_note || '')}" placeholder="Bijv. vergeten uit te klokken, gecorrigeerd"></label>
     <p class="hint">Laat “Uit” leeg als de medewerker nog aan het werk is. Een eindtijd vóór de begintijd telt als de volgende dag.</p>
     ${isNew ? '' : '<details class="history" data-history><summary>Geschiedenis van wijzigingen</summary><div class="hint">Laden…</div></details>'}
     <div class="dlg-foot">${isNew ? '' : '<button class="btn danger" value="delete" formnovalidate>Verwijderen</button>'}<span class="spacer"></span><button type="button" class="btn" data-close>Annuleren</button><button class="btn primary" value="save">Opslaan</button></div>`, {
