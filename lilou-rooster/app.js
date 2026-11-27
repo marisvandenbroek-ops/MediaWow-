@@ -3063,7 +3063,7 @@ async function viewMyHours(el) {
   const tot = inMonth.filter(r => r.x.status !== 'rejected').reduce((t, r) => t + r.p.hours, 0), ok = inMonth.filter(r => r.x.status === 'approved').reduce((t, r) => t + r.p.hours, 0);
   const ch = Number(S.me.contract_hours) || 0;
   const label = first.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' });
-  const row = r => `<li class="mhrow"><span><strong>${esc(fmtShort(tDate(r.x.clock_in)))}</strong> ${tHM(new Date(r.x.clock_in))}–${r.x.clock_out ? tHM(new Date(r.x.clock_out)) : '…'}${r.x.break_minutes ? ` · ${r.x.break_minutes}\u00a0min pauze` : ''}${r.p.adjusted ? ' <small class="muted">(volgens rooster)</small>' : ''}</span>
+  const row = r => `<li class="mhrow"><span><strong>${esc(fmtShort(tDate(r.x.clock_in)))}</strong> ${tHM(new Date(r.x.clock_in))}–${r.x.clock_out ? tHM(new Date(r.x.clock_out)) : '…'}${breakOf(r.x, r.sh) ? ` · ${breakOf(r.x, r.sh)}\u00a0min pauze${breakPlanned(r.x, r.sh) ? ' (gepland)' : ''}` : ''}${r.p.adjusted ? ' <small class="muted">(volgens rooster)</small>' : ''}</span>
     <span class="mhh">${r.x.clock_out ? fmtH(r.p.hours) : 'bezig'}<small class="st-${r.x.status}">${esc(ESTATUS[r.x.status] || '')}</small></span></li>`;
   const wkeys = Object.keys(weeks).sort().reverse();
   el.innerHTML = `
@@ -5281,7 +5281,7 @@ async function viewHours(el) {
     klok: ['Klokregistratie', 'Alle in- en uitkloktijden met pauze, afstand tot de zaak, meldingen en status. Bewijs bij vragen over gewerkte uren.', () => {
       const byId = Object.fromEntries(emps.map(e => [e.id, e]));
       return [['Datum', 'Medewerker', 'Gepland', 'Ingeklokt', 'Uitgeklokt', 'Pauze (min)', 'Geklokt (u)', 'Telt mee van', 'Telt mee tot', 'Telt mee (u)', 'Overuren', 'Toelichting overuren', 'Controle in', 'Controle uit', 'Afstand in (m)', 'Afstand uit (m)', 'Meldingen', 'Reden medewerker', 'Status', 'Aangepast', 'Notitie directie'],
-        ...ents.map(x => { const sh = matchShift(x, allShifts); return [tDate(x.clock_in), byId[x.employee_id]?.name || '', sh ? `${hm(sh.start_time)}-${hm(sh.end_time)}` : '', tHM(x.clock_in), x.clock_out ? tHM(x.clock_out) : '', x.break_minutes || 0, x.clock_out ? r2(entryHours(x)) : '', ...(() => { const p = paidOf(x, sh, stH); return x.clock_out ? [tHM(p.start), tHM(p.end), r2(p.hours)] : ['', '', '']; })(), { requested: 'aangevraagd', approved: 'goedgekeurd', rejected: 'afgekeurd' }[x.overtime_status] || '', x.overtime_reason || '', x.in_method || '', x.out_method || '', x.in_distance_m ?? '', x.out_distance_m ?? '', (x.flags || []).map(f => FLAG[f] || f).join(', '), x.reason || '', ESTATUS[x.status], x.edited ? 'ja' : 'nee', x.manager_note || '']; })];
+        ...ents.map(x => { const sh = matchShift(x, allShifts); return [tDate(x.clock_in), byId[x.employee_id]?.name || '', sh ? `${hm(sh.start_time)}-${hm(sh.end_time)}` : '', tHM(x.clock_in), x.clock_out ? tHM(x.clock_out) : '', breakOf(x, sh), x.clock_out ? r2(entryHours(x)) : '', ...(() => { const p = paidOf(x, sh, stH); return x.clock_out ? [tHM(p.start), tHM(p.end), r2(p.hours)] : ['', '', '']; })(), { requested: 'aangevraagd', approved: 'goedgekeurd', rejected: 'afgekeurd' }[x.overtime_status] || '', x.overtime_reason || '', x.in_method || '', x.out_method || '', x.in_distance_m ?? '', x.out_distance_m ?? '', (x.flags || []).map(f => FLAG[f] || f).join(', '), x.reason || '', ESTATUS[x.status], x.edited ? 'ja' : 'nee', x.manager_note || '']; })];
     }, `klokregistratie-${S.pmode}-${from}_${to}`],
     kosten: ['Loonkosten per functie (voor de salarisadministratie)', 'Uren en loonkosten per kostenplaats (Bediening, Bar, Keuken…). Werkgeverslasten zijn een indicatie; de exacte bedragen komen uit de salarisberekening.', () => {
       const per = {};
@@ -5407,6 +5407,9 @@ function shiftWindow(sh) {
 }
 // Tijd die meetelt. "Planning is leidend": te vroeg inklokken en na het einde uitklokken tellen niet mee,
 // behalve goedgekeurde overuren. De echte kloktijden blijven altijd bewaard.
+// Pauze die meetelt: wat er geklokt is, of (niet geklokt) de geplande pauze van de dienst
+const breakOf = (x, sh) => (Number(x.break_minutes) || 0) > 0 ? Number(x.break_minutes) : (sh ? Number(sh.break_minutes) || 0 : 0);
+const breakPlanned = (x, sh) => !(Number(x.break_minutes) > 0) && !!sh && Number(sh.break_minutes) > 0;
 function paidOf(x, sh, st = {}) {
   const cin = new Date(x.clock_in), cout = x.clock_out ? new Date(x.clock_out) : null;
   let start = cin, end = cout;
@@ -5419,10 +5422,10 @@ function paidOf(x, sh, st = {}) {
     if (cout > pe && x.overtime_status !== 'approved') { end = pe; why.push('laat'); }
     if (end < start) end = start;
   }
-  const hours = cout ? Math.max(0, (end - start) / 3600000 - (Number(x.break_minutes) || 0) / 60) : entryHours(x);
+  const hours = cout ? Math.max(0, (end - start) / 3600000 - breakOf(x, sh) / 60) : entryHours(x);
   return { start, end, hours, adjusted: why.length > 0, why, overMin };
 }
-const entryAsShift = (e, sh, st) => { const p = paidOf(e, sh, st); return { id: e.id, employee_id: e.employee_id, date: tDate(e.clock_in), start_time: tHM(p.start), end_time: tHM(p.end), break_minutes: e.break_minutes || 0, position: sh?.position || '', note: e.manager_note || '', published: true }; };
+const entryAsShift = (e, sh, st) => { const p = paidOf(e, sh, st); return { id: e.id, employee_id: e.employee_id, date: tDate(e.clock_in), start_time: tHM(p.start), end_time: tHM(p.end), break_minutes: breakOf(e, sh), position: sh?.position || '', note: e.manager_note || '', published: true }; };
 
 // Vraag bij uitklokken na het einde van de dienst: langer gewerkt?  → '' (nee), reden (ja) of null (annuleren)
 function askOvertime(plannedEnd, overMin) {
@@ -5766,7 +5769,7 @@ async function viewClockMgr(el) {
       <div class="entry-head"><span class="dot" style="background:${esc(e.color || COLORS[0])};margin:0"></span><strong>${esc(e.name)}</strong><span class="muted small">${esc(fmtShort(tDate(x.clock_in)))}</span><span class="status ${x.status === 'approved' ? 'approved' : x.status === 'rejected' ? 'rejected' : 'pending'}">${ESTATUS[x.status]}</span></div>
       <div class="entry-grid">
         <div><small>Gepland</small><b>${sh ? `${hm(sh.start_time)} – ${hm(sh.end_time)}` : '—'}</b><span>${sh ? fmtH(shiftHours(sh)) : 'geen dienst'}</span></div>
-        <div><small>Geklokt</small><b>${tHM(x.clock_in)} – ${x.clock_out ? tHM(x.clock_out) : '…'}</b><span>${fmtH(h)} · ${x.break_minutes || 0}\u00a0min pauze${x.in_method ? ` · ${x.in_method === 'wifi' ? ico('wifi') + 'wifi' : ico('pin') + 'gps'}` : ''}</span></div>
+        <div><small>Geklokt</small><b>${tHM(x.clock_in)} – ${x.clock_out ? tHM(x.clock_out) : '…'}</b><span>${fmtH(h)} · ${breakOf(x, sh)}\u00a0min pauze${breakPlanned(x, sh) ? ' (gepland)' : ''}${x.in_method ? ` · ${x.in_method === 'wifi' ? ico('wifi') + 'wifi' : ico('pin') + 'gps'}` : ''}</span></div>
         <div><small>Telt mee</small><b class="${p.adjusted ? 'warnc' : ''}">${tHM(p.start)} – ${x.clock_out ? tHM(p.end) : '…'}</b><span>${fmtH(p.hours)}${diff == null ? '' : Math.abs(diff) <= 0.25 ? ' · volgens planning' : ` · ${fmtDiff(diff)} t.o.v. planning`}</span></div>
       </div>
       ${otBox}
